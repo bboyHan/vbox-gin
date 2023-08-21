@@ -92,6 +92,38 @@ func (userService *UserService) GetUserInfoList(info request.PageInfo) (list int
 		return
 	}
 	err = db.Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
+
+	return userList, total, err
+}
+
+func (userService *UserService) GetOwnerUserInfoList(info request.PageInfo, id uint) (list interface{}, total int64, err error) {
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var userList []system.SysUser
+	query := `
+        SELECT u.id,u.uuid, u.username, u.password, u.nick_name, u.side_mode, u.header_img, u.base_color,
+			u.active_color, u.authority_id, u.phone, u.email, u.enable, u.parent_id
+        FROM sys_users u, sys_users p
+        WHERE (u.id = p.id OR u.parent_id = p.id) AND p.id = ?;
+    `
+	if id == 1 {
+		err = db.Count(&total).Error
+		if err != nil {
+			return
+		}
+		err = db.Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
+
+		return userList, total, err
+	}
+	err = db.Raw(query, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Count(&total).Error
+
+	//err = db.Raw(query).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = db.Raw(query, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
+	fmt.Println(userList)
 	return userList, total, err
 }
 

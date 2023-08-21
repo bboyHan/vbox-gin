@@ -2,6 +2,7 @@ package system
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -160,6 +161,33 @@ func (authorityService *AuthorityService) GetAuthorityInfoList(info request.Page
 	}
 	var authority []system.SysAuthority
 	err = db.Limit(limit).Offset(offset).Preload("DataAuthorityId").Where("parent_id = ?", "0").Find(&authority).Error
+	for k := range authority {
+		err = authorityService.findChildrenAuthority(&authority[k])
+	}
+	return authority, total, err
+}
+
+//@author: [piexlmax](https://github.com/piexlmax)
+//@function: GetAuthorityInfoList
+//@description: 分页获取数据
+//@param: info request.PageInfo
+//@return: list interface{}, total int64, err error
+
+func (authorityService *AuthorityService) GetOwnerAuthorityInfoList(info request.PageInfo, userId uint) (list interface{}, total int64, err error) {
+	var u system.SysUser
+	err = global.GVA_DB.Where("`id` = ?", userId).First(&u).Error
+	authId := u.AuthorityId
+	fmt.Println("authId=", authId)
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	db := global.GVA_DB.Model(&system.SysAuthority{})
+	if err = db.Where("parent_id = ? or authority_id = ?", authId, authId).Count(&total).Error; total == 0 || err != nil {
+		fmt.Printf("total a = ", total)
+		return
+	}
+	fmt.Printf("total = ", total)
+	var authority []system.SysAuthority
+	err = db.Limit(limit).Offset(offset).Preload("DataAuthorityId").Where("parent_id = ? or authority_id = ?", authId, authId).Find(&authority).Error
 	for k := range authority {
 		err = authorityService.findChildrenAuthority(&authority[k])
 	}
