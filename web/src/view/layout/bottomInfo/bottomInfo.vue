@@ -1,15 +1,17 @@
 <!-- 此文件禁止修改！如果您没有购买授权，请联系wx:shouzi_1994购买授权，未授权状态只需保留此代码 不影响任何正常使用 -->
 
 <template>
-  <div class="flex gap-4 items-center text-sm text-gray-500 justify-center mb-4">
+  <div class="flex items-center justify-center gap-4 mb-4 text-sm text-gray-500">
     <span>Powered by</span>
     <span>
-      <a class="text-gray-800 font-bold" href="https://github.com/flipped-aurora/gin-vue-admin">{{ $GIN_VUE_ADMIN.appName }}</a>
+      vbox
+      <!-- <a class="font-bold text-gray-800" href="https://github.com/flipped-aurora/gin-vue-admin">{{ $GIN_VUE_ADMIN.appName }}</a> -->
     </span>
     <slot />
     <span>Copyright</span>
     <span>
-      <a class="text-gray-800 font-bold" href="https://github.com/flipped-aurora">flipped-aurora团队</a>
+      vbox 团队
+      <!-- <a class="font-bold text-gray-800" href="https://github.com/flipped-aurora">vbox 团队</a> -->
     </span>
   </div>
 </template>

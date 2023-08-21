@@ -7,6 +7,15 @@ export const getAuthorityList = (data) => {
     data
   })
 }
+// @Router /authority/getOwnerAuthorityList [post]
+export const getOwnerAuthorityList = (data) => {
+  return service({
+    url: '/authority/getOwnerAuthorityList',
+    method: 'post',
+    data
+  })
+}
+
 
 // @Summary 删除角色
 // @Security ApiKeyAuth

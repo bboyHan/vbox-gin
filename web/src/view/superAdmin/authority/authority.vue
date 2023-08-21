@@ -170,6 +170,7 @@ const getTableData = async() => {
   const table = await getAuthorityList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
+    console.log('==>a1' + JSON.stringify(tableData.value))
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize

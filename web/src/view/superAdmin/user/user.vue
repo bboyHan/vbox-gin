@@ -149,12 +149,13 @@ export default {
 
 import {
   getUserList,
+  getOwnerUserList,
   setUserAuthorities,
   register,
   deleteUser
 } from '@/api/user'
 
-import { getAuthorityList } from '@/api/authority'
+import { getAuthorityList,getOwnerAuthorityList } from '@/api/authority'
 import CustomPic from '@/components/customPic/index.vue'
 import ChooseImg from '@/components/chooseImg/index.vue'
 import WarningBar from '@/components/warningBar/warningBar.vue'
@@ -191,20 +192,24 @@ const pageSize = ref(10)
 const tableData = ref([])
 // 分页
 const handleSizeChange = (val) => {
+  console.log('==>1')
   pageSize.value = val
   getTableData()
 }
 
 const handleCurrentChange = (val) => {
+  console.log('==>2')
   page.value = val
   getTableData()
 }
 
 // 查询
 const getTableData = async() => {
-  const table = await getUserList({ page: page.value, pageSize: pageSize.value })
+  console.log('==>3')
+  const table = await getOwnerUserList({ page: page.value, pageSize: pageSize.value })
   if (table.code === 0) {
     tableData.value = table.data.list
+    // console.log('==>4' + JSON.stringify(tableData.value))
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
@@ -212,12 +217,15 @@ const getTableData = async() => {
 }
 
 watch(() => tableData.value, () => {
+  console.log('==>5')
   setAuthorityIds()
 })
 
 const initPage = async() => {
+  console.log('==>6')
   getTableData()
-  const res = await getAuthorityList({ page: 1, pageSize: 999 })
+  const res = await getOwnerAuthorityList({ page: 1, pageSize: 999 })
+  console.log('==>6-res' +  JSON.stringify(res))
   setOptions(res.data.list)
 }
 
@@ -355,6 +363,7 @@ const addUser = () => {
 
 const tempAuth = {}
 const changeAuthority = async(row, flag, removeAuth) => {
+  // debugger
   if (flag) {
     if (!removeAuth) {
       tempAuth[row.ID] = [...row.authorityIds]
