@@ -171,7 +171,8 @@ import {
   updateChannelShop,
   findChannelShop,
   getChannelShopList,
-  getChannelShopListByChanelRemark
+  getChannelShopListByChanelRemark,
+  batchUpdateChannelShopStatus
 } from '@/api/channelshop'
 
 // 全量引入格式化工具 请按需保留
@@ -189,6 +190,7 @@ const formData = ref({
         money: 0,
         status: 0,
         })
+
 
 // 验证规则
 const rule = reactive({
@@ -263,8 +265,34 @@ const getTableData = async() => {
 
 getTableData()
 
+const batchUpdateChannelShopStatusFunc = async(value) => {
+    const res = await batchUpdateChannelShopStatus(value)
+    if (res.code === 0) {
+        ElMessage({
+                type: 'success',
+                message: '更新成功'
+            })
+    }
+    getTableData()
+    
+}
+
+
 function handleSwitchChange(row, value) {
+  console.log('==>channel3 ' + JSON.stringify(row))
+  
   row.status = value ? 1 : 0;
+  const batchFormData = ref({
+          ID : row.ID,
+          uid: row.uid,
+          cid: row.cid,
+          channel: row.channel,
+          shop_remark: row.shop_remark,
+          status: row.status,
+          treeLevel:row.treeLevel
+          })
+   console.log('==>channel4 ' + JSON.stringify(batchFormData.value))
+   batchUpdateChannelShopStatusFunc(batchFormData.value)
 }
 
 function switchValue(status) {

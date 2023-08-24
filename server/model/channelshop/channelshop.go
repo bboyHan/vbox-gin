@@ -17,6 +17,7 @@ type ChannelShop struct {
 	Status       *int          `json:"status" form:"status" gorm:"column:status;comment:开关;size:11;"`
 	DisMoney     string        `json:"disMoney" gorm:"-"`
 	OpenAndClose string        `json:"openAndClose" gorm:"-"`
+	TreeLevel    int           `json:"treeLevel" gorm:"-"`
 	Children     []ChannelShop `json:"children" gorm:"-"`
 	CreatedBy    uint          `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy    uint          `gorm:"column:updated_by;comment:更新者"`

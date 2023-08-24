@@ -18,6 +18,31 @@ type ChannelShopApi struct {
 
 var chShopService = service.ServiceGroupApp.ChannelshopServiceGroup.ChannelShopService
 
+// @Tags ChannelShop
+// @Summary 批量更新ChannelShop
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelShop true "批量更新ChannelShop"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /chShop/batchUpdateChannelShopStatus [post]
+func (chShopApi *ChannelShopApi) BatchUpdateChannelShopStatus(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	var chShop channelshop.ChannelShop
+	err := c.ShouldBindJSON(&chShop)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	chShop.CreatedBy = utils.GetUserID(c)
+	if err := chShopService.BatchUpdateChannelShopStatus(chShop, userId); err != nil {
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		response.FailWithMessage("更新失败", c)
+	} else {
+		response.OkWithMessage("更新成功", c)
+	}
+}
+
 // CreateChannelShop 创建ChannelShop
 // @Tags ChannelShop
 // @Summary 创建ChannelShop

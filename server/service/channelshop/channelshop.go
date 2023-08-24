@@ -90,6 +90,56 @@ func (chShopService *ChannelShopService) GetChannelShopInfoListByChanelRemark(in
 	return chShops, total, err
 }
 
+func (chShopService *ChannelShopService) BatchUpdateChannelShopStatus(shop channelshop.ChannelShop, userId uint) (err error) {
+	channel := shop.Channel
+	treeLevel := shop.TreeLevel
+	openStatus := shop.Status
+	shopRemark := shop.Shop_remark
+	if treeLevel == 0 {
+		//fmt.Println("shop.ID", shop.ID)
+		err = global.GVA_DB.Where("id = ?", shop.ID).First(&shop).Update("status", openStatus).Error
+		return err
+	}
+	db := global.GVA_DB.Model(&channelshop.ChannelShop{})
+	var chShops []channelshop.ChannelShop
+
+	queryA := `SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE  channel = ?;`
+	queryB := `SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE  channel = ? and shop_remark = ?;`
+
+	if userId != 1 {
+		db = db.Where("uid = ?", userId)
+	} else {
+		db = db.Where("1 = 1")
+	}
+	err = db.Find(&chShops).Error
+	if err != nil {
+		return
+	}
+	var chShopsResult []channelshop.ChannelShop
+	// 返回查询该用户下的每个channel下的一条数据
+	if treeLevel == 1 {
+
+		db = global.GVA_DB.Raw(queryA, channel).Find(&chShopsResult)
+		//fmt.Println(len(chShopsA))
+
+	}
+	if treeLevel == 2 {
+		db = global.GVA_DB.Raw(queryB, channel, shopRemark).Find(&chShopsResult)
+		//fmt.Println(len(chShopsA))
+	}
+	fmt.Println("len1", len(chShopsResult))
+	err = db.Update("status", openStatus).Error
+
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 // GetTreeChannelShopInfoList 分页获取ChannelShop记录
 // Author yoga
 func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channelshopReq.ChannelShopSearch, userId uint) (list []channelshop.ChannelShop, total int64, err error) {
@@ -102,7 +152,7 @@ func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channel
 	if userId != 1 {
 		db = db.Where("uid = ?", userId)
 	} else {
-		db = db.Where("1 = 1", userId)
+		db = db.Where("1 = 1")
 	}
 
 	err = db.Find(&chShops).Error
@@ -169,6 +219,7 @@ func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channel
 			output := fmt.Sprintf("已启动【%d】个,共【%d】个", openCnt, totalCnt)
 			chShopsD[i].DisMoney = ukMoney
 			chShopsD[i].OpenAndClose = output
+			chShopsD[i].TreeLevel = 2
 		}
 		if err != nil {
 			return
@@ -181,6 +232,7 @@ func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channel
 		chShopsP[i].Children = chShopsD
 		chShopsP[i].DisMoney = result
 		chShopsP[i].OpenAndClose = resultOutput
+		chShopsP[i].TreeLevel = 1
 		fmt.Println("dismoney=", chShopsP[i].DisMoney)
 	}
 
@@ -212,6 +264,7 @@ func (chShopService *ChannelShopService) GetChannelShopInfoList(info channelshop
 	err = db.Limit(limit).Offset(offset).Find(&chShops).Error
 	return chShops, total, err
 }
+
 func GetUniqueMoneyString(chShopsC []channelshop.ChannelShop) (string, int, int) {
 	uniqueMoney := make(map[int]struct{})
 	var result string

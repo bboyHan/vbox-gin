@@ -59,10 +59,10 @@ captcha:
 # mysql connect configuration
 # 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
 mysql:
-  path: rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com
+  path: "rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com"
   port: "3306"
   config: charset=utf8mb4&parseTime=True&loc=Local
-  db-name: gva
+  db-name: vbox_gin
   username: vbox_admin
   password: Vbox123qwe
   prefix: ""
