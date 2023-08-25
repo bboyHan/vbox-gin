@@ -11,12 +11,14 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"strconv"
 )
 
 type ChannelShopApi struct {
 }
 
 var chShopService = service.ServiceGroupApp.ChannelshopServiceGroup.ChannelShopService
+var chService = service.ServiceGroupApp.ChannelServiceGroup.ChannelService
 
 // @Tags ChannelShop
 // @Summary 批量更新ChannelShop
@@ -60,6 +62,9 @@ func (chShopApi *ChannelShopApi) CreateChannelShop(c *gin.Context) {
 		return
 	}
 	chShop.CreatedBy = utils.GetUserID(c)
+	ch, err := chService.GetChannelByChannel(chShop.Channel)
+	chShop.Cid = strconv.Itoa(int(ch.ID))
+	*chShop.Uid = int(chShop.CreatedBy)
 	if err := chShopService.CreateChannelShop(&chShop); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)

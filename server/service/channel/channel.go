@@ -62,6 +62,13 @@ func (chService *ChannelService) GetChannel(id uint) (ch channel.Channel, err er
 	return
 }
 
+// GetChannelByChannel 根据channel获取Channel记录
+// Author yoga
+func (chService *ChannelService) GetChannelByChannel(channel string) (ch channel.Channel, err error) {
+	err = global.GVA_DB.Where("c_channel_id = ?", channel).First(&ch).Error
+	return
+}
+
 // GetChannelInfoList 分页获取Channel记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (chService *ChannelService) GetChannelInfoList(info channelReq.ChannelSearch) (list []channel.Channel, total int64, err error) {
