@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/service/channel"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/channelshop"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/student"
@@ -12,6 +13,7 @@ type ServiceGroup struct {
 	ExampleServiceGroup     example.ServiceGroup
 	StudentServiceGroup     student.ServiceGroup
 	ChannelshopServiceGroup channelshop.ServiceGroup
+	ChannelServiceGroup     channel.ServiceGroup
 }
 
 var ServiceGroupApp = new(ServiceGroup)

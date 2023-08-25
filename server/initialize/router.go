@@ -80,6 +80,10 @@ func Routers() *gin.Engine {
 		channelshopRouter := router.RouterGroupApp.Channelshop
 		channelshopRouter.InitChannelShopRouter(PrivateGroup)
 	}
+	{
+		channelRouter := router.RouterGroupApp.Channel
+		channelRouter.InitChannelRouter(PrivateGroup)
+	}
 
 	global.GVA_LOG.Info("router register success")
 	return Router

@@ -53,7 +53,7 @@
         </el-table-column> -->
         <!-- <el-table-column align="left" label="用户ID" prop="uid" width="120" /> -->
         <!-- <el-table-column align="left" label="通道ID" prop="cid" width="120" /> -->
-        <el-table-column align="left" label="通道" prop="channel" width="120" />
+        <el-table-column align="left" label="通道" prop="channel" width="140" :formatter="formatChannel"/>
         <el-table-column align="left" label="店铺备注" prop="shop_remark" width="200" />
         <!-- <el-table-column align="left" label="店地址" prop="address" width="300" /> -->
         <el-table-column align="left" label="金额" prop="disMoney" width="300" />
@@ -129,7 +129,7 @@
         </el-table-column> -->
         <!-- <el-table-column align="left" label="用户ID" prop="uid" width="120" /> -->
         <!-- <el-table-column align="left" label="通道ID" prop="cid" width="120" /> -->
-        <el-table-column align="left" label="通道" prop="channel" width="120" />
+        <el-table-column align="left" label="通道" prop="channel" width="120" :formatter="formatChannel"/>
         <el-table-column align="left" label="店铺备注" prop="shop_remark" width="200" />
         <el-table-column align="left" label="店地址" prop="address" width="300"  show-overflow-tooltip="true"/>
         <el-table-column align="left" label="金额" prop="money" width="100" />
@@ -497,6 +497,22 @@ const closeManageDialog = () => {
     console.log('==>dialogManageFormVisible 2' + dialogManageFormVisible.value)
 }
 
+const formatChannel =  (row)  => {
+      if (row.channel === 'tx_jd') {
+        return '腾讯京东';
+      }
+      if (row.channel === 'tx_tb') {
+        return '腾讯(淘宝)';
+      }
+      if (row.channel === 'tx_zfb') {
+        return '腾讯(小程序)';
+      }
+      if (row.channel === 'tx_dy') {
+        return '腾讯(抖音)';
+      }
+      // 其他情况的映射
+      // 或者返回原始值 row.channel
+    }
 </script>
 
 <style>

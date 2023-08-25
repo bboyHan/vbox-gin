@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 
+	"github.com/flipped-aurora/gin-vue-admin/server/model/channel"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/student"
 	"go.uber.org/zap"
@@ -52,7 +53,7 @@ func RegisterTables() {
 		example.ExaFile{},
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
-		example.ExaFileUploadAndDownload{}, student.Student{}, channelshop.ChannelShop{},
+		example.ExaFileUploadAndDownload{}, student.Student{}, channelshop.ChannelShop{}, channel.Channel{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

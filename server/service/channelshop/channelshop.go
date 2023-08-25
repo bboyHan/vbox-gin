@@ -85,8 +85,13 @@ func (chShopService *ChannelShopService) GetChannelShopInfoListByChanelRemark(in
 	if err != nil {
 		return
 	}
-
+	//fmt.Println("total=", total)
+	//fmt.Println("channel=", channel)
+	//fmt.Println("shopRemark=", shopRemark)
+	//fmt.Println("uid=", userId)
+	//fmt.Println("2", len(chShops))
 	err = db.Limit(limit).Offset(offset).Find(&chShops).Error
+	//fmt.Println("3", len(chShops))
 	return chShops, total, err
 }
 
