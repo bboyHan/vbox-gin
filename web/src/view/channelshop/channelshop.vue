@@ -95,16 +95,18 @@
           <el-input v-model="formData.cid" :clearable="true"  placeholder="请输入" />
         </el-form-item> -->
         <el-form-item label="通道:"  prop="channel" >
-          <el-input v-model="formData.channel" :clearable="true"  placeholder="请输入" />
+          <el-input v-model="formData.channel" :clearable="true"  placeholder="请输入" :disabled="isUpdate"/>
         </el-form-item>
         <el-form-item label="店铺备注:"  prop="shop_remark" >
-          <el-input v-model="formData.shop_remark" :clearable="true"  placeholder="请输入" />
+          <el-input v-model="formData.shop_remark" :clearable="true"  placeholder="请输入" :disabled="isUpdate"/>
         </el-form-item>
         <el-form-item label="店地址:"  prop="address" >
-          <el-input v-model="formData.address" :clearable="true"  placeholder="请输入" />
+          <el-input type="textarea" autosize="{ minRows: 2, maxRows: 7 }" v-model="formData.address" :clearable="true"  placeholder="请输入" />
+          <!-- <textarea v-model="formData.address" :clearable="true" placeholder="请输入" /> -->
+
         </el-form-item>
         <el-form-item label="金额:"  prop="money" >
-          <el-input v-model.number="formData.money" :clearable="true" placeholder="请输入" />
+          <el-input v-model.number="formData.money" :clearable="true" placeholder="请输入" :disabled="isUpdate"/>
         </el-form-item>
         <!-- <el-form-item label="开关:"  prop="status" >
           <el-input v-model.number="formData.status" :clearable="true" placeholder="请输入" />
@@ -411,6 +413,8 @@ const type = ref('')
 const updateChannelShopFunc = async(row) => {
     const res = await findChannelShop({ ID: row.ID })
     type.value = 'update'
+    isUpdate.value = true
+    console.log('== chnanel 1 update ==>')
     if (res.code === 0) {
         formData.value = res.data.rechShop
         dialogFormVisible.value = true
@@ -433,12 +437,14 @@ const deleteChannelShopFunc = async (row) => {
     }
 }
 
+const isUpdate = ref('')
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
 
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
+    isUpdate.value = false
     dialogFormVisible.value = true
 }
 
@@ -589,6 +595,8 @@ const closeBatchDialog = () => {
         cid: '',
         channel: '',
         shop_remark: '',
+        address: '',
+        money: 0,
         shopMarkList:[{ address: '', money: 0 }]
         }
     // shopMarkList.value =[{ address: '', money: 0 }]
