@@ -73,6 +73,33 @@ func (chShopApi *ChannelShopApi) CreateChannelShop(c *gin.Context) {
 	}
 }
 
+// @Tags ChannelShop
+// @Summary 批量创建ChannelShop
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelShop true "批量创建ChannelShop"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /chShop/batchCreateChannelShop [post]
+func (chShopApi *ChannelShopApi) BatchCreateChannelShop(c *gin.Context) {
+	var chShopBatch channelshopReq.ChannelShopBatch
+	err := c.ShouldBindJSON(&chShopBatch)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userID := int(utils.GetUserID(c))
+	*chShopBatch.Uid = userID
+	ch, err := chService.GetChannelByChannel(chShopBatch.Channel)
+	chShopBatch.Cid = strconv.Itoa(int(ch.ID))
+	if err := chShopService.BatchCreateChannelShop(&chShopBatch); err != nil {
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		response.FailWithMessage("创建失败", c)
+	} else {
+		response.OkWithMessage("创建成功", c)
+	}
+}
+
 // DeleteChannelShop 删除ChannelShop
 // @Tags ChannelShop
 // @Summary 删除ChannelShop

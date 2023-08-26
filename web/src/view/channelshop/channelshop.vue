@@ -24,6 +24,7 @@
     <div class="gva-table-box">
         <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+            <el-button type="primary" icon="plus" @click="openBatchDialog">批量新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
             <p>确定要删除吗？</p>
             <div style="text-align: right; margin-top: 8px;">
@@ -154,6 +155,49 @@
         </div>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+      <el-form :model="batchFormData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <!-- <el-form-item label="用户ID:"  prop="uid" >
+          <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
+        </el-form-item> -->
+        <!-- <el-form-item label="通道ID:"  prop="cid" >
+          <el-input v-model="formData.cid" :clearable="true"  placeholder="请输入" />
+        </el-form-item> -->
+        <el-form-item label="通道:"  prop="channel" >
+          <el-input v-model="batchFormData.channel" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="店铺备注:"  prop="shop_remark" >
+          <el-input v-model="batchFormData.shop_remark" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <!-- <el-form-item label="店铺地址:"  prop="address" >
+          <el-input v-model="formData.address" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="金额:"  prop="money" >
+          <el-input v-model.number="formData.money" :clearable="true" placeholder="请输入" />
+        </el-form-item> -->
+
+      <div v-for="(item,i) in batchFormData.shopMarkList" :key="i">
+        <el-form-item label="店铺地址:" prop="address">
+          <el-input v-model="item.address" clearable placeholder="请输入"></el-input>
+        </el-form-item>
+        <el-form-item label="金额:" prop="money">
+            <el-input v-model="item.money" clearable placeholder="请输入"></el-input>
+        </el-form-item>
+        <el-button circle icon="Plus" @click="addList()"></el-button>
+        <el-button circle icon="Minus" @click="subList(i)" v-if="i>0"></el-button>
+      </div>
+        <!-- <el-form-item label="开关:"  prop="status" >
+          <el-input v-model.number="formData.status" :clearable="true" placeholder="请输入" />
+        </el-form-item> -->
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeBatchDialog">取 消</el-button>
+          <el-button type="primary" @click="enterBatchDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -172,7 +216,8 @@ import {
   findChannelShop,
   getChannelShopList,
   getChannelShopListByChanelRemark,
-  batchUpdateChannelShopStatus
+  batchUpdateChannelShopStatus,
+  batchCreateChannelShop
 } from '@/api/channelshop'
 
 // 全量引入格式化工具 请按需保留
@@ -513,6 +558,76 @@ const formatChannel =  (row)  => {
       // 其他情况的映射
       // 或者返回原始值 row.channel
     }
+
+
+// 自动化生成的字典（可能为空）以及字段
+const batchFormData = ref({
+        uid: 0,
+        cid: '',
+        channel: '',
+        shop_remark: '',
+        address: '',
+        money: 0,
+        status: 0,
+        shopMarkList:[{ address: '', money: 0 }]
+        })
+
+// 批量弹窗控制标记
+const dialogBatchFormVisible = ref(false)
+
+// 打开弹窗
+const openBatchDialog = () => {
+    type.value = 'create'
+    dialogBatchFormVisible.value = true
+}
+
+// 关闭弹窗
+const closeBatchDialog = () => {
+    dialogBatchFormVisible.value = false
+    batchFormData.value = {
+        uid: 0,
+        cid: '',
+        channel: '',
+        shop_remark: '',
+        shopMarkList:[{ address: '', money: 0 }]
+        }
+    // shopMarkList.value =[{ address: '', money: 0 }]
+}
+// 弹窗确定
+const enterBatchDialog = async () => {
+    console.log('== batchFormData.value ==>' + JSON.stringify(batchFormData.value))
+     elFormRef.value?.validate( async (valid) => {
+             if (!valid) return
+              let res
+              switch (type.value) {
+                case 'create':
+                  res = await batchCreateChannelShop(batchFormData.value)
+                  break
+                default:
+                  res = await batchCreateChannelShop(batchFormData.value)
+                  break
+              }
+              if (res.code === 0) {
+                ElMessage({
+                  type: 'success',
+                  message: '创建/更改成功'
+                })
+                closeBatchDialog()
+                getTableData()
+              }
+      })
+}
+
+
+const shopMarkList = ref([{ address: '', money: 0 }]);
+
+function addList() {
+  batchFormData.value.shopMarkList.push({ address: '', money: 0 });
+}
+
+function subList(index) {
+  batchFormData.value.shopMarkList.splice(index, 1);
+}
 </script>
 
 <style>

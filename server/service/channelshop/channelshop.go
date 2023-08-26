@@ -20,6 +20,46 @@ func (chShopService *ChannelShopService) CreateChannelShop(chShop *channelshop.C
 	return err
 }
 
+// BatchCreateChannelShop 批量创建ChannelShop记录
+// Author yoga
+func (chShopService *ChannelShopService) BatchCreateChannelShop(chShopBatch *channelshopReq.ChannelShopBatch) (err error) {
+
+	uid := chShopBatch.Uid
+	cid := chShopBatch.Cid
+	channel := chShopBatch.Channel
+	shopRemark := chShopBatch.Shop_remark
+	markList := chShopBatch.ShopMarkList
+	if len(markList) == 0 {
+		return err
+	}
+	for _, item := range markList {
+		num, err := strconv.Atoi(item.Money)
+		var chShop channelshop.ChannelShop
+		chShop.Uid = uid
+		chShop.Cid = cid
+		chShop.Shop_remark = shopRemark
+		chShop.Channel = channel
+		chShop.CreatedBy = uint(*uid)
+		chShop.Status = new(int)
+		*chShop.Status = 0
+		chShop.Address = item.Address
+		chShop.Money = new(int)
+		*chShop.Money = num
+
+		if err != nil {
+			fmt.Println("无法转换字符串为整数:", err)
+			return err
+		}
+		fmt.Println(*chShop.Money)
+		err = global.GVA_DB.Create(&chShop).Error
+		if err != nil {
+			return err
+		}
+	}
+	return err
+
+}
+
 // DeleteChannelShop 删除ChannelShop记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (chShopService *ChannelShopService) DeleteChannelShop(chShop channelshop.ChannelShop) (err error) {

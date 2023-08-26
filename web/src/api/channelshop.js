@@ -16,6 +16,24 @@ export const createChannelShop = (data) => {
   })
 }
 
+
+// @Tags ChannelShop
+// @Summary 批量创建ChannelShop
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelShop true "批量创建ChannelShop"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /chShop/batchCreateChannelShop [post]
+export const batchCreateChannelShop = (data) => {
+  return service({
+    url: '/chShop/batchCreateChannelShop',
+    method: 'post',
+    data
+  })
+}
+
+
 // @Tags ChannelShop
 // @Summary 批量更新ChannelShop
 // @Security ApiKeyAuth
