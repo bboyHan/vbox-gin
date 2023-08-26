@@ -5,6 +5,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
 	channelshopReq "github.com/flipped-aurora/gin-vue-admin/server/model/channelshop/request"
+	channelshopRep "github.com/flipped-aurora/gin-vue-admin/server/model/channelshop/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"gorm.io/gorm"
 	"strconv"
@@ -308,6 +309,31 @@ func (chShopService *ChannelShopService) GetChannelShopInfoList(info channelshop
 
 	err = db.Limit(limit).Offset(offset).Find(&chShops).Error
 	return chShops, total, err
+}
+
+func (chShopService *ChannelShopService) GetShopMarkList(userID int) (marks []channelshopRep.Marks, err error) {
+
+	query := `
+        SELECT distinct shop_remark
+		FROM vbox_channel_shop
+		WHERE  uid = ? ;
+    `
+
+	var chShops []channelshop.ChannelShop
+	//var markLists []channelshopRep.Marks
+	// 创建db
+	err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(query, userID).Find(&chShops).Error
+	if err != nil {
+		return
+	}
+
+	for _, chShop := range chShops {
+		remark := chShop.Shop_remark
+		shopMark := channelshopRep.Marks{Value: remark}
+		marks = append(marks, shopMark)
+	}
+	fmt.Println("markLists=", marks)
+	return marks, err
 }
 
 func GetUniqueMoneyString(chShopsC []channelshop.ChannelShop) (string, int, int) {

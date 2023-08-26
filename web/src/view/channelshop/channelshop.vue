@@ -95,12 +95,18 @@
           <el-input v-model="formData.cid" :clearable="true"  placeholder="请输入" />
         </el-form-item> -->
         <el-form-item label="通道:"  prop="channel" >
-          <el-input v-model="formData.channel" :clearable="true"  placeholder="请输入" :disabled="isUpdate"/>
+          <!-- <el-input v-model="formData.channel" :clearable="true"  placeholder="请输入" :disabled="isUpdate"/> -->
+          <el-select v-model="formData.channel" placeholder="请选择" :disabled="isUpdate">
+            <el-option label="腾讯(淘宝)" value="tx_tb" />
+            <el-option label="腾讯(抖音)" value="tx_dy" />
+            <el-option label="腾讯京东" value="tx_jd" />
+            <el-option label="腾讯(小程序)" value="tx_zfb" />
+          </el-select>
         </el-form-item>
         <el-form-item label="店铺备注:"  prop="shop_remark" >
           <el-input v-model="formData.shop_remark" :clearable="true"  placeholder="请输入" :disabled="isUpdate"/>
         </el-form-item>
-        <el-form-item label="店地址:"  prop="address" >
+        <el-form-item label="店铺地址:"  prop="address" >
           <el-input type="textarea" autosize="{ minRows: 2, maxRows: 7 }" v-model="formData.address" :clearable="true"  placeholder="请输入" />
           <!-- <textarea v-model="formData.address" :clearable="true" placeholder="请输入" /> -->
 
@@ -166,12 +172,34 @@
         <!-- <el-form-item label="通道ID:"  prop="cid" >
           <el-input v-model="formData.cid" :clearable="true"  placeholder="请输入" />
         </el-form-item> -->
-        <el-form-item label="通道:"  prop="channel" >
-          <el-input v-model="batchFormData.channel" :clearable="true"  placeholder="请输入" />
+        <el-row>
+        <el-col :span="12">
+          <el-form-item label="通道:"  prop="channel"  >
+          <!-- <el-input v-model="batchFormData.channel" :clearable="true"  placeholder="请输入" /> -->
+          <el-select v-model="batchFormData.channel" placeholder="请选择"  :learable="true">
+            <el-option label="腾讯(淘宝)" value="tx_tb" />
+            <el-option label="腾讯(抖音)" value="tx_dy" />
+            <el-option label="腾讯京东" value="tx_jd" />
+            <el-option label="腾讯(小程序)" value="tx_zfb" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="店铺备注:"  prop="shop_remark" >
-          <el-input v-model="batchFormData.shop_remark" :clearable="true"  placeholder="请输入" />
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="店铺备注:"  prop="shop_remark" >
+          <!-- <el-input v-model="batchFormData.shop_remark" :clearable="true"  placeholder="请输入" /> -->
+          <el-autocomplete 
+          v-model="batchFormData.shop_remark" 
+          :fetch-suggestions="querySearchAsync" 
+          placeholder="请输入" 
+          :clearable="true"
+          @select="handleSelect">
+            <template #default="{ item }">
+              {{ item.value }}
+            </template>
+          </el-autocomplete>
         </el-form-item>
+        </el-col>
+      </el-row>
         <!-- <el-form-item label="店铺地址:"  prop="address" >
           <el-input v-model="formData.address" :clearable="true"  placeholder="请输入" />
         </el-form-item>
@@ -219,13 +247,14 @@ import {
   getChannelShopList,
   getChannelShopListByChanelRemark,
   batchUpdateChannelShopStatus,
-  batchCreateChannelShop
+  batchCreateChannelShop,
+  getShopMarkList
 } from '@/api/channelshop'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
+import { ref, reactive,onMounted } from 'vue'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -636,6 +665,52 @@ function addList() {
 function subList(index) {
   batchFormData.value.shopMarkList.splice(index, 1);
 }
+
+
+
+
+const ShopMarkItem = ref([])
+// 可搜索店铺
+const loadAll = async ()  => {
+
+  const res = await getShopMarkList()
+  if (res.code === 0) {
+    console.log('== res.data.marks==>' + JSON.stringify(res.data.marks))
+    ShopMarkItem.value = res.data.marks
+  }
+  return ShopMarkItem.value
+}
+loadAll()
+let timeout
+const querySearchAsync = (queryString, cb) => {
+  loadAll()
+  const results = queryString
+    ? ShopMarkItem.value.filter(createFilter(queryString))
+    : ShopMarkItem.value
+
+  clearTimeout(timeout)
+  timeout = setTimeout(() => {
+    cb(results)
+  }, 2000 * Math.random())
+}
+const createFilter = (queryString) => {
+  return (restaurant) => {
+    return (
+      restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
+    )
+  }
+}
+
+const handleSelect = (item) => {
+  console.log(item)
+  batchFormData.value.shop_remark = item.value
+}
+
+onMounted(() => {
+  console.log('onMounted')
+  ShopMarkItem.value = loadAll()
+})
+
 </script>
 
 <style>

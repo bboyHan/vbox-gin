@@ -22,6 +22,7 @@ func (s *ChannelShopRouter) InitChannelShopRouter(Router *gin.RouterGroup) {
 	}
 	{
 		chShopRouterWithoutRecord.GET("findChannelShop", chShopApi.FindChannelShop)                                   // 根据ID获取ChannelShop
+		chShopRouterWithoutRecord.GET("getShopMarkList", chShopApi.GetShopMarkList)                                   // 根据ID获取ChannelShop
 		chShopRouterWithoutRecord.GET("getChannelShopList", chShopApi.GetChannelShopList)                             // 获取ChannelShop列表
 		chShopRouterWithoutRecord.GET("getChannelShopListByChanelRemark", chShopApi.GetChannelShopListByChanelRemark) // 获取同一通道下同一店铺的ChannelShop列表
 		chShopRouterWithoutRecord.POST("batchUpdateChannelShopStatus", chShopApi.BatchUpdateChannelShopStatus)        // 批量控制ChannelShop列表状态

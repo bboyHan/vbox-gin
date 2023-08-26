@@ -117,6 +117,22 @@ export const findChannelShop = (params) => {
 }
 
 // @Tags ChannelShop
+// @Summary 用id查询ChannelShop
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query model.ChannelShop true "用id查询ChannelShop"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /chShop/findChannelShop [get]
+export const getShopMarkList = () => {
+  return service({
+    url: '/chShop/getShopMarkList',
+    method: 'get'
+  })
+}
+
+
+// @Tags ChannelShop
 // @Summary 分页获取ChannelShop列表
 // @Security ApiKeyAuth
 // @accept application/json

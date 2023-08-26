@@ -199,6 +199,33 @@ func (chShopApi *ChannelShopApi) FindChannelShop(c *gin.Context) {
 	}
 }
 
+// getShopMarkList 查询ChannelShop_remark
+// @Tags ChannelShop
+// @Summary 用id查询ChannelShop
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query channelshop.ChannelShop true "用id查询ChannelShop"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /chShop/getShopMarkList [get]
+func (chShopApi *ChannelShopApi) GetShopMarkList(c *gin.Context) {
+	var chShop channelshop.ChannelShop
+	err := c.ShouldBindQuery(&chShop)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userID := int(utils.GetUserID(c))
+	fmt.Println("GetShopMarkList userId = ", userID)
+
+	if marks, err := chShopService.GetShopMarkList(userID); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(gin.H{"marks": marks}, c)
+	}
+}
+
 // GetChannelShopList 分页获取ChannelShop列表
 // @Tags ChannelShop
 // @Summary 分页获取ChannelShop列表
