@@ -73,10 +73,6 @@ func Routers() *gin.Engine {
 
 	}
 	{
-		studentRouter := router.RouterGroupApp.Student
-		studentRouter.InitStudentRouter(PrivateGroup)
-	}
-	{
 		vbox := router.RouterGroupApp.Vbox
 		vbox.InitChannelShopRouter(PrivateGroup)
 	}
