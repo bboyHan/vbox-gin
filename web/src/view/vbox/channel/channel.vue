@@ -47,11 +47,15 @@
         <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="名字" prop="name" width="120" />
-        <el-table-column align="left" label="分数" prop="score" width="120" />
+        <el-table-column align="left" label="通道id" prop="c_channel_id" width="120" />
+        <el-table-column align="left" label="game id" prop="c_game" width="120" />
+        <el-table-column align="left" label="game描述" prop="c_game_name" width="120" />
+        <el-table-column align="left" label="支付通道id" prop="c_channel" width="120" />
+        <el-table-column align="left" label="支付通道描述" prop="c_channel_name" width="120" />
+        <el-table-column align="left" label="自动或引导" prop="type" width="120" />
         <el-table-column align="left" label="操作">
             <template #default="scope">
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateStudentFunc(scope.row)">变更</el-button>
+            <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelFunc(scope.row)">变更</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
         </el-table-column>
@@ -70,11 +74,23 @@
     </div>
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <el-form-item label="名字:"  prop="name" >
-          <el-input v-model="formData.name" :clearable="true"  placeholder="请输入" />
+        <el-form-item label="通道id:"  prop="c_channel_id" >
+          <el-input v-model="formData.c_channel_id" :clearable="true"  placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="分数:"  prop="score" >
-          <el-input v-model.number="formData.score" :clearable="true" placeholder="请输入" />
+        <el-form-item label="game id:"  prop="c_game" >
+          <el-input v-model="formData.c_game" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="game描述:"  prop="c_game_name" >
+          <el-input v-model="formData.c_game_name" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="支付通道id:"  prop="c_channel" >
+          <el-input v-model="formData.c_channel" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="支付通道描述:"  prop="c_channel_name" >
+          <el-input v-model="formData.c_channel_name" :clearable="true"  placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="自动或引导:"  prop="type" >
+          <el-input v-model.number="formData.type" :clearable="true" placeholder="请输入" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -89,19 +105,19 @@
 
 <script>
 export default {
-  name: 'Student'
+  name: 'Channel'
 }
 </script>
 
 <script setup>
 import {
-  createStudent,
-  deleteStudent,
-  deleteStudentByIds,
-  updateStudent,
-  findStudent,
-  getStudentList
-} from '@/api/student'
+  createChannel,
+  deleteChannel,
+  deleteChannelByIds,
+  updateChannel,
+  findChannel,
+  getChannelList
+} from '@/api/channel'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
@@ -110,12 +126,22 @@ import { ref, reactive } from 'vue'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        name: '',
-        score: 0,
+        c_channel_id: '',
+        c_game: '',
+        c_game_name: '',
+        c_channel: '',
+        c_channel_name: '',
+        type: 0,
         })
 
 // 验证规则
 const rule = reactive({
+               type : [{
+                   required: true,
+                   message: '',
+                   trigger: ['input','blur'],
+               },
+              ],
 })
 
 const searchRule = reactive({
@@ -174,7 +200,7 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getStudentList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const table = await getChannelList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
@@ -209,7 +235,7 @@ const deleteRow = (row) => {
         cancelButtonText: '取消',
         type: 'warning'
     }).then(() => {
-            deleteStudentFunc(row)
+            deleteChannelFunc(row)
         })
     }
 
@@ -231,7 +257,7 @@ const onDelete = async() => {
         multipleSelection.value.map(item => {
           ids.push(item.ID)
         })
-      const res = await deleteStudentByIds({ ids })
+      const res = await deleteChannelByIds({ ids })
       if (res.code === 0) {
         ElMessage({
           type: 'success',
@@ -249,19 +275,19 @@ const onDelete = async() => {
 const type = ref('')
 
 // 更新行
-const updateStudentFunc = async(row) => {
-    const res = await findStudent({ ID: row.ID })
+const updateChannelFunc = async(row) => {
+    const res = await findChannel({ ID: row.ID })
     type.value = 'update'
     if (res.code === 0) {
-        formData.value = res.data.restd
+        formData.value = res.data.rech
         dialogFormVisible.value = true
     }
 }
 
 
 // 删除行
-const deleteStudentFunc = async (row) => {
-    const res = await deleteStudent({ ID: row.ID })
+const deleteChannelFunc = async (row) => {
+    const res = await deleteChannel({ ID: row.ID })
     if (res.code === 0) {
         ElMessage({
                 type: 'success',
@@ -287,8 +313,12 @@ const openDialog = () => {
 const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
-        name: '',
-        score: 0,
+        c_channel_id: '',
+        c_game: '',
+        c_game_name: '',
+        c_channel: '',
+        c_channel_name: '',
+        type: 0,
         }
 }
 // 弹窗确定
@@ -298,13 +328,13 @@ const enterDialog = async () => {
               let res
               switch (type.value) {
                 case 'create':
-                  res = await createStudent(formData.value)
+                  res = await createChannel(formData.value)
                   break
                 case 'update':
-                  res = await updateStudent(formData.value)
+                  res = await updateChannel(formData.value)
                   break
                 default:
-                  res = await createStudent(formData.value)
+                  res = await createChannel(formData.value)
                   break
               }
               if (res.code === 0) {

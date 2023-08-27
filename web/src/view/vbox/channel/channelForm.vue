@@ -2,11 +2,23 @@
   <div>
     <div class="gva-form-box">
       <el-form :model="formData" ref="elFormRef" label-position="right" :rules="rule" label-width="80px">
-        <el-form-item label="名字:" prop="name">
-          <el-input v-model="formData.name" :clearable="true" placeholder="请输入" />
+        <el-form-item label="通道id:" prop="c_channel_id">
+          <el-input v-model="formData.c_channel_id" :clearable="true" placeholder="请输入" />
        </el-form-item>
-        <el-form-item label="分数:" prop="score">
-          <el-input v-model.number="formData.score" :clearable="true" placeholder="请输入" />
+        <el-form-item label="game id:" prop="c_game">
+          <el-input v-model="formData.c_game" :clearable="true" placeholder="请输入" />
+       </el-form-item>
+        <el-form-item label="game描述:" prop="c_game_name">
+          <el-input v-model="formData.c_game_name" :clearable="true" placeholder="请输入" />
+       </el-form-item>
+        <el-form-item label="支付通道id:" prop="c_channel">
+          <el-input v-model="formData.c_channel" :clearable="true" placeholder="请输入" />
+       </el-form-item>
+        <el-form-item label="支付通道描述:" prop="c_channel_name">
+          <el-input v-model="formData.c_channel_name" :clearable="true" placeholder="请输入" />
+       </el-form-item>
+        <el-form-item label="自动或引导:" prop="type">
+          <el-input v-model.number="formData.type" :clearable="true" placeholder="请输入" />
        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="save">保存</el-button>
@@ -19,16 +31,16 @@
 
 <script>
 export default {
-  name: 'Student'
+  name: 'Channel'
 }
 </script>
 
 <script setup>
 import {
-  createStudent,
-  updateStudent,
-  findStudent
-} from '@/api/student'
+  createChannel,
+  updateChannel,
+  findChannel
+} from '@/api/channel'
 
 // 自动获取字典
 import { getDictFunc } from '@/utils/format'
@@ -41,11 +53,20 @@ const router = useRouter()
 
 const type = ref('')
 const formData = ref({
-            name: '',
-            score: 0,
+            c_channel_id: '',
+            c_game: '',
+            c_game_name: '',
+            c_channel: '',
+            c_channel_name: '',
+            type: 0,
         })
 // 验证规则
 const rule = reactive({
+               type : [{
+                   required: true,
+                   message: '',
+                   trigger: ['input','blur'],
+               }],
 })
 
 const elFormRef = ref()
@@ -54,9 +75,9 @@ const elFormRef = ref()
 const init = async () => {
  // 建议通过url传参获取目标数据ID 调用 find方法进行查询数据操作 从而决定本页面是create还是update 以下为id作为url参数示例
     if (route.query.id) {
-      const res = await findStudent({ ID: route.query.id })
+      const res = await findChannel({ ID: route.query.id })
       if (res.code === 0) {
-        formData.value = res.data.restd
+        formData.value = res.data.rech
         type.value = 'update'
       }
     } else {
@@ -72,13 +93,13 @@ const save = async() => {
             let res
            switch (type.value) {
              case 'create':
-               res = await createStudent(formData.value)
+               res = await createChannel(formData.value)
                break
              case 'update':
-               res = await updateStudent(formData.value)
+               res = await updateChannel(formData.value)
                break
              default:
-               res = await createStudent(formData.value)
+               res = await createChannel(formData.value)
                break
            }
            if (res.code === 0) {
