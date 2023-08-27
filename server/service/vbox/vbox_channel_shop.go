@@ -1,4 +1,4 @@
-package channelshop
+package vbox
 
 import (
 	"fmt"

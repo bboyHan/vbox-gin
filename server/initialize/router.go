@@ -77,13 +77,18 @@ func Routers() *gin.Engine {
 		studentRouter.InitStudentRouter(PrivateGroup)
 	}
 	{
-		channelshopRouter := router.RouterGroupApp.Channelshop
-		channelshopRouter.InitChannelShopRouter(PrivateGroup)
+		vbox := router.RouterGroupApp.Vbox
+		vbox.InitChannelShopRouter(PrivateGroup)
 	}
-	{
-		channelRouter := router.RouterGroupApp.Channel
-		channelRouter.InitChannelRouter(PrivateGroup)
-	}
+	//
+	//{
+	//	channelshopRouter := router.RouterGroupApp.Channelshop
+	//	channelshopRouter.InitChannelShopRouter(PrivateGroup)
+	//}
+	//{
+	//	channelRouter := router.RouterGroupApp.Channel
+	//	channelRouter.InitChannelRouter(PrivateGroup)
+	//}
 
 	global.GVA_LOG.Info("router register success")
 	return Router

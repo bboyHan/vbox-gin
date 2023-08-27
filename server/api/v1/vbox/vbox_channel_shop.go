@@ -1,4 +1,4 @@
-package channelshop
+package vbox
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	channelshopReq "github.com/flipped-aurora/gin-vue-admin/server/model/channelshop/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,9 +15,6 @@ import (
 
 type ChannelShopApi struct {
 }
-
-var chShopService = service.ServiceGroupApp.ChannelshopServiceGroup.ChannelShopService
-var chService = service.ServiceGroupApp.ChannelServiceGroup.ChannelService
 
 // @Tags ChannelShop
 // @Summary 批量更新ChannelShop

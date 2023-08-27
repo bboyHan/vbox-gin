@@ -1,4 +1,4 @@
-package channel
+package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"

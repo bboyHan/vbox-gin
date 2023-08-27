@@ -1,5 +1,6 @@
-package channelshop
+package vbox
 
 type ServiceGroup struct {
 	ChannelShopService
+	ChannelService
 }

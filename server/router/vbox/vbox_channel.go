@@ -1,4 +1,4 @@
-package channel
+package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
@@ -13,7 +13,7 @@ type ChannelRouter struct {
 func (s *ChannelRouter) InitChannelRouter(Router *gin.RouterGroup) {
 	chRouter := Router.Group("ch").Use(middleware.OperationRecord())
 	chRouterWithoutRecord := Router.Group("ch")
-	var chApi = v1.ApiGroupApp.ChannelApiGroup.ChannelApi
+	var chApi = v1.ApiGroupApp.Vbox.ChannelApi
 	{
 		chRouter.POST("createChannel", chApi.CreateChannel)             // 新建Channel
 		chRouter.DELETE("deleteChannel", chApi.DeleteChannel)           // 删除Channel

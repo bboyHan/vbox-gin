@@ -1,4 +1,4 @@
-package channelshop
+package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
@@ -13,7 +13,7 @@ type ChannelShopRouter struct {
 func (s *ChannelShopRouter) InitChannelShopRouter(Router *gin.RouterGroup) {
 	chShopRouter := Router.Group("chShop").Use(middleware.OperationRecord())
 	chShopRouterWithoutRecord := Router.Group("chShop")
-	var chShopApi = v1.ApiGroupApp.ChannelshopApiGroup.ChannelShopApi
+	var chShopApi = v1.ApiGroupApp.Vbox.ChannelShopApi
 	{
 		chShopRouter.POST("createChannelShop", chShopApi.CreateChannelShop)             // 新建ChannelShop
 		chShopRouter.DELETE("deleteChannelShop", chShopApi.DeleteChannelShop)           // 删除ChannelShop
