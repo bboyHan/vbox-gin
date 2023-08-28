@@ -4,7 +4,8 @@
       <el-row :class="[isShadowBg?'bg-black opacity-30 w-full h-full absolute top-0 left-0 z-[1001]':'']" @click="changeShadow()" />
       <el-aside class="main-cont gva-aside" :style="{width:asideWidth()}">
         <div class="min-h-[60px] text-center transition-all duration-300 flex items-center justify-center gap-2" :style="{background: backgroundColor}">
-          <img alt class="w-9 h-9 p-1 bg-white rounded-full" :src="$GIN_VUE_ADMIN.appLogo">
+<!--          <img alt class="w-9 h-9 p-1 bg-white rounded-full" :src="$GIN_VUE_ADMIN.appLogo">-->
+          <img alt class="w-9 h-9 p-1 bg-white rounded-full" src="@/assets/logo.png">
           <div v-if="isSider" class="inline-flex text-white font-bold text-2xl" :style="{color:textColor}">{{ $GIN_VUE_ADMIN.appName }}</div>
         </div>
         <Aside class="aside" />

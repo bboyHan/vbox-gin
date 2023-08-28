@@ -3,8 +3,9 @@
  */
 
 const config = {
-  appName: 'VBox-Admin',
-  appLogo: 'https://www.gin-vue-admin.com/img/logo.png',
+  appName: 'VBOX',
+  // appLogo: 'https://www.gin-vue-admin.com/img/logo.png',
+  appLogo: '/@/assets/login_right_banner.png',
   showViteLogo: true
 }
 

@@ -65,7 +65,7 @@
 
     <div class="hidden md:block w-1/2 h-full float-right bg-[#194bfb]"><img
       class="h-full"
-      src="@/assets/login_right_banner.jpg"
+      src="@/assets/login_right_banner.png"
       alt="banner"
     ></div>
   </div>
