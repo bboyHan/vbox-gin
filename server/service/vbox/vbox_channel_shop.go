@@ -119,7 +119,7 @@ func (chShopService *ChannelShopService) GetChannelShopInfoListByChanelRemark(in
 	if userId != 1 {
 		db = db.Where("uid = ?", userId)
 	} else {
-		db = db.Where("1 = 1", userId)
+		db = db.Where("1 = 1")
 	}
 	db = db.Where("channel = ? and shop_remark = ?", channel, shopRemark)
 	err = db.Count(&total).Error
@@ -191,15 +191,27 @@ func (chShopService *ChannelShopService) BatchUpdateChannelShopStatus(shop chann
 func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channelshopReq.ChannelShopSearch, userId uint) (list []channelshop.ChannelShop, total int64, err error) {
 	//limit := info.PageSize
 	//offset := info.PageSize * (info.Page - 1)
+	// 查出所有该用户下的数据
+	if userId != 1 {
+		channelShops, t, err := GetTreeChannelShopInfoListForUser(userId)
+		return channelShops, t, err
+	} else {
+		channelShops, t, err := GetTreeChannelShopInfoListForAdmin()
+		return channelShops, t, err
+	}
+	return
+}
+
+// GetTreeChannelShopInfoList 分页获取ChannelShop记录
+// Author yoga
+func GetTreeChannelShopInfoListForUser(userId uint) (list []channelshop.ChannelShop, total int64, err error) {
+	//limit := info.PageSize
+	//offset := info.PageSize * (info.Page - 1)
 	// 创建db
 	db := global.GVA_DB.Model(&channelshop.ChannelShop{})
 	var chShops []channelshop.ChannelShop
 	// 查出所有该用户下的数据
-	if userId != 1 {
-		db = db.Where("uid = ?", userId)
-	} else {
-		db = db.Where("1 = 1")
-	}
+	db = db.Where("uid = ?", userId)
 
 	err = db.Find(&chShops).Error
 	if err != nil {
@@ -258,6 +270,100 @@ func (chShopService *ChannelShopService) GetTreeChannelShopInfoList(info channel
 
 			var chShopsE []channelshop.ChannelShop
 			err = global.GVA_DB.Raw(queryE, channel, userId, remark).Find(&chShopsE).Error
+			if err != nil {
+				return
+			}
+			ukMoney, openCnt, totalCnt := GetUniqueMoneyString(chShopsE)
+			output := fmt.Sprintf("已启动【%d】个,共【%d】个", openCnt, totalCnt)
+			chShopsD[i].DisMoney = ukMoney
+			chShopsD[i].OpenAndClose = output
+			chShopsD[i].TreeLevel = 2
+		}
+		if err != nil {
+			return
+		}
+
+		result, resultOpenCnt, resultTotalCnt := GetUniqueMoneyString(chShopsC)
+		resultOutput := fmt.Sprintf("已启动【%d】个,共【%d】个", resultOpenCnt, resultTotalCnt)
+		//fmt.Println(result)
+		// 将 chShopsC 赋值给 chShopsP[i] 的 Children 字段
+		chShopsP[i].Children = chShopsD
+		chShopsP[i].DisMoney = result
+		chShopsP[i].OpenAndClose = resultOutput
+		chShopsP[i].TreeLevel = 1
+		fmt.Println("dismoney=", chShopsP[i].DisMoney)
+	}
+
+	total = int64(len(chShopsP))
+	fmt.Println("total=", total)
+	//err = db.Limit(limit).Offset(offset).Find(&chShopsP).Error
+	return chShopsP, total, err
+}
+
+// GetTreeChannelShopInfoList 分页获取ChannelShop记录
+// Author yoga
+func GetTreeChannelShopInfoListForAdmin() (list []channelshop.ChannelShop, total int64, err error) {
+	//limit := info.PageSize
+	//offset := info.PageSize * (info.Page - 1)
+	// 创建db
+	db := global.GVA_DB.Model(&channelshop.ChannelShop{})
+	var chShops []channelshop.ChannelShop
+	// 查出所有该用户下的数据
+	err = db.Find(&chShops).Error
+	if err != nil {
+		return
+	}
+
+	// 返回查询该用户下的每个channel下的最大的一条数据
+	queryP := `SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE  (id in (
+			SELECT MAX(id)
+			FROM vbox_channel_shop
+			GROUP BY channel
+		));`
+
+	// 返回查询该用户下的相同channel下的数据
+	queryC := `
+        SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE channel = ?;
+    `
+
+	queryD := `
+		SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE  (id in (
+			SELECT MAX(id)
+			FROM vbox_channel_shop
+			GROUP BY channel,shop_remark
+		)) AND channel = ?
+		;
+	`
+
+	queryE := `
+        SELECT id,created_at,uid,cid,channel,shop_remark,address,money,status
+		FROM vbox_channel_shop
+		WHERE channel = ? and shop_remark = ?;
+    `
+	var chShopsP []channelshop.ChannelShop
+	db = global.GVA_DB.Raw(queryP).Find(&chShopsP)
+	fmt.Println(len(chShopsP))
+
+	for i, shop := range chShopsP {
+		channel := shop.Channel
+		var chShopsC []channelshop.ChannelShop
+		err = global.GVA_DB.Raw(queryC, channel).Find(&chShopsC).Error
+		if err != nil {
+			return
+		}
+		var chShopsD []channelshop.ChannelShop
+		err = global.GVA_DB.Raw(queryD, channel).Find(&chShopsD).Error
+		for i, shopMark := range chShopsD {
+			remark := shopMark.Shop_remark
+
+			var chShopsE []channelshop.ChannelShop
+			err = global.GVA_DB.Raw(queryE, channel, remark).Find(&chShopsE).Error
 			if err != nil {
 				return
 			}

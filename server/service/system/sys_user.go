@@ -29,6 +29,7 @@ func (userService *UserService) Register(u system.SysUser) (userInter system.Sys
 	// 否则 附加uuid 密码hash加密 注册
 	u.Password = utils.BcryptHash(u.Password)
 	u.UUID = uuid.Must(uuid.NewV4())
+
 	err = global.GVA_DB.Create(&u).Error
 	return u, err
 }
@@ -101,12 +102,6 @@ func (userService *UserService) GetOwnerUserInfoList(info request.PageInfo, id u
 	offset := info.PageSize * (info.Page - 1)
 	db := global.GVA_DB.Model(&system.SysUser{})
 	var userList []system.SysUser
-	query := `
-        SELECT u.id,u.uuid, u.username, u.password, u.nick_name, u.side_mode, u.header_img, u.base_color,
-			u.active_color, u.authority_id, u.phone, u.email, u.enable, u.parent_id
-        FROM sys_users u, sys_users p
-        WHERE (u.id = p.id OR u.parent_id = p.id) AND p.id = ?;
-    `
 	if id == 1 {
 		err = db.Count(&total).Error
 		if err != nil {
@@ -116,14 +111,20 @@ func (userService *UserService) GetOwnerUserInfoList(info request.PageInfo, id u
 
 		return userList, total, err
 	}
-	err = db.Raw(query, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Count(&total).Error
-
-	//err = db.Raw(query).Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
-	err = db.Raw(query, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
-	fmt.Println(userList)
+
+	querySub := `
+		WITH RECURSIVE cte (id) AS (SELECT id FROM sys_users WHERE id = ? UNION ALL SELECT sys_users.id FROM sys_users 
+			JOIN cte ON sys_users.parent_id = cte.id)
+		SELECT id,uuid,username,password,nick_name,side_mode,header_img,base_color,active_color,authority_id,phone,email,enable,parent_id
+		FROM sys_users WHERE id IN (SELECT id FROM cte);
+    `
+	//var userListSub []system.SysUser
+	err = db.Raw(querySub, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
+
+	total = int64(len(userList))
 	return userList, total, err
 }
 
@@ -196,8 +197,9 @@ func (userService *UserService) DeleteUser(id int) (err error) {
 //@return: err error, user model.SysUser
 
 func (userService *UserService) SetUserInfo(req system.SysUser) error {
+
 	return global.GVA_DB.Model(&system.SysUser{}).
-		Select("updated_at", "nick_name", "header_img", "phone", "email", "sideMode", "enable").
+		Select("updated_at", "nick_name", "header_img", "phone", "email", "sideMode", "enable", "parent_id").
 		Where("id=?", req.ID).
 		Updates(map[string]interface{}{
 			"updated_at": time.Now(),
@@ -207,6 +209,7 @@ func (userService *UserService) SetUserInfo(req system.SysUser) error {
 			"email":      req.Email,
 			"side_mode":  req.SideMode,
 			"enable":     req.Enable,
+			"parent_id":  req.ParentId,
 		}).Error
 }
 

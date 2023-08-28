@@ -158,7 +158,17 @@ func (b *BaseApi) Register(c *gin.Context) {
 			AuthorityId: v,
 		})
 	}
-	user := &system.SysUser{Username: r.Username, NickName: r.NickName, Password: r.Password, HeaderImg: r.HeaderImg, AuthorityId: r.AuthorityId, Authorities: authorities, Enable: r.Enable, Phone: r.Phone, Email: r.Email}
+	userID := int(utils.GetUserID(c))
+	user := &system.SysUser{Username: r.Username,
+		NickName:    r.NickName,
+		Password:    r.Password,
+		HeaderImg:   r.HeaderImg,
+		AuthorityId: r.AuthorityId,
+		Authorities: authorities,
+		Enable:      r.Enable,
+		Phone:       r.Phone,
+		Email:       r.Email,
+		ParentId:    userID}
 	userReturn, err := userService.Register(*user)
 	if err != nil {
 		global.GVA_LOG.Error("注册失败!", zap.Error(err))
@@ -236,7 +246,7 @@ func (b *BaseApi) GetUserList(c *gin.Context) {
 	}, "获取成功", c)
 }
 
-// GetUserList
+// GetOwnerUserList
 // @Tags      SysUser
 // @Summary   分页获取用户列表
 // @Security  ApiKeyAuth
@@ -403,6 +413,7 @@ func (b *BaseApi) SetUserInfo(c *gin.Context) {
 			return
 		}
 	}
+	userID := utils.GetUserID(c)
 	err = userService.SetUserInfo(system.SysUser{
 		GVA_MODEL: global.GVA_MODEL{
 			ID: user.ID,
@@ -413,6 +424,7 @@ func (b *BaseApi) SetUserInfo(c *gin.Context) {
 		Email:     user.Email,
 		SideMode:  user.SideMode,
 		Enable:    user.Enable,
+		ParentId:  int(userID),
 	})
 	if err != nil {
 		global.GVA_LOG.Error("设置失败!", zap.Error(err))
