@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channel"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/student"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox_channel_guideimg"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -53,7 +54,11 @@ func RegisterTables() {
 		example.ExaFile{},
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
-		example.ExaFileUploadAndDownload{}, student.Student{}, channelshop.ChannelShop{}, channel.Channel{},
+		example.ExaFileUploadAndDownload{},
+		student.Student{},
+		channelshop.ChannelShop{},
+		channel.Channel{},
+		vbox_channel_guideimg.ChannelGuideImg{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))
