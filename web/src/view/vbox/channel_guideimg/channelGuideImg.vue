@@ -1,26 +1,6 @@
 <template>
   <div>
-    <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
-      <el-form-item label="创建日期" prop="createdAt">
-      <template #label>
-        <span>
-          创建日期
-          <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
-            <el-icon><QuestionFilled /></el-icon>
-          </el-tooltip>
-        </span>
-      </template>
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始日期" :disabled-date="time=> searchInfo.endCreatedAt ? time.getTime() > searchInfo.endCreatedAt.getTime() : false"></el-date-picker>
-       —
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束日期" :disabled-date="time=> searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker>
-      </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+
     <div class="gva-table-box">
         <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
@@ -44,16 +24,33 @@
         @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
+        <el-table-column align="left" label="图片" prop="img_base_str" width="200"  >
+          <template #default="{ row }">
+            <!-- {{ formatValue(row.img_base_str) }} -->
+            <!-- <div class="cell-content">{{ row.img_base_str }} -->
+              <el-image :src="row.img_base_str" fit="contain" class="thumbnail-image"/>
+              
+               <!-- <CustomPic pic-type="file" :pic-src="row.img_base_str" preview/> -->
+            <!-- </div> -->
+          </template>
+        </el-table-column>
+        
         <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="通道id" prop="c_channel_id" width="80" />
-        <el-table-column align="left" label="文件base 64编码" prop="img_base_str" width="300" />
+        <el-table-column align="left" label="文件base 64编码" prop="img_base_str" width="200"  >
+          <template #default="{ row }">
+             <!-- {{ formatValue(row.img_base_str) }}  -->
+            <div class="cell-content">{{ row.img_base_str }}
+            </div>
+          </template>
+        </el-table-column> 
         <el-table-column align="left" label="顺序" prop="img_num" width="80" />
         <el-table-column align="left" label="文件名" prop="file_name" width="120" />
-        <el-table-column align="left" label="图片地址" prop="url" width="120" />
+        <!-- <el-table-column align="left" label="图片地址" prop="url" width="120" /> -->
         <el-table-column align="left" label="文件标签" prop="tag" width="120" />
-        <el-table-column align="left" label="编号" prop="key" width="120" />
+        <!-- <el-table-column align="left" label="编号" prop="key" width="120" /> -->
         <el-table-column align="left" label="操作">
             <template #default="scope">
             <el-button type="primary" link icon="edit" class="table-button" @click="updateChannel_guideimgFunc(scope.row)">变更</el-button>
@@ -73,13 +70,51 @@
             />
         </div>
     </div>
+
+    
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="130px">
+        <el-form-item label="照片" prop="img_base_str">
+							 <el-upload
+							class="avatar-uploader"
+							action=""
+							:on-change="getFilesj" 
+							:on-remove="handlePicRemovesj" 
+							:on-preview="handlePicPreviewsj" 
+							v-model="formData.img_base_str"
+							:limit="1" 
+							list-type="picture-card" 
+							:file-list="filelistsj" 
+							:auto-upload="false" 
+							accept="image/png, image/gif, image/jpg, image/jpeg"
+						>
+						<!-- 图标 -->
+							<el-icon
+								style="font-size: 25px;"
+								><Plus /></el-icon>
+ 
+						</el-upload>
+						<el-dialog
+							v-model="dialogVisiblesj"
+							title="预览"
+							destroy-on-close
+						>
+							<img
+								:src="dialogImageUrsj"
+								style="
+									display: block;
+									max-width: 500px;
+									margin: 0 auto;
+									height: 500px;
+								"
+							/>
+						</el-dialog>
+						</el-form-item>
         <el-form-item label="通道id:"  prop="c_channel_id" >
           <el-input v-model="formData.c_channel_id" :clearable="true"  placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="文件base 64编码:"  prop="img_base_str" >
-          <el-input v-model="formData.img_base_str" :clearable="true"  placeholder="请输入" />
+        <el-form-item label="文件base64编码:"  prop="img_base_str" >
+          <el-input type="textarea"  v-model="formData.img_base_str" :clearable="true"  placeholder="请输入" />
         </el-form-item>
         <el-form-item label="图片顺序:"  prop="img_num" >
           <el-input v-model.number="formData.img_num" :clearable="true" placeholder="请输入" />
@@ -126,7 +161,20 @@ import {
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
+import { ref, reactive,watch } from 'vue'
+import SparkMD5 from 'spark-md5'
+import {
+  findFile,
+  breakpointContinueFinish,
+  removeChunk,
+  breakpointContinue
+} from '@/api/breakpoint'
+
+const dialogVisiblesj = ref(false);
+const dialogImageUrsj = ref("");
+const filelistsj = ref([]);
+const listst = ref("");
+
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -143,21 +191,7 @@ const formData = ref({
 const rule = reactive({
 })
 
-const searchRule = reactive({
-  createdAt: [
-    { validator: (rule, value, callback) => {
-      if (searchInfo.value.startCreatedAt && !searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写结束日期'))
-      } else if (!searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写开始日期'))
-      } else if (searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt && (searchInfo.value.startCreatedAt.getTime() === searchInfo.value.endCreatedAt.getTime() || searchInfo.value.startCreatedAt.getTime() > searchInfo.value.endCreatedAt.getTime())) {
-        callback(new Error('开始日期应当早于结束日期'))
-      } else {
-        callback()
-      }
-    }, trigger: 'change' }
-  ],
-})
+
 
 const elFormRef = ref()
 const elSearchFormRef = ref()
@@ -169,21 +203,7 @@ const pageSize = ref(10)
 const tableData = ref([])
 const searchInfo = ref({})
 
-// 重置
-const onReset = () => {
-  searchInfo.value = {}
-  getTableData()
-}
 
-// 搜索
-const onSubmit = () => {
-  elSearchFormRef.value?.validate(async(valid) => {
-    if (!valid) return
-    page.value = 1
-    pageSize.value = 10
-    getTableData()
-  })
-}
 
 // 分页
 const handleSizeChange = (val) => {
@@ -348,8 +368,101 @@ const enterDialog = async () => {
       })
 }
 
+const uploadImgToBase64 = (file) => {
+				// 核心方法，将图片转成base64字符串形式
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.readAsDataURL(file);
+					reader.onload = function () {
+					// 图片转base64完成后返回reader对象
+					resolve(reader);
+					};
+					reader.onerror = reject;
+				});
+		}
+const getFilesj = async (file, fileList) => {
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (isLt2M) {
+    try {
+      const data = await uploadImgToBase64(file.raw);
+      formData.value.img_base_str = data.result;
+      listst.value= data.result;
+      // 接口请求
+      /*
+      const response = await fetch('接口地址');
+      const test = await response.json();
+      if (test.ret == 200) {
+        this.$message.success("识别成功");
+        window.localStorage.setItem('userImg', this.form.idCardBack);
+        this.form.idCardValidity = test.data.end_date;
+        console.log("yy.data.address--1", test.data.address);
+      } else {
+        this.$message.error("身份证识别错误");
+      }
+      console.log("test", test);
+      */
+      // this.form.idCardBack= file.url;
+      // console.log("file-curl-1",this.form.idCardBack);
+
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    ElMessage({
+                  type: 'error',
+                  message: '上传图片大小不能超过 2MB!'
+                })
+  }
+  console.log("fileList-111", fileList);
+  console.log("file-111", file);
+}
+
+const handlePicRemovesj = (file, fileList) => {
+  let hideUploadEdit = fileList.length
+  if (hideUploadEdit >= 1){
+    formData.value.img_base_str = "";
+  } 
+  
+};
+
+const handlePicPreviewsj = (file) => {
+  console.log('file=' + file.url);
+  dialogImageUrsj.value = file.url;
+  dialogVisiblesj.value = true;
+}
+
+const formatValue = (value) => {
+  const maxLength = 20; // 设置需要截取的最大长度
+  if (value.length <= maxLength) {
+    return value;
+  } else {
+    return value.slice(0, maxLength) + '...';
+  }
+};
+
 </script>
 
-<style>
 
+<style lang='scss' scoped>
+
+
+.avatar-uploader {
+  width: 150px;
+  height: 150px !important;
+  overflow: hidden;
+}
+.cell-content {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: all;
+}
+
+// class="thumbnail-image"
+.thumbnail-image {
+  max-width: 100px; /* 调整图片最大宽度 */
+  min-height: 200px;
+}
 </style>
+
