@@ -122,7 +122,7 @@
         <el-form-item label="文件名:"  prop="file_name" >
           <el-input v-model="formData.file_name" :clearable="true"  placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="图片地址:"  prop="url" >
+        <!-- <el-form-item label="图片地址:"  prop="url" >
           <el-input v-model="formData.url" :clearable="true"  placeholder="请输入" />
         </el-form-item>
         <el-form-item label="文件标签:"  prop="tag" >
@@ -130,7 +130,7 @@
         </el-form-item>
         <el-form-item label="编号:"  prop="key" >
           <el-input v-model="formData.key" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <template #footer>
         <div class="dialog-footer">
