@@ -1,13 +1,17 @@
 package http
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
+	"log"
 	"net"
+	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -26,16 +30,99 @@ type Response struct {
 	Body       []byte            // 响应体
 }
 
-// httpClient 结构体
-type HttpClient struct {
+// FastHttpClient 结构体
+type FastHttpClient struct {
 	client *fasthttp.Client
 }
 
+const (
+	Default = 0
+	Redis   = 1
+	DB      = 2
+)
+
+func NewHTTPClientByType(t int) {
+	switch t {
+	case 0:
+	}
+}
+
 // NewHTTPClient 创建一个新的 httpClient 实例
-func NewHTTPClient() *HttpClient {
-	return &HttpClient{
+func NewHTTPClient(proxyAddr ...string) *FastHttpClient {
+	var dialFunc fasthttp.DialFunc
+
+	switch len(proxyAddr) {
+	case 0: // 不使用代理
+		dialFunc = nil
+	case 1: // 使用指定的代理地址，格式为 "IP:Port"
+		proxyURL, err := url.Parse("http://" + proxyAddr[0])
+		if err != nil {
+			log.Fatal("Proxy URL parsing error:", err)
+		}
+
+		// 创建一个定制的Dial函数，用于设置代理
+		dialFunc = func(addr string) (net.Conn, error) {
+			proxyConn, err := net.Dial("tcp", proxyURL.Host)
+			if err != nil {
+				return nil, fmt.Errorf("proxy connection error: %v", err)
+			}
+
+			// 连接成功后发送Connect请求，告知代理要连接的目标地址
+			proxyReaderWriter := bufio.NewReadWriter(bufio.NewReader(proxyConn), bufio.NewWriter(proxyConn))
+			fmt.Fprintf(proxyReaderWriter, "CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n", addr, addr)
+			if err := proxyReaderWriter.Flush(); err != nil {
+				return nil, fmt.Errorf("proxy write error: %v", err)
+			}
+
+			// 读取响应，确认代理是否连接成功
+			resp, err := http.ReadResponse(proxyReaderWriter.Reader, &http.Request{Method: "CONNECT"})
+			if err != nil {
+				return nil, fmt.Errorf("proxy read response error: %v", err)
+			}
+			resp.Body.Close()
+
+			// 返回与目标服务器的连接
+			return proxyConn, nil
+		}
+	case 2: // 传入IP和Port，用于支持 http.NewHTTPClient("1.1.1.1","80") 的方式
+		proxyIP := proxyAddr[0]
+		proxyPort := proxyAddr[1]
+
+		proxyURL, err := url.Parse("http://" + proxyIP + ":" + proxyPort)
+		if err != nil {
+			log.Fatal("Proxy URL parsing error:", err)
+		}
+
+		// 创建一个定制的Dial函数，用于设置代理
+		dialFunc = func(addr string) (net.Conn, error) {
+			proxyConn, err := net.Dial("tcp", proxyURL.Host)
+			if err != nil {
+				return nil, fmt.Errorf("proxy connection error: %v", err)
+			}
+
+			// 连接成功后发送Connect请求，告知代理要连接的目标地址
+			proxyReaderWriter := bufio.NewReadWriter(bufio.NewReader(proxyConn), bufio.NewWriter(proxyConn))
+			fmt.Fprintf(proxyReaderWriter, "CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n", addr, addr)
+			if err := proxyReaderWriter.Flush(); err != nil {
+				return nil, fmt.Errorf("proxy write error: %v", err)
+			}
+
+			// 读取响应，确认代理是否连接成功
+			resp, err := http.ReadResponse(proxyReaderWriter.Reader, &http.Request{Method: "CONNECT"})
+			if err != nil {
+				return nil, fmt.Errorf("proxy read response error: %v", err)
+			}
+			resp.Body.Close()
+
+			// 返回与目标服务器的连接
+			return proxyConn, nil
+		}
+	default:
+		log.Fatal("Invalid proxy address")
+	}
+	return &FastHttpClient{
 		client: &fasthttp.Client{
-			//Addr:                ProxyDialer("113.142.58.204:51022"),
+			Dial:                dialFunc,
 			MaxConnsPerHost:     100,
 			ReadBufferSize:      4096,
 			WriteBufferSize:     4096,
@@ -60,27 +147,27 @@ func ProxyDialer(proxyURL string) fasthttp.DialFunc {
 }
 
 // Get 发送 GET 请求
-func (c *HttpClient) Get(url string, options *RequestOptions) (*Response, error) {
+func (c *FastHttpClient) Get(url string, options *RequestOptions) (*Response, error) {
 	return c.sendRequest("GET", url, options)
 }
 
 // Post 发送 POST 请求
-func (c *HttpClient) Post(url string, options *RequestOptions) (*Response, error) {
+func (c *FastHttpClient) Post(url string, options *RequestOptions) (*Response, error) {
 	return c.sendRequest("POST", url, options)
 }
 
 // Put 发送 PUT 请求
-func (c *HttpClient) Put(url string, options *RequestOptions) (*Response, error) {
+func (c *FastHttpClient) Put(url string, options *RequestOptions) (*Response, error) {
 	return c.sendRequest("PUT", url, options)
 }
 
 // Delete 发送 DELETE 请求
-func (c *HttpClient) Delete(url string, options *RequestOptions) (*Response, error) {
+func (c *FastHttpClient) Delete(url string, options *RequestOptions) (*Response, error) {
 	return c.sendRequest("DELETE", url, options)
 }
 
 // sendRequest 发送 HTTP 请求
-func (c *HttpClient) sendRequest(method, url string, options *RequestOptions) (*Response, error) {
+func (c *FastHttpClient) sendRequest(method, url string, options *RequestOptions) (*Response, error) {
 	req := fasthttp.AcquireRequest()
 	req.SetRequestURI(url)
 	req.Header.SetMethod(method)

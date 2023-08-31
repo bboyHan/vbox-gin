@@ -2,9 +2,10 @@ package product
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/tx"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"go.uber.org/zap"
 	"net/url"
 	"strconv"
 	"time"
@@ -51,15 +52,60 @@ func Records(qq string) *tx.Records {
 
 	u.RawQuery = queryParams.Encode()
 	newURL := u.String()
-	client := http.NewHTTPClient()
-	//options.Proxy = "43.248.99.24:61000"
+	client := http.NewHTTPClient("43.248.99.33:59019")
 
-	resp, _ := client.Get(newURL, options)
-	fmt.Print(string(resp.Body))
+	resp, err := client.Get(newURL, options)
+	if err != nil {
+		global.GVA_LOG.Error("err:  ->", zap.Error(err))
+		return nil
+	}
 
 	var records tx.Records
-	json.Unmarshal(resp.Body, &records)
+	err = json.Unmarshal(resp.Body, &records)
+	if err != nil {
+		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		return nil
+	}
 	//fmt.Print(records)
 
 	return &records
+}
+
+// 计算不同类型 - 不同金额 - 记录集合
+func cal(payments []tx.Payment) map[string]map[string][]string {
+	// 使用map存储不同充值类型下的支付金额和充值账号ID集合（去重）
+	paymentsByTypeAndAmount := make(map[string]map[string][]string)
+	for _, payment := range payments {
+		amount := payment.PayAmt
+		showName := payment.ShowName
+		provideID := payment.ProvideID
+
+		// 检查是否存在对应的充值类型的map
+		if _, ok := paymentsByTypeAndAmount[showName]; !ok {
+			paymentsByTypeAndAmount[showName] = make(map[string][]string)
+		}
+
+		// 添加充值账号ID到对应的支付金额中（去重）
+		ids := paymentsByTypeAndAmount[showName][amount]
+		exists := false
+		for _, id := range ids {
+			if id == provideID {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			paymentsByTypeAndAmount[showName][amount] = append(ids, provideID)
+		}
+	}
+
+	// 输出结果
+	//for showName, amounts := range paymentsByTypeAndAmount {
+	//	fmt.Printf("充值类型：%s\n", showName)
+	//	for amount, ids := range amounts {
+	//		fmt.Printf("支付金额：%s，充值账号ID集合：%v\n", amount, ids)
+	//	}
+	//	fmt.Println()
+	//}
+	return paymentsByTypeAndAmount
 }

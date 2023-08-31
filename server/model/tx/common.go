@@ -27,9 +27,9 @@ type Payment struct {
 }
 
 type Records struct {
-	Payments []Payment `json:"WaterList" form:"WaterList"`
-	Ret      int       `json:"ret" form:"ret"`
-	Msg      string    `json:"msg" form:"msg"`
-	PageNum  int       `json:"PageNum" form:"PageNum"`
-	PageSize int       `json:"PageSize" form:"PageSize"`
+	WaterList []Payment `json:"WaterList" form:"WaterList"`
+	Ret       int       `json:"ret" form:"ret"`
+	Msg       string    `json:"msg" form:"msg"`
+	PageNum   int       `json:"PageNum" form:"PageNum"`
+	PageSize  int       `json:"PageSize" form:"PageSize"`
 }
