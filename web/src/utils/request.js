@@ -107,9 +107,10 @@ service.interceptors.response.use(
     switch (error.response.status) {
       case 500:
         ElMessageBox.confirm(`
-        <p>检测到接口错误${error}</p>
-        <p>错误码<span style="color:red"> 500 </span>：此类错误内容常见于后台panic，请先查看后台日志，如果影响您正常使用可强制登出清理缓存</p>
-        `, '接口报错', {
+        <p>检测到系统错误${error}</p>
+<!--        <p>错误码<span style="color:red"> 500 </span>：此类错误内容常见于后台panic，请先查看后台日志，如果影响您正常使用可强制登出清理缓存</p>-->
+        <p>错误码<span style="color:red"> 500 </span>：请联系管理员反馈处理</p>
+        `, '后台异常', {
           dangerouslyUseHTMLString: true,
           distinguishCancelAndClose: true,
           confirmButtonText: '清理缓存',
@@ -125,7 +126,8 @@ service.interceptors.response.use(
       case 404:
         ElMessageBox.confirm(`
           <p>检测到接口错误${error}</p>
-          <p>错误码<span style="color:red"> 404 </span>：此类错误多为接口未注册（或未重启）或者请求路径（方法）与api路径（方法）不符--如果为自动化代码请检查是否存在空格</p>
+<!--          <p>错误码<span style="color:red"> 404 </span>：此类错误多为接口未注册（或未重启）或者请求路径（方法）与api路径（方法）不符&#45;&#45;如果为自动化代码请检查是否存在空格</p>-->
+          <p>错误码<span style="color:red"> 404 </span>：资源未找到</p>
           `, '接口报错', {
           dangerouslyUseHTMLString: true,
           distinguishCancelAndClose: true,
