@@ -31,7 +31,7 @@ func (chGuideImgApi *ChannelGuideImgApi) CreateChannelGuideImg(c *gin.Context) {
 		return
 	}
 	chGuideImg.CreatedBy = utils.GetUserID(c)
-	if err := chGuideImgService.CreateChannel_guideimg(&chGuideImg); err != nil {
+	if err := chGuideImgService.CreateChannelGuideimg(&chGuideImg); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
@@ -56,7 +56,7 @@ func (chGuideImgApi *ChannelGuideImgApi) DeleteChannelGuideImg(c *gin.Context) {
 		return
 	}
 	chGuideImg.DeletedBy = utils.GetUserID(c)
-	if err := chGuideImgService.DeleteChannel_guideimg(chGuideImg); err != nil {
+	if err := chGuideImgService.DeleteChannelGuideimg(chGuideImg); err != nil {
 		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
@@ -81,7 +81,7 @@ func (chGuideImgApi *ChannelGuideImgApi) DeleteChannelGuideImgByIds(c *gin.Conte
 		return
 	}
 	deletedBy := utils.GetUserID(c)
-	if err := chGuideImgService.DeleteChannel_guideimgByIds(IDS, deletedBy); err != nil {
+	if err := chGuideImgService.DeleteChannelGuideimgByIds(IDS, deletedBy); err != nil {
 		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
@@ -106,7 +106,7 @@ func (chGuideImgApi *ChannelGuideImgApi) UpdateChannelGuideImg(c *gin.Context) {
 		return
 	}
 	chGuideImg.UpdatedBy = utils.GetUserID(c)
-	if err := chGuideImgService.UpdateChannel_guideimg(chGuideImg); err != nil {
+	if err := chGuideImgService.UpdateChannelGuideimg(chGuideImg); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
@@ -130,7 +130,7 @@ func (chGuideImgApi *ChannelGuideImgApi) FindChannelGuideImg(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if rechGuideImg, err := chGuideImgService.GetChannel_guideimg(chGuideImg.ID); err != nil {
+	if rechGuideImg, err := chGuideImgService.GetChannelGuideimg(chGuideImg.ID); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
@@ -154,7 +154,7 @@ func (chGuideImgApi *ChannelGuideImgApi) GetChannelGuideImgList(c *gin.Context) 
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := chGuideImgService.GetChannel_guideimgInfoList(pageInfo); err != nil {
+	if list, total, err := chGuideImgService.GetChannelGuideimgInfoList(pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

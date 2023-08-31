@@ -15,13 +15,13 @@ func (s *ChannelGuideImgRouter) InitChannelGuideImgRouter(Router *gin.RouterGrou
 	chGuideImgRouterWithoutRecord := Router.Group("chGuideImg")
 	var chGuideImgApi = v1.ApiGroupApp.Vbox.ChannelGuideImgApi
 	{
-		chGuideImgRouter.POST("createChannel_guideimg", chGuideImgApi.CreateChannelGuideImg)             // 新建Channel_guideimg
-		chGuideImgRouter.DELETE("deleteChannel_guideimg", chGuideImgApi.DeleteChannelGuideImg)           // 删除Channel_guideimg
-		chGuideImgRouter.DELETE("deleteChannel_guideimgByIds", chGuideImgApi.DeleteChannelGuideImgByIds) // 批量删除Channel_guideimg
-		chGuideImgRouter.PUT("updateChannel_guideimg", chGuideImgApi.UpdateChannelGuideImg)              // 更新Channel_guideimg
+		chGuideImgRouter.POST("createChannelGuideimg", chGuideImgApi.CreateChannelGuideImg)             // 新建Channel_guideimg
+		chGuideImgRouter.DELETE("deleteChannelGuideimg", chGuideImgApi.DeleteChannelGuideImg)           // 删除Channel_guideimg
+		chGuideImgRouter.DELETE("deleteChannelGuideimgByIds", chGuideImgApi.DeleteChannelGuideImgByIds) // 批量删除Channel_guideimg
+		chGuideImgRouter.PUT("updateChannelGuideimg", chGuideImgApi.UpdateChannelGuideImg)              // 更新Channel_guideimg
 	}
 	{
-		chGuideImgRouterWithoutRecord.GET("findChannel_guideimg", chGuideImgApi.FindChannelGuideImg)       // 根据ID获取Channel_guideimg
-		chGuideImgRouterWithoutRecord.GET("getChannel_guideimgList", chGuideImgApi.GetChannelGuideImgList) // 获取Channel_guideimg列表
+		chGuideImgRouterWithoutRecord.GET("findChannelGuideimg", chGuideImgApi.FindChannelGuideImg)       // 根据ID获取Channel_guideimg
+		chGuideImgRouterWithoutRecord.GET("getChannelGuideimgList", chGuideImgApi.GetChannelGuideImgList) // 获取Channel_guideimg列表
 	}
 }
