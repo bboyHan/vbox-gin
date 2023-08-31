@@ -10,7 +10,7 @@ import service from '@/utils/request'
 // @Router /chGuideImg/createChannel_guideimg [post]
 export const createChannel_guideimg = (data) => {
   return service({
-    url: '/chGuideImg/createChannel_guideimg',
+    url: '/chGuideImg/createChannelGuideimg',
     method: 'post',
     data
   })
@@ -26,7 +26,7 @@ export const createChannel_guideimg = (data) => {
 // @Router /chGuideImg/deleteChannel_guideimg [delete]
 export const deleteChannel_guideimg = (data) => {
   return service({
-    url: '/chGuideImg/deleteChannel_guideimg',
+    url: '/chGuideImg/deleteChannelGuideimg',
     method: 'delete',
     data
   })
@@ -42,7 +42,7 @@ export const deleteChannel_guideimg = (data) => {
 // @Router /chGuideImg/deleteChannel_guideimg [delete]
 export const deleteChannel_guideimgByIds = (data) => {
   return service({
-    url: '/chGuideImg/deleteChannel_guideimgByIds',
+    url: '/chGuideImg/deleteChannelGuideimgByIds',
     method: 'delete',
     data
   })
@@ -58,7 +58,7 @@ export const deleteChannel_guideimgByIds = (data) => {
 // @Router /chGuideImg/updateChannel_guideimg [put]
 export const updateChannel_guideimg = (data) => {
   return service({
-    url: '/chGuideImg/updateChannel_guideimg',
+    url: '/chGuideImg/updateChannelGuideimg',
     method: 'put',
     data
   })
@@ -74,7 +74,7 @@ export const updateChannel_guideimg = (data) => {
 // @Router /chGuideImg/findChannel_guideimg [get]
 export const findChannel_guideimg = (params) => {
   return service({
-    url: '/chGuideImg/findChannel_guideimg',
+    url: '/chGuideImg/findChannelGuideimg',
     method: 'get',
     params
   })
@@ -90,7 +90,7 @@ export const findChannel_guideimg = (params) => {
 // @Router /chGuideImg/getChannel_guideimgList [get]
 export const getChannel_guideimgList = (params) => {
   return service({
-    url: '/chGuideImg/getChannel_guideimgList',
+    url: '/chGuideImg/getChannelGuideimgList',
     method: 'get',
     params
   })
