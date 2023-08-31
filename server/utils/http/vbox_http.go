@@ -41,10 +41,8 @@ const (
 	DB      = 2
 )
 
-func NewHTTPClientByType(t int) {
-	switch t {
-	case 0:
-	}
+func NewProxyHTTPClient() {
+
 }
 
 // NewHTTPClient 创建一个新的 httpClient 实例

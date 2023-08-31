@@ -4,4 +4,6 @@ type RouterGroup struct {
 	ChannelShopRouter
 	ChannelRouter
 	ChannelGuideImgRouter
+	ProxyRouter
+	PayAccountRouter
 }

@@ -52,7 +52,7 @@ func Records(qq string) *tx.Records {
 
 	u.RawQuery = queryParams.Encode()
 	newURL := u.String()
-	client := http.NewHTTPClient("43.248.99.33:59019")
+	client := http.NewHTTPClient()
 
 	resp, err := client.Get(newURL, options)
 	if err != nil {
