@@ -8,12 +8,14 @@ type ApiGroup struct {
 	ChannelGuideImgApi
 	ProxyApi
 	PayAccountApi
+	VboxPayOrderApi
 }
 
 var (
 	chShopService     = service.ServiceGroupApp.VboxServiceGroup.ChannelShopService
 	chService         = service.ServiceGroupApp.VboxServiceGroup.ChannelService
 	chGuideImgService = service.ServiceGroupApp.VboxServiceGroup.ChannelGuideImgService
+	vpoService        = service.ServiceGroupApp.VboxServiceGroup.VboxPayOrderService
 	vpaService        = service.ServiceGroupApp.VboxServiceGroup.PayAccountService
 	vboxProxyService  = service.ServiceGroupApp.VboxServiceGroup.ProxyService
 )

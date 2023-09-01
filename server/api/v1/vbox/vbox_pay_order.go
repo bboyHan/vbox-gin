@@ -2,21 +2,17 @@ package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
-    vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-    "github.com/flipped-aurora/gin-vue-admin/server/service"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
-    "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type VboxPayOrderApi struct {
 }
-
-var vpoService = service.ServiceGroupApp.VboxServiceGroup.VboxPayOrderService
-
 
 // CreateVboxPayOrder 创建VboxPayOrder
 // @Tags VboxPayOrder
@@ -34,9 +30,9 @@ func (vpoApi *VboxPayOrderApi) CreateVboxPayOrder(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vpo.CreatedBy = utils.GetUserID(c)
+	vpo.CreatedBy = utils.GetUserID(c)
 	if err := vpoService.CreateVboxPayOrder(&vpo); err != nil {
-        global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
 		response.OkWithMessage("创建成功", c)
@@ -59,9 +55,9 @@ func (vpoApi *VboxPayOrderApi) DeleteVboxPayOrder(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vpo.DeletedBy = utils.GetUserID(c)
+	vpo.DeletedBy = utils.GetUserID(c)
 	if err := vpoService.DeleteVboxPayOrder(vpo); err != nil {
-        global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
 		response.OkWithMessage("删除成功", c)
@@ -79,14 +75,14 @@ func (vpoApi *VboxPayOrderApi) DeleteVboxPayOrder(c *gin.Context) {
 // @Router /vpo/deleteVboxPayOrderByIds [delete]
 func (vpoApi *VboxPayOrderApi) DeleteVboxPayOrderByIds(c *gin.Context) {
 	var IDS request.IdsReq
-    err := c.ShouldBindJSON(&IDS)
+	err := c.ShouldBindJSON(&IDS)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    deletedBy := utils.GetUserID(c)
-	if err := vpoService.DeleteVboxPayOrderByIds(IDS,deletedBy); err != nil {
-        global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
+	deletedBy := utils.GetUserID(c)
+	if err := vpoService.DeleteVboxPayOrderByIds(IDS, deletedBy); err != nil {
+		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
 		response.OkWithMessage("批量删除成功", c)
@@ -109,9 +105,9 @@ func (vpoApi *VboxPayOrderApi) UpdateVboxPayOrder(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vpo.UpdatedBy = utils.GetUserID(c)
+	vpo.UpdatedBy = utils.GetUserID(c)
 	if err := vpoService.UpdateVboxPayOrder(vpo); err != nil {
-        global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
 		response.OkWithMessage("更新成功", c)
@@ -135,7 +131,7 @@ func (vpoApi *VboxPayOrderApi) FindVboxPayOrder(c *gin.Context) {
 		return
 	}
 	if revpo, err := vpoService.GetVboxPayOrder(vpo.ID); err != nil {
-        global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
 		response.OkWithData(gin.H{"revpo": revpo}, c)
@@ -159,14 +155,14 @@ func (vpoApi *VboxPayOrderApi) GetVboxPayOrderList(c *gin.Context) {
 		return
 	}
 	if list, total, err := vpoService.GetVboxPayOrderInfoList(pageInfo); err != nil {
-	    global.GVA_LOG.Error("获取失败!", zap.Error(err))
-        response.FailWithMessage("获取失败", c)
-    } else {
-        response.OkWithDetailed(response.PageResult{
-            List:     list,
-            Total:    total,
-            Page:     pageInfo.Page,
-            PageSize: pageInfo.PageSize,
-        }, "获取成功", c)
-    }
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
 }

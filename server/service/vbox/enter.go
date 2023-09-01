@@ -6,4 +6,5 @@ type ServiceGroup struct {
 	ChannelGuideImgService
 	ProxyService
 	PayAccountService
+	VboxPayOrderService
 }

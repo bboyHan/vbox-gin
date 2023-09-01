@@ -82,3 +82,22 @@ func (chGuideImgService *ChannelGuideImgService) GetChannelGuideimgInfoList(info
 	err = db.Limit(limit).Offset(offset).Find(&chGuideImgs).Error
 	return chGuideImgs, total, err
 }
+
+func (chGuideImgService *ChannelGuideImgService) GetChannelGuideImgTaskList(info vbox_channel_guideimgReq.ChannelGuideImgSearch) (list []vbox_channel_guideimg.ChannelGuideImg, total int64, err error) {
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	// 创建db
+	db := global.GVA_DB.Model(&vbox_channel_guideimg.ChannelGuideImg{})
+	var chGuideImgs []vbox_channel_guideimg.ChannelGuideImg
+	// 如果有条件搜索 下方会自动创建搜索语句
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
+	}
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
+
+	err = db.Limit(limit).Offset(offset).Find(&chGuideImgs).Error
+	return chGuideImgs, total, err
+}
