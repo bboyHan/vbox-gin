@@ -21,7 +21,8 @@ func (s *ChannelGuideImgRouter) InitChannelGuideImgRouter(Router *gin.RouterGrou
 		chGuideImgRouter.PUT("updateChannelGuideimg", chGuideImgApi.UpdateChannelGuideImg)              // 更新Channel_guideimg
 	}
 	{
-		chGuideImgRouterWithoutRecord.GET("findChannelGuideimg", chGuideImgApi.FindChannelGuideImg)       // 根据ID获取Channel_guideimg
-		chGuideImgRouterWithoutRecord.GET("getChannelGuideimgList", chGuideImgApi.GetChannelGuideImgList) // 获取Channel_guideimg列表
+		chGuideImgRouterWithoutRecord.GET("findChannelGuideimg", chGuideImgApi.FindChannelGuideImg)               // 根据ID获取Channel_guideimg
+		chGuideImgRouterWithoutRecord.GET("getChannelGuideimgList", chGuideImgApi.GetChannelGuideImgList)         // 获取Channel_guideimg列表
+		chGuideImgRouterWithoutRecord.GET("getChannelGuideImgTaskList", chGuideImgApi.GetChannelGuideImgTaskList) // 获取通道引导图片
 	}
 }

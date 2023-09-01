@@ -6,6 +6,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -13,6 +14,8 @@ import (
 
 type VboxPayOrderApi struct {
 }
+
+var userService = service.ServiceGroupApp.SystemServiceGroup.UserService
 
 // CreateVboxPayOrder 创建VboxPayOrder
 // @Tags VboxPayOrder
@@ -154,7 +157,17 @@ func (vpoApi *VboxPayOrderApi) GetVboxPayOrderList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := vpoService.GetVboxPayOrderInfoList(pageInfo); err != nil {
+
+	userID := uint(utils.GetUserID(c))
+	userList, tot, err := userService.GetOwnerUserIdsList(userID)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+	if list, total, err := vpoService.GetVboxPayOrderInfoList(pageInfo, idList); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

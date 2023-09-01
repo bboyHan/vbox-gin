@@ -64,12 +64,14 @@ func (vpoService *VboxPayOrderService) GetVboxPayOrder(id uint) (vpo vbox.VboxPa
 
 // GetVboxPayOrderInfoList 分页获取VboxPayOrder记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.VboxPayOrderSearch) (list []vbox.VboxPayOrder, total int64, err error) {
+func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.VboxPayOrderSearch, ids []int) (list []vbox.VboxPayOrder, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
 	var vpos []vbox.VboxPayOrder
+
+	db = db.Where("uid in (?)", ids).Find(&vpos)
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)

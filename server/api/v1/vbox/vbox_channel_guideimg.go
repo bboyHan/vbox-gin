@@ -9,7 +9,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"sort"
 )
 
 type ChannelGuideImgApi struct {
@@ -168,9 +167,9 @@ func (chGuideImgApi *ChannelGuideImgApi) GetChannelGuideImgList(c *gin.Context) 
 	}
 }
 
-// getChannelGuideImgTaskList 分页获取Channel_guideimg列表
+// getChannelGuideImgTaskList 获取通道引导图片
 // @Tags Channel_guideimg
-// @Summary 分页获取Channel_guideimg列表
+// @Summary 获取通道引导图片
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
@@ -178,7 +177,7 @@ func (chGuideImgApi *ChannelGuideImgApi) GetChannelGuideImgList(c *gin.Context) 
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /chGuideImg/getChannelGuideImgTaskList [get]
 func (chGuideImgApi *ChannelGuideImgApi) GetChannelGuideImgTaskList(c *gin.Context) {
-	var pageInfo vbox_channel_guideimgReq.ChannelGuideImgSearch
+	var pageInfo vbox_channel_guideimgReq.ChannelGuideImgTask
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -188,24 +187,9 @@ func (chGuideImgApi *ChannelGuideImgApi) GetChannelGuideImgTaskList(c *gin.Conte
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
-		sortChannelGuideImgs(list)
 		response.OkWithDetailed(response.PageResult{
-			List:     list,
-			Total:    total,
-			Page:     pageInfo.Page,
-			PageSize: pageInfo.PageSize,
+			List:  list,
+			Total: total,
 		}, "获取成功", c)
 	}
-}
-
-// 定义自定义排序函数
-func sortByNum(a, b *vbox_channel_guideimg.ChannelGuideImg) bool {
-	return *a.ImgNum < *b.ImgNum
-}
-
-// 对切片进行排序
-func sortChannelGuideImgs(chGuideImgs []vbox_channel_guideimg.ChannelGuideImg) {
-	sort.Slice(chGuideImgs, func(i, j int) bool {
-		return sortByNum(&chGuideImgs[i], &chGuideImgs[j])
-	})
 }

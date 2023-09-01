@@ -6,6 +6,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox_channel_guideimg"
 	vbox_channel_guideimgReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox_channel_guideimg/request"
 	"gorm.io/gorm"
+	"sort"
 )
 
 type ChannelGuideImgService struct {
@@ -83,21 +84,37 @@ func (chGuideImgService *ChannelGuideImgService) GetChannelGuideimgInfoList(info
 	return chGuideImgs, total, err
 }
 
-func (chGuideImgService *ChannelGuideImgService) GetChannelGuideImgTaskList(info vbox_channel_guideimgReq.ChannelGuideImgSearch) (list []vbox_channel_guideimg.ChannelGuideImg, total int64, err error) {
-	limit := info.PageSize
-	offset := info.PageSize * (info.Page - 1)
+func (chGuideImgService *ChannelGuideImgService) GetChannelGuideImgTaskList(info vbox_channel_guideimgReq.ChannelGuideImgTask) (list []vbox_channel_guideimg.ChannelGuideImg, total int64, err error) {
+	//limit := info.PageSize
+	//offset := info.PageSize * (info.Page - 1)
+	//fmt.Println(info.ChannelId)
+
+	global.GVA_LOG.Info(info.ChannelId)
 	// 创建db
 	db := global.GVA_DB.Model(&vbox_channel_guideimg.ChannelGuideImg{})
 	var chGuideImgs []vbox_channel_guideimg.ChannelGuideImg
 	// 如果有条件搜索 下方会自动创建搜索语句
-	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
+	if info.ChannelId != "" {
+		db = db.Where("c_channel_id = ?", info.ChannelId)
 	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Find(&chGuideImgs).Error
+	err = db.Find(&chGuideImgs).Error
+	sortChannelGuideImgs(chGuideImgs)
 	return chGuideImgs, total, err
+}
+
+// 定义自定义排序函数
+func sortByNum(a, b *vbox_channel_guideimg.ChannelGuideImg) bool {
+	return *a.ImgNum < *b.ImgNum
+}
+
+// 对切片进行排序
+func sortChannelGuideImgs(chGuideImgs []vbox_channel_guideimg.ChannelGuideImg) {
+	sort.Slice(chGuideImgs, func(i, j int) bool {
+		return sortByNum(&chGuideImgs[i], &chGuideImgs[j])
+	})
 }
