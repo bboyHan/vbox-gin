@@ -14,6 +14,11 @@ const routes = [{
   name: 'Login',
   component: () => import('@/view/login/index.vue')
 },
+// {
+//   path: '/order/:ch',
+//   name: 'OrderTask',
+//   component: () => import('@/view/vbox/order/orderPayTask.vue')
+// },
 {
   path: '/:catchAll(.*)',
   meta: {
@@ -27,5 +32,6 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes,
 })
+
 
 export default router

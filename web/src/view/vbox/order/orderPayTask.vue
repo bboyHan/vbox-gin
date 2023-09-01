@@ -53,6 +53,7 @@ const getTableData = async() => {
     const table = await getChannel_guideimgList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
     if (table.code === 0) {
         tableData.value = table.data.list
+        console.log('imgs=' + JSON.stringify(tableData.value))
         total.value = table.data.total
         imgData.value = tableData.value[imgNum.value - 1]
     }

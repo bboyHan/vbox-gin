@@ -39,7 +39,7 @@
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="通道id" prop="c_channel_id" width="80" />
-        <el-table-column align="left" label="文件base 64编码" prop="img_base_str" width="200"  >
+        <el-table-column align="left" label="文件base 64编码" prop="img_base_str" width="200" >
           <template #default="{ row }">
              <!-- {{ formatValue(row.img_base_str) }}  -->
             <div class="cell-content">{{ row.img_base_str }}
