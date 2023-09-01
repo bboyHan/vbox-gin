@@ -33,7 +33,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive,watch } from 'vue'
 
 import {
-  getChannel_guideimgList
+    getChannelGuideImgTaskList
 } from '@/api/channelGuideImg'
 
 
@@ -42,15 +42,17 @@ const imgData = ref({
     img_base_str: '',
     img_num: 0
     })
-const page = ref(1)
+// const page = ref(1)
 const total = ref(0)
 const imgNum = ref(1)
-const pageSize = ref(10)
-const searchInfo = ref({})
+// const pageSize = ref(10)
+// const searchInfo = ref({})
 const tableData = ref([])
 
+const chId = ref("tx_jd")
+
 const getTableData = async() => {
-    const table = await getChannel_guideimgList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    const table = await getChannelGuideImgTaskList({ channelId: chId.value })
     if (table.code === 0) {
         tableData.value = table.data.list
         console.log('imgs=' + JSON.stringify(tableData.value))
