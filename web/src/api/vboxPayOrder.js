@@ -95,3 +95,19 @@ export const getVboxPayOrderList = (params) => {
     params
   })
 }
+
+
+// @Tags getVboxUserPayOrderAnalysis
+// @Summary 获取用户订单看板
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取用户订单看板"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getVboxUserPayOrderAnalysis [get]
+export const getVboxUserPayOrderAnalysis = () => {
+  return service({
+    url: '/vpo/getVboxUserPayOrderAnalysis',
+    method: 'get'
+  })
+}
