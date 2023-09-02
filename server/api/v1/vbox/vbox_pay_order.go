@@ -179,3 +179,34 @@ func (vpoApi *VboxPayOrderApi) GetVboxPayOrderList(c *gin.Context) {
 		}, "获取成功", c)
 	}
 }
+
+// GetVboxUserPayOrderAnalysis 获取用户订单看板
+// @Tags VboxPayOrder
+// @Summary 分页获取VboxPayOrder列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxPayOrderSearch true "获取用户订单看板"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/GetVboxUserPayOrderAnalysis [get]
+func (vpoApi *VboxPayOrderApi) GetVboxUserPayOrderAnalysis(c *gin.Context) {
+
+	userID := uint(utils.GetUserID(c))
+	userList, tot, err := userService.GetOwnerUserIdsList(userID)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+	if list, total, err := vpoService.GetVboxUserPayOrderAnalysis(userID, idList); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:  list,
+			Total: total,
+		}, "获取成功", c)
+	}
+}
