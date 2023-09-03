@@ -1,6 +1,7 @@
 <template>
-
- <el-descriptions
+<el-tabs type="border-card">
+    <el-tab-pane label="卡片模式">
+      <el-descriptions
     class="margin-top"
     title="核销信息"
     :column="4"
@@ -164,6 +165,21 @@
   </div>
   </el-descriptions>
 
+    </el-tab-pane>
+    <el-tab-pane label="图形模式">
+        <div >
+          <!-- <div class="dashboard-line-title">
+            收入趋势
+          </div> -->
+          <div
+            id="incomeEchart"
+            class="dashboard-line"
+          />
+        </div>
+    </el-tab-pane>
+  </el-tabs>
+ 
+
 </template>
 
 <script>
@@ -174,7 +190,9 @@ export default {
 
 <script setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive,watch ,computed} from 'vue'
+import { ref, reactive,watch ,computed,shallowRef,nextTick,onMounted} from 'vue'
+import * as echarts from 'echarts'
+
 import {
   Iphone,
   Location,
@@ -226,6 +244,85 @@ const getTableData = async() => {
 
 getTableData()
 
+
+
+const chart = shallowRef(null)
+// const incomeEchart = ref(null)
+const initChart = () => {
+  chart.value = echarts.init(document.getElementById("incomeEchart") /* 'macarons' */)
+  setOptions()
+}
+onMounted(async() => {
+  // await nextTick()
+  initChart()
+})
+const setOptions = () => {
+  chart.value.setOption({
+  title: {
+    text: '销售收入'
+  },
+  tooltip: {
+    trigger: 'axis'
+  },
+  legend: {
+    data: ['xiaoming', 'xiaobai', 'xiaohei', 'xiaohei1', 'xiaowang']
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  toolbox: {
+    feature: {
+      saveAsImage: {}
+    }
+  },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  },
+  yAxis: {
+    type: 'value'
+  },
+  series: [
+    {
+      name: 'xiaoming',
+      type: 'line',
+      stack: 'Total',
+      data: [120, 132, 101, 134, 90, 230, 210]
+    },
+    {
+      name: 'xiaobai',
+      type: 'line',
+      stack: 'Total',
+      data: [220, 182, 191, 234, 290, 330, 310]
+    },
+    {
+      name: 'xiaohei',
+      type: 'line',
+      stack: 'Total',
+      data: [150, 232, 201, 154, 190, 330, 410]
+    },
+    {
+      name: 'xiaohei1',
+      type: 'line',
+      stack: 'Total',
+      data: [320, 332, 301, 334, 390, 330, 320]
+    },
+    {
+      name: 'xiaowang',
+      type: 'line',
+      stack: 'Total',
+      data: [820, 932, 901, 934, 1290, 1330, 1320]
+    }
+  ]
+})
+}
+
+
+
 </script>
 
 <style>
@@ -240,4 +337,15 @@ getTableData()
 .margin-top {
   margin-top: 20px;
 }
+
+.dashboard-line {
+  background-color: #fff;
+  height: 500px;
+  width: 1000px;
+}
+.dashboard-line-title {
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
 </style>
