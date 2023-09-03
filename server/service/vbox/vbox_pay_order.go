@@ -1,8 +1,8 @@
 package vbox
 
 import (
-	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
@@ -145,6 +145,12 @@ func (vpoService *VboxPayOrderService) GetUsersVboxPayOrderInfoList(ids []int, n
 }
 
 func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idList []int) (list []vboxRep.VboxUserOrderPayAnalysis, total int64, err error) {
+	query := `
+        SELECT count(1)
+		FROM vbox_channel_shop
+		WHERE  uid = ? and status = ?;
+    `
+
 	tInfoList, tOrderTotal, err := vpoService.GetUsersVboxPayOrderInfoList(idList, 0)
 	if err != nil {
 		return
@@ -179,8 +185,6 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 			yOkGroupedCosts[uid] += *order.Cost
 		}
 	}
-
-	fmt.Println("Uid分组统计OrderStatus=1的个数和Cost总和：")
 
 	for _, uid := range idList {
 		tOrderQuantify := tOrderTotal
@@ -232,12 +236,25 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 			return
 		}
 
+		var openTotal int64
+		var closeTotal int64
+
+		// 创建db
+		err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(query, uid, 1).Count(&openTotal).Error
+		if err != nil {
+			return
+		}
+		err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(query, uid, 0).Count(&closeTotal).Error
+		if err != nil {
+			return
+		}
+
 		entity := vboxRep.VboxUserOrderPayAnalysis{
 			Uid:              &uid,
 			Username:         userInfo.Username,
-			Balance:          99999, //todo
-			ChIdCnt:          2,     //todo
-			OpenChId:         1,     //todo
+			Balance:          99999,                       //todo
+			ChIdCnt:          int(openTotal + closeTotal), //todo
+			OpenChId:         int(openTotal),              //todo
 			YOrderQuantify:   int(yOrderQuantify),
 			YOkOrderQuantify: yOkOrderQuantify,
 			YOkRate:          yOkRate,
