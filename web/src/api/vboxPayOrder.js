@@ -111,3 +111,21 @@ export const getVboxUserPayOrderAnalysis = () => {
     method: 'get'
   })
 }
+
+
+
+// @Tags getVboxUserPayOrderAnalysisIncomeCharts
+// @Summary 获取用户订单看板收入图
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取用户订单看板"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getVboxUserPayOrderAnalysisIncomeCharts [get]
+export const getVboxUserPayOrderAnalysisIncomeCharts = () => {
+  return service({
+    url: '/vpo/getVboxUserPayOrderAnalysisIncomeCharts',
+    method: 'get'
+  })
+}
+

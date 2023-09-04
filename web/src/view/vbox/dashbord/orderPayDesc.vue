@@ -204,8 +204,10 @@ import {
 } from '@element-plus/icons-vue'
 
 import {
-  getVboxUserPayOrderAnalysis
+  getVboxUserPayOrderAnalysis,
+  getVboxUserPayOrderAnalysisIncomeCharts
 } from '@/api/vboxPayOrder'
+import { stringify } from 'qs'
 
 
 const total = ref(0)
@@ -245,7 +247,9 @@ const getTableData = async() => {
 getTableData()
 
 
-
+const incomeLineChartSeries = ref([])
+const incomeLineChartXData = ref([])
+const incomeLineChartLegend = ref([])
 const chart = shallowRef(null)
 // const incomeEchart = ref(null)
 const initChart = () => {
@@ -254,6 +258,14 @@ const initChart = () => {
 }
 onMounted(async() => {
   // await nextTick()
+  const table = await getVboxUserPayOrderAnalysisIncomeCharts()
+  if (table.code === 0) {
+    console.log(JSON.stringify(table.data))
+    // const res = JSON.parse(table.data)
+    incomeLineChartSeries.value = table.data.lists
+    incomeLineChartXData.value = table.data.xData
+    incomeLineChartLegend.value = table.data.legendData
+  }
   initChart()
 })
 const setOptions = () => {
@@ -265,7 +277,7 @@ const setOptions = () => {
     trigger: 'axis'
   },
   legend: {
-    data: ['xiaoming', 'xiaobai', 'xiaohei', 'xiaohei1', 'xiaowang']
+    data: incomeLineChartLegend.value
   },
   grid: {
     left: '3%',
@@ -275,49 +287,19 @@ const setOptions = () => {
   },
   toolbox: {
     feature: {
+      magicType: { show: true, type: ['stack', 'tiled'] },
       saveAsImage: {}
     }
   },
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: incomeLineChartXData.value
   },
   yAxis: {
     type: 'value'
   },
-  series: [
-    {
-      name: 'xiaoming',
-      type: 'line',
-      stack: 'Total',
-      data: [120, 132, 101, 134, 90, 230, 210]
-    },
-    {
-      name: 'xiaobai',
-      type: 'line',
-      stack: 'Total',
-      data: [220, 182, 191, 234, 290, 330, 310]
-    },
-    {
-      name: 'xiaohei',
-      type: 'line',
-      stack: 'Total',
-      data: [150, 232, 201, 154, 190, 330, 410]
-    },
-    {
-      name: 'xiaohei1',
-      type: 'line',
-      stack: 'Total',
-      data: [320, 332, 301, 334, 390, 330, 320]
-    },
-    {
-      name: 'xiaowang',
-      type: 'line',
-      stack: 'Total',
-      data: [820, 932, 901, 934, 1290, 1330, 1320]
-    }
-  ]
+  series: incomeLineChartSeries.value
 })
 }
 

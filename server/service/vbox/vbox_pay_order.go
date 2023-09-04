@@ -252,9 +252,9 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 		entity := vboxRep.VboxUserOrderPayAnalysis{
 			Uid:              &uid,
 			Username:         userInfo.Username,
-			Balance:          99999,                       //todo
-			ChIdCnt:          int(openTotal + closeTotal), //todo
-			OpenChId:         int(openTotal),              //todo
+			Balance:          99999, //todo
+			ChIdCnt:          int(openTotal + closeTotal),
+			OpenChId:         int(openTotal),
 			YOrderQuantify:   int(yOrderQuantify),
 			YOkOrderQuantify: yOkOrderQuantify,
 			YOkRate:          yOkRate,
@@ -269,6 +269,65 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 	}
 	return list, int64(len(idList)), err
 
+}
+
+func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisIncomeCharts(id uint, idList []int) (resData vboxRep.LineChartData, err error) {
+	query := `
+        SELECT coalesce(sum(cost),0) as totalIncome
+		FROM vbox_pay_order
+		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ?;
+    `
+	queryB := `
+		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
+		    SELECT distinct DATE(create_time)  as dt
+			FROM vbox_pay_order
+			WHERE  uid in (?)
+		)t
+        order by dt;
+    `
+
+	rowDt, err := global.GVA_DB.Raw(queryB, idList).Rows()
+	var dts []string
+	if err != nil {
+		return
+	}
+	for rowDt.Next() {
+		var dt string
+		scanErr := rowDt.Scan(&dt)
+		if scanErr != nil {
+			return
+		}
+		dts = append(dts, dt)
+	}
+	resData.XData = dts
+
+	for _, uid := range idList {
+		var userInfo system.SysUser
+		err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
+		if err != nil {
+			return
+		}
+		resData.LegendData = append(resData.LegendData, userInfo.Username)
+
+		var income []int
+		for _, dt := range dts {
+			result := 0
+			err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).Raw(query, uid, 1, dt).Scan(&result).Error
+			if err != nil {
+				return
+			}
+			income = append(income, result)
+		}
+		entity := vboxRep.LineChartDataYSeries{
+			Name:   userInfo.Username,
+			Type:   "line",
+			Smooth: true,
+			Data:   income,
+		}
+		resData.Lists = append(resData.Lists, entity)
+	}
+
+	return resData, err
 }
 
 // 判断是否是今天

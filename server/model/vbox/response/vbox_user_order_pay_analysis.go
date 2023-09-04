@@ -16,3 +16,15 @@ type VboxUserOrderPayAnalysis struct {
 	TOkRate          int `json:"tOkRate" form:"tOkRate" gorm:"-"`
 	TInCome          int `json:"tInCome" form:"tInCome" gorm:"-"`
 }
+type LineChartData struct {
+	LegendData []string               `json:"legendData"`
+	XData      []string               `json:"xData"`
+	Lists      []LineChartDataYSeries `json:"lists"`
+}
+
+type LineChartDataYSeries struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Smooth bool   `json:"smooth"`
+	Data   []int  `json:"data"`
+}
