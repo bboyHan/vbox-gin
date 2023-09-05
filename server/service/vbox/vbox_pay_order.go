@@ -330,6 +330,79 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisIncomeCharts(i
 	return resData, err
 }
 
+func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisQuantifyCharts(uid int) (resData vboxRep.LineChartData, err error) {
+	query := `
+        SELECT coalesce(count(1),0) as totalIncome
+		FROM vbox_pay_order
+		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ? and c_channel_id= ?;
+    `
+	queryB := `
+		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
+		    SELECT distinct DATE(create_time)  as dt
+			FROM vbox_pay_order
+			WHERE  uid = ?  and DATE(create_time) >= (CURDATE() - INTERVAL 30 DAY)
+		)t
+        order by dt;
+    `
+	queryC := `
+		SELECT distinct channel
+		FROM vbox_channel_shop
+		WHERE  uid = ?
+		;
+    `
+	rowCh, err := global.GVA_DB.Raw(queryC, uid).Rows()
+	var channels []string
+	if err != nil {
+		return
+	}
+	for rowCh.Next() {
+		var ch string
+		scanErr := rowCh.Scan(&ch)
+		if scanErr != nil {
+			return
+		}
+		channels = append(channels, ch)
+	}
+	resData.LegendData = channels
+
+	rowDt, err := global.GVA_DB.Raw(queryB, uid).Rows()
+	var dts []string
+	if err != nil {
+		return
+	}
+	for rowDt.Next() {
+		var dt string
+		scanErr := rowDt.Scan(&dt)
+		if scanErr != nil {
+			return
+		}
+		dts = append(dts, dt)
+	}
+	resData.XData = dts
+
+	for _, channelId := range channels {
+
+		var income []int
+		for _, dt := range dts {
+			result := 0
+			err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).Raw(query, uid, 1, dt, channelId).Scan(&result).Error
+			if err != nil {
+				return
+			}
+			income = append(income, result)
+		}
+		entity := vboxRep.LineChartDataYSeries{
+			Name:   channelId,
+			Type:   "line",
+			Smooth: true,
+			Data:   income,
+		}
+		resData.Lists = append(resData.Lists, entity)
+	}
+
+	return resData, err
+}
+
 // 判断是否是今天
 func isToday(createTime *time.Time, now time.Time) bool {
 	year, month, day := now.Date()

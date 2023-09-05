@@ -4,6 +4,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
@@ -208,6 +209,70 @@ func (vpoApi *VboxPayOrderApi) GetVboxUserPayOrderAnalysis(c *gin.Context) {
 			List:  list,
 			Total: total,
 		}, "获取成功", c)
+	}
+}
+
+// getSelectUserPayOrderAnalysis 获取单个用户分析展示数据
+// @Tags VboxPayOrder
+// @Summary 分页获取VboxPayOrder列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxPayOrderSearch true "获取单个用户分析展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectUserPayOrderAnalysis [get]
+func (vpoApi *VboxPayOrderApi) GetSelectUserPayOrderAnalysis(c *gin.Context) {
+	userID := uint(utils.GetUserID(c))
+	var selectUser system.SysUser
+	err := c.ShouldBindQuery(&selectUser)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var user system.SysUser
+	db.Where("username = ?", selectUser.Username).Find(&user)
+	var idList []int
+	idList = append(idList, int(user.ID))
+
+	if list, total, err := vpoService.GetVboxUserPayOrderAnalysis(userID, idList); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:  list,
+			Total: total,
+		}, "获取成功", c)
+	}
+}
+
+// getSelectPayOrderAnalysisQuantifyCharts 获取单个用户各个通道下每天的成单数据图
+// @Tags VboxPayOrder
+// @Summary 分页获取VboxPayOrder列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxPayOrderSearch true "获取单个用户各个通道下每天的成单数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisQuantifyCharts [get]
+func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisQuantifyCharts(c *gin.Context) {
+	var selectUser system.SysUser
+	err := c.ShouldBindQuery(&selectUser)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var user system.SysUser
+	db.Where("username = ?", selectUser.Username).Find(&user)
+
+	if data, err := vpoService.GetSelectPayOrderAnalysisQuantifyCharts(int(user.ID)); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(data, "获取成功", c)
 	}
 }
 

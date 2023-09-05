@@ -3,6 +3,7 @@ package system
 import (
 	"errors"
 	"fmt"
+	channelshopRep "github.com/flipped-aurora/gin-vue-admin/server/model/channelshop/response"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -307,4 +308,22 @@ func (userService *UserService) FindUserByUuid(uuid string) (user *system.SysUse
 func (userService *UserService) ResetPassword(ID uint) (err error) {
 	err = global.GVA_DB.Model(&system.SysUser{}).Where("id = ?", ID).Update("password", utils.BcryptHash("123456")).Error
 	return err
+}
+
+func (userService *UserService) GetOwnerUserListForSelect(id uint, idList []int) (marks []channelshopRep.Marks, err error) {
+	query := `
+        SELECT username
+		FROM sys_users
+		WHERE id = ? ;
+    `
+	for _, uid := range idList {
+		var userName string
+		err = global.GVA_DB.Model(&system.SysUser{}).Raw(query, uid).Find(&userName).Error
+		//fmt.Println("Username=", userName)
+		userMark := channelshopRep.Marks{Value: userName}
+		marks = append(marks, userMark)
+	}
+	//fmt.Println("markLists=", marks)
+	return marks, err
+
 }

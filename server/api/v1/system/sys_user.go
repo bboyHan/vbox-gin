@@ -257,7 +257,7 @@ func (b *BaseApi) GetUserList(c *gin.Context) {
 // @Router    /user/getOwnerUserList [post]
 func (b *BaseApi) GetOwnerUserList(c *gin.Context) {
 	userId := utils.GetUserID(c)
-	fmt.Println("jwtId = ", userId)
+	//fmt.Println("jwtId = ", userId)
 	var pageInfo request.PageInfo
 	err := c.ShouldBindJSON(&pageInfo)
 	if err != nil {
@@ -281,6 +281,36 @@ func (b *BaseApi) GetOwnerUserList(c *gin.Context) {
 		Page:     pageInfo.Page,
 		PageSize: pageInfo.PageSize,
 	}, "获取成功", c)
+}
+
+// GetOwnerUserListForSelect
+// @Tags      SysUser
+// @Summary   分页获取用户列表
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     data  body      request.PageInfo                                        true  "页码, 每页大小"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string}  "分页获取用户列表,返回包括列表,总数,页码,每页数量"
+// @Router    /user/GetOwnerUserListForSelect [get]
+func (b *BaseApi) GetOwnerUserListForSelect(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	userList, tot, err := userService.GetOwnerUserIdsList(userId)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+
+	list, err := userService.GetOwnerUserListForSelect(userId, idList)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+		return
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
+	}
 }
 
 // SetUserAuthority
