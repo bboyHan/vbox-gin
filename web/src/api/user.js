@@ -80,6 +80,21 @@ export const getOwnerUserList = (data) => {
 }
 
 // @Tags User
+// @Summary 分页获取用户列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body modelInterface.PageInfo true "分页获取用户列表"
+// @Success 200 {string} json "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /user/getOwnerUserListForSelect [post]
+export const getOwnerUserListForSelect = () => {
+  return service({
+    url: '/user/getOwnerUserListForSelect',
+    method: 'get'
+  })
+}
+
+// @Tags User
 // @Summary 设置用户权限
 // @Security ApiKeyAuth
 // @accept application/json

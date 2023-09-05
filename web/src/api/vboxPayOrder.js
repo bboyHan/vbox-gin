@@ -96,6 +96,39 @@ export const getVboxPayOrderList = (params) => {
   })
 }
 
+// @Tags getSelectUserPayOrderAnalysis
+// @Summary 获取单个用户分析展示数据
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户分析展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectUserPayOrderAnalysis [get]
+export const getSelectUserPayOrderAnalysis = (params) => {
+  return service({
+    url: '/vpo/getSelectUserPayOrderAnalysis',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags getSelectPayOrderAnalysisQuantifyCharts
+// @Summary 获取单个用户各个通道下每天的成单数据图
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户各个通道下每天的成单数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisQuantifyCharts [get]
+export const getSelectPayOrderAnalysisQuantifyCharts = (params) => {
+  return service({
+    url: '/vpo/getSelectPayOrderAnalysisQuantifyCharts',
+    method: 'get',
+    params
+  })
+}
+
+
 
 // @Tags getVboxUserPayOrderAnalysis
 // @Summary 获取用户订单看板
