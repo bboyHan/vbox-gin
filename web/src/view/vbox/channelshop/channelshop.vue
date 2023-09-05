@@ -372,7 +372,7 @@ function handleSwitchChange(row, value) {
 }
 
 function switchValue(status) {
-  return status === 1 ? true : false;
+  return status === 1;
 }
 
 // ============== 表格控制部分结束 ===============

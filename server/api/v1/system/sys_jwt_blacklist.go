@@ -12,7 +12,7 @@ type JwtApi struct{}
 
 // JsonInBlacklist
 // @Tags      Jwt
-// @Summary   jwt加入黑名单
+// @Summary   jwt加入·黑名单
 // @Security  ApiKeyAuth
 // @accept    application/json
 // @Produce   application/json

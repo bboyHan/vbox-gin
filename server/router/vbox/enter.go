@@ -6,5 +6,7 @@ type RouterGroup struct {
 	ChannelGuideImgRouter
 	ProxyRouter
 	PayAccountRouter
+	ChannelProductRouter
 	VboxPayOrderRouter
+	ChannelAccountRouter
 }

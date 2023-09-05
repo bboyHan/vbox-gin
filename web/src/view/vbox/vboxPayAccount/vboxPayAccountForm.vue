@@ -2,21 +2,9 @@
   <div>
     <div class="gva-form-box">
       <el-form :model="formData" ref="elFormRef" label-position="right" :rules="rule" label-width="80px">
-        <el-form-item label="UID:" prop="uid">
-          <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
-       </el-form-item>
-        <el-form-item label="商户ID:" prop="pAccount">
-          <el-input v-model="formData.pAccount" :clearable="true" placeholder="请输入" />
-       </el-form-item>
-        <el-form-item label="商户Key:" prop="pKey">
-          <el-input v-model="formData.pKey" :clearable="true" placeholder="请输入" />
-       </el-form-item>
         <el-form-item label="商户备注:" prop="pRemark">
           <el-input v-model="formData.pRemark" :clearable="true" placeholder="请输入" />
-       </el-form-item>
-        <el-form-item label="状态开关:" prop="status">
-          <el-input v-model.number="formData.status" :clearable="true" placeholder="请输入" />
-       </el-form-item>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="save">保存</el-button>
           <el-button type="primary" @click="back">返回</el-button>
