@@ -1,20 +1,20 @@
 <template>
   <div>
-    <div class="grid grid-cols-12 w-full gap-2">
-      <div class="col-span-3 h-full">
-        <div class="w-full h-full bg-white px-4 py-8 rounded-lg shadow-lg box-border">
-          <div class="user-card px-6 text-center bg-white shrink-0">
+    <div class="grid w-full grid-cols-12 gap-2">
+      <div class="h-full col-span-3">
+        <div class="box-border w-full h-full px-4 py-8 bg-white rounded-lg shadow-lg">
+          <div class="px-6 text-center bg-white user-card shrink-0">
             <div class="flex justify-center">
               <SelectImage v-model="userStore.userInfo.headerImg" />
             </div>
             <div class="py-6 text-center">
-              <p v-if="!editFlag" class="text-3xl flex justify-center items-center gap-4">
+              <p v-if="!editFlag" class="flex items-center justify-center gap-4 text-3xl">
                 {{ userStore.userInfo.nickName }}
-                <el-icon class="cursor-pointer text-sm" color="#66b1ff" @click="openEdit">
+                <el-icon class="text-sm cursor-pointer" color="#66b1ff" @click="openEdit">
                   <edit />
                 </el-icon>
               </p>
-              <p v-if="editFlag" class="flex justify-center items-center gap-4">
+              <p v-if="editFlag" class="flex items-center justify-center gap-4">
                 <el-input v-model="nickName" />
                 <el-icon class="cursor-pointer" color="#67c23a" @click="enterEdit">
                   <check />
@@ -23,10 +23,10 @@
                   <close />
                 </el-icon>
               </p>
-              <p class="text-gray-500 mt-2 text-md">这个家伙很懒，什么都没有留下</p>
+              <p class="mt-2 text-gray-500 text-md">这个家伙很懒，什么都没有留下</p>
             </div>
             <div class="w-full h-full text-left">
-              <ul class="inline-block h-full w-full">
+              <ul class="inline-block w-full h-full">
                 <li class="info-list">
                   <el-icon>
                     <user />
@@ -36,21 +36,21 @@
                 <el-tooltip
                   class="item"
                   effect="light"
-                  content="北京反转极光科技有限公司-技术部-前端事业群"
+                  content="vbox"
                   placement="top"
                 >
                   <li class="info-list">
                     <el-icon>
                       <data-analysis />
                     </el-icon>
-                    北京反转极光科技有限公司-技术部-前端事业群
+                    vbox
                   </li>
                 </el-tooltip>
                 <li class="info-list">
                   <el-icon>
                     <video-camera />
                   </el-icon>
-                  中国·北京市·朝阳区
+                  地球
                 </li>
                 <el-tooltip
                   class="item"
@@ -62,7 +62,7 @@
                     <el-icon>
                       <medal />
                     </el-icon>
-                    GoLang/JavaScript/Vue/Gorm
+                    Go go go
                   </li>
                 </el-tooltip>
               </ul>
@@ -71,7 +71,7 @@
         </div>
       </div>
       <div class="col-span-9 ">
-        <div class="bg-white h-full px-4 py-8 rounded-lg shadow-lg box-border">
+        <div class="box-border h-full px-4 py-8 bg-white rounded-lg shadow-lg">
           <el-tabs v-model="activeName" @tab-click="handleClick">
             <el-tab-pane label="账号绑定" name="second">
               <ul>

@@ -362,8 +362,17 @@
         
       </div>
       </el-descriptions>
+      <div id="user-charts">
+        <el-button type="info" @click="channelQuantifyCharts">各个通道成单量</el-button>
+        <el-button type="info" @click="channelIncomeCharts">各个通道收入</el-button>
+      </div>
+      
       <div
           id="quantifyEchart"
+          class="dashboard-line"
+        />
+        <div
+          id="oneIncomeEchart"
           class="dashboard-line"
         />
       <template #footer>
@@ -379,9 +388,7 @@
 
     <el-tab-pane label="图形模式" v-model="activeTab">
         <div >
-          <!-- <div class="dashboard-line-title">
-            收入趋势
-          </div> -->
+          
           <div
             id="incomeEchart"
             class="dashboard-line"
@@ -408,7 +415,9 @@ import {
   getVboxUserPayOrderAnalysis,
   getSelectUserPayOrderAnalysis,
   getVboxUserPayOrderAnalysisIncomeCharts,
-  getSelectPayOrderAnalysisQuantifyCharts
+  getSelectPayOrderAnalysisQuantifyCharts,
+  getSelectPayOrderAnalysisChannelIncomeCharts,
+  getSelectPayOrderAnalysisIncomeBarCharts
 } from '@/api/vboxPayOrder'
 
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -596,7 +605,8 @@ const handleItemClick = (item) => {
       selectUserName.value = item.value
       dialogFormVisible.value = true
       getDialogTable()
-      initQuantifyChart()
+      initChannelQuantifyChart()
+      initOneIncomeBarChart()
 };
 
 
@@ -630,14 +640,29 @@ const closeDialog = () => {
 }
 
 
+const channelIncomeCharts = () => {
+  if (quantifyChart.value) {
+    quantifyChart.value.dispose();
+    quantifyChart.value = null;
+  }
+  initChannelIncomeChart()
+}
 
 
+const channelQuantifyCharts = () => {
+  if (quantifyChart.value) {
+    quantifyChart.value.dispose();
+    quantifyChart.value = null;
+  }
+  initChannelQuantifyChart()
+}
 
 const quantifyLineChartSeries = ref([])
 const quantifyLineChartXData = ref([])
 const quantifyLineChartLegend = ref([])
+const userLinetitle = ref('')
 const quantifyChart = shallowRef(null)
-const initQuantifyChart = async() => {
+const initChannelQuantifyChart = async() => {
   const table = await getSelectPayOrderAnalysisQuantifyCharts({ Username: selectUserName.value })
   if (table.code === 0) {
     // console.log(JSON.stringify(table.data))
@@ -645,6 +670,23 @@ const initQuantifyChart = async() => {
     quantifyLineChartSeries.value = table.data.lists
     quantifyLineChartXData.value = table.data.xData
     quantifyLineChartLegend.value = table.data.legendData
+    userLinetitle.value = '各个通道成单量'
+  }
+
+  quantifyChart.value = echarts.init(document.getElementById("quantifyEchart") /* 'macarons' */)
+  setQuantifyOptions()
+}
+
+const initChannelIncomeChart = async() => {
+  
+  const table = await getSelectPayOrderAnalysisChannelIncomeCharts({ Username: selectUserName.value })
+  if (table.code === 0) {
+    // console.log(JSON.stringify(table.data))
+    // const res = JSON.parse(table.data)
+    quantifyLineChartSeries.value = table.data.lists
+    quantifyLineChartXData.value = table.data.xData
+    quantifyLineChartLegend.value = table.data.legendData
+    userLinetitle.value = '各个通道收入'
   }
 
   quantifyChart.value = echarts.init(document.getElementById("quantifyEchart") /* 'macarons' */)
@@ -654,7 +696,7 @@ const initQuantifyChart = async() => {
 const setQuantifyOptions = () => {
   quantifyChart.value.setOption({
   title: {
-    text: '各个通道成单量'
+    text: userLinetitle.value
   },
   tooltip: {
     trigger: 'axis'
@@ -683,6 +725,67 @@ const setQuantifyOptions = () => {
     type: 'value'
   },
   series: quantifyLineChartSeries.value
+})
+}
+
+
+
+
+const oneIncomeBarChartSeries = ref([])
+const oneIncomeBarChartXData = ref([])
+const oneIncomeChart = shallowRef(null)
+const initOneIncomeBarChart = async() => {
+  const table = await getSelectPayOrderAnalysisIncomeBarCharts({ Username: selectUserName.value })
+  if (table.code === 0) {
+    // console.log(JSON.stringify(table.data))
+    // const res = JSON.parse(table.data)
+    oneIncomeBarChartSeries.value = table.data.lists
+    oneIncomeBarChartXData.value = table.data.xData
+  }
+
+  oneIncomeChart.value = echarts.init(document.getElementById("oneIncomeEchart") /* 'macarons' */)
+  setOneIncomeOptions()
+}
+
+const setOneIncomeOptions = () => {
+  oneIncomeChart.value.setOption({
+  title: {
+    text: '每日收入'
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    }
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  xAxis: [
+    {
+      type: 'category',
+      data: oneIncomeBarChartXData.value,
+      axisTick: {
+        alignWithLabel: true
+      }
+    }
+  ],
+  yAxis: [
+    {
+      type: 'value'
+    }
+  ],
+  series: [
+    {
+      name: 'Direct',
+      type: 'bar',
+      barWidth: '50%',
+      data: oneIncomeBarChartSeries.value
+    }
+  ]
 })
 }
 
@@ -724,6 +827,12 @@ const setQuantifyOptions = () => {
   transition: background-color 0.2s ease-in-out;
 }
 #quantifyEchart{
+  margin-top: 40px;
+}
+#oneIncomeEchart{
+  margin-top: 40px;
+}
+#user-charts{
   margin-top: 40px;
 }
 </style>

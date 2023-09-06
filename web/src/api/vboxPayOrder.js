@@ -129,6 +129,42 @@ export const getSelectPayOrderAnalysisQuantifyCharts = (params) => {
 }
 
 
+// @Tags getSelectPayOrderAnalysisChannelIncomeCharts
+// @Summary 获取单个用户各个通道下每天的成单数据图
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户各个通道下每天的成单数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisChannelIncomeCharts [get]
+export const getSelectPayOrderAnalysisChannelIncomeCharts = (params) => {
+  return service({
+    url: '/vpo/getSelectPayOrderAnalysisChannelIncomeCharts',
+    method: 'get',
+    params
+  })
+}
+
+
+
+// @Tags getSelectPayOrderAnalysisIncomeBarCharts
+// @Summary 获取单个用户每天的收入数据图
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户各个通道下每天的成单数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisIncomeBarCharts [get]
+export const getSelectPayOrderAnalysisIncomeBarCharts = (params) => {
+  return service({
+    url: '/vpo/getSelectPayOrderAnalysisIncomeBarCharts',
+    method: 'get',
+    params
+  })
+}
+
+
+
 
 // @Tags getVboxUserPayOrderAnalysis
 // @Summary 获取用户订单看板
