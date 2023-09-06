@@ -2,21 +2,17 @@ package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
-    vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-    "github.com/flipped-aurora/gin-vue-admin/server/service"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
-    "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type ChannelAccountApi struct {
 }
-
-var vcaService = service.ServiceGroupApp.VboxServiceGroup.ChannelAccountService
-
 
 // CreateChannelAccount 创建ChannelAccount
 // @Tags ChannelAccount
@@ -34,9 +30,10 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vca.CreatedBy = utils.GetUserID(c)
+	vca.CreatedBy = utils.GetUserID(c)
+	vca.Uid = utils.GetUserID(c)
 	if err := vcaService.CreateChannelAccount(&vca); err != nil {
-        global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
 		response.OkWithMessage("创建成功", c)
@@ -59,9 +56,9 @@ func (vcaApi *ChannelAccountApi) DeleteChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vca.DeletedBy = utils.GetUserID(c)
+	vca.DeletedBy = utils.GetUserID(c)
 	if err := vcaService.DeleteChannelAccount(vca); err != nil {
-        global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
 		response.OkWithMessage("删除成功", c)
@@ -79,14 +76,14 @@ func (vcaApi *ChannelAccountApi) DeleteChannelAccount(c *gin.Context) {
 // @Router /vca/deleteChannelAccountByIds [delete]
 func (vcaApi *ChannelAccountApi) DeleteChannelAccountByIds(c *gin.Context) {
 	var IDS request.IdsReq
-    err := c.ShouldBindJSON(&IDS)
+	err := c.ShouldBindJSON(&IDS)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    deletedBy := utils.GetUserID(c)
-	if err := vcaService.DeleteChannelAccountByIds(IDS,deletedBy); err != nil {
-        global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
+	deletedBy := utils.GetUserID(c)
+	if err := vcaService.DeleteChannelAccountByIds(IDS, deletedBy); err != nil {
+		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
 		response.OkWithMessage("批量删除成功", c)
@@ -109,9 +106,9 @@ func (vcaApi *ChannelAccountApi) UpdateChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vca.UpdatedBy = utils.GetUserID(c)
+	vca.UpdatedBy = utils.GetUserID(c)
 	if err := vcaService.UpdateChannelAccount(vca); err != nil {
-        global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
 		response.OkWithMessage("更新成功", c)
@@ -135,7 +132,7 @@ func (vcaApi *ChannelAccountApi) FindChannelAccount(c *gin.Context) {
 		return
 	}
 	if revca, err := vcaService.GetChannelAccount(vca.ID); err != nil {
-        global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
 		response.OkWithData(gin.H{"revca": revca}, c)
@@ -159,14 +156,14 @@ func (vcaApi *ChannelAccountApi) GetChannelAccountList(c *gin.Context) {
 		return
 	}
 	if list, total, err := vcaService.GetChannelAccountInfoList(pageInfo); err != nil {
-	    global.GVA_LOG.Error("获取失败!", zap.Error(err))
-        response.FailWithMessage("获取失败", c)
-    } else {
-        response.OkWithDetailed(response.PageResult{
-            List:     list,
-            Total:    total,
-            Page:     pageInfo.Page,
-            PageSize: pageInfo.PageSize,
-        }, "获取成功", c)
-    }
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
 }

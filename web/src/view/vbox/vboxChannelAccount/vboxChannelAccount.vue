@@ -113,9 +113,19 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="通道id"  prop="cid" >
-          <el-input v-model.number="formData.cid" :clearable="true" placeholder="请输入" />
-        </el-form-item>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="通道id"  prop="cid">
+              <el-cascader
+                  v-model="formData.cid"
+                  :options="channelCodeOptions"
+                  :props="channelCodeProps"
+                  @change="handleChange"
+                  style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="token"  prop="token" >
           <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入" />
         </el-form-item>
@@ -160,7 +170,9 @@ import {
   findChannelAccount,
   getChannelAccountList
 } from '@/api/vboxChannelAccount'
-
+import {
+  getVboxChannelProductList
+} from '@/api/vboxChannelProduct'
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -169,6 +181,43 @@ import { ref, reactive } from 'vue'
 function switchValue(status) {
   return status === 1;
 }
+
+const channelCodeOptions = ref([])
+
+const channelCodeProps = {
+  expandTrigger: 'hover',
+  checkStrictly: true,
+  emitPath: false,
+}
+
+const handleChange = (value) => {
+  console.log(value)
+}
+
+const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.channelCode,
+        label: item.productName,
+        children: []
+      }
+      setChannelCodeOptions(
+          item.children,
+          option.children,
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.channelCode,
+        label: item.productName,
+      }
+      optionsData.push(option)
+    }
+  })
+}
+
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -213,6 +262,7 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const vcpTableData = ref([])
 const searchInfo = ref({})
 
 // 重置
@@ -246,11 +296,15 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async() => {
   const table = await getChannelAccountList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const vcpTable = await getVboxChannelProductList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
+    vcpTableData.value = vcpTable.data.list
+    setOptions()
   }
 }
 
@@ -259,11 +313,10 @@ getTableData()
 // ============== 表格控制部分结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
-const setOptions = async () =>{
+const setOptions = () => {
+  channelCodeOptions.value = []
+  setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
-
-// 获取需要的字典 可能为空 按需保留
-setOptions()
 
 
 // 多选数据
@@ -375,6 +428,8 @@ const closeDialog = () => {
 const enterDialog = async () => {
      elFormRef.value?.validate( async (valid) => {
              if (!valid) return
+       formData.value.cid = Number(formData.value.cid)
+       formData.value.status = Number(formData.value.status)
               let res
               switch (type.value) {
                 case 'create':

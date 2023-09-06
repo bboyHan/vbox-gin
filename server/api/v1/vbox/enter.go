@@ -14,11 +14,12 @@ type ApiGroup struct {
 }
 
 var (
-	chShopService		= service.ServiceGroupApp.VboxServiceGroup.ChannelShopService
-	chService		= service.ServiceGroupApp.VboxServiceGroup.ChannelService
-	chGuideImgService	= service.ServiceGroupApp.VboxServiceGroup.ChannelGuideImgService
-	vpoService		= service.ServiceGroupApp.VboxServiceGroup.VboxPayOrderService
-	vpaService		= service.ServiceGroupApp.VboxServiceGroup.PayAccountService
-	vboxProxyService	= service.ServiceGroupApp.VboxServiceGroup.ProxyService
-	vcpService		= service.ServiceGroupApp.VboxServiceGroup.ChannelProductService
+	chShopService     = service.ServiceGroupApp.VboxServiceGroup.ChannelShopService
+	chService         = service.ServiceGroupApp.VboxServiceGroup.ChannelService
+	chGuideImgService = service.ServiceGroupApp.VboxServiceGroup.ChannelGuideImgService
+	vpoService        = service.ServiceGroupApp.VboxServiceGroup.VboxPayOrderService
+	vpaService        = service.ServiceGroupApp.VboxServiceGroup.PayAccountService
+	vboxProxyService  = service.ServiceGroupApp.VboxServiceGroup.ProxyService
+	vcpService        = service.ServiceGroupApp.VboxServiceGroup.ChannelProductService
+	vcaService        = service.ServiceGroupApp.VboxServiceGroup.ChannelAccountService
 )
