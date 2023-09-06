@@ -28,3 +28,8 @@ type LineChartDataYSeries struct {
 	Smooth bool   `json:"smooth"`
 	Data   []int  `json:"data"`
 }
+
+type CustomBarChartData struct {
+	XData []string `json:"xData"`
+	Lists []int    `json:"lists"`
+}

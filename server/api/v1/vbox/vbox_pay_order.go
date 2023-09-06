@@ -276,6 +276,63 @@ func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisQuantifyCharts(c *gin.Co
 	}
 }
 
+// getSelectPayOrderAnalysisChannelIncomeCharts 获取单个用户各个通道下每天的收入数据图
+// @Tags VboxPayOrder
+// @Summary 分页获取VboxPayOrder列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxPayOrderSearch true "获取单个用户各个通道下每天的收入数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisChannelIncomeCharts [get]
+func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisChannelIncomeCharts(c *gin.Context) {
+	var selectUser system.SysUser
+	err := c.ShouldBindQuery(&selectUser)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var user system.SysUser
+	db.Where("username = ?", selectUser.Username).Find(&user)
+
+	if data, err := vpoService.GetSelectPayOrderAnalysisChannelIncomeCharts(int(user.ID)); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(data, "获取成功", c)
+	}
+}
+
+// @Tags getSelectPayOrderAnalysisIncomeBarCharts
+// @Summary 获取单个用户每天的收入数据图
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户各个通道下每天的成单数据图"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getSelectPayOrderAnalysisIncomeBarCharts [get]
+func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisIncomeBarCharts(c *gin.Context) {
+	var selectUser system.SysUser
+	err := c.ShouldBindQuery(&selectUser)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var user system.SysUser
+	db.Where("username = ?", selectUser.Username).Find(&user)
+
+	if data, err := vpoService.GetSelectPayOrderAnalysisIncomeBarCharts(int(user.ID)); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(data, "获取成功", c)
+	}
+}
+
 // getVboxUserPayOrderAnalysisIncomeCharts 获取用户订单看板收入图
 // @Tags VboxPayOrder
 // @Summary 获取用户订单看板收入图
