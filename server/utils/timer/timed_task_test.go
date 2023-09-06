@@ -2,6 +2,7 @@ package timer
 
 import (
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -19,25 +20,26 @@ func (job mockJob) Run() {
 func mockFunc() {
 	time.Sleep(time.Second)
 	fmt.Println("1s...")
+	log.Printf("1s...")
 }
 
 func TestNewTimerTask(t *testing.T) {
 	tm := NewTimerTask()
-	_tm := tm.(*timer)
+	_tm := tm.(*Task)
 
 	{
-		_, err := tm.AddTaskByFunc("func", "@every 1s", mockFunc)
+		_, err := tm.AddTaskByFunc("func", "@every 2s", mockFunc)
 		assert.Nil(t, err)
-		_, ok := _tm.taskList["func"]
+		_, ok := _tm.TaskList["func"]
 		if !ok {
 			t.Error("no find func")
 		}
 	}
 
 	{
-		_, err := tm.AddTaskByJob("job", "@every 1s", job)
+		_, err := tm.AddTaskByJob("job", "@every 2s", job)
 		assert.Nil(t, err)
-		_, ok := _tm.taskList["job"]
+		_, ok := _tm.TaskList["job"]
 		if !ok {
 			t.Error("no find job")
 		}

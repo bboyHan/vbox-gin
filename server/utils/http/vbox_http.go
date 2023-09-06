@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"log"
@@ -41,8 +42,39 @@ const (
 	DB      = 2
 )
 
-func NewProxyHTTPClient() {
+func NewProxyHTTPClient() *FastHttpClient {
 
+	//1. cache
+	//2. db
+	// 设置数据库连接参数
+	//dsn := "vbox_admin:Vbox123qwe@tcp(rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com:3306)/vbox_gin?charset=utf8mb4&parseTime=True&loc=Local"
+	//// 连接数据库
+	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	//var proxyDB vbox.Proxy
+	//err = db.Where("status = ?", 1).First(&proxyDB).Error
+
+	var proxyDB vbox.Proxy
+	err := global.GVA_DB.Where("status = ?", 1).First(&proxyDB).Error
+	if err != nil {
+		log.Fatal("Proxy URL from DB parsing error:", err)
+	}
+	log.Printf("xxxxxxx: %v", proxyDB)
+
+	c := NewHTTPClient()
+	// 创建 HTTP 客户端实例
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": "Bearer token",
+	}
+	options := &RequestOptions{
+		Headers:      headers,
+		MaxRedirects: 3,
+	}
+	res, err := c.Get(proxyDB.Url, options)
+	s := string(res.Body)
+	log.Printf("pppppppp: %v", s)
+
+	return NewHTTPClient(s)
 }
 
 // NewHTTPClient 创建一个新的 httpClient 实例
