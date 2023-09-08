@@ -11,6 +11,7 @@ type ApiGroup struct {
 	VboxPayOrderApi
 	ChannelProductApi
 	ChannelAccountApi
+	VboxUserWalletApi
 }
 
 var (
@@ -22,4 +23,5 @@ var (
 	vboxProxyService  = service.ServiceGroupApp.VboxServiceGroup.ProxyService
 	vcpService        = service.ServiceGroupApp.VboxServiceGroup.ChannelProductService
 	vcaService        = service.ServiceGroupApp.VboxServiceGroup.ChannelAccountService
+	vuwService        = service.ServiceGroupApp.VboxServiceGroup.VboxUserWalletService
 )

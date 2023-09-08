@@ -2,21 +2,17 @@ package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
-    vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-    "github.com/flipped-aurora/gin-vue-admin/server/service"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
-    "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type VboxUserWalletApi struct {
 }
-
-var vuwService = service.ServiceGroupApp.VboxServiceGroup.VboxUserWalletService
-
 
 // CreateVboxUserWallet 创建VboxUserWallet
 // @Tags VboxUserWallet
@@ -34,9 +30,9 @@ func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vuw.CreatedBy = utils.GetUserID(c)
+	vuw.CreatedBy = utils.GetUserID(c)
 	if err := vuwService.CreateVboxUserWallet(&vuw); err != nil {
-        global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
 		response.OkWithMessage("创建成功", c)
@@ -59,9 +55,9 @@ func (vuwApi *VboxUserWalletApi) DeleteVboxUserWallet(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vuw.DeletedBy = utils.GetUserID(c)
+	vuw.DeletedBy = utils.GetUserID(c)
 	if err := vuwService.DeleteVboxUserWallet(vuw); err != nil {
-        global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
 		response.OkWithMessage("删除成功", c)
@@ -79,14 +75,14 @@ func (vuwApi *VboxUserWalletApi) DeleteVboxUserWallet(c *gin.Context) {
 // @Router /vuw/deleteVboxUserWalletByIds [delete]
 func (vuwApi *VboxUserWalletApi) DeleteVboxUserWalletByIds(c *gin.Context) {
 	var IDS request.IdsReq
-    err := c.ShouldBindJSON(&IDS)
+	err := c.ShouldBindJSON(&IDS)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    deletedBy := utils.GetUserID(c)
-	if err := vuwService.DeleteVboxUserWalletByIds(IDS,deletedBy); err != nil {
-        global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
+	deletedBy := utils.GetUserID(c)
+	if err := vuwService.DeleteVboxUserWalletByIds(IDS, deletedBy); err != nil {
+		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
 		response.OkWithMessage("批量删除成功", c)
@@ -109,9 +105,9 @@ func (vuwApi *VboxUserWalletApi) UpdateVboxUserWallet(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    vuw.UpdatedBy = utils.GetUserID(c)
+	vuw.UpdatedBy = utils.GetUserID(c)
 	if err := vuwService.UpdateVboxUserWallet(vuw); err != nil {
-        global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
 		response.OkWithMessage("更新成功", c)
@@ -135,7 +131,7 @@ func (vuwApi *VboxUserWalletApi) FindVboxUserWallet(c *gin.Context) {
 		return
 	}
 	if revuw, err := vuwService.GetVboxUserWallet(vuw.ID); err != nil {
-        global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
 		response.OkWithData(gin.H{"revuw": revuw}, c)
@@ -159,14 +155,14 @@ func (vuwApi *VboxUserWalletApi) GetVboxUserWalletList(c *gin.Context) {
 		return
 	}
 	if list, total, err := vuwService.GetVboxUserWalletInfoList(pageInfo); err != nil {
-	    global.GVA_LOG.Error("获取失败!", zap.Error(err))
-        response.FailWithMessage("获取失败", c)
-    } else {
-        response.OkWithDetailed(response.PageResult{
-            List:     list,
-            Total:    total,
-            Page:     pageInfo.Page,
-            PageSize: pageInfo.PageSize,
-        }, "获取成功", c)
-    }
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
 }

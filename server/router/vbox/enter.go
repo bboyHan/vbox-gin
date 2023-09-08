@@ -9,4 +9,5 @@ type RouterGroup struct {
 	ChannelProductRouter
 	VboxPayOrderRouter
 	ChannelAccountRouter
+	VboxUserWalletRouter
 }

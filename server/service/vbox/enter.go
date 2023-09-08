@@ -9,4 +9,5 @@ type ServiceGroup struct {
 	VboxPayOrderService
 	ChannelProductService
 	ChannelAccountService
+	VboxUserWalletService
 }
