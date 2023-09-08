@@ -283,6 +283,73 @@ func (b *BaseApi) GetOwnerUserList(c *gin.Context) {
 	}, "获取成功", c)
 }
 
+// GetOwnerUserIdsListNoContainSelf
+// @Tags      SysUser
+// @Summary   分页获取子用户列表不包含自己
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     data  body      request.PageInfo                                        true  "页码, 每页大小"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string}  "分页获取用户列表,返回包括列表,总数,页码,每页数量"
+// @Router    /user/GetOwnerUserIdsListNoContainSelf [post]
+func (b *BaseApi) GetOwnerUserIdsListNoContainSelf(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	//fmt.Println("jwtId = ", userId)
+	var pageInfo request.PageInfo
+	err := c.ShouldBindJSON(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	err = utils.Verify(pageInfo, utils.PageInfoVerify)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, total, err := userService.GetOwnerUserIdsListNoContainSelf(userId)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(response.PageResult{
+		List:     list,
+		Total:    total,
+		Page:     pageInfo.Page,
+		PageSize: pageInfo.PageSize,
+	}, "获取成功", c)
+}
+
+// GetOwnerUserListForSelectNoContainSelf
+// @Tags      SysUser
+// @Summary   获取用户名 不包含自己
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     data  body      request.PageInfo                                        true  "页码, 每页大小"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string}  "分页获取用户列表,返回包括列表,总数,页码,每页数量"
+// @Router    /user/GetOwnerUserListForSelectNoContainSelf [get]
+func (b *BaseApi) GetOwnerUserListForSelectNoContainSelf(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	userList, tot, err := userService.GetOwnerUserIdsListNoContainSelf(userId)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+
+	list, err := userService.GetOwnerUserListForSelect(userId, idList)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+		return
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
+	}
+}
+
 // GetOwnerUserListForSelect
 // @Tags      SysUser
 // @Summary   分页获取用户列表

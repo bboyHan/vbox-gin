@@ -212,7 +212,7 @@ func (vpoApi *VboxPayOrderApi) GetVboxUserPayOrderAnalysis(c *gin.Context) {
 	}
 }
 
-// getSelectUserPayOrderAnalysis 获取单个用户分析展示数据
+// GetSelectUserPayOrderAnalysis 获取单个用户分析展示数据
 // @Tags VboxPayOrder
 // @Summary 分页获取VboxPayOrder列表
 // @Security ApiKeyAuth
@@ -247,7 +247,7 @@ func (vpoApi *VboxPayOrderApi) GetSelectUserPayOrderAnalysis(c *gin.Context) {
 	}
 }
 
-// getSelectPayOrderAnalysisQuantifyCharts 获取单个用户各个通道下每天的成单数据图
+// GetSelectPayOrderAnalysisQuantifyCharts 获取单个用户各个通道下每天的成单数据图
 // @Tags VboxPayOrder
 // @Summary 分页获取VboxPayOrder列表
 // @Security ApiKeyAuth
@@ -276,7 +276,7 @@ func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisQuantifyCharts(c *gin.Co
 	}
 }
 
-// getSelectPayOrderAnalysisChannelIncomeCharts 获取单个用户各个通道下每天的收入数据图
+// GetSelectPayOrderAnalysisChannelIncomeCharts 获取单个用户各个通道下每天的收入数据图
 // @Tags VboxPayOrder
 // @Summary 分页获取VboxPayOrder列表
 // @Security ApiKeyAuth
@@ -305,7 +305,7 @@ func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisChannelIncomeCharts(c *g
 	}
 }
 
-// @Tags getSelectPayOrderAnalysisIncomeBarCharts
+// GetSelectPayOrderAnalysisIncomeBarCharts
 // @Summary 获取单个用户每天的收入数据图
 // @Security ApiKeyAuth
 // @accept application/json
@@ -333,7 +333,7 @@ func (vpoApi *VboxPayOrderApi) GetSelectPayOrderAnalysisIncomeBarCharts(c *gin.C
 	}
 }
 
-// getVboxUserPayOrderAnalysisIncomeCharts 获取用户订单看板收入图
+// GetVboxUserPayOrderAnalysisIncomeCharts 获取用户订单看板收入图
 // @Tags VboxPayOrder
 // @Summary 获取用户订单看板收入图
 // @Security ApiKeyAuth

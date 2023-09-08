@@ -21,7 +21,8 @@ func (s *VboxUserWalletRouter) InitVboxUserWalletRouter(Router *gin.RouterGroup)
 		vuwRouter.PUT("updateVboxUserWallet", vuwApi.UpdateVboxUserWallet)              // 更新VboxUserWallet
 	}
 	{
-		vuwRouterWithoutRecord.GET("findVboxUserWallet", vuwApi.FindVboxUserWallet)       // 根据ID获取VboxUserWallet
-		vuwRouterWithoutRecord.GET("getVboxUserWalletList", vuwApi.GetVboxUserWalletList) // 获取VboxUserWallet列表
+		vuwRouterWithoutRecord.GET("findVboxUserWallet", vuwApi.FindVboxUserWallet)                             // 根据ID获取VboxUserWallet
+		vuwRouterWithoutRecord.GET("getVboxUserWalletList", vuwApi.GetVboxUserWalletList)                       // 获取VboxUserWallet列表
+		vuwRouterWithoutRecord.GET("getVboxUserWalletAvailablePoints", vuwApi.GetVboxUserWalletAvailablePoints) // 获取VboxUserWallet列表
 	}
 }

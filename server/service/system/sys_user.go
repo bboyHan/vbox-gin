@@ -159,6 +159,37 @@ func (userService *UserService) GetOwnerUserIdsList(id uint) (list []system.SysU
 	return userList, total, err
 }
 
+func (userService *UserService) GetOwnerUserIdsListNoContainSelf(id uint) (list []system.SysUser, total int64, err error) {
+
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var userList []system.SysUser
+	if id == 1 {
+		db = db.Where("id != ?", id)
+		err = db.Count(&total).Error
+		if err != nil {
+			return
+		}
+		err = db.Preload("Authorities").Preload("Authority").Find(&userList).Error
+
+		return userList, total, err
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+
+	querySub := `
+		WITH RECURSIVE cte (id) AS (SELECT id FROM sys_users WHERE id = ? UNION ALL SELECT sys_users.id FROM sys_users 
+			JOIN cte ON sys_users.parent_id = cte.id)
+		SELECT id,uuid,username,password,nick_name,side_mode,header_img,base_color,active_color,authority_id,phone,email,enable,parent_id
+		FROM sys_users WHERE id IN (SELECT id FROM cte) and id != ?;
+    `
+	//var userListSub []system.SysUser
+	err = db.Raw(querySub, id, id).Preload("Authorities").Preload("Authority").Find(&userList).Error
+
+	total = int64(len(userList))
+	return userList, total, err
+}
+
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: SetUserAuthority
 //@description: 设置一个用户的权限

@@ -1,9 +1,11 @@
 package vbox
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
@@ -31,12 +33,42 @@ func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
 		return
 	}
 	vuw.CreatedBy = utils.GetUserID(c)
+	// 保存被分配积分的用户数据
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysUser{})
+	var user system.SysUser
+	db.Where("username = ?", vuw.UserName).Find(&user)
+	vuw.Uid = user.ID
+	output := fmt.Sprintf("划转至【%d】,积分：【%d】", vuw.UserName, vuw.Recharge)
+	vuw.Remark = output
+	fmt.Println("id = ", vuw.ID)
 	if err := vuwService.CreateVboxUserWallet(&vuw); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
-	} else {
-		response.OkWithMessage("创建成功", c)
 	}
+
+	// 保存分配积分的用户数据
+	userId := utils.GetUserID(c)
+	var vuwUser vbox.VboxUserWallet
+	vuwUser = vuw
+
+	vuwUser.Uid = userId
+	// 创建db
+	createDb := global.GVA_DB.Model(&system.SysUser{})
+	var createUser system.SysUser
+	createDb.Where("id = ?", userId).Find(&createUser)
+	vuwUser.UserName = createUser.Username
+	output2 := fmt.Sprintf("划转至【%d】,积分：【%d】", vuwUser.UserName, vuwUser.Recharge)
+	vuwUser.Remark = output2
+	vuwUser.Recharge = -1 * vuw.Recharge
+	vuwUser.ID = 0
+	if err := vuwService.CreateVboxUserWallet(&vuwUser); err != nil {
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		response.FailWithMessage("创建失败", c)
+	}
+
+	response.OkWithMessage("创建成功", c)
+
 }
 
 // DeleteVboxUserWallet 删除VboxUserWallet
@@ -148,13 +180,24 @@ func (vuwApi *VboxUserWalletApi) FindVboxUserWallet(c *gin.Context) {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /vuw/getVboxUserWalletList [get]
 func (vuwApi *VboxUserWalletApi) GetVboxUserWalletList(c *gin.Context) {
+	userId := uint(utils.GetUserID(c))
 	var pageInfo vboxReq.VboxUserWalletSearch
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := vuwService.GetVboxUserWalletInfoList(pageInfo); err != nil {
+
+	userList, tot, err := userService.GetOwnerUserIdsList(userId)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+
+	if list, total, err := vuwService.GetVboxUserWalletInfoList(pageInfo, idList); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
@@ -164,5 +207,39 @@ func (vuwApi *VboxUserWalletApi) GetVboxUserWalletList(c *gin.Context) {
 			Page:     pageInfo.Page,
 			PageSize: pageInfo.PageSize,
 		}, "获取成功", c)
+	}
+}
+
+// GetVboxUserWalletAvailablePoints 用id查询VboxUserWallet
+// @Tags VboxUserWallet
+// @Summary 用id查询VboxUserWallet
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vbox.VboxUserWallet true "用id查询VboxUserWallet"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vuw/GetVboxUserWalletAvailablePoints [get]
+func (vuwApi *VboxUserWalletApi) GetVboxUserWalletAvailablePoints(c *gin.Context) {
+	userId := uint(utils.GetUserID(c))
+	var vuw vbox.VboxUserWallet
+	err := c.ShouldBindQuery(&vuw)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userList, tot, err := userService.GetOwnerUserIdsList(userId)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+
+	if rechargeData, err := vuwService.GetVboxUserWalletAvailablePoints(userId, idList); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(gin.H{"rechargeData": rechargeData}, c)
 	}
 }
