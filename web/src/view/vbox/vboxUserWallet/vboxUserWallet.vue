@@ -77,14 +77,14 @@
         @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="日期" width="180">
+        <!-- <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="uid" prop="uid" width="120" />
+        </el-table-column> -->
+        <!-- <el-table-column align="left" label="uid" prop="uid" width="120" /> -->
         <el-table-column align="left" label="用户名" prop="username" width="120" />
         <el-table-column align="left" label="充值数" prop="recharge" width="120" />
         <el-table-column align="left" label="费率" prop="tariff" width="120" />
-        <el-table-column align="left" label="划转/分配" prop="remark" width="120"  show-overflow-tooltip="true"/>
+        <el-table-column align="left" label="划转/分配" prop="remark" width="250"  show-overflow-tooltip="true"/>
          <el-table-column align="left" label="创建时间" width="180">
             <template #default="scope">{{ formatDate(scope.row.createTime) }}</template>
          </el-table-column>
@@ -108,28 +108,44 @@
             />
         </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'分配积分':'修改'" destroy-on-close>
+      <el-form-item >
+        <el-col :span="6" :offset="11">
+          <el-statistic title="可用划转积分" :value="rechargeData" />
+        </el-col>
+      </el-form-item>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <el-form-item label="uid:"  prop="uid" >
+        <!-- <el-form-item label="uid:"  prop="uid" >
           <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
-        </el-form-item>
+        </el-form-item>-->
         <el-form-item label="用户名:"  prop="username" >
-          <el-input v-model="formData.username" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="充值数:"  prop="recharge" >
+          <!-- <el-input v-model="formData.username" :clearable="true"  placeholder="请输入" /> -->
+          <el-autocomplete 
+          style="width:100%"
+          v-model="usersFormData.name" 
+          :fetch-suggestions="querySearchAsync" 
+          placeholder="请输入" 
+          :clearable="true"
+          @select="handleSelect">
+            <template #default="{ item }">
+              {{ item.value }}
+            </template>
+          </el-autocomplete>
+        </el-form-item> 
+        <el-form-item label="划转积分:"  prop="recharge" >
           <el-input v-model.number="formData.recharge" :clearable="true" placeholder="请输入" />
         </el-form-item>
         <el-form-item label="费率:"  prop="tariff" >
-          <el-input-number v-model="formData.tariff"  style="width:100%" :precision="2" :clearable="true"  />
+          <el-input-number v-model="formData.tariff"  style="width:100%" :precision="2" :clearable="true" disabled />
         </el-form-item>
-        <el-form-item label="划转/分配:"  prop="remark" >
+        <!-- <el-form-item label="划转/分配:"  prop="remark" >
           <el-input v-model="formData.remark" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="创建时间:"  prop="createTime" >
+        </el-form-item> -->
+        <!-- <el-form-item label="创建时间:"  prop="createTime" >
           <el-date-picker v-model="formData.createTime" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="会员等级:"  prop="vipLevel" >
-          <el-input v-model.number="formData.vipLevel" :clearable="true" placeholder="请输入" />
+          <el-input v-model.number="formData.vipLevel" :clearable="true" placeholder="请输入" disabled/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -155,20 +171,24 @@ import {
   deleteVboxUserWalletByIds,
   updateVboxUserWallet,
   findVboxUserWallet,
-  getVboxUserWalletList
+  getVboxUserWalletList,
+  getVboxUserWalletAvailablePoints
 } from '@/api/vboxUserWallet'
+import {
+  getOwnerUserListForSelectNoContainSelf
+} from '@/api/user'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
+import { ref, reactive,onMounted } from 'vue'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
         uid: 0,
         username: '',
         recharge: 0,
-        tariff: 0,
+        tariff: 1,
         remark: '',
         createTime: new Date(),
         vipLevel: 0,
@@ -351,6 +371,7 @@ const dialogFormVisible = ref(false)
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
+    getAvailablePoints()
     dialogFormVisible.value = true
 }
 
@@ -359,13 +380,14 @@ const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
         uid: 0,
-        username: '',
+        username: usersFormData.value.name,
         recharge: 0,
-        tariff: 0,
+        tariff: 1,
         remark: '',
         createTime: new Date(),
         vipLevel: 0,
         }
+     
 }
 // 弹窗确定
 const enterDialog = async () => {
@@ -394,6 +416,69 @@ const enterDialog = async () => {
       })
 }
 
+
+
+
+// select
+
+const usersFormData = ref({
+        name: ''
+        })
+const usersItem = ref([])
+// 可搜索店铺
+const loadAll = async ()  => {
+
+  const res = await getOwnerUserListForSelectNoContainSelf({ page: 1, pageSize: 100 })
+  // console.log('== res ==>' + JSON.stringify(res))
+  if (res.code === 0) {
+    // console.log('== res.data.marks==>' + JSON.stringify(res.data.list))
+    usersItem.value = res.data.list
+  }
+  return usersItem.value
+}
+loadAll()
+let timeout
+const querySearchAsync = (queryString, cb) => {
+  loadAll()
+  const results = queryString
+    ? usersItem.value.filter(createFilter(queryString))
+    : usersItem.value
+
+  clearTimeout(timeout)
+  timeout = setTimeout(() => {
+    cb(results)
+  }, 2000 * Math.random())
+}
+
+
+const createFilter = (queryString) => {
+  return (restaurant) => {
+    return (
+      restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
+    )
+  }
+}
+
+const handleSelect = (item) => {
+  console.log(item)
+  usersFormData.value.name = item.value
+  formData.value.username = item.value
+}
+
+onMounted(() => {
+  console.log('onMounted')
+  usersItem.value = loadAll()
+})
+
+const rechargeData = ref(0)
+// 可用积分
+const getAvailablePoints = async() => {
+    const res = await getVboxUserWalletAvailablePoints()
+    if (res.code === 0) {
+      rechargeData.value = res.data.rechargeData
+      // console.log('rechargeData.value=' + rechargeData.value)
+    }
+}
 </script>
 
 <style>

@@ -95,3 +95,18 @@ export const getVboxUserWalletList = (params) => {
     params
   })
 }
+
+// @Tags getVboxUserWalletAvailablePoints
+// @Summary 获取用户可用余额
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取VboxUserWallet列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vuw/getVboxUserWalletAvailablePoints [get]
+export const getVboxUserWalletAvailablePoints = () => {
+  return service({
+    url: '/vuw/getVboxUserWalletAvailablePoints',
+    method: 'get'
+  })
+}
