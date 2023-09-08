@@ -70,7 +70,8 @@ func (vuwService *VboxUserWalletService) GetVboxUserWalletInfoList(info vboxReq.
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.VboxUserWallet{})
 	var vuws []vbox.VboxUserWallet
-	db = db.Where("uid in (?)", ids).Find(&vuws)
+	db = db.Where("uid in (?)", ids).Order("create_time desc").Find(&vuws)
+
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)

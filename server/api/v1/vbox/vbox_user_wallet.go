@@ -58,7 +58,7 @@ func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
 	var createUser system.SysUser
 	createDb.Where("id = ?", userId).Find(&createUser)
 	vuwUser.UserName = createUser.Username
-	output2 := fmt.Sprintf("划转至【%d】,积分：【%d】", vuwUser.UserName, vuwUser.Recharge)
+	output2 := fmt.Sprintf("划转至:【%s】,积分:【%d】", vuwUser.UserName, vuwUser.Recharge)
 	vuwUser.Remark = output2
 	vuwUser.Recharge = -1 * vuw.Recharge
 	vuwUser.ID = 0
