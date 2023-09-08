@@ -14,6 +14,37 @@ import (
 type ChannelAccountApi struct {
 }
 
+// SwitchEnableChannelAccount 开启或关闭ChannelAccount
+// @Tags ChannelAccount
+// @Summary 开启或关闭ChannelAccount
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body payermng.VboxPayAccount true "开启或关闭ChannelAccount"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
+// @Router /vca/ChannelAccount [put]
+func (vcaApi *ChannelAccountApi) SwitchEnableChannelAccount(c *gin.Context) {
+	var channelAccount vbox.ChannelAccount
+	err := c.ShouldBindJSON(&channelAccount)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	verify := utils.Rules{
+		"status": {utils.NotEmpty()},
+	}
+	if err := utils.Verify(channelAccount, verify); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := vcaService.UpdateChannelAccount(channelAccount); err != nil {
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		response.FailWithMessage("更新失败", c)
+	} else {
+		response.OkWithMessage("更新成功", c)
+	}
+}
+
 // CreateChannelAccount 创建ChannelAccount
 // @Tags ChannelAccount
 // @Summary 创建ChannelAccount
@@ -125,6 +156,30 @@ func (vcaApi *ChannelAccountApi) UpdateChannelAccount(c *gin.Context) {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
 // @Router /vca/findChannelAccount [get]
 func (vcaApi *ChannelAccountApi) FindChannelAccount(c *gin.Context) {
+	var vca vbox.ChannelAccount
+	err := c.ShouldBindQuery(&vca)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if revca, err := vcaService.GetChannelAccount(vca.ID); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(gin.H{"revca": revca}, c)
+	}
+}
+
+// QueryCAHisRecords 用id查询ChannelAccount历史记录
+// @Tags ChannelAccount
+// @Summary 用id查询ChannelAccount
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vbox.ChannelAccount true "用id查询ChannelAccount"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vca/findChannelAccount [get]
+func (vcaApi *ChannelAccountApi) QueryCAHisRecords(c *gin.Context) {
 	var vca vbox.ChannelAccount
 	err := c.ShouldBindQuery(&vca)
 	if err != nil {

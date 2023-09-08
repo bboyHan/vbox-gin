@@ -92,9 +92,9 @@
         <el-tab-pane label="角色api">
           <Apis ref="apis" :row="activeRow" @changeRow="changeRow" />
         </el-tab-pane>
-        <el-tab-pane label="资源权限">
+<!--        <el-tab-pane label="资源权限">
           <Datas ref="datas" :authority="tableData" :row="activeRow" @changeRow="changeRow" />
-        </el-tab-pane>
+        </el-tab-pane>-->
       </el-tabs>
     </el-drawer>
   </div>

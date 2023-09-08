@@ -1,6 +1,22 @@
 import service from '@/utils/request'
 
 // @Tags ChannelAccount
+// @Summary 开启关闭通道账号
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.SysUser true "设置通道账号信息"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"修改成功"}"
+// @Router /user/switchEnableCA [put]
+export const switchEnableCA = (data) => {
+  return service({
+    url: '/vca/switchEnable',
+    method: 'put',
+    data: data
+  })
+}
+
+// @Tags ChannelAccount
 // @Summary 创建ChannelAccount
 // @Security ApiKeyAuth
 // @accept application/json
@@ -75,6 +91,22 @@ export const updateChannelAccount = (data) => {
 export const findChannelAccount = (params) => {
   return service({
     url: '/vca/findChannelAccount',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags ChannelAccount
+// @Summary 用id查询ChannelAccount
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query model.ChannelAccount true "用id查询ChannelAccount"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vca/findChannelAccount [get]
+export const queryCAHisRecords = (params) => {
+  return service({
+    url: '/vca/queryCAHisRecords',
     method: 'get',
     params
   })

@@ -14,6 +14,11 @@ const routes = [{
   name: 'Login',
   component: () => import('@/view/login/index.vue')
 },
+{
+  path: '/pay',
+  name: 'Pay',
+  component: () => import('@/view/vbox/order/orderDetail.vue')
+},
 // {
 //   path: '/order/:ch',
 //   name: 'OrderTask',

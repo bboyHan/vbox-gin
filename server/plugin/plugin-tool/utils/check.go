@@ -15,7 +15,7 @@ func RegisterApis(apis ...system.SysApi) {
 	}
 	global.GVA_DB.Find(&[]system.SysApi{}, "path in (?)", apiPaths).Count(&count)
 	if count > 0 {
-		fmt.Println("插件已安装或存在同名路由")
+		fmt.Printf("插件已安装或存在同名路由， %v", apiPaths)
 		return
 	}
 	err := global.GVA_DB.Create(&apis).Error

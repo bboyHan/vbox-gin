@@ -1,10 +1,6 @@
 <template>
     <div>
         <h4>订单支付页面</h4>
-    <warning-bar
-        title="订单支付页面测试中"
-      />
-
     </div>
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog"  destroy-on-close class="el-dialog__wrapper" fullscreen>
         <h2 class="dialog-title">👇👇👇操作流程提示👇👇👇</h2>
@@ -17,7 +13,6 @@
           <el-button @click="changImgNext">下一步</el-button>
           <el-button type="primary" @click="enterDialog">我知道了</el-button>
         </div>
-      <!-- </template> -->
     </el-dialog>
     
 </template>

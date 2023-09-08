@@ -19,9 +19,11 @@ func (s *ChannelAccountRouter) InitChannelAccountRouter(Router *gin.RouterGroup)
 		vcaRouter.DELETE("deleteChannelAccount", vcaApi.DeleteChannelAccount)           // 删除ChannelAccount
 		vcaRouter.DELETE("deleteChannelAccountByIds", vcaApi.DeleteChannelAccountByIds) // 批量删除ChannelAccount
 		vcaRouter.PUT("updateChannelAccount", vcaApi.UpdateChannelAccount)              // 更新ChannelAccount
+		vcaRouter.PUT("switchEnable", vcaApi.SwitchEnableChannelAccount)                // 开关VboxPayAccount
 	}
 	{
 		vcaRouterWithoutRecord.GET("findChannelAccount", vcaApi.FindChannelAccount)       // 根据ID获取ChannelAccount
+		vcaRouterWithoutRecord.GET("queryCAHisRecords", vcaApi.QueryCAHisRecords)         // 根据ID获取ChannelAccount
 		vcaRouterWithoutRecord.GET("getChannelAccountList", vcaApi.GetChannelAccountList) // 获取ChannelAccount列表
 	}
 }
