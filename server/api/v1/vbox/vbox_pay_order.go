@@ -247,6 +247,29 @@ func (vpoApi *VboxPayOrderApi) GetSelectUserPayOrderAnalysis(c *gin.Context) {
 	}
 }
 
+// GetHomePagePayOrderAnalysis 获取首页单个用户分析展示数据
+// @Tags VboxPayOrder
+// @Summary 分页获取VboxPayOrder列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxPayOrderSearch true "获取首页单个用户分析展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getHomePagePayOrderAnalysis [get]
+func (vpoApi *VboxPayOrderApi) GetHomePagePayOrderAnalysis(c *gin.Context) {
+	userID := uint(utils.GetUserID(c))
+	var idList []int
+	idList = append(idList, int(userID))
+
+	if resData, err := vpoService.GetHomePagePayOrderAnalysis(userID, idList); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+
+		response.OkWithData(gin.H{"resultData": resData}, c)
+	}
+}
+
 // GetSelectPayOrderAnalysisQuantifyCharts 获取单个用户各个通道下每天的成单数据图
 // @Tags VboxPayOrder
 // @Summary 分页获取VboxPayOrder列表

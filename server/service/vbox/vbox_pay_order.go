@@ -520,6 +520,17 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisChannelIncomeCha
 	return resData, err
 }
 
+func (vpoService *VboxPayOrderService) GetHomePagePayOrderAnalysis(uid uint, idList []int) (resData vboxRep.VboxUserOrderPayAnalysis, err error) {
+	list, total, err := vpoService.GetVboxUserPayOrderAnalysis(uid, idList)
+	if total > 0 {
+		resData = list[0]
+	} else {
+		global.GVA_LOG.Error("为获取到数据")
+		return
+	}
+	return resData, err
+}
+
 // 判断是否是今天
 func isToday(createTime *time.Time, now time.Time) bool {
 	year, month, day := now.Date()

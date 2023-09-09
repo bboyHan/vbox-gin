@@ -25,6 +25,7 @@ func (s *VboxPayOrderRouter) InitVboxPayOrderRouter(Router *gin.RouterGroup) {
 		vpoRouterWithoutRecord.GET("getVboxPayOrderList", vpoApi.GetVboxPayOrderList)                                                   // 获取VboxPayOrder列表
 		vpoRouterWithoutRecord.GET("getVboxUserPayOrderAnalysis", vpoApi.GetVboxUserPayOrderAnalysis)                                   // 获取用户订单看板
 		vpoRouterWithoutRecord.GET("getSelectUserPayOrderAnalysis", vpoApi.GetSelectUserPayOrderAnalysis)                               // 获取用户订单看板
+		vpoRouterWithoutRecord.GET("getHomePagePayOrderAnalysis", vpoApi.GetHomePagePayOrderAnalysis)                                   // 获取用户订单看板
 		vpoRouterWithoutRecord.GET("getSelectPayOrderAnalysisQuantifyCharts", vpoApi.GetSelectPayOrderAnalysisQuantifyCharts)           // 获取用户订单看板
 		vpoRouterWithoutRecord.GET("getSelectPayOrderAnalysisChannelIncomeCharts", vpoApi.GetSelectPayOrderAnalysisChannelIncomeCharts) // 获取用户订单看板
 		vpoRouterWithoutRecord.GET("getVboxUserPayOrderAnalysisIncomeCharts", vpoApi.GetVboxUserPayOrderAnalysisIncomeCharts)           // 获取用户订单看板
