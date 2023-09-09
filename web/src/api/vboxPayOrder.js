@@ -112,6 +112,24 @@ export const getSelectUserPayOrderAnalysis = (params) => {
   })
 }
 
+
+// @Tags getHomePagePayOrderAnalysis
+// @Summary 获取首页单个用户分析展示数据
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户分析展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/getHomePagePayOrderAnalysis [get]
+export const getHomePagePayOrderAnalysis = () => {
+  return service({
+    url: '/vpo/getHomePagePayOrderAnalysis',
+    method: 'get'
+    
+  })
+}
+
+
 // @Tags getSelectPayOrderAnalysisQuantifyCharts
 // @Summary 获取单个用户各个通道下每天的成单数据图
 // @Security ApiKeyAuth
