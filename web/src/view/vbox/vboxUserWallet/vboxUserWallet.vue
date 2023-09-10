@@ -396,6 +396,13 @@ const enterDialog = async () => {
               let res
               switch (type.value) {
                 case 'create':
+                  if(rechargeData.value < formData.value.recharge){
+                    ElMessage({
+                      type: 'error',
+                      message: '余额不足'
+                    })
+                    break
+                  }
                   res = await createVboxUserWallet(formData.value)
                   break
                 case 'update':
