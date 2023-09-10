@@ -196,8 +196,24 @@ const formData = ref({
 
 // 验证规则
 const rule = reactive({
+  recharge: [
+    { required: true, message: '请输入充值金额', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if ( value <= 0 || !Number.isInteger(value)) {
+          callback(new Error('请输入大于0的整数金额'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
 })
 
+// const ruleRecharge = {
+  
+// };
 const searchRule = reactive({
   createdAt: [
     { validator: (rule, value, callback) => {
