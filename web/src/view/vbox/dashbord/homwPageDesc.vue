@@ -166,7 +166,10 @@
   <div class="gva-card-box">
 
     <div class="gva-card quick-entrance">
-      <div>图形</div>
+      <div
+            id="incomeEchart"
+            class="dashboard-line"
+          />
     </div>
   </div>
 </div>
@@ -190,8 +193,8 @@ import {
   getSelectPayOrderAnalysisChannelIncomeCharts,
   getSelectPayOrderAnalysisIncomeBarCharts
 } from '@/api/vboxPayOrder'
-import { ref} from 'vue'
-
+import { ref,shallowRef,onMounted} from 'vue'
+import * as echarts from 'echarts'
 
 const usersOrderata = ref({
           username: '',
@@ -216,6 +219,65 @@ const getUsersOrderata = async() => {
   }
 }
 getUsersOrderata()
+
+
+const incomeLineChartSeries = ref([])
+const incomeLineChartXData = ref([])
+const incomeLineChartLegend = ref([])
+const chart = shallowRef(null)
+const initChart = async() => {
+  const table = await getVboxUserPayOrderAnalysisIncomeCharts()
+  if (table.code === 0) {
+    // console.log(JSON.stringify(table.data))
+    // const res = JSON.parse(table.data)
+    incomeLineChartSeries.value = table.data.lists
+    incomeLineChartXData.value = table.data.xData
+    incomeLineChartLegend.value = table.data.legendData
+  }
+
+  chart.value = echarts.init(document.getElementById("incomeEchart") /* 'macarons' */)
+  setOptions()
+}
+// onMounted(async() => {
+//   // await nextTick()
+  
+//   initChart()
+// })
+const setOptions = () => {
+  chart.value.setOption({
+  title: {
+    text: '销售收入'
+  },
+  tooltip: {
+    trigger: 'axis'
+  },
+  legend: {
+    data: incomeLineChartLegend.value
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  toolbox: {
+    feature: {
+      magicType: { show: true, type: ['stack', 'tiled'] },
+      saveAsImage: {}
+    }
+  },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: incomeLineChartXData.value
+  },
+  yAxis: {
+    type: 'value'
+  },
+  series: incomeLineChartSeries.value
+})
+}
+initChart()
 </script>
 
 <style lang="scss" scoped>
@@ -314,5 +376,10 @@ getUsersOrderata()
 }
 .red {
   color: var(--el-color-error);
+}
+.dashboard-line {
+  background-color: #fff;
+  height: 500px;
+  width: 1000px;
 }
 </style>
