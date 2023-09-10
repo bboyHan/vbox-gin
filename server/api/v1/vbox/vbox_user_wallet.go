@@ -26,6 +26,12 @@ type VboxUserWalletApi struct {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /vuw/createVboxUserWallet [post]
 func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	// 创建db
+	createDb := global.GVA_DB.Model(&system.SysUser{})
+	var createUser system.SysUser
+	createDb.Where("id = ?", userId).Find(&createUser)
+
 	var vuw vbox.VboxUserWallet
 	err := c.ShouldBindJSON(&vuw)
 	if err != nil {
@@ -39,7 +45,7 @@ func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
 	var user system.SysUser
 	db.Where("username = ?", vuw.UserName).Find(&user)
 	vuw.Uid = user.ID
-	output := fmt.Sprintf("划转至【%d】,积分：【%d】", vuw.UserName, vuw.Recharge)
+	output := fmt.Sprintf("【%s】划转至:【%s】,积分:【%d】", createUser.Username, vuw.UserName, vuw.Recharge)
 	vuw.Remark = output
 	fmt.Println("id = ", vuw.ID)
 	if err := vuwService.CreateVboxUserWallet(&vuw); err != nil {
@@ -48,17 +54,14 @@ func (vuwApi *VboxUserWalletApi) CreateVboxUserWallet(c *gin.Context) {
 	}
 
 	// 保存分配积分的用户数据
-	userId := utils.GetUserID(c)
+
 	var vuwUser vbox.VboxUserWallet
 	vuwUser = vuw
 
 	vuwUser.Uid = userId
-	// 创建db
-	createDb := global.GVA_DB.Model(&system.SysUser{})
-	var createUser system.SysUser
-	createDb.Where("id = ?", userId).Find(&createUser)
 	vuwUser.UserName = createUser.Username
-	output2 := fmt.Sprintf("划转至:【%s】,积分:【%d】", vuwUser.UserName, vuwUser.Recharge)
+
+	output2 := fmt.Sprintf("划转至:【%s】,积分:【%d】", vuw.UserName, vuw.Recharge)
 	vuwUser.Remark = output2
 	vuwUser.Recharge = -1 * vuw.Recharge
 	vuwUser.ID = 0
@@ -221,22 +224,22 @@ func (vuwApi *VboxUserWalletApi) GetVboxUserWalletList(c *gin.Context) {
 // @Router /vuw/GetVboxUserWalletAvailablePoints [get]
 func (vuwApi *VboxUserWalletApi) GetVboxUserWalletAvailablePoints(c *gin.Context) {
 	userId := uint(utils.GetUserID(c))
-	var vuw vbox.VboxUserWallet
-	err := c.ShouldBindQuery(&vuw)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	userList, tot, err := userService.GetOwnerUserIdsList(userId)
-	var idList []int
-	for _, user := range userList {
-		idList = append(idList, int(user.ID))
-	}
-	if err != nil || tot == 0 {
-		return
-	}
+	//var vuw vbox.VboxUserWallet
+	//err := c.ShouldBindQuery(&vuw)
+	//if err != nil {
+	//	response.FailWithMessage(err.Error(), c)
+	//	return
+	//}
+	//userList, tot, err := userService.GetOwnerUserIdsList(userId)
+	//var idList []int
+	//for _, user := range userList {
+	//	idList = append(idList, int(user.ID))
+	//}
+	//if err != nil || tot == 0 {
+	//	return
+	//}
 
-	if rechargeData, err := vuwService.GetVboxUserWalletAvailablePoints(userId, idList); err != nil {
+	if rechargeData, err := vuwService.GetVboxUserWalletAvailablePoints(userId); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {

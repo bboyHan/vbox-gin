@@ -15,7 +15,7 @@ import (
 type VboxPayOrderService struct {
 }
 
-//var userService = service.ServiceGroupApp.SystemServiceGroup.UserService
+// var userService = service.ServiceGroupApp.SystemServiceGroup.UserService
 
 // CreateVboxPayOrder 创建VboxPayOrder记录
 // Author [piexlmax](https://github.com/piexlmax)
@@ -144,6 +144,20 @@ func (vpoService *VboxPayOrderService) GetUsersVboxPayOrderInfoList(ids []int, n
 	return vpos, total, err
 }
 
+// Author youga
+func (vpoService *VboxPayOrderService) GetUsersVboxPayOrderInfoHList(ids []int, num int) (list []vbox.VboxPayOrder, total int64, err error) {
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
+	var vpos []vbox.VboxPayOrder
+	if num == 1 {
+		err = db.Where("uid in (?) and create_time >= (CURDATE() - INTERVAL ? HOUR)", ids, num).Find(&vpos).Error
+	} else {
+		err = db.Where("uid in (?) and create_time >= (CURDATE() - INTERVAL ? HOUR) and create_time < (CURDATE() - INTERVAL 1 HOUR)", ids, num).Find(&vpos).Error
+	}
+	total = int64(len(vpos))
+	return vpos, total, err
+}
+
 func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idList []int) (list []vboxRep.VboxUserOrderPayAnalysis, total int64, err error) {
 	query := `
         SELECT count(1)
@@ -248,13 +262,159 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 		if err != nil {
 			return
 		}
+		rechargeData, errB := GetVboxUserWalletAvailablePoints(uint(uid))
+		if errB != nil {
+			return
+		}
 
 		entity := vboxRep.VboxUserOrderPayAnalysis{
 			Uid:              &uid,
 			Username:         userInfo.Username,
-			Balance:          99999, //todo
+			Balance:          rechargeData,
 			ChIdCnt:          int(openTotal + closeTotal),
 			OpenChId:         int(openTotal),
+			YOrderQuantify:   int(yOrderQuantify),
+			YOkOrderQuantify: yOkOrderQuantify,
+			YOkRate:          yOkRate,
+			YInCome:          yInCome,
+			TOrderQuantify:   int(tOrderQuantify),
+			TOkOrderQuantify: tOkOrderQuantify,
+			TOkRate:          tOkRate,
+			TInCome:          tInCome,
+		}
+		list = append(list, entity)
+
+	}
+	return list, int64(len(idList)), err
+
+}
+
+func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisH(id uint, idList []int) (list []vboxRep.VboxUserOrderPayAnalysisH, total int64, err error) {
+	query := `
+        SELECT count(1)
+		FROM vbox_channel_shop
+		WHERE  uid = ? and status = ?;
+    `
+	queryChB := `
+        SELECT count(1)
+		FROM vbox_channel_shop
+		WHERE  uid = ? and status = ? and created_at >= (CURDATE() - INTERVAL ? HOUR);
+    `
+
+	tInfoList, tOrderTotal, err := vpoService.GetUsersVboxPayOrderInfoHList(idList, 1)
+	if err != nil {
+		return
+	}
+	yInfoList, yOrderTotal, err := vpoService.GetUsersVboxPayOrderInfoHList(idList, 2)
+	if err != nil {
+		return
+	}
+
+	tGroupedCounts := make(map[int]int16)
+	tOkGroupedCounts := make(map[int]int16)
+	tOkGroupedCosts := make(map[int]int)
+
+	yGroupedCounts := make(map[int]int16)
+	yOkGroupedCounts := make(map[int]int16)
+	yOkGroupedCosts := make(map[int]int)
+
+	for _, order := range tInfoList {
+		uid := *order.Uid
+		tGroupedCounts[uid]++
+		if *order.OrderStatus == 1 {
+			tOkGroupedCounts[uid]++
+			tOkGroupedCosts[uid] += *order.Cost
+		}
+	}
+
+	for _, order := range yInfoList {
+		uid := *order.Uid
+		yGroupedCounts[uid]++
+		if *order.OrderStatus == 1 {
+			yOkGroupedCounts[uid]++
+			yOkGroupedCosts[uid] += *order.Cost
+		}
+	}
+
+	for _, uid := range idList {
+		tOrderQuantify := tOrderTotal
+		tOkOrderQuantify := 0
+		tOkRate := 0
+		tInCome := 0
+		yOrderQuantify := yOrderTotal
+		yOkOrderQuantify := 0
+		yOkRate := 0
+		yInCome := 0
+		// 判断 tGroupedCounts 中是否包含指定的 uid 键
+		_, tContainsUID := tGroupedCounts[uid]
+		_, tOkContainsUID := tOkGroupedCounts[uid]
+		_, yContainsUID := yGroupedCounts[uid]
+		_, yOkContainsUID := yOkGroupedCounts[uid]
+
+		if tContainsUID {
+			tOrderQuantify = int64(tGroupedCounts[uid])
+			if tOkContainsUID {
+				tOkOrderQuantify = int(tOkGroupedCounts[uid])
+			}
+
+			if tOrderQuantify > 0 {
+				result := float64(tOkOrderQuantify) / float64(tOrderQuantify)
+				tOkRate = int(result * 100)
+				tInCome = tOkGroupedCosts[uid]
+			}
+
+		}
+
+		if yContainsUID {
+
+			yOrderQuantify = int64(yGroupedCounts[uid])
+			if yOkContainsUID {
+				yOkOrderQuantify = int(yOkGroupedCounts[uid])
+			}
+
+			if yOrderQuantify > 0 {
+				result := float64(yOkOrderQuantify) / float64(yOrderQuantify)
+				yOkRate = int(result * 100)
+				yInCome = yOkGroupedCosts[uid]
+			}
+
+		}
+
+		var userInfo system.SysUser
+		err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
+		if err != nil {
+			return
+		}
+
+		var openTotal int64
+		var newOpenTotal int64
+		var closeTotal int64
+
+		// 创建db
+		err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(queryChB, uid, 1, 1).Count(&newOpenTotal).Error
+		if err != nil {
+			return
+		}
+		err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(query, uid, 1).Count(&openTotal).Error
+		if err != nil {
+			return
+		}
+		err = global.GVA_DB.Model(&channelshop.ChannelShop{}).Raw(query, uid, 0).Count(&closeTotal).Error
+		if err != nil {
+			return
+		}
+		rechargeData, errB := GetVboxUserWalletAvailablePoints(uint(uid))
+		if errB != nil {
+			return
+		}
+
+		entity := vboxRep.VboxUserOrderPayAnalysisH{
+			Uid:              &uid,
+			Username:         userInfo.Username,
+			Balance:          rechargeData,
+			ChIdCnt:          int(openTotal + closeTotal),
+			OpenChId:         int(openTotal),
+			NewOpenChId:      int(newOpenTotal),
 			YOrderQuantify:   int(yOrderQuantify),
 			YOkOrderQuantify: yOkOrderQuantify,
 			YOkRate:          yOkRate,
@@ -530,6 +690,16 @@ func (vpoService *VboxPayOrderService) GetHomePagePayOrderAnalysis(uid uint, idL
 	}
 	return resData, err
 }
+func (vpoService *VboxPayOrderService) GetHomePagePayOrderAnalysisH(uid uint, idList []int) (resData vboxRep.VboxUserOrderPayAnalysisH, err error) {
+	list, total, err := vpoService.GetVboxUserPayOrderAnalysisH(uid, idList)
+	if total > 0 {
+		resData = list[0]
+	} else {
+		global.GVA_LOG.Error("为获取到数据")
+		return
+	}
+	return resData, err
+}
 
 // 判断是否是今天
 func isToday(createTime *time.Time, now time.Time) bool {
@@ -546,4 +716,34 @@ func isYesterday(createTime *time.Time, now time.Time) bool {
 	createYear, createMonth, createDay := createTime.Date()
 
 	return year == createYear && month == createMonth && day == createDay
+}
+
+func GetVboxUserWalletAvailablePoints(uid uint) (rechargeData int, err error) {
+
+	queryA := `
+        SELECT coalesce(sum(recharge),0) as recharge
+		FROM vbox_user_wallet
+		WHERE  uid = ? ;
+    `
+
+	queryB := `
+        SELECT coalesce(sum(cost),0) as recharge
+		FROM vbox_pay_order
+		WHERE  uid = ? and order_status = ?;
+    `
+
+	resultA := 0
+	err = global.GVA_DB.Model(&vbox.VboxUserWallet{}).Raw(queryA, uid).Scan(&resultA).Error
+	if err != nil {
+		return
+	}
+
+	resultB := 0
+	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).Raw(queryB, uid, 1).Scan(&resultB).Error
+	if err != nil {
+		return
+	}
+	rechargeData = resultA - resultB
+	return rechargeData, err
+
 }
