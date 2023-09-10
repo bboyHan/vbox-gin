@@ -112,6 +112,21 @@ export const getSelectUserPayOrderAnalysis = (params) => {
   })
 }
 
+// @Tags GetSelectUserPayOrderAnalysisH
+// @Summary 获取单个用户分析展示近一两个小时的数据
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取单个用户分析展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/GetSelectUserPayOrderAnalysisH [get]
+export const getSelectUserPayOrderAnalysisH = () => {
+  return service({
+    url: '/vpo/getSelectUserPayOrderAnalysisH',
+    method: 'get'
+  })
+}
+
 
 // @Tags getHomePagePayOrderAnalysis
 // @Summary 获取首页单个用户分析展示数据

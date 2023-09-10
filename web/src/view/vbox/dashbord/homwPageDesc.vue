@@ -1,13 +1,110 @@
 <template>
   <div class="page">
 
+
+    <div class="gva-card-box">
+    <div class="gva-card quick-entrance">
+      <h3>近一小时交易实时概况</h3>
+      <el-row>
+        <el-col :span="6">
+          <el-statistic  :value="usersOrderHData.tInCome" >
+            <template #title>
+            <div style="font-size: 14px; align-items: center">最近一小时收入</div>
+            </template>
+          </el-statistic>
+          <div class="statistic-footer">
+          <div class="footer-item">
+            <span>元(RMB) </span>
+            <span :class="hColor">
+              环比 {{ hPercentage}}%
+              
+              <el-icon v-if="hColor > 0">
+                <CaretTop />
+              </el-icon>
+              <el-icon v-else>
+                <CaretBottom />
+              </el-icon>
+              
+            </span>
+            <el-tooltip
+                effect="dark"
+                content="环比是指与前一周期相比较的增长或降低的比例或百分比"
+                placement="top"
+              >
+              <el-icon style="margin-left: 4px" :size="12">
+                  <Warning />
+                </el-icon>
+            </el-tooltip>
+          </div>
+        </div>
+        </el-col>
+        <el-col :span="6">
+          <el-statistic :value="usersOrderHData.newOpenChId">
+            <template #title>
+              <div style="font-size: 14px; display: inline-flex; align-items: center">
+                通道概览
+                <!-- <el-icon style="margin-left: 4px" :size="12">
+                  <Male />
+                </el-icon> -->
+              </div>
+            </template>
+            <template #suffix>/{{ usersOrderHData.openChId }}/{{ usersOrderHData.chIdCnt}}</template>
+          </el-statistic>
+          <div class="statistic-footer">
+          <div class="footer-item">
+            <span>新开启个数/开启总数/通道总数</span>
+            <!-- <span class="green">
+              
+              <el-icon>
+                <CaretTop />
+              </el-icon>
+            </span> -->
+          </div>
+        </div>
+        </el-col>
+        <el-col :span="6">
+          <el-statistic  :value="usersOrderHData.tOrderQuantify" >
+            <template #title>
+            <div style="font-size: 14px; align-items: center">最近一小时订单量</div>
+            </template>
+          </el-statistic>
+          <div class="statistic-footer">
+          <div class="footer-item">
+            <span>单</span>
+            <!-- <span class="green">
+              {{ usersOrderData.tOkRate }} %)
+            </span> -->
+          </div>
+        </div>
+        </el-col>
+        <el-col :span="6">
+          <el-statistic  :value="usersOrderHData.tOkOrderQuantify" >
+            <template #title>
+            <div style="font-size: 14px; align-items: center">最近一小时成单量</div>
+            </template>
+          </el-statistic>
+          <div class="statistic-footer">
+          <div class="footer-item">
+            <span>单</span>
+            <span class="green">
+              (成功率 {{ usersOrderHData.tOkRate }} %)
+            </span>
+          </div>
+        </div>
+        </el-col>
+      </el-row>
+    </div>
+        
+  </div>
+  
+
  
   <div class="gva-card-box">
     <div class="gva-card quick-entrance">
       <h3>当日交易实时概况</h3>
       <el-row>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.tInCome" >
+          <el-statistic  :value="usersOrderData.tInCome" >
             <template #title>
             <div style="font-size: 14px; align-items: center">今日收入</div>
             </template>
@@ -25,7 +122,7 @@
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic :value="usersOrderata.openChId">
+          <el-statistic :value="usersOrderData.openChId">
             <template #title>
               <div style="font-size: 14px; display: inline-flex; align-items: center">
                 通道概览
@@ -34,7 +131,7 @@
                 </el-icon> -->
               </div>
             </template>
-            <template #suffix>/{{ usersOrderata.chIdCnt }}</template>
+            <template #suffix>/{{ usersOrderData.chIdCnt }}</template>
           </el-statistic>
           <div class="statistic-footer">
           <div class="footer-item">
@@ -49,7 +146,7 @@
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.tOrderQuantify" >
+          <el-statistic  :value="usersOrderData.tOrderQuantify" >
             <template #title>
             <div style="font-size: 14px; align-items: center">今日订单量</div>
             </template>
@@ -58,13 +155,13 @@
           <div class="footer-item">
             <span>单</span>
             <!-- <span class="green">
-              {{ usersOrderata.tOkRate }} %)
+              {{ usersOrderData.tOkRate }} %)
             </span> -->
           </div>
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.tOkOrderQuantify" >
+          <el-statistic  :value="usersOrderData.tOkOrderQuantify" >
             <template #title>
             <div style="font-size: 14px; align-items: center">今日成单量</div>
             </template>
@@ -73,7 +170,7 @@
           <div class="footer-item">
             <span>单</span>
             <span class="green">
-              (成功率 {{ usersOrderata.tOkRate }} %)
+              (成功率 {{ usersOrderData.tOkRate }} %)
             </span>
           </div>
         </div>
@@ -88,7 +185,7 @@
       <h3>昨日交易概况</h3>
       <el-row>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.yInCome" >
+          <el-statistic  :value="usersOrderData.yInCome" >
             <template #title>
             <div style="font-size: 14px; align-items: center">昨日收入</div>
             </template>
@@ -106,7 +203,7 @@
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic :value="usersOrderata.openChId">
+          <el-statistic :value="usersOrderData.openChId">
             <template #title>
               <div style="font-size: 14px; display: inline-flex; align-items: center">
                 通道概览
@@ -115,7 +212,7 @@
                 </el-icon> -->
               </div>
             </template>
-            <template #suffix>/{{ usersOrderata.chIdCnt }}</template>
+            <template #suffix>/{{ usersOrderData.chIdCnt }}</template>
           </el-statistic>
           <div class="statistic-footer">
           <div class="footer-item">
@@ -130,7 +227,7 @@
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.yOrderQuantify" >
+          <el-statistic  :value="usersOrderData.yOrderQuantify" >
             <template #title>
             <div style="font-size: 14px; align-items: center">昨日订单量</div>
             </template>
@@ -139,13 +236,13 @@
           <div class="footer-item">
             <span>单</span>
             <!-- <span class="green">
-              {{ usersOrderata.tOkRate }} %)
+              {{ usersOrderData.tOkRate }} %)
             </span> -->
           </div>
         </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic  :value="usersOrderata.yOkOrderQuantify" >
+          <el-statistic  :value="usersOrderData.yOkOrderQuantify" >
             <template #title>
             <div style="font-size: 14px; align-items: center">昨日成单量</div>
             </template>
@@ -154,7 +251,7 @@
           <div class="footer-item">
             <span>单</span>
             <span class="green">
-              (成功率 {{ usersOrderata.yOkRate }} %)
+              (成功率 {{ usersOrderData.yOkRate }} %)
             </span>
           </div>
         </div>
@@ -186,17 +283,14 @@ export default {
 <script setup>
 import { ChatLineRound, Male } from '@element-plus/icons-vue'
 import {
-  getVboxUserPayOrderAnalysis,
+  getSelectUserPayOrderAnalysisH,
   getHomePagePayOrderAnalysis,
   getVboxUserPayOrderAnalysisIncomeCharts,
-  getSelectPayOrderAnalysisQuantifyCharts,
-  getSelectPayOrderAnalysisChannelIncomeCharts,
-  getSelectPayOrderAnalysisIncomeBarCharts
 } from '@/api/vboxPayOrder'
 import { ref,shallowRef,onMounted} from 'vue'
 import * as echarts from 'echarts'
 
-const usersOrderata = ref({
+const usersOrderData = ref({
           username: '',
           balance:0,
           chIdCnt:0,
@@ -211,14 +305,52 @@ const usersOrderata = ref({
           tInCome:0,
         })
 
-const getUsersOrderata = async() => {
+const getUsersOrderData = async() => {
   const table = await getHomePagePayOrderAnalysis()
   if (table.code === 0) {
-    usersOrderata.value = table.data.resultData
-    console.log("usersOrderata= " + JSON.stringify(usersOrderata.value))
+    usersOrderData.value = table.data.resultData
+    console.log("usersOrderData= " + JSON.stringify(usersOrderData.value))
   }
 }
-getUsersOrderata()
+getUsersOrderData()
+
+
+const usersOrderHData = ref({
+          username: '',
+          balance:0,
+          chIdCnt:0,
+          openChId:0,
+          newOpenChId:0,
+          yOrderQuantify:0,
+          yOkOrderQuantify:0,
+          yOkRate:0,
+          yInCome:0,
+          tOrderQuantify:0,
+          tOkOrderQuantify:0,
+          tOkRate:0,
+          tInCome:0,
+        })
+
+const hColor = ref("")
+const hPercentage = ref(0)
+const getUsersOrderHData = async() => {
+  const table = await getSelectUserPayOrderAnalysisH()
+  if (table.code === 0) {
+    usersOrderHData.value = table.data.resultData
+    console.log("usersOrderHData= " + JSON.stringify(usersOrderHData.value))
+    let per = 0
+    if (usersOrderHData.value.yInCome != 0){
+      per = (1.0 * usersOrderHData.value.tInCome - usersOrderHData.value.yInCome / usersOrderHData.value.yInCome * 100 )
+    }
+    hPercentage.value = per
+    if (per > 0){
+      hColor.value = "green"
+    }else{
+      hColor.value = "red"
+    }
+  }
+}
+getUsersOrderHData()
 
 
 const incomeLineChartSeries = ref([])

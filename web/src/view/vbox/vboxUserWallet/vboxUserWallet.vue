@@ -84,7 +84,7 @@
         <el-table-column align="left" label="用户名" prop="username" width="120" />
         <el-table-column align="left" label="充值数" prop="recharge" width="120" />
         <el-table-column align="left" label="费率" prop="tariff" width="120" />
-        <el-table-column align="left" label="划转/分配" prop="remark" width="250"  show-overflow-tooltip="true"/>
+        <el-table-column align="left" label="划转/分配" prop="remark" width="380"  show-overflow-tooltip="true"/>
          <el-table-column align="left" label="创建时间" width="180">
             <template #default="scope">{{ formatDate(scope.row.createTime) }}</template>
          </el-table-column>
