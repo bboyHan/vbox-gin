@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	channelshopRep "github.com/flipped-aurora/gin-vue-admin/server/model/channelshop/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -53,6 +54,17 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 		if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
 			return nil, errors.New("密码错误")
 		}
+		if user.EnableAuth == 1 {
+			var secret string
+			secret, _ = captcha.GetSecret(user.AuthCaptcha)
+			if ok := captcha.ValidateCode(secret, u.AuthCaptcha); !ok {
+				return nil, errors.New("双因子认证码错误")
+			}
+		} else {
+			if u.AuthCaptcha != "666" {
+				return nil, errors.New("双因子认证码错误")
+			}
+		}
 		MenuServiceApp.UserAuthorityDefaultRouter(&user)
 	}
 	return &user, err
@@ -75,7 +87,24 @@ func (userService *UserService) ChangePassword(u *system.SysUser, newPassword st
 	user.Password = utils.BcryptHash(newPassword)
 	err = global.GVA_DB.Save(&user).Error
 	return &user, err
+}
 
+//@function: ResetAuthCaptcha
+//@description: 修改用户密码
+//@param: u *model.SysUser, newPassword string
+//@return: userInter *model.SysUser,err error
+
+func (userService *UserService) ResetAuthCaptcha(u *system.SysUser) (userInter *system.SysUser, err error) {
+	var user system.SysUser
+	if err = global.GVA_DB.Where("id = ?", u.ID).First(&user).Error; err != nil {
+		return nil, err
+	}
+	if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
+		return nil, errors.New("密码错误，不允许重置双因子认证")
+	}
+	user.AuthCaptcha, err = captcha.AuthQrCode(user.Username)
+	err = global.GVA_DB.Save(&user).Error
+	return &user, err
 }
 
 //@author: [piexlmax](https://github.com/piexlmax)

@@ -48,10 +48,10 @@ func (b *BaseApi) Login(c *gin.Context) {
 		global.BlackCache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
 	}
 
-	var oc bool = openCaptcha == 0 || openCaptcha < interfaceToInt(v)
+	var oc = openCaptcha == 0 || openCaptcha < interfaceToInt(v)
 
 	if !oc || store.Verify(l.CaptchaId, l.Captcha, true) {
-		u := &system.SysUser{Username: l.Username, Password: l.Password}
+		u := &system.SysUser{Username: l.Username, Password: l.Password, AuthCaptcha: l.AuthCaptcha}
 		user, err := userService.Login(u)
 		if err != nil {
 			global.GVA_LOG.Error("登陆失败! 用户名不存在或者密码错误!", zap.Error(err))
@@ -201,6 +201,37 @@ func (b *BaseApi) ChangePassword(c *gin.Context) {
 	uid := utils.GetUserID(c)
 	u := &system.SysUser{GVA_MODEL: global.GVA_MODEL{ID: uid}, Password: req.Password}
 	_, err = userService.ChangePassword(u, req.NewPassword)
+	if err != nil {
+		global.GVA_LOG.Error("修改失败!", zap.Error(err))
+		response.FailWithMessage("修改失败，原密码与当前账户不符", c)
+		return
+	}
+	response.OkWithMessage("修改成功", c)
+}
+
+// ResetAuthCaptcha
+// @Tags      SysUser
+// @Summary   重置双因子认证
+// @Security  ApiKeyAuth
+// @Produce  application/json
+// @Param     data  body      systemReq.ResetAuthCaptcha    true  "用户名, 原密码, 新密码"
+// @Success   200   {object}  response.Response{msg=string}  "用户修改密码"
+// @Router    /user/changePassword [post]
+func (b *BaseApi) ResetAuthCaptcha(c *gin.Context) {
+	var req systemReq.ChangeAuthCaptchaReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	err = utils.Verify(req, utils.ResetAuthCaptchaVerify)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	uid := utils.GetUserID(c)
+	u := &system.SysUser{GVA_MODEL: global.GVA_MODEL{ID: uid}, Password: req.Password}
+	_, err = userService.ResetAuthCaptcha(u)
 	if err != nil {
 		global.GVA_LOG.Error("修改失败!", zap.Error(err))
 		response.FailWithMessage("修改失败，原密码与当前账户不符", c)

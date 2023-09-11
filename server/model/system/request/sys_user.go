@@ -17,27 +17,34 @@ type Register struct {
 	Email        string `json:"email" example:"电子邮箱"`
 }
 
-// User login structure
+// Login User login structure
 type Login struct {
-	Username  string `json:"username"`  // 用户名
-	Password  string `json:"password"`  // 密码
-	Captcha   string `json:"captcha"`   // 验证码
-	CaptchaId string `json:"captchaId"` // 验证码ID
+	Username    string `json:"username"`    // 用户名
+	Password    string `json:"password"`    // 密码
+	Captcha     string `json:"captcha"`     // 验证码
+	AuthCaptcha string `json:"authCaptcha"` // 双因子验证码
+	CaptchaId   string `json:"captchaId"`   // 验证码ID
 }
 
-// Modify password structure
+// ChangePasswordReq Modify password structure
 type ChangePasswordReq struct {
 	ID          uint   `json:"-"`           // 从 JWT 中提取 user id，避免越权
 	Password    string `json:"password"`    // 密码
 	NewPassword string `json:"newPassword"` // 新密码
 }
 
-// Modify  user's auth structure
+// ChangeAuthCaptchaReq Modify auth captcha structure
+type ChangeAuthCaptchaReq struct {
+	ID       uint   `json:"-"`        // 从 JWT 中提取 user id，避免越权
+	Password string `json:"password"` // 密码
+}
+
+// SetUserAuth Modify  user's auth structure
 type SetUserAuth struct {
 	AuthorityId uint `json:"authorityId"` // 角色ID
 }
 
-// Modify  user's auth structure
+// SetUserAuthorities Modify  user's auth structure
 type SetUserAuthorities struct {
 	ID           uint
 	AuthorityIds []uint `json:"authorityIds"` // 角色ID

@@ -17,64 +17,45 @@
       </el-form-item >
         <el-form-item label="订单id" prop="order_id">
          <el-input v-model="searchInfo.order_id" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="付方uuid" prop="p_account">
          <el-input v-model="searchInfo.p_account" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="金额" prop="cost">
-            
              <el-input v-model.number="searchInfo.cost" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="uid" prop="uid">
-            
              <el-input v-model.number="searchInfo.uid" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="帐号id" prop="ac_id">
          <el-input v-model="searchInfo.ac_id" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="所属通道" prop="c_channel_id">
          <el-input v-model="searchInfo.c_channel_id" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="平台id" prop="platform_oid">
          <el-input v-model="searchInfo.platform_oid" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="客户ip" prop="pay_ip">
          <el-input v-model="searchInfo.pay_ip" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="区域" prop="pay_region">
          <el-input v-model="searchInfo.pay_region" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="支付链接" prop="resource_url">
          <el-input v-model="searchInfo.resource_url" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="回调地址" prop="notify_url">
          <el-input v-model="searchInfo.notify_url" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="订单状态" prop="order_status">
-            
              <el-input v-model.number="searchInfo.order_status" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="回调状态" prop="callback_status">
-            
              <el-input v-model.number="searchInfo.callback_status" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="取码状态" prop="code_use_status">
-            
              <el-input v-model.number="searchInfo.code_use_status" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>

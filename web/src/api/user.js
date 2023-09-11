@@ -47,6 +47,18 @@ export const changePassword = (data) => {
   })
 }
 
+// @Summary 重置防爆验证码
+// @Produce  application/json
+// @Param data body {username:"string",password:"string",newPassword:"string"}
+// @Router /user/changePassword [post]
+export const resetCaptcha = (data) => {
+  return service({
+    url: '/user/resetAuthCaptcha',
+    method: 'post',
+    data: data
+  })
+}
+
 // @Tags User
 // @Summary 分页获取用户列表
 // @Security ApiKeyAuth

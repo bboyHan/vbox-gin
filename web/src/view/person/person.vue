@@ -28,43 +28,14 @@
             <div class="w-full h-full text-left">
               <ul class="inline-block w-full h-full">
                 <li class="info-list">
-                  <el-icon>
-                    <user />
-                  </el-icon>
-                  {{ userStore.userInfo.nickName }}
+                  <div class="qrcode-generator">
+<!--                    <el-input v-model="url" placeholder="请输入URL"></el-input>-->
+                    <el-button @click="getAuthQRCode">防爆验证码</el-button>
+                    <div class="qrcode-container">
+                      <img :src="qrcodeUrl" alt="QR Code" v-show="showQRCode" />
+                    </div>
+                  </div>
                 </li>
-                <el-tooltip
-                  class="item"
-                  effect="light"
-                  content="vbox"
-                  placement="top"
-                >
-                  <li class="info-list">
-                    <el-icon>
-                      <data-analysis />
-                    </el-icon>
-                    vbox
-                  </li>
-                </el-tooltip>
-                <li class="info-list">
-                  <el-icon>
-                    <video-camera />
-                  </el-icon>
-                  地球
-                </li>
-                <el-tooltip
-                  class="item"
-                  effect="light"
-                  content="GoLang/JavaScript/Vue/Gorm"
-                  placement="top"
-                >
-                  <li class="info-list">
-                    <el-icon>
-                      <medal />
-                    </el-icon>
-                    Go go go
-                  </li>
-                </el-tooltip>
               </ul>
             </div>
           </div>
@@ -75,7 +46,7 @@
           <el-tabs v-model="activeName" @tab-click="handleClick">
             <el-tab-pane label="账号绑定" name="second">
               <ul>
-                <li class="borderd">
+<!--                <li class="borderd">
                   <p class="pb-2.5 text-xl text-gray-600">密保手机</p>
                   <p class="pb-2.5 text-lg text-gray-400">
                     已绑定手机:{{ userStore.userInfo.phone }}
@@ -95,16 +66,19 @@
                     未设置密保问题
                     <a href="javascript:void(0)" class="float-right text-blue-400">去设置</a>
                   </p>
-                </li>
+                </li>-->
                 <li class="borderd pt-2.5">
                   <p class="pb-2.5 text-xl text-gray-600">修改密码</p>
                   <p class="pb-2.5 text-lg text-gray-400">
                     修改个人密码
-                    <a
-                      href="javascript:void(0)"
-                      @click="showPassword = true"
-                      class="float-right text-blue-400"
-                    >修改密码</a>
+                    <a href="javascript:void(0)" @click="showPassword = true" class="float-right text-blue-400">修改密码</a>
+                  </p>
+                </li>
+                <li class="borderd pt-2.5">
+                  <p class="pb-2.5 text-xl text-gray-600">防爆验证码</p>
+                  <p class="pb-2.5 text-lg text-gray-400">
+                    设置防爆验证码
+                    <a href="javascript:void(0)" @click="showAuthCaptcha = true" class="float-right text-blue-400">设置防爆</a>
                   </p>
                 </li>
               </ul>
@@ -113,7 +87,7 @@
         </div>
       </div>
     </div>
-
+    <!-- 修改密码 -->
     <el-dialog
       v-model="showPassword"
       title="修改密码"
@@ -138,15 +112,32 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button
+          <el-button @click="showPassword = false">取 消</el-button>
+          <el-button type="primary" @click="savePassword">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
 
-            @click="showPassword = false"
-          >取 消</el-button>
-          <el-button
-
-            type="primary"
-            @click="savePassword"
-          >确 定</el-button>
+    <!-- 防爆验证码 -->
+    <el-dialog
+        v-model="showAuthCaptcha"
+        title="修改密码"
+        width="360px"
+        @close="clearAuthCaptcha"
+    >
+      <el-form
+          ref="modifyCapForm"
+          :model="capModify"
+          label-width="80px"
+      >
+        <el-form-item :minlength="6" label="登录密码" prop="password">
+          <el-input v-model="capModify.password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showAuthCaptcha = false">取 消</el-button>
+          <el-button type="primary" @click="resetAuthCaptcha">确 定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -165,15 +156,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button
-
-            @click="closeChangePhone"
-          >取消</el-button>
-          <el-button
-            type="primary"
-
-            @click="changePhone"
-          >更改</el-button>
+          <el-button @click="closeChangePhone" >取消</el-button>
+          <el-button type="primary" @click="changePhone" >更改</el-button>
         </span>
       </template>
     </el-dialog>
@@ -192,15 +176,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button
-
-            @click="closeChangeEmail"
-          >取消</el-button>
-          <el-button
-            type="primary"
-
-            @click="changeEmail"
-          >更改</el-button>
+          <el-button @click="closeChangeEmail" >取消</el-button>
+          <el-button type="primary" @click="changeEmail" >更改</el-button>
         </span>
       </template>
     </el-dialog>
@@ -214,11 +191,13 @@ export default {
 </script>
 
 <script setup>
-import { setSelfInfo, changePassword } from '@/api/user.js'
+import QRCode from 'qrcode';
+import {setSelfInfo, changePassword, resetCaptcha, getUserInfo} from '@/api/user.js'
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
 import SelectImage from '@/components/selectImage/selectImage.vue'
+import { User } from "@element-plus/icons-vue";
 
 const activeName = ref('second')
 const rules = reactive({
@@ -248,8 +227,11 @@ const rules = reactive({
 
 const userStore = useUserStore()
 const modifyPwdForm = ref(null)
+const modifyCapForm = ref(null)
 const showPassword = ref(false)
+const showAuthCaptcha = ref(false)
 const pwdModify = ref({})
+const capModify = ref({})
 const nickName = ref('')
 const editFlag = ref(false)
 const savePassword = async() => {
@@ -270,6 +252,23 @@ const savePassword = async() => {
   })
 }
 
+const resetAuthCaptcha = async() => {
+  modifyCapForm.value.validate((valid) => {
+    if (valid) {
+      resetCaptcha({
+        password: capModify.value.password,
+      }).then((res) => {
+        if (res.code === 0) {
+          ElMessage.success('重置防爆验证码成功！')
+        }
+        showAuthCaptcha.value = false
+      })
+    } else {
+      return false
+    }
+  })
+}
+
 const clearPassword = () => {
   pwdModify.value = {
     password: '',
@@ -277,6 +276,13 @@ const clearPassword = () => {
     confirmPassword: '',
   }
   modifyPwdForm.value.clearValidate()
+}
+
+const clearAuthCaptcha = () => {
+  capModify.value = {
+    password: '',
+  }
+  modifyCapForm.value.clearValidate()
 }
 
 watch(() => userStore.userInfo.headerImg, async(val) => {
@@ -385,6 +391,42 @@ const changeEmail = async() => {
   }
 }
 
+
+const url = ref('');
+const qrcodeUrl = ref('');
+const showQRCode = ref(false);
+
+const generateQRCode = () => {
+  if (url.value) {
+    QRCode.toDataURL(url.value)
+        .then((dataUrl) => {
+          qrcodeUrl.value = dataUrl;
+          showQRCode.value = true;
+        })
+        .catch((error) => {
+          console.error('Failed to generate QR code:', error);
+        });
+  }
+};
+
+const getAuthQRCode = async () => {
+  const res = await getUserInfo()
+  if (res.code === 0) {
+    console.log(res.data.userInfo)
+    if (res.data.userInfo.enableAuth === 1){
+      QRCode.toDataURL(res.data.userInfo.authCaptcha)
+          .then((dataUrl) => {
+            qrcodeUrl.value = dataUrl;
+            showQRCode.value = true;
+          })
+          .catch((error) => {
+            console.error('Failed to generate QR code:', error);
+          });
+    } else {
+
+    }
+  }
+};
 </script>
 
 <style lang="scss">
@@ -398,5 +440,13 @@ const changeEmail = async() => {
 .info-list{
   @apply w-full whitespace-nowrap overflow-hidden text-ellipsis py-3 text-lg text-gray-700
 }
+.qrcode-generator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.qrcode-container {
+  margin-top: 20px;
+}
 </style>

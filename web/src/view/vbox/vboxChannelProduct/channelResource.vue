@@ -25,7 +25,8 @@
                   <el-button>批量添加</el-button>
                 </el-col>
                 <el-col :span="12">
-                  <el-button>添加账号</el-button>
+                  <el-button type="primary" icon="plus" @click="openDialog">添加账号</el-button>
+<!--                  <el-button>添加账号</el-button>-->
                 </el-col>
               </el-row>
             </el-card>
@@ -33,8 +34,62 @@
         </el-row>
       </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :title="dialogTitle">
-      <el-form ref="channelProductForm" :model="form" :rules="rules" label-width="80px">
+    <!--  账号添加/修改  -->
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-form-item label="账户备注" prop="acRemark">
+          <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户密码" prop="acPwd">
+              <el-input v-model="formData.acPwd" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="通道id" prop="cid">
+              <el-cascader
+                  v-model="formData.cid"
+                  :options="channelCodeOptions"
+                  :props="channelCodeProps"
+                  @change="handleChange"
+                  style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="token" prop="token">
+          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="笔数限额" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态开关" prop="status">
+          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                     inactive-text="关闭"></el-switch>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -53,6 +108,11 @@ export default {
 </script>
 
 <script setup>
+import {
+  createChannelAccount,
+  updateChannelAccount,
+  queryCAHisRecords,
+} from '@/api/vboxChannelAccount'
 import {
   createVboxChannelProduct,
   deleteVboxChannelProduct,
@@ -81,6 +141,20 @@ const ChannelCodeOption = ref([
 const dialogType = ref('add')
 const dialogTitle = ref('新增通道产品')
 const dialogFormVisible = ref(false)
+const formData = ref({
+  uid: 0,
+  acAccount: '',
+  acPwd: '',
+  acRemark: '',
+  token: '',
+  acId: 0,
+  cid: 0,
+  dailyLimit: 0,
+  totalLimit: 0,
+  countLimit: 0,
+  status: 1,
+  sysStatus: 0,
+})
 
 // 自动化生成的字典（可能为空）以及字段
 const form = ref({
@@ -131,34 +205,64 @@ getTableData()
 
 
 // ============== 表格控制部分结束 ===============
-
-// 删除通道
-const deleteChannel = (row) => {
-  ElMessageBox.confirm('此操作将永久删除该产品, 是否继续?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-      .then(async() => {
-        const res = await deleteVboxChannelProduct({ ID: row.ID , channelCode: row.channelCode})
-        if (res.code === 0) {
-          ElMessage({
-            type: 'success',
-            message: '删除成功!'
-          })
-          if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-          }
-          getTableData()
-        }
-      })
-      .catch(() => {
-        ElMessage({
-          type: 'info',
-          message: '已取消删除'
-        })
-      })
+// 打开弹窗
+const openDialog = () => {
+  type.value = 'create'
+  dialogFormVisible.value = true
 }
+
+// 关闭弹窗
+const closeDialog = () => {
+  dialogFormVisible.value = false
+  dialogTokenFormVisible.value = false
+  dialogQueryFormVisible.value = false
+  formData.value = {
+    uid: 0,
+    acAccount: '',
+    acPwd: '',
+    acRemark: '',
+    token: '',
+    acId: 0,
+    cid: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    countLimit: 0,
+    status: 0,
+    sysStatus: 0,
+  }
+}
+// 弹窗确定
+const enterDialog = async () => {
+  elFormRef.value?.validate(async (valid) => {
+    if (!valid) return
+    formData.value.cid = Number(formData.value.cid)
+    formData.value.status = Number(formData.value.status)
+    let res
+    switch (type.value) {
+      case 'create':
+        res = await createChannelAccount(formData.value)
+        break
+      case 'update':
+        res = await updateChannelAccount(formData.value)
+        break
+      case 'query':
+        res = await queryCAHisRecords(formData.value)
+        break
+      default:
+        res = await createChannelAccount(formData.value)
+        break
+    }
+    if (res.code === 0) {
+      ElMessage({
+        type: 'success',
+        message: '创建/更改成功'
+      })
+      closeDialog()
+      getTableData()
+    }
+  })
+}
+
 // 初始化表单
 const channelProductForm = ref(null)
 const initForm = () => {
@@ -170,110 +274,6 @@ const initForm = () => {
     productName: '',
     parentId: 0
   }
-}
-// 关闭窗口
-const closeDialog = () => {
-  initForm()
-  dialogFormVisible.value = false
-}
-// 确定弹窗
-const enterDialog = () => {
-  channelProductForm.value.validate(async valid => {
-    if (valid) {
-      form.value.channelCode = Number(form.value.channelCode)
-      switch (dialogType.value) {
-        case 'add':
-        {
-          const res = await createVboxChannelProduct(form.value)
-          if (res.code === 0) {
-            ElMessage({
-              type: 'success',
-              message: '添加成功!'
-            })
-            getTableData()
-            closeDialog()
-          }
-        }
-          break
-        case 'edit':
-        {
-          const res = await updateVboxChannelProduct(form.value)
-          if (res.code === 0) {
-            ElMessage({
-              type: 'success',
-              message: '添加成功!'
-            })
-            getTableData()
-            closeDialog()
-          }
-        }
-          break
-      }
-
-      initForm()
-      dialogFormVisible.value = false
-    }
-  })
-}
-
-const setOptions = () => {
-  ChannelCodeOption.value = [
-    {
-      channelCode: 0,
-      productName: '根通道产品'
-    }
-  ]
-  setChannelCodeOptions(tableData.value, ChannelCodeOption.value, false)
-}
-
-const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
-  form.value.channelCode = String(form.value.channelCode)
-  ChannelCodeData &&
-  ChannelCodeData.forEach(item => {
-    if (item.children && item.children.length) {
-      const option = {
-        channelCode: item.channelCode,
-        productName: item.productName,
-        disabled: disabled || item.channelCode === form.value.channelCode,
-        children: []
-      }
-      setChannelCodeOptions(
-          item.children,
-          option.children,
-          disabled || item.channelCode === form.value.channelCode
-      )
-      optionsData.push(option)
-    } else {
-      const option = {
-        channelCode: item.channelCode,
-        productName: item.productName,
-        disabled: disabled || item.channelCode === form.value.channelCode
-      }
-      optionsData.push(option)
-    }
-  })
-}
-
-// 增加通道产品
-const addChannelCode = (parentId) => {
-  initForm()
-  dialogTitle.value = '新增子产品项'
-  dialogType.value = 'add'
-  form.value.parentId = parentId
-  setOptions()
-  dialogFormVisible.value = true
-}
-
-// 编辑产品
-const editChannelCode = (row) => {
-  setOptions()
-  dialogTitle.value = '编辑产品'
-  dialogType.value = 'edit'
-  for (const key in form.value) {
-    form.value[key] = row[key]
-  }
-  setOptions()
-  dialogFormVisible.value = true
 }
 
 </script>

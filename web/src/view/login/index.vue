@@ -26,7 +26,7 @@
               @keyup.enter="submitForm"
             >
               <el-form-item prop="username" class="mb-6">
-                <el-input v-model="loginFormData.username" size="large" placeholder="请输入用户名" suffix-icon="user" />
+                <el-input v-model="loginFormData.username" size="large" placeholder="用户名" suffix-icon="user" />
               </el-form-item>
               <el-form-item prop="password" class="mb-6">
                 <el-input
@@ -34,16 +34,19 @@
                   show-password
                   size="large"
                   type="password"
-                  placeholder="请输入密码"
+                  placeholder="密码"
                 />
               </el-form-item>
               <el-form-item v-if="loginFormData.openCaptcha" prop="captcha" class="mb-6">
                 <div class="flex w-full justify-between">
-                  <el-input v-model="loginFormData.captcha" placeholder="请输入验证码" size="large" class="flex-1 mr-5" />
+                  <el-input v-model="loginFormData.captcha" placeholder="验证码" size="large" class="flex-1 mr-5" />
                   <div class="w-1/3 h-11 bg-[#c3d4f2] rounded">
-                    <img v-if="picPath" class="w-full h-full" :src="picPath" alt="请输入验证码" @click="loginVerify()">
+                    <img v-if="picPath" class="w-full h-full" :src="picPath" alt="验证码" @click="loginVerify()">
                   </div>
                 </div>
+              </el-form-item>
+              <el-form-item prop="authCaptcha" class="mb-6">
+                <el-input v-model="loginFormData.authCaptcha" size="large" placeholder="防爆验证码" />
               </el-form-item>
               <el-form-item class="mb-6">
                 <el-button class="shadow shadow-blue-600 h-11 w-full" type="primary" size="large" @click="submitForm">登 录</el-button>
@@ -141,6 +144,7 @@ const picPath = ref('')
 const loginFormData = reactive({
   username: 'admin',
   password: '123456',
+  authCaptcha: '',
   captcha: '',
   captchaId: '',
   openCaptcha: false,
