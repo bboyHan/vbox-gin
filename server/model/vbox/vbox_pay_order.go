@@ -11,11 +11,11 @@ type VboxPayOrder struct {
 	global.GVA_MODEL
 	OrderId        string     `json:"order_id" form:"order_id" gorm:"column:order_id;comment:默认菜单;size:50;"`
 	PAccount       string     `json:"p_account" form:"p_account" gorm:"column:p_account;comment:角色ID;size:50;"`
-	Cost           *int       `json:"cost" form:"cost" gorm:"column:cost;comment:角色名;"`
-	Uid            *int       `json:"uid" form:"uid" gorm:"column:uid;comment:父角色ID;"`
-	AcId           string     `json:"ac_id" form:"ac_id" gorm:"column:ac_id;comment:附加参数;size:50;"`
-	CChannelId     string     `json:"c_channel_id" form:"c_channel_id" gorm:"column:c_channel_id;comment:通道方式，0-原生、1-引导、2-预产;size:50;"`
-	PlatformOid    string     `json:"platform_oid" form:"platform_oid" gorm:"column:platform_oid;comment:支付方式，weixin、alipay等;size:500;"`
+	Cost           *int       `json:"cost" form:"cost" gorm:"column:cost;comment:金额;"`
+	Uid            *int       `json:"uid" form:"uid" gorm:"column:uid;comment:用户ID;"`
+	AcId           string     `json:"ac_id" form:"ac_id" gorm:"column:ac_id;comment:帐号id;size:50;"`
+	CChannelId     string     `json:"c_channel_id" form:"c_channel_id" gorm:"column:c_channel_id;comment:通道;size:50;"`
+	PlatformOid    string     `json:"platform_oid" form:"platform_oid" gorm:"column:platform_oid;comment:平台id;size:500;"`
 	PayIp          string     `json:"pay_ip" form:"pay_ip" gorm:"column:pay_ip;comment:客户ip;size:50;"`
 	PayRegion      string     `json:"pay_region" form:"pay_region" gorm:"column:pay_region;comment:区域;size:50;"`
 	ResourceUrl    string     `json:"resource_url" form:"resource_url" gorm:"column:resource_url;comment:支付链接;type:text;"`

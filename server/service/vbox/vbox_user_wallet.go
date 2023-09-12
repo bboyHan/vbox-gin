@@ -97,7 +97,6 @@ func (vuwService *VboxUserWalletService) GetVboxUserWalletInfoList(info vboxReq.
 }
 
 func (vuwService *VboxUserWalletService) GetVboxUserWalletAvailablePoints(uid uint) (rechargeData int, err error) {
-
 	queryA := `
         SELECT coalesce(sum(recharge),0) as recharge
 		FROM vbox_user_wallet

@@ -10,4 +10,6 @@ type ServiceGroup struct {
 	ChannelProductService
 	ChannelAccountService
 	VboxUserWalletService
+	VboxBdaChIndexDService
+	VboxBdaChaccIndexDService
 }

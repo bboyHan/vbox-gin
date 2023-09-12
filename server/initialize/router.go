@@ -87,6 +87,8 @@ func Routers() *gin.Engine {
 		vboxRouter.InitVboxChannelProductRouter(PrivateGroup)
 		vboxRouter.InitChannelAccountRouter(PrivateGroup)
 		vboxRouter.InitVboxUserWalletRouter(PrivateGroup)
+		vboxRouter.InitVboxBdaChIndexDRouter(PrivateGroup)
+		vboxRouter.InitVboxBdaChaccIndexDRouter(PrivateGroup)
 	}
 	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
 	global.GVA_LOG.Info("router register success")

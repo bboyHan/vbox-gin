@@ -10,4 +10,6 @@ type RouterGroup struct {
 	VboxPayOrderRouter
 	ChannelAccountRouter
 	VboxUserWalletRouter
+	VboxBdaChIndexDRouter
+	VboxBdaChaccIndexDRouter
 }

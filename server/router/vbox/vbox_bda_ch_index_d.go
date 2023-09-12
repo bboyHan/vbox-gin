@@ -13,15 +13,15 @@ type VboxBdaChIndexDRouter struct {
 func (s *VboxBdaChIndexDRouter) InitVboxBdaChIndexDRouter(Router *gin.RouterGroup) {
 	bdaChDRouter := Router.Group("bdaChD").Use(middleware.OperationRecord())
 	bdaChDRouterWithoutRecord := Router.Group("bdaChD")
-	var bdaChDApi = v1.ApiGroupApp.VboxApiGroup.VboxBdaChIndexDApi
+	var bdaChDApi = v1.ApiGroupApp.Vbox.VboxBdaChIndexDApi
 	{
-		bdaChDRouter.POST("createVboxBdaChIndexD", bdaChDApi.CreateVboxBdaChIndexD)   // 新建VboxBdaChIndexD
-		bdaChDRouter.DELETE("deleteVboxBdaChIndexD", bdaChDApi.DeleteVboxBdaChIndexD) // 删除VboxBdaChIndexD
+		bdaChDRouter.POST("createVboxBdaChIndexD", bdaChDApi.CreateVboxBdaChIndexD)             // 新建VboxBdaChIndexD
+		bdaChDRouter.DELETE("deleteVboxBdaChIndexD", bdaChDApi.DeleteVboxBdaChIndexD)           // 删除VboxBdaChIndexD
 		bdaChDRouter.DELETE("deleteVboxBdaChIndexDByIds", bdaChDApi.DeleteVboxBdaChIndexDByIds) // 批量删除VboxBdaChIndexD
-		bdaChDRouter.PUT("updateVboxBdaChIndexD", bdaChDApi.UpdateVboxBdaChIndexD)    // 更新VboxBdaChIndexD
+		bdaChDRouter.PUT("updateVboxBdaChIndexD", bdaChDApi.UpdateVboxBdaChIndexD)              // 更新VboxBdaChIndexD
 	}
 	{
-		bdaChDRouterWithoutRecord.GET("findVboxBdaChIndexD", bdaChDApi.FindVboxBdaChIndexD)        // 根据ID获取VboxBdaChIndexD
-		bdaChDRouterWithoutRecord.GET("getVboxBdaChIndexDList", bdaChDApi.GetVboxBdaChIndexDList)  // 获取VboxBdaChIndexD列表
+		bdaChDRouterWithoutRecord.GET("findVboxBdaChIndexD", bdaChDApi.FindVboxBdaChIndexD)       // 根据ID获取VboxBdaChIndexD
+		bdaChDRouterWithoutRecord.GET("getVboxBdaChIndexDList", bdaChDApi.GetVboxBdaChIndexDList) // 获取VboxBdaChIndexD列表
 	}
 }

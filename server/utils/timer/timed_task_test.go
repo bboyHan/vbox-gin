@@ -28,7 +28,7 @@ func TestNewTimerTask(t *testing.T) {
 	_tm := tm.(*Task)
 
 	{
-		_, err := tm.AddTaskByFunc("func", "@every 2s", mockFunc)
+		_, err := tm.AddTaskByFunc("func", "@every 5s", mockFunc)
 		assert.Nil(t, err)
 		_, ok := _tm.TaskList["func"]
 		if !ok {
@@ -37,7 +37,7 @@ func TestNewTimerTask(t *testing.T) {
 	}
 
 	{
-		_, err := tm.AddTaskByJob("job", "@every 2s", job)
+		_, err := tm.AddTaskByJob("job", "@every 5s", job)
 		assert.Nil(t, err)
 		_, ok := _tm.TaskList["job"]
 		if !ok {

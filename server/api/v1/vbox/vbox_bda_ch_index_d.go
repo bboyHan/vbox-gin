@@ -2,21 +2,17 @@ package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
-    vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-    "github.com/flipped-aurora/gin-vue-admin/server/service"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
-    "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type VboxBdaChIndexDApi struct {
 }
-
-var bdaChDService = service.ServiceGroupApp.VboxServiceGroup.VboxBdaChIndexDService
-
 
 // CreateVboxBdaChIndexD 创建VboxBdaChIndexD
 // @Tags VboxBdaChIndexD
@@ -34,16 +30,16 @@ func (bdaChDApi *VboxBdaChIndexDApi) CreateVboxBdaChIndexD(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    bdaChD.CreatedBy = utils.GetUserID(c)
-    verify := utils.Rules{
-        "Dt":{utils.NotEmpty()},
-    }
+	bdaChD.CreatedBy = utils.GetUserID(c)
+	verify := utils.Rules{
+		"Dt": {utils.NotEmpty()},
+	}
 	if err := utils.Verify(bdaChD, verify); err != nil {
-    		response.FailWithMessage(err.Error(), c)
-    		return
-    	}
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := bdaChDService.CreateVboxBdaChIndexD(&bdaChD); err != nil {
-        global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
 		response.OkWithMessage("创建成功", c)
@@ -66,9 +62,9 @@ func (bdaChDApi *VboxBdaChIndexDApi) DeleteVboxBdaChIndexD(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    bdaChD.DeletedBy = utils.GetUserID(c)
+	bdaChD.DeletedBy = utils.GetUserID(c)
 	if err := bdaChDService.DeleteVboxBdaChIndexD(bdaChD); err != nil {
-        global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
 		response.OkWithMessage("删除成功", c)
@@ -86,14 +82,14 @@ func (bdaChDApi *VboxBdaChIndexDApi) DeleteVboxBdaChIndexD(c *gin.Context) {
 // @Router /bdaChD/deleteVboxBdaChIndexDByIds [delete]
 func (bdaChDApi *VboxBdaChIndexDApi) DeleteVboxBdaChIndexDByIds(c *gin.Context) {
 	var IDS request.IdsReq
-    err := c.ShouldBindJSON(&IDS)
+	err := c.ShouldBindJSON(&IDS)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    deletedBy := utils.GetUserID(c)
-	if err := bdaChDService.DeleteVboxBdaChIndexDByIds(IDS,deletedBy); err != nil {
-        global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
+	deletedBy := utils.GetUserID(c)
+	if err := bdaChDService.DeleteVboxBdaChIndexDByIds(IDS, deletedBy); err != nil {
+		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
 		response.OkWithMessage("批量删除成功", c)
@@ -116,16 +112,16 @@ func (bdaChDApi *VboxBdaChIndexDApi) UpdateVboxBdaChIndexD(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    bdaChD.UpdatedBy = utils.GetUserID(c)
-      verify := utils.Rules{
-          "Dt":{utils.NotEmpty()},
-      }
-    if err := utils.Verify(bdaChD, verify); err != nil {
-      	response.FailWithMessage(err.Error(), c)
-      	return
-     }
+	bdaChD.UpdatedBy = utils.GetUserID(c)
+	verify := utils.Rules{
+		"Dt": {utils.NotEmpty()},
+	}
+	if err := utils.Verify(bdaChD, verify); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := bdaChDService.UpdateVboxBdaChIndexD(bdaChD); err != nil {
-        global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
 		response.OkWithMessage("更新成功", c)
@@ -149,7 +145,7 @@ func (bdaChDApi *VboxBdaChIndexDApi) FindVboxBdaChIndexD(c *gin.Context) {
 		return
 	}
 	if rebdaChD, err := bdaChDService.GetVboxBdaChIndexD(bdaChD.ID); err != nil {
-        global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
 		response.OkWithData(gin.H{"rebdaChD": rebdaChD}, c)
@@ -173,14 +169,14 @@ func (bdaChDApi *VboxBdaChIndexDApi) GetVboxBdaChIndexDList(c *gin.Context) {
 		return
 	}
 	if list, total, err := bdaChDService.GetVboxBdaChIndexDInfoList(pageInfo); err != nil {
-	    global.GVA_LOG.Error("获取失败!", zap.Error(err))
-        response.FailWithMessage("获取失败", c)
-    } else {
-        response.OkWithDetailed(response.PageResult{
-            List:     list,
-            Total:    total,
-            Page:     pageInfo.Page,
-            PageSize: pageInfo.PageSize,
-        }, "获取成功", c)
-    }
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
 }
