@@ -168,7 +168,16 @@ func (bdaChDApi *VboxBdaChIndexDApi) GetVboxBdaChIndexDList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := bdaChDService.GetVboxBdaChIndexDInfoList(pageInfo); err != nil {
+	userId := utils.GetUserID(c)
+	userList, tot, err := utils.GetOwnerUserIdsList(userId)
+	if err != nil || tot == 0 {
+		return
+	}
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if list, total, err := bdaChDService.GetVboxBdaChIndexDInfoList(pageInfo, idList); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

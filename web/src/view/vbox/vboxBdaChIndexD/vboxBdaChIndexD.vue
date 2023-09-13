@@ -1,95 +1,49 @@
 <template>
-  <div>
-    <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
-      <el-form-item label="创建日期" prop="createdAt">
+  <div class="gva-search-box">
+    <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
+      <el-form-item label="创建日期" prop="dt">
       <template #label>
         <span>
-          创建日期
-          <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
+           选择日期
+          <!-- <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
             <el-icon><QuestionFilled /></el-icon>
-          </el-tooltip>
+          </el-tooltip> -->
         </span>
       </template>
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始日期" :disabled-date="time=> searchInfo.endCreatedAt ? time.getTime() > searchInfo.endCreatedAt.getTime() : false"></el-date-picker>
-       —
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束日期" :disabled-date="time=> searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker>
+      <el-date-picker  v-model="searchInfo.startCreatedAt" type="date" format="YYYY-MM-DD" placeholder="日期" :disabled-date="time=> searchInfo.endCreatedAt ? time.getTime() > searchInfo.endCreatedAt.getTime() : false"></el-date-picker>
+       <!-- — -->
+      <!-- <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束日期" :disabled-date="time=> searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker> -->
       </el-form-item>
-        <el-form-item label="uid" prop="uid">
-            
-             <el-input v-model.number="searchInfo.uid" placeholder="搜索条件" />
 
-        </el-form-item>
-        <el-form-item label="用户名" prop="username">
-         <el-input v-model="searchInfo.username" placeholder="搜索条件" />
-
-        </el-form-item>
-        <el-form-item label="通道code" prop="channelCode">
-            
-             <el-input v-model.number="searchInfo.channelCode" placeholder="搜索条件" />
-
-        </el-form-item>
-        <el-form-item label="通道id" prop="productId">
-            
-             <el-input v-model.number="searchInfo.productId" placeholder="搜索条件" />
-
-        </el-form-item>
-        <el-form-item label="通道名称" prop="productName">
-         <el-input v-model="searchInfo.productName" placeholder="搜索条件" />
-
-        </el-form-item>
-        <el-form-item label="时间yyyy-MM-dd" prop="dt">
-         <el-input v-model="searchInfo.dt" placeholder="搜索条件" />
-
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="gva-table-box">
-        <div class="gva-btn-list">
-            <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-            <el-popover v-model:visible="deleteVisible" placement="top" width="160">
-            <p>确定要删除吗？</p>
-            <div style="text-align: right; margin-top: 8px;">
-                <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-                <el-button type="primary" @click="onDelete">确定</el-button>
-            </div>
-            <template #reference>
-                <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
-            </template>
-            </el-popover>
-        </div>
+    </el-form>
+  </div>
+     <div class="gva-table-box">
+        
         <el-table
-        ref="multipleTable"
         style="width: 100%"
         tooltip-effect="dark"
         :data="tableData"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
+        border
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="日期" width="180">
+        <!-- <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="uid" prop="uid" width="120" />
+        </el-table-column> -->
+
+        <el-table-column align="left" label="日期" prop="dt" width="120" />
+        <!-- <el-table-column align="left" label="uid" prop="uid" width="120" /> -->
         <el-table-column align="left" label="用户名" prop="username" width="120" />
+        <!-- <el-table-column align="left" label="付方账户名" prop="p_account" width="120" /> -->
         <el-table-column align="left" label="通道code" prop="channelCode" width="120" />
-        <el-table-column align="left" label="通道id" prop="productId" width="120" />
+        <!-- <el-table-column align="left" label="通道id" prop="productId" width="120" /> -->
         <el-table-column align="left" label="通道名称" prop="productName" width="120" />
         <el-table-column align="left" label="订单数量" prop="orderQuantify" width="120" />
         <el-table-column align="left" label="订单成交数量" prop="okOrderQuantify" width="120" />
-        <el-table-column align="left" label="成交率" prop="ratio" width="120" />
-        <el-table-column align="left" label="成交金额" prop="income" width="120" />
-        <el-table-column align="left" label="时间yyyy-MM-dd" prop="dt" width="120" />
-        <el-table-column align="left" label="操作">
-            <template #default="scope">
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateVboxBdaChIndexDFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-            </template>
+        <el-table-column align="left" label="成交率" prop="ratio" width="120" >
+          <template #default="scope">{{ scope.row.ratio }} %</template>
         </el-table-column>
+        <el-table-column align="left" label="成交金额" prop="income" width="120" />
+     
         </el-table>
         <div class="gva-pagination">
             <el-pagination
@@ -103,75 +57,33 @@
             />
         </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <el-form-item label="uid:"  prop="uid" >
-          <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="用户名:"  prop="username" >
-          <el-input v-model="formData.username" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="通道code:"  prop="channelCode" >
-          <el-input v-model.number="formData.channelCode" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="通道id:"  prop="productId" >
-          <el-input v-model.number="formData.productId" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="通道名称:"  prop="productName" >
-          <el-input v-model="formData.productName" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="订单数量:"  prop="orderQuantify" >
-          <el-input v-model.number="formData.orderQuantify" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="订单成交数量:"  prop="okOrderQuantify" >
-          <el-input v-model.number="formData.okOrderQuantify" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="成交率:"  prop="ratio" >
-          <el-input-number v-model="formData.ratio"  style="width:100%" :precision="2" :clearable="true"  />
-        </el-form-item>
-        <el-form-item label="成交金额:"  prop="income" >
-          <el-input v-model.number="formData.income" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="时间yyyy-MM-dd:"  prop="dt" >
-          <el-input v-model="formData.dt" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
-          <el-button type="primary" @click="enterDialog">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>
-  </div>
-</template>
 
-<script>
-export default {
-  name: 'VboxBdaChIndexD'
-}
-</script>
+</template>
 
 <script setup>
 import {
-  createVboxBdaChIndexD,
-  deleteVboxBdaChIndexD,
-  deleteVboxBdaChIndexDByIds,
-  updateVboxBdaChIndexD,
+  findVboxBdaChaccIndexD,
+  getVboxBdaChaccIndexDList
+} from '@/api/vboxBdaChaccIndexD'
+import {
   findVboxBdaChIndexD,
   getVboxBdaChIndexDList
 } from '@/api/vboxBdaChIndexD'
-
-// 全量引入格式化工具 请按需保留
+import { reactive, computed,ref } from 'vue';
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
 
-// 自动化生成的字典（可能为空）以及字段
-const formData = ref({
+const page = ref(1)
+const total = ref(0)
+const pageSize = ref(10)
+const searchInfo = ref({})
+const tableData = ref([])
+
+const totalData = ref({
         uid: 0,
         username: '',
-        channelCode: 0,
+        p_account: '',
+        // channelCode: 0,
         productId: 0,
         productName: '',
         orderQuantify: 0,
@@ -180,6 +92,38 @@ const formData = ref({
         income: 0,
         dt: '',
         })
+// const tableData = reactive([
+//   { name: 'John', age: 25, score: 80 },
+//   { name: 'Alice', age: 28, score: 90 },
+//   { name: 'Tom', age: 22, score: 95 },
+//   { name: 'Tom2', age: 22, score: 95 },
+//   { name: 'Tom3', age: 13, score: 95 },
+//   // 更多数据行...
+// ]);
+const columns = reactive([
+  { label: '日期', prop: 'dt' },
+  { label: '用户', prop: 'username' },
+  { label: '通道名', prop: 'productName' },
+  { label: '订单量', prop: 'orderQuantify' },
+  { label: '成交单量', prop: 'okOrderQuantify' },
+  { label: '成交率', prop: 'ratio' },
+  { label: '成交金额', prop: 'income' },
+]);
+
+// 计算总和行的数据
+// const totalRow = computed(() => {
+//   const total = { name: 'Total' };
+//   for (let i = 0; i < columns.length; i++) {
+//     const column = columns[i];
+//     let sum = 0;
+//     for (let j = 0; j < tableData.length; j++) {
+//       sum += tableData[j][column.prop];
+//     }
+//     total[column.prop] = sum;
+//   }
+//   return [total];
+// });
+
 
 // 验证规则
 const rule = reactive({
@@ -215,13 +159,6 @@ const searchRule = reactive({
 const elFormRef = ref()
 const elSearchFormRef = ref()
 
-// =========== 表格控制部分 ===========
-const page = ref(1)
-const total = ref(0)
-const pageSize = ref(10)
-const tableData = ref([])
-const searchInfo = ref({})
-
 // 重置
 const onReset = () => {
   searchInfo.value = {}
@@ -249,163 +186,52 @@ const handleCurrentChange = (val) => {
   page.value = val
   getTableData()
 }
-
-// 查询
 const getTableData = async() => {
   const table = await getVboxBdaChIndexDList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
+    console.log(JSON.stringify(table.data.list))
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
+    let sumOrderQuantify = 0
+    let sumOkOrderQuantify = 0
+    let sumIncome = 0
+    let ratio = 0
+    let cnt = 0
+    tableData.value.forEach(item => {
+      cnt ++
+      sumOkOrderQuantify += item.okOrderQuantify
+      sumOrderQuantify += item.orderQuantify
+      sumIncome += item.income
+      ratio +=item.ratio
+    })
+    totalData.value.orderQuantify = sumOrderQuantify
+    totalData.value.okOrderQuantify = sumOkOrderQuantify
+    totalData.value.income = sumIncome
+    totalData.value.ratio = ratio / cnt
+    totalData.value.productName = "合计"
+
+    tableData.value.push(totalData.value)
+
+
   }
 }
-
 getTableData()
 
-// ============== 表格控制部分结束 ===============
-
-// 获取需要的字典 可能为空 按需保留
-const setOptions = async () =>{
-}
-
-// 获取需要的字典 可能为空 按需保留
-setOptions()
-
-
-// 多选数据
-const multipleSelection = ref([])
-// 多选
-const handleSelectionChange = (val) => {
-    multipleSelection.value = val
-}
-
-// 删除行
-const deleteRow = (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
-            deleteVboxBdaChIndexDFunc(row)
-        })
-    }
-
-
-// 批量删除控制标记
-const deleteVisible = ref(false)
-
-// 多选删除
-const onDelete = async() => {
-      const ids = []
-      if (multipleSelection.value.length === 0) {
-        ElMessage({
-          type: 'warning',
-          message: '请选择要删除的数据'
-        })
-        return
-      }
-      multipleSelection.value &&
-        multipleSelection.value.map(item => {
-          ids.push(item.ID)
-        })
-      const res = await deleteVboxBdaChIndexDByIds({ ids })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === ids.length && page.value > 1) {
-          page.value--
-        }
-        deleteVisible.value = false
-        getTableData()
-      }
-    }
-
-// 行为控制标记（弹窗内部需要增还是改）
-const type = ref('')
-
-// 更新行
-const updateVboxBdaChIndexDFunc = async(row) => {
-    const res = await findVboxBdaChIndexD({ ID: row.ID })
-    type.value = 'update'
-    if (res.code === 0) {
-        formData.value = res.data.rebdaChD
-        dialogFormVisible.value = true
-    }
-}
-
-
-// 删除行
-const deleteVboxBdaChIndexDFunc = async (row) => {
-    const res = await deleteVboxBdaChIndexD({ ID: row.ID })
-    if (res.code === 0) {
-        ElMessage({
-                type: 'success',
-                message: '删除成功'
-            })
-            if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-        }
-        getTableData()
-    }
-}
-
-// 弹窗控制标记
-const dialogFormVisible = ref(false)
-
-// 打开弹窗
-const openDialog = () => {
-    type.value = 'create'
-    dialogFormVisible.value = true
-}
-
-// 关闭弹窗
-const closeDialog = () => {
-    dialogFormVisible.value = false
-    formData.value = {
-        uid: 0,
-        username: '',
-        channelCode: 0,
-        productId: 0,
-        productName: '',
-        orderQuantify: 0,
-        okOrderQuantify: 0,
-        ratio: 0,
-        income: 0,
-        dt: '',
-        }
-}
-// 弹窗确定
-const enterDialog = async () => {
-     elFormRef.value?.validate( async (valid) => {
-             if (!valid) return
-              let res
-              switch (type.value) {
-                case 'create':
-                  res = await createVboxBdaChIndexD(formData.value)
-                  break
-                case 'update':
-                  res = await updateVboxBdaChIndexD(formData.value)
-                  break
-                default:
-                  res = await createVboxBdaChIndexD(formData.value)
-                  break
-              }
-              if (res.code === 0) {
-                ElMessage({
-                  type: 'success',
-                  message: '创建/更改成功'
-                })
-                closeDialog()
-                getTableData()
-              }
+const getTableTotalData = async() => {
+     let sumOrderQuantify = 0
+     let sumOkOrderQuantify = 0
+     let sumIncome = 0
+      tableData.value.forEach(item => {
+        sumOkOrderQuantify += item.okOrderQuantify
+        sumOrderQuantify += item.orderQuantify
+        sumIncome += item.income
       })
+      totalData.value.orderQuantify = sumOrderQuantify
+      totalData.value.okOrderQuantify = sumOkOrderQuantify
+      totalData.value.income = sumIncome
+      totalData.value.productName = "合计"
+
 }
-
 </script>
-
-<style>
-
-</style>

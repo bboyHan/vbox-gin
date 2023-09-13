@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/robfig/cron/v3"
+	"time"
 )
 
 func Timer() {
@@ -32,26 +33,29 @@ func Timer() {
 	}
 }
 
-var vuwService = service.ServiceGroupApp.VboxServiceGroup.VboxUserWalletService
+var bdaChDService = service.ServiceGroupApp.VboxServiceGroup.VboxBdaChIndexDService
+var bdaChaccDService = service.ServiceGroupApp.VboxServiceGroup.VboxBdaChaccIndexDService
 
 func MockFunc() {
 	//time.Sleep(time.Second)
-	//fmt.Println("1s...")
+	fmt.Println("开始调度...")
+	fmt.Println(time.Now())
 	//log.Printf("1s...")
 	//func() {
 	// 在匿名函数中调用带参数的函数
-	vuwService.GetVboxUserWalletAvailablePoints(3)
+	bdaChDService.CronVboxBdaChIndexD()
+	bdaChaccDService.CronVboxBdaChaccIndexD()
 	//}
 }
 
 func CronTableAnalysisTimer() {
 	if global.GVA_CONFIG.Timer.Start {
-		//fmt.Println(global.GVA_CONFIG.Timer.Detail)
+
 		var option []cron.Option
 		if global.GVA_CONFIG.Timer.WithSeconds {
 			option = append(option, cron.WithSeconds())
 		}
-		_, err := global.GVA_Timer.AddTaskByFunc("payOrderAnalysisTask", "@every 10s", func() {
+		_, err := global.GVA_Timer.AddTaskByFunc("payOrderAnalysisTask", "10 0 * * *", func() {
 			MockFunc()
 		}, option...)
 		if err != nil {
