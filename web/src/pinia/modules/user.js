@@ -1,4 +1,5 @@
-import { login, getUserInfo, setSelfInfo } from '@/api/user'
+import { login, getUserInfo, setSelfInfo, getOwnerUserList } from '@/api/user'
+import { getVboxChannelProductAll } from '@/api/vboxChannelProduct'
 import { jsonInBlacklist } from '@/api/jwt'
 import router from '@/router/index'
 import { ElLoading, ElMessage } from 'element-plus'
@@ -8,6 +9,54 @@ import { useRouterStore } from './router'
 
 export const useUserStore = defineStore('user', () => {
   const loadingInstance = ref(null)
+  const usersItem = ref([{
+    ID: '',
+    userName: '',
+  }])
+
+  //channel product list
+  const channelProductList = ref([{
+    channelCode: '',
+    productName: '',
+    productId: '',
+  }])
+
+  const chanCodeMap = ref(new Map())
+  const ownerUsersMap = ref(new Map())
+
+  const setChannelProductList = (val) => {
+    channelProductList.value = val
+    for (const item of channelProductList.value) {
+      chanCodeMap.value.set(item.channelCode + '', item.productName)
+    }
+    console.log(channelProductList.value)
+    console.log(chanCodeMap.value)
+  }
+
+  /* 获取通道产品信息*/
+  const GetChannelProductList = async() => {
+    const res = await getVboxChannelProductAll()
+    if (res.code === 0) {
+      // console.log("---xxx---")
+      // console.log(res.data)
+      setChannelProductList(res.data.list)
+    }
+    return res
+  }
+
+  const LoadAllUser = async ()  => {
+
+    const res = await getOwnerUserList({ page: 1, pageSize: 9999 })
+    console.log('== res ==>' + JSON.stringify(res))
+    if (res.code === 0) {
+      // console.log('== res.data.marks==>' + JSON.stringify(res.data.list))
+      usersItem.value = res.data.list
+      for (const item of usersItem.value) {
+        ownerUsersMap.value.set(item.ID + '', item.userName + '')
+      }
+    }
+    return usersItem.value
+  }
 
   const userInfo = ref({
     uuid: '',
@@ -146,9 +195,14 @@ export const useUserStore = defineStore('user', () => {
   return {
     userInfo,
     token,
+    channelProductList,
+    chanCodeMap,
+    ownerUsersMap,
     NeedInit,
     ResetUserInfo,
     GetUserInfo,
+    LoadAllUser,
+    GetChannelProductList,
     LoginIn,
     LoginOut,
     changeSideMode,

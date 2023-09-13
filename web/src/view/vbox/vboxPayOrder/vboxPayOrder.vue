@@ -78,51 +78,108 @@
             </el-popover>
         </div>
         <el-table
-        ref="multipleTable"
-        style="width: 100%"
-        tooltip-effect="dark"
-        :data="tableData"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
+          ref="multipleTable"
+          style="width: 100%"
+          tooltip-effect="dark"
+          :data="tableData"
+          row-key="ID"
+          border
+          @selection-change="handleSelectionChange"
         >
-        <el-table-column type="selection" width="55" />
-        <!-- <el-table-column align="left" label="日期" width="180">
-            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column> -->
-        <el-table-column align="left" label="订单id" prop="order_id" width="120"  show-overflow-tooltip="true"/>
-        <el-table-column align="left" label="付方uuid" prop="p_account" width="120"  show-overflow-tooltip="true"/>
-        <el-table-column align="left" label="金额" prop="cost" width="80" />
-        <el-table-column align="left" label="uid" prop="uid" width="50" />
-        <el-table-column align="left" label="帐号id" prop="ac_id" width="120"  show-overflow-tooltip="true"/>
-        <el-table-column align="left" label="所属通道" prop="c_channel_id" width="120" />
-        <el-table-column align="left" label="平台id" prop="platform_oid" width="120"  show-overflow-tooltip="true"/>
-        <el-table-column align="left" label="客户ip" prop="pay_ip" width="150" />
-        <el-table-column align="left" label="区域" prop="pay_region" width="150"  show-overflow-tooltip="true"/>
-        <el-table-column label="支付链接" prop="resource_url" width="200" show-overflow-tooltip="true">
-          <template #default="{row}">
-            <div class="table-cell limit-height">{{row.resource_url}}</div>
-          </template>
-        </el-table-column>
-                      
-        <el-table-column align="left" label="回调地址" prop="notify_url" width="120"  show-overflow-tooltip="true"/>
-        <el-table-column align="left" label="订单状态" prop="order_status" width="80" />
-        <el-table-column align="left" label="回调状态" prop="callback_status" width="80" />
-        <el-table-column align="left" label="取码状态" prop="code_use_status" width="80" />
-         <el-table-column align="left" label="创建时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.create_time) }}</template>
-         </el-table-column>
-         <el-table-column align="left" label="异步执行时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.async_time) }}</template>
-         </el-table-column>
-         <el-table-column align="left" label="回调时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.call_time) }}</template>
-         </el-table-column>
-        <!-- <el-table-column align="left" label="操作">
+          <el-table-column type="selection" width="55" />
+          <!-- <el-table-column align="left" label="日期" width="180">
+              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          </el-table-column> -->
+          <el-table-column align="left" label="归属用户" prop="uid" width="240">
             <template #default="scope">
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateVboxPayOrderFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+              <el-row>
+                <el-col :span="24">
+                  <el-text tag="b">付方ID: </el-text>
+                  <el-text>{{ scope.row.p_account }}</el-text>
+                </el-col>
+                <el-col :span="24">
+                  <el-text tag="b">归属用户: </el-text>
+                  <el-text>{{ scope.row.uid }}</el-text>
+                </el-col>
+              </el-row>
             </template>
-        </el-table-column> -->
+          </el-table-column>
+          <el-table-column align="left" label="充值账号" prop="uid" width="240">
+            <template #default="scope">
+              <el-row>
+                <el-col :span="24">
+                  <el-text tag="b">通道账号: </el-text>
+                  <el-tag>{{ scope.row.acAccount }}</el-tag>
+                </el-col>
+                <el-col :span="24">
+                  <el-text tag="b">账号备注: </el-text>
+                  <el-tag>{{ scope.row.acRemark }}</el-tag>
+                </el-col>
+              </el-row>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="所属通道" prop="c_channel_id" width="120">
+            <template #default="scope">
+              <el-tag effect="light" round>{{ scope.row.c_channel_id }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="订单ID" prop="order_id" width="420">
+            <template #default="scope">
+              <el-row>
+                <el-col :span="24">
+                  <el-text tag="b">上游订单ID: </el-text>
+                  <el-tag>{{ scope.row.order_id }}</el-tag>
+                </el-col>
+                <el-col :span="24">
+                  <el-text tag="b">平台订单ID: </el-text>
+                  <el-tag>{{ scope.row.platform_oid }}</el-tag>
+                </el-col>
+              </el-row>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="金额" prop="cost" width="80" />
+          <el-table-column align="left" label="订单状态" prop="order_status" width="180">
+            <template #default="scope">
+              <el-row>
+                <el-col :span="24">
+                  <el-tag effect="dark" :type="formatOrderStatusColor(scope.row.order_status)">{{ formatOrderStatus(scope.row.order_status) }}</el-tag>
+                </el-col>
+                <el-col :span="24">
+                  <el-tag effect="dark" :type="formatCallbackStatusColor(scope.row.callback_status)">{{ formatCallbackOrderStatus(scope.row.callback_status) }}</el-tag>
+                </el-col>
+              </el-row>
+            </template>
+          </el-table-column>
+           <el-table-column align="left" label="创建时间" width="180">
+              <template #default="scope">{{ formatDate(scope.row.create_time) }}</template>
+           </el-table-column>
+<!--           <el-table-column align="left" label="取码时间" width="180">-->
+<!--              <template #default="scope">{{ formatDate(scope.row.async_time) }}</template>-->
+<!--           </el-table-column>-->
+           <el-table-column align="left" label="通知时间" width="180">
+              <template #default="scope">{{ formatDate(scope.row.call_time) }}</template>
+           </el-table-column>
+          <el-table-column align="left" label="客户端信息" prop="pay_ip" width="240">
+            <template #default="scope">
+              <el-row>
+                <el-col :span="24">
+                  <el-tag>设备: {{ scope.row.pay_device }}</el-tag>
+                </el-col>
+                <el-col :span="24">
+                  <el-tag>IP: {{ scope.row.pay_ip }}</el-tag>
+                </el-col>
+                <el-col :span="24">
+                  <el-tag>区域: {{ scope.row.pay_region }}</el-tag>
+                </el-col>
+              </el-row>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="操作">
+              <template #default="scope">
+                <el-button type="success" @click="queryHisRecords(scope.row)">查询</el-button>
+                <el-button type="primary" @click="queryHisRecords(scope.row)">补单</el-button>
+              </template>
+          </el-table-column>
         </el-table>
         <div class="gva-pagination">
             <el-pagination
@@ -136,67 +193,6 @@
             />
         </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <el-form-item label="订单id:"  prop="order_id" >
-          <el-input v-model="formData.order_id" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="付方uuid:"  prop="p_account" >
-          <el-input v-model="formData.p_account" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="金额:"  prop="cost" >
-          <el-input v-model.number="formData.cost" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="uid:"  prop="uid" >
-          <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="帐号id:"  prop="ac_id" >
-          <el-input v-model="formData.ac_id" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="所属通道:"  prop="c_channel_id" >
-          <el-input v-model="formData.c_channel_id" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="平台id:"  prop="platform_oid" >
-          <el-input v-model="formData.platform_oid" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="客户ip:"  prop="pay_ip" >
-          <el-input v-model="formData.pay_ip" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="区域:"  prop="pay_region" >
-          <el-input v-model="formData.pay_region" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="支付链接:"  prop="resource_url" >
-          <RichEdit v-model="formData.resource_url"/>
-        </el-form-item>
-        <el-form-item label="回调地址:"  prop="notify_url" >
-          <el-input v-model="formData.notify_url" :clearable="true"  placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="订单状态:"  prop="order_status" >
-          <el-input v-model.number="formData.order_status" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="回调状态:"  prop="callback_status" >
-          <el-input v-model.number="formData.callback_status" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="取码状态:"  prop="code_use_status" >
-          <el-input v-model.number="formData.code_use_status" :clearable="true" placeholder="请输入" />
-        </el-form-item>
-        <el-form-item label="创建时间:"  prop="create_time" >
-          <el-date-picker v-model="formData.create_time" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-        </el-form-item>
-        <el-form-item label="异步执行时间:"  prop="async_time" >
-          <el-date-picker v-model="formData.async_time" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-        </el-form-item>
-        <el-form-item label="回调时间:"  prop="call_time" >
-          <el-date-picker v-model="formData.call_time" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
-          <el-button type="primary" @click="enterDialog">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -217,11 +213,21 @@ import {
 } from '@/api/vboxPayOrder'
 // 富文本组件
 import RichEdit from '@/components/richtext/rich-edit.vue'
-
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
+import {
+  formatCallbackOrderStatus,
+  formatOrderStatus,
+  formatDate,
+  formatBoolean,
+  filterDict,
+  formatOrderStatusColor,
+  formatCallbackStatusColor
+} from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import { useUserStore } from '@/pinia/modules/user';
+
+const userStore = useUserStore()
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -304,9 +310,23 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
+  await userStore.LoadAllUser();
+  await userStore.GetChannelProductList();
   const table = await getVboxPayOrderList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  console.log(userStore.chanCodeMap)
+  console.log(userStore.ownerUsersMap)
+
   if (table.code === 0) {
-    tableData.value = table.data.list
+    // tableData.value = table.data.list
+    tableData.value = table.data.list.map(item => {
+      // 将每个元素的c_channel_id替换为对应的productName值
+      const productName = userStore.chanCodeMap.get(item.c_channel_id + '');
+      const userName = userStore.ownerUsersMap.get(item.user_id);
+      return { ...item,
+        uid: userName ? userName : '- | ' + item.uid,
+        c_channel_id: productName ? productName : '- | ' + item.c_channel_id
+      };
+    })
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
@@ -323,7 +343,6 @@ const setOptions = async () =>{
 
 // 获取需要的字典 可能为空 按需保留
 setOptions()
-
 
 // 多选数据
 const multipleSelection = ref([])
@@ -377,32 +396,6 @@ const onDelete = async() => {
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
-
-// 更新行
-const updateVboxPayOrderFunc = async(row) => {
-    const res = await findVboxPayOrder({ ID: row.ID })
-    type.value = 'update'
-    if (res.code === 0) {
-        formData.value = res.data.revpo
-        dialogFormVisible.value = true
-    }
-}
-
-
-// 删除行
-const deleteVboxPayOrderFunc = async (row) => {
-    const res = await deleteVboxPayOrder({ ID: row.ID })
-    if (res.code === 0) {
-        ElMessage({
-                type: 'success',
-                message: '删除成功'
-            })
-            if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-        }
-        getTableData()
-    }
-}
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)

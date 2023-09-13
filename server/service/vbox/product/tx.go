@@ -3,7 +3,7 @@ package product
 import (
 	"encoding/json"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/tx"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"go.uber.org/zap"
 	"net/url"
@@ -30,7 +30,7 @@ var options = &http.RequestOptions{
 }
 
 // Records 获取半小时内记录
-func Records(qq string) *tx.Records {
+func Records(qq string) *product.Records {
 
 	u, _ := url.Parse(rawURL)
 	queryParams := u.Query()
@@ -60,7 +60,7 @@ func Records(qq string) *tx.Records {
 		return nil
 	}
 
-	var records tx.Records
+	var records product.Records
 	err = json.Unmarshal(resp.Body, &records)
 	if err != nil {
 		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
@@ -72,7 +72,7 @@ func Records(qq string) *tx.Records {
 }
 
 // 计算不同类型 - 不同金额 - 记录集合
-func cal(payments []tx.Payment) map[string]map[string][]string {
+func cal(payments []product.Payment) map[string]map[string][]string {
 	// 使用map存储不同充值类型下的支付金额和充值账号ID集合（去重）
 	paymentsByTypeAndAmount := make(map[string]map[string][]string)
 	for _, payment := range payments {

@@ -36,30 +36,30 @@
             </el-popover>
         </div>
         <el-table
-        ref="multipleTable"
-        style="width: 100%"
-        tooltip-effect="dark"
-        :data="tableData"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
+          ref="multipleTable"
+          style="width: 100%"
+          tooltip-effect="dark"
+          :data="tableData"
+          row-key="ID"
+          @selection-change="handleSelectionChange"
         >
-        <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="渠道" prop="chan" width="120" />
-        <el-table-column align="left" label="类型" prop="type" width="120" />
-        <el-table-column align="left" label="url地址" prop="url" width="360" />
-        <el-table-column align="left" label="备注" prop="remark" width="180" />
-        <el-table-column align="left" label="创建时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="修改时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.UpdatedAt) }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="操作">
-            <template #default="scope">
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateVboxProxyFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-            </template>
-        </el-table-column>
+          <el-table-column type="selection" width="55" />
+          <el-table-column align="left" label="渠道" prop="chan" width="120" />
+          <el-table-column align="left" label="类型" prop="type" width="120" />
+          <el-table-column align="left" label="url地址" prop="url" width="360" />
+          <el-table-column align="left" label="备注" prop="remark" width="180" />
+          <el-table-column align="left" label="创建时间" width="180">
+            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          </el-table-column>
+          <el-table-column align="left" label="修改时间" width="180">
+            <template #default="scope">{{ formatDate(scope.row.UpdatedAt) }}</template>
+          </el-table-column>
+          <el-table-column align="left" label="操作">
+              <template #default="scope">
+              <el-button type="primary" link icon="edit" class="table-button" @click="updateVboxProxyFunc(scope.row)">变更</el-button>
+              <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+              </template>
+          </el-table-column>
         </el-table>
         <div class="gva-pagination">
             <el-pagination

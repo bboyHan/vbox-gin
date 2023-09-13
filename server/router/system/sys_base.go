@@ -10,9 +10,11 @@ type BaseRouter struct{}
 func (s *BaseRouter) InitBaseRouter(Router *gin.RouterGroup) (R gin.IRoutes) {
 	baseRouter := Router.Group("base")
 	baseApi := v1.ApiGroupApp.SystemApiGroup.BaseApi
+	chanProductApi := v1.ApiGroupApp.Vbox.ChannelProductApi
 	{
 		baseRouter.POST("login", baseApi.Login)
 		baseRouter.POST("captcha", baseApi.Captcha)
+		baseRouter.GET("getVboxChannelProductAll", chanProductApi.GetVboxChannelProductAll)
 	}
 	return baseRouter
 }

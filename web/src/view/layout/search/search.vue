@@ -1,8 +1,8 @@
 <template>
   <div class="search-component">
       <div class="gvaIcon gvaIcon-refresh" :class="[reload ? 'reloading' : '']" @click="handleReload" />
-      <Screenfull class="search-icon" />
-      <div class="gvaIcon gvaIcon-customer-service" @click="toService" />
+<!--      <Screenfull class="search-icon" />-->
+<!--      <div class="gvaIcon gvaIcon-customer-service" @click="toService" />-->
   </div>
 </template>
 

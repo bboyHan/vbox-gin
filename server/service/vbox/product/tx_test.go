@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/tx"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/product"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strconv"
@@ -36,7 +36,7 @@ func TestHttp(t *testing.T) {
 		},
 	}
 
-	var payments []tx.Payment
+	var payments []product.Payment
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			records := Records(tt.args.d)

@@ -70,66 +70,57 @@ func (vpoService *VboxPayOrderService) GetVboxPayOrder(id uint) (vpo vbox.VboxPa
 
 // GetVboxPayOrderInfoList 分页获取VboxPayOrder记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.VboxPayOrderSearch, ids []int) (list []vbox.VboxPayOrder, total int64, err error) {
+func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.VboxPayOrderSearch, ids []int) (list []vboxRep.VboxPayOrderRes, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
-	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
-	var vpos []vbox.VboxPayOrder
+	db := global.GVA_DB.Model(&vboxRep.VboxPayOrderRes{}).Table("vbox_pay_order")
+	var vpos []vboxRep.VboxPayOrderRes
 
-	db = db.Where("uid in (?)", ids).Find(&vpos)
+	db = db.Where("vbox_pay_order.uid in (?)", ids)
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
+		db = db.Where("vbox_pay_order.created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
 	if info.OrderId != "" {
-		db = db.Where("order_id = ?", info.OrderId)
+		db = db.Where("vbox_pay_order.order_id LIKE ?", "%"+info.OrderId+"%")
 	}
 	if info.PAccount != "" {
-		db = db.Where("p_account = ?", info.PAccount)
-	}
-	if info.Cost != nil {
-		db = db.Where("cost = ?", info.Cost)
-	}
-	if info.Uid != nil {
-		db = db.Where("uid = ?", info.Uid)
+		db = db.Where("vbox_pay_order.p_account = ?", info.PAccount)
 	}
 	if info.AcId != "" {
-		db = db.Where("ac_id = ?", info.AcId)
+		db = db.Where("vbox_pay_order.ac_id = ?", info.AcId)
 	}
 	if info.CChannelId != "" {
-		db = db.Where("c_channel_id = ?", info.CChannelId)
+		db = db.Where("vbox_pay_order.c_channel_id = ?", info.CChannelId)
 	}
 	if info.PlatformOid != "" {
-		db = db.Where("platform_oid = ?", info.PlatformOid)
-	}
-	if info.PayIp != "" {
-		db = db.Where("pay_ip = ?", info.PayIp)
+		db = db.Where("vbox_pay_order.platform_oid = ?", info.PlatformOid)
 	}
 	if info.PayRegion != "" {
-		db = db.Where("pay_region = ?", info.PayRegion)
+		db = db.Where("vbox_pay_order.pay_region = ?", info.PayRegion)
 	}
 	if info.ResourceUrl != "" {
-		db = db.Where("resource_url = ?", info.ResourceUrl)
+		db = db.Where("vbox_pay_order.resource_url = ?", info.ResourceUrl)
 	}
 	if info.NotifyUrl != "" {
-		db = db.Where("notify_url = ?", info.NotifyUrl)
+		db = db.Where("vbox_pay_order.notify_url = ?", info.NotifyUrl)
 	}
-	if info.OrderStatus != nil {
-		db = db.Where("order_status = ?", info.OrderStatus)
+	if info.OrderStatus != 0 {
+		db = db.Where("vbox_pay_order.order_status = ?", info.OrderStatus)
 	}
-	if info.CallbackStatus != nil {
-		db = db.Where("callback_status = ?", info.CallbackStatus)
-	}
-	if info.CodeUseStatus != nil {
-		db = db.Where("code_use_status = ?", info.CodeUseStatus)
+	if info.CallbackStatus != 0 {
+		db = db.Where("vbox_pay_order.callback_status = ?", info.CallbackStatus)
 	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Find(&vpos).Error
+	err = db.Limit(limit).Offset(offset).Select("vbox_pay_order.*, vbox_channel_account.ac_remark, vbox_channel_account.ac_account, vbox_channel_account.uid as user_id").
+		Joins("LEFT JOIN vbox_channel_account ON vbox_channel_account.ac_id = vbox_pay_order.ac_id").
+		Scan(&vpos).Error
+
 	return vpos, total, err
 }
 
@@ -183,20 +174,20 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 	yOkGroupedCosts := make(map[int]int)
 
 	for _, order := range tInfoList {
-		uid := *order.Uid
+		uid := order.Uid
 		tGroupedCounts[uid]++
-		if *order.OrderStatus == 1 {
+		if order.OrderStatus == 1 {
 			tOkGroupedCounts[uid]++
-			tOkGroupedCosts[uid] += *order.Cost
+			tOkGroupedCosts[uid] += order.Cost
 		}
 	}
 
 	for _, order := range yInfoList {
-		uid := *order.Uid
+		uid := order.Uid
 		yGroupedCounts[uid]++
-		if *order.OrderStatus == 1 {
+		if order.OrderStatus == 1 {
 			yOkGroupedCounts[uid]++
-			yOkGroupedCosts[uid] += *order.Cost
+			yOkGroupedCosts[uid] += order.Cost
 		}
 	}
 
@@ -319,20 +310,20 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisH(id uint, idL
 	yOkGroupedCosts := make(map[int]int)
 
 	for _, order := range tInfoList {
-		uid := *order.Uid
+		uid := order.Uid
 		tGroupedCounts[uid]++
-		if *order.OrderStatus == 1 {
+		if order.OrderStatus == 1 {
 			tOkGroupedCounts[uid]++
-			tOkGroupedCosts[uid] += *order.Cost
+			tOkGroupedCosts[uid] += order.Cost
 		}
 	}
 
 	for _, order := range yInfoList {
-		uid := *order.Uid
+		uid := order.Uid
 		yGroupedCounts[uid]++
-		if *order.OrderStatus == 1 {
+		if order.OrderStatus == 1 {
 			yOkGroupedCounts[uid]++
-			yOkGroupedCosts[uid] += *order.Cost
+			yOkGroupedCosts[uid] += order.Cost
 		}
 	}
 

@@ -5,8 +5,8 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/songzhibin97/gkit/tools/rand_string"
 	"gorm.io/gorm"
-	"math/rand"
 )
 
 type ChannelAccountService struct {
@@ -15,7 +15,7 @@ type ChannelAccountService struct {
 // CreateChannelAccount 创建ChannelAccount记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount) (err error) {
-	vca.AcId = rand.Intn(8)
+	vca.AcId = rand_string.RandomLetter(8)
 	err = global.GVA_DB.Create(vca).Error
 	return err
 }
@@ -82,7 +82,7 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.AcRemark != "" {
 		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
 	}
-	if info.Cid != nil {
+	if info.Cid != 0 {
 		db = db.Where("cid = ?", info.Cid)
 	}
 	if info.Status != nil {

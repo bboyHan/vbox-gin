@@ -129,8 +129,7 @@
         </el-table-column>
         <el-table-column align="left" label="操作">
           <template #default="scope">
-            <el-button type="success" link icon="search" class="table-button" @click="queryHisRecords(scope.row)">查询
-            </el-button>
+            <el-button type="success" link icon="search" class="table-button" @click="queryHisRecords(scope.row)">查询</el-button>
             <el-button type="primary" link icon="edit" class="table-button"
                        @click="updateChannelAccountFunc(scope.row)">变更
             </el-button>

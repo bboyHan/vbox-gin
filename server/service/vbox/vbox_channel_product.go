@@ -68,12 +68,19 @@ func (vcpService *ChannelProductService) GetVboxChannelProductInfoList(info vbox
 	return vcps, total, err
 }
 
-//@author: [piexlmax](https://github.com/piexlmax)
-//@function: findChildrenAuthority
-//@description: 查询子角色
-//@param: authority *model.SysAuthority
-//@return: err error
+// GetVboxChannelProductInfoAll 获取VboxChannelProduct所有记录
+func (vcpService *ChannelProductService) GetVboxChannelProductInfoAll() (list []vbox.ChannelProduct, err error) {
+	db := global.GVA_DB.Model(&vbox.ChannelProduct{})
+	var vcps []vbox.ChannelProduct
+	err = db.Find(&vcps).Error
+	return vcps, err
+}
 
+// @author: [piexlmax](https://github.com/piexlmax)
+// @function: findChildrenAuthority
+// @description: 查询子角色
+// @param: authority *model.SysAuthority
+// @return: err error
 func (vcpService *ChannelProductService) findChildrenChannelProduct(vcp *vbox.ChannelProduct) (err error) {
 	err = global.GVA_DB.Where("parent_id = ?", vcp.ChannelCode).Find(&vcp.Children).Error
 	if len(vcp.Children) > 0 {

@@ -1,4 +1,4 @@
-package tx
+package product
 
 type Payment struct {
 	CurrentState    string `json:"CurrentState" form:"CurrentState"`       // 当前状态

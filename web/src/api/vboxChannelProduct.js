@@ -95,3 +95,19 @@ export const getVboxChannelProductList = (params) => {
     params
   })
 }
+
+// @Tags VboxChannelProduct
+// @Summary 获取VboxChannelProduct列表所有
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取VboxChannelProduct列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vcp/getVboxChannelProductList [get]
+export const getVboxChannelProductAll = (params) => {
+  return service({
+    url: '/base/getVboxChannelProductAll',
+    method: 'get',
+    params
+  })
+}

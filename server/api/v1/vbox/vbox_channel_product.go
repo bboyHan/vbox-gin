@@ -5,9 +5,13 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"time"
 )
+
+var redisStore = captcha.NewCustomRedisStore("channel_product:", time.Hour*12)
 
 type ChannelProductApi struct {
 }
@@ -128,11 +132,37 @@ func (vcpApi *ChannelProductApi) GetVboxChannelProductList(c *gin.Context) {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
+		//jsonData, _ := json.Marshal(list)
+		//redisStore.Set("list", string(jsonData))
 		response.OkWithDetailed(response.PageResult{
 			List:     list,
 			Total:    total,
 			Page:     pageInfo.Page,
 			PageSize: pageInfo.PageSize,
 		}, "获取成功", c)
+	}
+}
+
+// GetVboxChannelProductAll 分页获取VboxChannelProduct列表
+// @Tags VboxChannelProduct
+// @Summary 分页获取VboxChannelProduct列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.VboxChannelProductSearch true "分页获取VboxChannelProduct列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vcp/getVboxChannelProductList [get]
+func (vcpApi *ChannelProductApi) GetVboxChannelProductAll(c *gin.Context) {
+	var pageInfo vboxReq.VboxChannelProductSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if list, err := vcpService.GetVboxChannelProductInfoAll(); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
 	}
 }

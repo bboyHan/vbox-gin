@@ -16,6 +16,13 @@ func NewDefaultRedisStore() *RedisStore {
 	}
 }
 
+func NewCustomRedisStore(preKey string, timeout time.Duration) *RedisStore {
+	return &RedisStore{
+		Expiration: timeout,
+		PreKey:     preKey,
+	}
+}
+
 type RedisStore struct {
 	Expiration time.Duration
 	PreKey     string

@@ -22,5 +22,6 @@ func (s *ChannelProductRouter) InitVboxChannelProductRouter(Router *gin.RouterGr
 	{
 		vcpRouterWithoutRecord.GET("findVboxChannelProduct", vcpApi.FindVboxChannelProduct)       // 根据ID获取VboxChannelProduct
 		vcpRouterWithoutRecord.GET("getVboxChannelProductList", vcpApi.GetVboxChannelProductList) // 获取VboxChannelProduct列表
+		vcpRouterWithoutRecord.GET("getVboxChannelProductAll", vcpApi.GetVboxChannelProductAll)   // 获取VboxChannelProduct列表所有
 	}
 }

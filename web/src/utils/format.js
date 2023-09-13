@@ -1,6 +1,46 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 
+export const formatCallbackStatusColor = (value) => {
+  if (value === 1) {
+    return 'success'
+  } else if(value === 2) {
+    return 'info'
+  }
+}
+
+export const formatCallbackOrderStatus = (value) => {
+  if (value === 1) {
+    return '通知成功'
+  } else if(value === 2) {
+    return '未通知'
+  }
+}
+
+export const formatOrderStatusColor = (value) => {
+  if (value === 1) {
+    return 'success'
+  } else if(value === 2) {
+    return 'info'
+  } else if(value === 3) {
+    return ''
+  } else if(value === 4) {
+    return 'warning'
+  }
+}
+
+export const formatOrderStatus = (value) => {
+  if (value === 1) {
+    return '支付成功'
+  } else if(value === 2) {
+    return '等待支付'
+  } else if(value === 3) {
+    return '支付超时'
+  } else if(value === 4) {
+    return '等待取码'
+  }
+}
+
 export const formatBoolean = (bool) => {
   if (bool !== null) {
     return bool ? '是' : '否'
@@ -8,6 +48,7 @@ export const formatBoolean = (bool) => {
     return ''
   }
 }
+
 export const formatDate = (time) => {
   if (time !== null && time !== '') {
     var date = new Date(time)
