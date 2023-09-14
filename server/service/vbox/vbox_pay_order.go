@@ -1,64 +1,178 @@
 package vbox
 
 import (
+	"errors"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
-	"gorm.io/gorm"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"strings"
 	"time"
 )
 
 type VboxPayOrderService struct {
 }
 
-// var userService = service.ServiceGroupApp.SystemServiceGroup.UserService
+// QueryOrderSimple 查询QueryOrderSimple
+//
+//	p := &vboxReq.QueryOrderSimple{
+//			OrderId:        "123",
+//		}
+func (vpoService *VboxPayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimple) (rep *vboxRep.OrderSimpleRes, err error) {
 
-// CreateVboxPayOrder 创建VboxPayOrder记录
-// Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) CreateVboxPayOrder(vpo *vbox.VboxPayOrder) (err error) {
-	err = global.GVA_DB.Create(vpo).Error
-	return err
+	// 1. 查单
+	var order vbox.VboxPayOrder
+	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).
+		Where("order_id = ?", vpo.OrderId).
+		First(&order).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var resUrl string
+	resUrl, err = HandelResourceUrl(order)
+
+	rep = &vboxRep.OrderSimpleRes{
+		OrderId:     order.OrderId,
+		Account:     order.PAccount,
+		Money:       order.Money,
+		ResourceUrl: resUrl,
+		Status:      order.OrderStatus,
+		ChannelCode: order.ChannelCode,
+	}
+
+	return rep, err
+
 }
 
-// DeleteVboxPayOrder 删除VboxPayOrder记录
-// Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) DeleteVboxPayOrder(vpo vbox.VboxPayOrder) (err error) {
-	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.VboxPayOrder{}).Where("id = ?", vpo.ID).Update("deleted_by", vpo.DeletedBy).Error; err != nil {
-			return err
-		}
-		if err = tx.Delete(&vpo).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
+func HandelResourceUrl(order vbox.VboxPayOrder) (string, error) {
+	return order.ResourceUrl, nil
 }
 
-// DeleteVboxPayOrderByIds 批量删除VboxPayOrder记录
-// Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) DeleteVboxPayOrderByIds(ids request.IdsReq, deleted_by uint) (err error) {
-	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.VboxPayOrder{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
-			return err
-		}
-		if err := tx.Where("id in ?", ids.Ids).Delete(&vbox.VboxPayOrder{}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
+// QueryOrder2PayAcc 查询QueryOrder2PayAcc
+//
+//	p := &vboxReq.QueryOrder2PayAccount{
+//			Account:     "",
+//			Key:         "",
+//			Sign:        "123",
+//		}
+func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+
+	// 1. 校验签名
+	signValid := utils.VerifySign(vpo)
+	if !signValid {
+		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
+	}
+
+	// 2. 查单
+	var order vbox.VboxPayOrder
+	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).
+		Where("order_id = ? and p_account = ?", vpo.OrderId, vpo.Account).
+		First(order).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var payUrl string
+	payUrl, err = HandelPayUrl2Pacc(vpo.OrderId)
+
+	rep = &vboxRep.Order2PayAccountRes{
+		OrderId:   vpo.OrderId,
+		Money:     order.Money,
+		PayUrl:    payUrl,
+		Status:    order.OrderStatus,
+		NotifyUrl: order.NotifyUrl,
+	}
+
+	return rep, err
+
 }
 
-// UpdateVboxPayOrder 更新VboxPayOrder记录
-// Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *VboxPayOrderService) UpdateVboxPayOrder(vpo vbox.VboxPayOrder) (err error) {
-	err = global.GVA_DB.Save(&vpo).Error
-	return err
+// CreateOrder2PayAcc 创建CreateOrder2PayAcc
+//
+//	p := &vbox.CreateOrder2PayAccount{
+//			Account:     "",
+//			Key:         "",
+//			Money:       10,
+//			Sign:        "123",
+//			ChannelCode: "600",
+//			NotifyUrl:   "http://1.1.1.1",
+//			OrderId:     "P1234",
+//		}
+func (vpoService *VboxPayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+
+	// 1. 校验签名
+	signValid := utils.VerifySign(vpo)
+	if !signValid {
+		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
+	}
+
+	var total int64 = 0
+	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
+	db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").Count(&total)
+
+	limit, offset := utils.RandSize2DB(int(total), 20)
+	var vcas []vbox.ChannelAccount
+	err = db.Debug().Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", vpo.ChannelCode).
+		Limit(limit).Offset(offset).
+		Find(&vcas).Error
+	if err != nil || len(vcas) == 0 {
+		return nil, err
+	}
+
+	vca := vcas[0]
+
+	order := &vbox.VboxPayOrder{
+		PlatformOid:    time.Now().String(),
+		ChannelCode:    vca.Cid,
+		Uid:            vca.Uid,
+		PAccount:       vpo.Account,
+		OrderId:        vpo.OrderId,
+		Money:          vpo.Money,
+		NotifyUrl:      vpo.NotifyUrl,
+		OrderStatus:    2,
+		CallbackStatus: 2,
+		ResourceUrl:    HandleResourceUrl(vca, vca.Cid, vpo.Money),
+	}
+
+	err = global.GVA_DB.Create(order).Error
+	if err != nil {
+		s := err.Error()
+		if strings.Contains(s, "Duplicate") {
+			return nil, errors.New("订单已存在，请勿重复创建")
+		}
+		return nil, err
+	}
+	var payUrl string
+	payUrl, err = HandelPayUrl2Pacc(vpo.OrderId)
+
+	rep = &vboxRep.Order2PayAccountRes{
+		OrderId:   vpo.OrderId,
+		Money:     vpo.Money,
+		PayUrl:    payUrl,
+		Status:    2,
+		NotifyUrl: vpo.NotifyUrl,
+	}
+	return rep, err
+}
+
+func HandelPayUrl2Pacc(orderId string) (string, error) {
+	var proxy vbox.Proxy
+	db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+	err := db.Where("status = ?", 1).Where("chan = ?", "pacc_create").
+		First(&proxy).Error
+	if err != nil || proxy.Url == "" {
+		return "", err
+	}
+	var url = proxy.Url + orderId
+	return url, nil
+}
+
+func HandleResourceUrl(vca vbox.ChannelAccount, cid string, money int) string {
+	return ""
 }
 
 // GetVboxPayOrder 根据id获取VboxPayOrder记录
@@ -91,8 +205,8 @@ func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.Vbox
 	if info.AcId != "" {
 		db = db.Where("vbox_pay_order.ac_id = ?", info.AcId)
 	}
-	if info.CChannelId != "" {
-		db = db.Where("vbox_pay_order.c_channel_id = ?", info.CChannelId)
+	if info.ChannelCode != "" {
+		db = db.Where("vbox_pay_order.channel_code = ?", info.ChannelCode)
 	}
 	if info.PlatformOid != "" {
 		db = db.Where("vbox_pay_order.platform_oid = ?", info.PlatformOid)
@@ -175,19 +289,19 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 
 	for _, order := range tInfoList {
 		uid := order.Uid
-		tGroupedCounts[uid]++
+		tGroupedCounts[int(uid)]++
 		if order.OrderStatus == 1 {
-			tOkGroupedCounts[uid]++
-			tOkGroupedCosts[uid] += order.Cost
+			tOkGroupedCounts[int(uid)]++
+			tOkGroupedCosts[int(uid)] += order.Money
 		}
 	}
 
 	for _, order := range yInfoList {
 		uid := order.Uid
-		yGroupedCounts[uid]++
+		yGroupedCounts[int(uid)]++
 		if order.OrderStatus == 1 {
-			yOkGroupedCounts[uid]++
-			yOkGroupedCosts[uid] += order.Cost
+			yOkGroupedCounts[int(uid)]++
+			yOkGroupedCosts[int(uid)] += order.Money
 		}
 	}
 
@@ -259,7 +373,7 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysis(id uint, idLi
 		}
 
 		entity := vboxRep.VboxUserOrderPayAnalysis{
-			Uid:              &uid,
+			Uid:              uint(uid),
 			Username:         userInfo.Username,
 			Balance:          rechargeData,
 			ChIdCnt:          int(openTotal + closeTotal),
@@ -311,19 +425,19 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisH(id uint, idL
 
 	for _, order := range tInfoList {
 		uid := order.Uid
-		tGroupedCounts[uid]++
+		tGroupedCounts[int(uid)]++
 		if order.OrderStatus == 1 {
-			tOkGroupedCounts[uid]++
-			tOkGroupedCosts[uid] += order.Cost
+			tOkGroupedCounts[int(uid)]++
+			tOkGroupedCosts[int(uid)] += order.Money
 		}
 	}
 
 	for _, order := range yInfoList {
 		uid := order.Uid
-		yGroupedCounts[uid]++
+		yGroupedCounts[int(uid)]++
 		if order.OrderStatus == 1 {
-			yOkGroupedCounts[uid]++
-			yOkGroupedCosts[uid] += order.Cost
+			yOkGroupedCounts[int(uid)]++
+			yOkGroupedCosts[int(uid)] += order.Money
 		}
 	}
 
@@ -400,7 +514,7 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisH(id uint, idL
 		}
 
 		entity := vboxRep.VboxUserOrderPayAnalysisH{
-			Uid:              &uid,
+			Uid:              uid,
 			Username:         userInfo.Username,
 			Balance:          rechargeData,
 			ChIdCnt:          int(openTotal + closeTotal),

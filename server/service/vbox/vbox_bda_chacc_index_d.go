@@ -179,11 +179,11 @@ func (bdaChaccDService *VboxBdaChaccIndexDService) CronVboxBdaChaccIndexD() (err
 				yOkGroupedCosts := make(map[string]int)
 
 				for _, order := range yInfoList {
-					uid := strconv.Itoa(order.Uid) + "-" + order.CChannelId + "-" + order.PAccount
+					uid := strconv.Itoa(order.Uid) + "-" + order.ChannelCode + "-" + order.PAccount
 					yGroupedCounts[uid]++
 					if order.OrderStatus == 1 {
 						yOkGroupedCounts[uid]++
-						yOkGroupedCosts[uid] += order.Cost
+						yOkGroupedCosts[uid] += order.Money
 					}
 				}
 

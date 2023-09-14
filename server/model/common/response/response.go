@@ -2,6 +2,7 @@ package response
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,8 +14,10 @@ type Response struct {
 }
 
 const (
-	ERROR   = 7
-	SUCCESS = 0
+	ERROR    = 500999
+	NotFound = 404
+	Conflict = 409
+	SUCCESS  = 0
 )
 
 func Result(code int, data interface{}, msg string, c *gin.Context) {
@@ -47,7 +50,13 @@ func Fail(c *gin.Context) {
 }
 
 func FailWithMessage(message string, c *gin.Context) {
-	Result(ERROR, map[string]interface{}{}, message, c)
+	if strings.Contains(message, "not found") {
+		Result(NotFound, map[string]interface{}{}, message, c)
+	} else if strings.Contains(message, "Duplicate") {
+		Result(Conflict, map[string]interface{}{}, message, c)
+	} else {
+		Result(ERROR, map[string]interface{}{}, message, c)
+	}
 }
 
 func FailWithDetailed(data interface{}, message string, c *gin.Context) {

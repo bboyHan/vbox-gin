@@ -75,6 +75,7 @@ func Routers() *gin.Engine {
 	}
 	{
 		vbox := router.RouterGroupApp.Vbox
+		vbox.InitPubAccessRouter(PublicGroup) //不做鉴权
 		vbox.InitChannelShopRouter(PrivateGroup)
 		vbox.InitChannelRouter(PrivateGroup)
 		vbox.InitChannelGuideImgRouter(PrivateGroup)

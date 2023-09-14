@@ -1,7 +1,7 @@
 package response
 
 type VboxUserOrderPayAnalysis struct {
-	Uid              *int   `json:"uid" form:"uid" gorm:"column:uid;comment:父角色ID;size:10;"`
+	Uid              uint   `json:"uid" form:"uid" gorm:"column:uid;comment:父角色ID;size:10;"`
 	Username         string `json:"username" form:"username" gorm:"-"`
 	Balance          int    `json:"balance" form:"balance" gorm:"-"`
 	ChIdCnt          int    `json:"chIdCnt" form:"chIdCnt" gorm:"-"`
@@ -18,7 +18,7 @@ type VboxUserOrderPayAnalysis struct {
 }
 
 type VboxUserOrderPayAnalysisH struct {
-	Uid              *int   `json:"uid" form:"uid" gorm:"column:uid;comment:父角色ID;size:10;"`
+	Uid              int    `json:"uid" form:"uid" gorm:"column:uid;comment:父角色ID;size:10;"`
 	Username         string `json:"username" form:"username" gorm:"-"`
 	Balance          int    `json:"balance" form:"balance" gorm:"-"`
 	ChIdCnt          int    `json:"chIdCnt" form:"chIdCnt" gorm:"-"`

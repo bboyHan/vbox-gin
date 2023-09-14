@@ -106,7 +106,7 @@ export const getVboxChannelProductList = (params) => {
 // @Router /vcp/getVboxChannelProductList [get]
 export const getVboxChannelProductAll = (params) => {
   return service({
-    url: '/base/getVboxChannelProductAll',
+    url: '/channelProduct/all',
     method: 'get',
     params
   })

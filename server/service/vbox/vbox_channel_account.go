@@ -82,7 +82,7 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.AcRemark != "" {
 		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
 	}
-	if info.Cid != 0 {
+	if info.Cid != "" {
 		db = db.Where("cid = ?", info.Cid)
 	}
 	if info.Status != nil {

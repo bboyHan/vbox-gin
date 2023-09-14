@@ -12,4 +12,5 @@ type RouterGroup struct {
 	VboxUserWalletRouter
 	VboxBdaChIndexDRouter
 	VboxBdaChaccIndexDRouter
+	OrderRouter
 }

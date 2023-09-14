@@ -28,4 +28,5 @@ var (
 	vuwService        = service.ServiceGroupApp.VboxServiceGroup.VboxUserWalletService
 	bdaChDService     = service.ServiceGroupApp.VboxServiceGroup.VboxBdaChIndexDService
 	bdaChaccDService  = service.ServiceGroupApp.VboxServiceGroup.VboxBdaChaccIndexDService
+	userService       = service.ServiceGroupApp.SystemServiceGroup.UserService
 )

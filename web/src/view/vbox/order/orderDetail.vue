@@ -1,110 +1,60 @@
 <template>
   <div class="container">
     <div class="content">
-      <h1>欢迎来到网页</h1>
-      <count-down
-          v-model:fire="fire"
+      <div v-show="dialogCountVisible">
+        <count-down
+          :fire="fire"
           :tiping="tiping"
           :tipend="tipend"
-          time="60"
+          time="12"
           @statusChange="onStatusChange"
           @end="onEnd"
-      >
-      </count-down>
-
-      <div class="buttons">
-        <el-row :gutter="12">
-          <el-col :span="24">
-            <el-button type="primary" class="button" round @click="dialogFormVisible = true">操作指南</el-button>
-          </el-col>
-          <el-col :span="24">
-            <el-button type="success" class="button" round>跳转支付</el-button>
-          </el-col>
-        </el-row>
+          :statusChange="[2000,500]"
+          width="180"
+          height="180"
+        >
+        </count-down>
+        <div class="buttons">
+          <el-row :gutter="6">
+            <el-col :span="24">
+              <el-button type="success" class="button" round>正在通过安全验证，请等待...</el-button>
+            </el-col>
+            <el-col :span="24">
+              <el-button type="primary" class="button" round>订单正在匹配中，预计5-20秒</el-button>
+            </el-col>
+          </el-row>
+        </div>
       </div>
 
-      <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" destroy-on-close class="el-dialog__wrapper" fullscreen>
-        <h2 class="dialog-title">👇👇👇操作流程提示👇👇👇</h2>
-        <div >
-          <el-image :src="imgData.img_base_str" fit="contain" class="thumbnail-image"/>
-        </div>
-        <!-- <template #footer> -->
-        <div class="dialog-footer">
-          <el-button @click="changImgPrev">上一步</el-button>
-          <el-button @click="changImgNext">下一步</el-button>
-          <el-button type="primary" @click="enterDialog">我知道了</el-button>
-        </div>
-      </el-dialog>
+      <div v-show="payVisible">
+        <!-- 显示新的 div 的代码... -->
+        <h1>付款页面</h1>
+      </div>
+      <div v-show="notFoundVisible">
+        <!-- 显示新的 div 的代码... -->
+        <h1>订单不存在</h1>
+      </div>
+      <div v-show="finishedVisible">
+        <!-- 显示新的 div 的代码... -->
+        <h1>已付款成功</h1>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
 import { ElButton } from 'element-plus';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, onUnmounted } from 'vue';
 import CountDown from 'vue-canvas-countdown';
-import {
-  getChannelGuideImgTaskList
-} from '@/api/channelGuideImg'
+import { queryOrderSimple } from '@/api/vboxPayOrder';
+import { useRoute } from 'vue-router';
 
 // 弹窗控制标记
-const dialogFormVisible = ref(false)
-const changImgPrev = () => {
-  if (imgNum.value > 1){
-    imgNum.value --
-  }else {
-    imgNum.value = 1
-  }
-}
-const changImgNext = () => {
-  if (imgNum.value >= total.value){
-    imgNum.value = total.value
-  }else {
-    imgNum.value ++
-  }
-}
-const imgData = ref({
-  c_channel_id: '',
-  img_base_str: '',
-  img_num: 0
-})
-// const page = ref(1)
-const total = ref(0)
-const imgNum = ref(1)
-// const pageSize = ref(10)
-// const searchInfo = ref({})
-const tableData = ref([])
-
-const chId = ref("tx_jd")
-
-const getTableData = async() => {
-  const table = await getChannelGuideImgTaskList({ channelId: chId.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    console.log('imgs=' + JSON.stringify(tableData.value))
-    total.value = table.data.total
-    imgData.value = tableData.value[imgNum.value - 1]
-  }
-}
-
-getTableData()
-
-// 打开弹窗
-const openDialog = () => {
-  dialogFormVisible.value = true
-}
-openDialog()
-
-// 关闭弹窗
-const closeDialog = () => {
-  dialogFormVisible.value = false
-}
-
-// 弹窗确定
-const enterDialog = async () => {
-  closeDialog()
-}
+const dialogCountVisible = ref(true)
+const payVisible = ref(false)
+const finishedVisible = ref(false)
+const notFoundVisible = ref(false)
+const route = useRoute()
 
 // ---------- 倒计时 ----------------
 const fire = ref(0);
@@ -117,36 +67,70 @@ const tipend = {
   color: '#fff'
 };
 
-const fireCD = () => {
+const fireCD = async () => {
   // 配置参数（更多配置如下表）
-  tiping.text = '请支付';
+  tiping.text = '匹配中';
   tiping.color = '#fff';
-  tipend.text = '停止支付';
+  tipend.text = '停止匹配';
   tipend.color = '#fff';
 
   // 启动倒计时(效果如上图所示)
   fire.value++;
 };
 
-const onStatusChange = (payload) => {
+const onStatusChange = async (payload) => {
   console.log('倒计时状态改变：', payload);
 };
 
-const onEnd = () => {
+const onEnd = async () => {
   console.log('倒计时结束的回调函数');
 };
+
+// 添加一个空变量作为定时器的 ID
+let timerId = null;
+let count = 1;
 
 onMounted(() => {
   // 启动倒计时
   fireCD();
+  // 启动定时器，每秒钟请求一次 HTTP 接口
+  timerId = setInterval(queryOrder, 2000);
 });
 
-const props = defineProps({
-  title: {
-    type: String,
-    default: '欢迎来到网页',
-  },
+onUnmounted(() => {
+  // 组件销毁时清除定时器
+  clearInterval(timerId);
 });
+
+const queryOrder = async () => {
+  try {
+    const orderId = route.query.orderId;
+    console.log(orderId)
+    const result = await queryOrderSimple({order_id: orderId}); // 发送 HTTP 请求
+    console.log(result)
+    console.log(result.code)
+    if (result) {
+      clearInterval(timerId); // 如果状态发生变化，则停止定时器
+    }
+    if (result.code === 404) {
+      dialogCountVisible.value = false;
+      notFoundVisible.value = true;
+    } else if (result.code === 0) {
+      // clearInterval(timerId); // 如果状态发生变化，则停止定时器
+      dialogCountVisible.value = false;
+      if (result.data.status === 1) {
+        finishedVisible.value = true;
+      }
+      if (result.data.status === 2) {
+        payVisible.value = true;
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
 </script>
 
 <style scoped>
@@ -172,36 +156,14 @@ h1 {
   flex-direction: column;
   gap: 16px;
   align-items: center; /* 垂直居中对齐按钮 */
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .button {
   padding: 12px 24px;
   font-size: 18px;
-  margin-top: 10px;
+  margin-top: 6px;
   width: 80%;
-}
-
-.el-dialog__wrapper {
-  background-color: transparent !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.thumbnail-image {
-  /* position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); */
-  margin-bottom: 20px;
-}
-.dialog-footer {
-  display: flex;
-  width: 100%;
-  justify-content: flex-end;
-}
-.dialog-title {
-  color: red;
-  text-align: center;
+  height: 42px;
 }
 </style>
