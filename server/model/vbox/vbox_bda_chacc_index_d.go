@@ -12,7 +12,7 @@ type VboxBdaChaccIndexD struct {
 	Uid             *int    `json:"uid" form:"uid" gorm:"column:uid;comment:用户id;size:10;"`
 	UserName        string  `json:"username" form:"username" gorm:"column:username;comment:用户名;size:64;"`
 	PAccount        string  `json:"p_account" form:"p_account" gorm:"column:p_account;comment:付方账户名;size:50;"`
-	ChannelCode     *int    `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;"`
+	ChannelCode     string  `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;size:20;"`
 	ProductId       string  `json:"productId" form:"productId" gorm:"column:product_id;comment:通道ID;"`
 	ProductName     string  `json:"productName" form:"productName" gorm:"column:product_name;comment:通道名;size:128;"`
 	OrderQuantify   int     `json:"orderQuantify" form:"orderQuantify" gorm:"column:order_quantify;comment:订单量;"`

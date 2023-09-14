@@ -88,7 +88,7 @@ func (bdaChaccDService *VboxBdaChaccIndexDService) GetVboxBdaChaccIndexDInfoList
 	if info.PAccount != "" {
 		db = db.Where("p_account = ?", info.PAccount)
 	}
-	if info.ChannelCode != nil {
+	if info.ChannelCode != "" {
 		db = db.Where("channel_code = ?", info.ChannelCode)
 	}
 	if info.ProductId != "" {
@@ -112,16 +112,16 @@ func (bdaChaccDService *VboxBdaChaccIndexDService) GetVboxBdaChaccIndexDInfoList
 // Author yoga
 func (bdaChaccDService *VboxBdaChaccIndexDService) CronVboxBdaChaccIndexD() (err error) {
 	queryB := `
-		    SELECT distinct c_channel_id  as chId
+		    SELECT distinct channel_code  as chId
 			FROM vbox_pay_order
-			WHERE  uid = ? and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)
+			WHERE  uid = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)
 		;
     `
 
 	queryC := `
 		    SELECT distinct p_account  as accId
 			FROM vbox_pay_order
-			WHERE  uid = ? and c_channel_id = ? and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)
+			WHERE  uid = ? and channel_code = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)
 		;
     `
 
@@ -217,18 +217,18 @@ func (bdaChaccDService *VboxBdaChaccIndexDService) CronVboxBdaChaccIndexD() (err
 					return err
 				}
 				var vcp vbox.ChannelProduct
-				err = global.GVA_DB.Where("product_id = ?", chId).First(&vcp).Error
+				err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
 				if err != nil {
 					return err
 				}
 
-				chCode := int(vcp.ChannelCode)
+				chCode := vcp.ChannelCode
 
 				entity := vbox.VboxBdaChaccIndexD{
 					Uid:             &uid,
 					UserName:        userInfo.Username,
 					PAccount:        accId,
-					ChannelCode:     &chCode,
+					ChannelCode:     chCode,
 					ProductId:       chId,
 					ProductName:     vcp.ProductName,
 					OrderQuantify:   int(yOrderQuantify),
@@ -255,7 +255,7 @@ func GetUsersAccChVboxPayOrderInfoList(id int, chId string, accId string, num in
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
 	var vpos []vbox.VboxPayOrder
-	err = db.Where("uid = ? and p_account = ? and c_channel_id = ? and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)", id, accId, chId, num).Find(&vpos).Error
+	err = db.Where("uid = ? and p_account = ? and channel_code = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)", id, accId, chId, num).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
 }

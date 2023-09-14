@@ -10,7 +10,7 @@ type VboxBdaChIndexD struct {
 	global.GVA_MODEL
 	Uid             *int    `json:"uid" form:"uid" gorm:"column:uid;comment:用户id;size:10;"`
 	UserName        string  `json:"username" form:"username" gorm:"column:username;comment:用户名;size:64;"`
-	ChannelCode     *int    `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;"`
+	ChannelCode     string  `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;size:20;"`
 	ProductId       string  `json:"productId" form:"productId" gorm:"column:product_id;comment:通道ID;"`
 	ProductName     string  `json:"productName" form:"productName" gorm:"column:product_name;comment:通道名;size:128;"`
 	OrderQuantify   int     `json:"orderQuantify" form:"orderQuantify" gorm:"column:order_quantify;comment:订单量;"`

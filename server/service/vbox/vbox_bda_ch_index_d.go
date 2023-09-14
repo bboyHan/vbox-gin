@@ -86,7 +86,7 @@ func (bdaChDService *VboxBdaChIndexDService) GetVboxBdaChIndexDInfoList(info vbo
 	if info.UserName != "" {
 		db = db.Where("username = ?", info.UserName)
 	}
-	if info.ChannelCode != nil {
+	if info.ChannelCode != "" {
 		db = db.Where("channel_code = ?", info.ChannelCode)
 	}
 	if info.ProductId != "" {
@@ -110,9 +110,9 @@ func (bdaChDService *VboxBdaChIndexDService) GetVboxBdaChIndexDInfoList(info vbo
 // Author yoga
 func (bdaChDService *VboxBdaChIndexDService) CronVboxBdaChIndexD() (err error) {
 	queryB := `
-		    SELECT distinct c_channel_id  as chId
+		    SELECT distinct channel_code  as chId
 			FROM vbox_pay_order
-			WHERE  uid = ? and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)
+			WHERE  uid = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)
 		;
     `
 	dt := time.Now().Format("2006-01-02")
@@ -192,17 +192,17 @@ func (bdaChDService *VboxBdaChIndexDService) CronVboxBdaChIndexD() (err error) {
 				return err
 			}
 			var vcp vbox.ChannelProduct
-			err = global.GVA_DB.Where("product_id = ?", chId).First(&vcp).Error
+			err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
 			if err != nil {
 				return err
 			}
 
-			chCode := int(vcp.ChannelCode)
+			chCode := vcp.ChannelCode
 
 			entity := vbox.VboxBdaChIndexD{
 				Uid:             &uid,
 				UserName:        userInfo.Username,
-				ChannelCode:     &chCode,
+				ChannelCode:     chCode,
 				ProductId:       chId,
 				ProductName:     vcp.ProductName,
 				OrderQuantify:   int(yOrderQuantify),
@@ -228,7 +228,7 @@ func GetUsersVboxPayOrderInfoList(id int, chId string, num int) (list []vbox.Vbo
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
 	var vpos []vbox.VboxPayOrder
-	err = db.Where("uid = ? and c_channel_id = ? and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)", id, chId, num).Find(&vpos).Error
+	err = db.Where("uid = ? and channel_code = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)", id, chId, num).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
 }

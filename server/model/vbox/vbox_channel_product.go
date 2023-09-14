@@ -9,7 +9,7 @@ import (
 type ChannelProduct struct {
 	global.GVA_MODEL
 	ParentId    *uint            `json:"parentId" form:"parentId" gorm:"column:parent_id;comment:默认菜单;size:20;"`
-	ChannelCode uint             `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:角色ID;size:20;"`
+	ChannelCode string           `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:角色ID;size:20;"`
 	ProductName string           `json:"productName" form:"productName" gorm:"column:product_name;comment:角色名;size:128;"`
 	ProductId   string           `json:"productId" form:"productId" gorm:"column:product_id;comment:父角色ID;size:128;"`
 	Ext         string           `json:"ext" form:"ext" gorm:"column:ext;comment:附加参数;size:256;"`

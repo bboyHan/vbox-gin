@@ -255,9 +255,9 @@ func (vpoService *VboxPayOrderService) GetUsersVboxPayOrderInfoHList(ids []int, 
 	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
 	var vpos []vbox.VboxPayOrder
 	if num == 1 {
-		err = db.Where("uid in (?) and create_time >= (CURDATE() - INTERVAL ? HOUR)", ids, num).Find(&vpos).Error
+		err = db.Where("uid in (?) and created_at >= (CURDATE() - INTERVAL ? HOUR)", ids, num).Find(&vpos).Error
 	} else {
-		err = db.Where("uid in (?) and create_time >= (CURDATE() - INTERVAL ? HOUR) and create_time < (CURDATE() - INTERVAL 1 HOUR)", ids, num).Find(&vpos).Error
+		err = db.Where("uid in (?) and created_at >= (CURDATE() - INTERVAL ? HOUR) and created_at < (CURDATE() - INTERVAL 1 HOUR)", ids, num).Find(&vpos).Error
 	}
 	total = int64(len(vpos))
 	return vpos, total, err
@@ -540,11 +540,11 @@ func (vpoService *VboxPayOrderService) GetVboxUserPayOrderAnalysisIncomeCharts(i
 	query := `
         SELECT coalesce(sum(cost),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
-		    SELECT distinct DATE(create_time)  as dt
+		    SELECT distinct DATE(created_at)  as dt
 			FROM vbox_pay_order
 			WHERE  uid in (?)
 		)t
@@ -599,13 +599,13 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisQuantifyCharts(u
 	query := `
         SELECT coalesce(count(1),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ? and c_channel_id= ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and c_channel_id= ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
 		    SELECT distinct DATE(create_time)  as dt
 			FROM vbox_pay_order
-			WHERE  uid = ?  and DATE(create_time) >= (CURDATE() - INTERVAL 30 DAY)
+			WHERE  uid = ?  and DATE(created_at) >= (CURDATE() - INTERVAL 30 DAY)
 		)t
         order by dt;
     `
@@ -672,13 +672,13 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisIncomeBarCharts(
 	query := `
         SELECT coalesce(sum(cost),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
-		    SELECT distinct DATE(create_time)  as dt
+		    SELECT distinct DATE(created_at)  as dt
 			FROM vbox_pay_order
-			WHERE  uid = ?  and DATE(create_time) >= (CURDATE() - INTERVAL 30 DAY)
+			WHERE  uid = ?  and DATE(created_at) >= (CURDATE() - INTERVAL 30 DAY)
 		)t
         order by dt;
     `
@@ -716,13 +716,13 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisChannelIncomeCha
 	query := `
         SELECT coalesce(sum(cost),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(create_time) = ? and c_channel_id= ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and c_channel_id= ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
-		    SELECT distinct DATE(create_time)  as dt
+		    SELECT distinct DATE(created_at)  as dt
 			FROM vbox_pay_order
-			WHERE  uid = ?  and DATE(create_time) >= (CURDATE() - INTERVAL 30 DAY)
+			WHERE  uid = ?  and DATE(created_at) >= (CURDATE() - INTERVAL 30 DAY)
 		)t
         order by dt;
     `
