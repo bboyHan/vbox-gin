@@ -244,7 +244,7 @@ func (vpoService *VboxPayOrderService) GetUsersVboxPayOrderInfoList(ids []int, n
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.VboxPayOrder{})
 	var vpos []vbox.VboxPayOrder
-	err = db.Where("uid in (?) and DATE(create_time) = (CURDATE() - INTERVAL ? DAY)", ids, num).Find(&vpos).Error
+	err = db.Where("uid in (?) and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)", ids, num).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
 }
@@ -599,11 +599,11 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisQuantifyCharts(u
 	query := `
         SELECT coalesce(count(1),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and c_channel_id= ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and channel_code= ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
-		    SELECT distinct DATE(create_time)  as dt
+		    SELECT distinct DATE(created_at)  as dt
 			FROM vbox_pay_order
 			WHERE  uid = ?  and DATE(created_at) >= (CURDATE() - INTERVAL 30 DAY)
 		)t
@@ -716,7 +716,7 @@ func (vpoService *VboxPayOrderService) GetSelectPayOrderAnalysisChannelIncomeCha
 	query := `
         SELECT coalesce(sum(cost),0) as totalIncome
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and c_channel_id= ?;
+		WHERE  uid = ? and order_status = ? and  DATE(created_at) = ? and channel_code= ?;
     `
 	queryB := `
 		select DATE_FORMAT(dt, '%Y-%m-%d') as dt from (
