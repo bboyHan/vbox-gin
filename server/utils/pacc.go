@@ -90,6 +90,8 @@ func GetDeviceSimpleInfo(userAgent string) string {
 		os = "WebOS"
 	} else if strings.Contains(userAgent, "SymbianOS") {
 		os = "Symbian"
+	} else if strings.Contains(userAgent, "Postman") {
+		os = "Postman"
 	} else {
 		os = "Other"
 	}

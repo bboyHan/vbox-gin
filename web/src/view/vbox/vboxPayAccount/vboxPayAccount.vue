@@ -94,24 +94,24 @@
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='show'?'对接信息':'非法操作'" destroy-on-close>
+    <el-dialog v-model="dialogInfoVisible" :before-close="closeInfoDialog" :title="infoType==='show'?'对接信息':'非法操作'" destroy-on-close>
       <el-form :model="formData" label-position="left" ref="elFormRef" label-width="80px">
         <el-form-item label="商户ID"  prop="pAccount" >
-          <el-input v-model="formData.pAccount" :clearable="true"  placeholder="请输入" />
+          <el-input v-model="formData.pAccount" readonly />
         </el-form-item>
         <el-form-item label="商户Key"  prop="pKey" >
-          <el-input v-model="formData.pKey" :clearable="true"  placeholder="请输入" />
+          <el-input v-model="formData.pKey" readonly />
         </el-form-item>
         <el-form-item label="通道编码"  prop="pKey" >
-          <el-input v-model="formData.pKey" :clearable="true"  placeholder="请输入" />
+          <el-input v-model="formData.pKey" readonly />
         </el-form-item>
-        <el-form-item label="对接网关"  prop="pRemark" >
-          <el-input v-model="formData.pRemark" :clearable="true"  placeholder="请输入" />
+        <el-form-item label="商户备注"  prop="pRemark" >
+          <el-input v-model="formData.pRemark" readonly />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
+          <el-button @click="closeInfoDialog">取 消</el-button>
           <el-button class="btn-copy" type="primary" @click="copyVPAInfo">复 制</el-button>
         </div>
       </template>
@@ -296,14 +296,15 @@ const onDelete = async() => {
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
+const infoType = ref('')
 
 // 查看对接信息
 const showVPAInfo = async(row) => {
   const res = await findVboxPayAccount({ ID: row.ID })
-  type.value = 'show'
+  infoType.value = 'show'
   if (res.code === 0) {
     formData.value = res.data.revpa
-    dialogFormVisible.value = true
+    dialogInfoVisible.value = true
   }
 }
 
@@ -335,6 +336,7 @@ const deleteVboxPayAccountFunc = async (row) => {
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
+const dialogInfoVisible = ref(false)
 
 // 打开弹窗
 const openDialog = () => {
@@ -353,6 +355,26 @@ const closeDialog = () => {
         status: 0,
         }
 }
+
+// ------------ 对接 ---------------
+// 打开弹窗
+const openInfoDialog = () => {
+  infoType.value = 'show'
+  dialogInfoVisible.value = true
+}
+
+// 关闭弹窗
+const closeInfoDialog = () => {
+  dialogInfoVisible.value = false
+  formData.value = {
+    uid: 0,
+    pAccount: '',
+    pKey: '',
+    pRemark: '',
+    status: 0,
+  }
+}
+
 // 弹窗确定
 const enterDialog = async () => {
      elFormRef.value?.validate( async (valid) => {
@@ -382,32 +404,32 @@ const enterDialog = async () => {
 
 // 复制对接信息
 const copyVPAInfo = () => {
-    let res = formData.value;
-    console.log(res)
-    let copyInfo = `
-      商户ID: ${res.pAccount}
-      商户Key: ${res.pKey}
-    `
-    const clipboard = new ClipboardJS('.btn-copy', {
-      text: () => copyInfo
-    });
+  let res = formData.value;
+  console.log(res)
+  let copyInfo = `
+    商户ID: ${res.pAccount}
+    商户Key: ${res.pKey}
+  `
+  const clipboard = new ClipboardJS('.btn-copy', {
+    text: () => copyInfo
+  });
 
-    clipboard.on('success', () => {
-      ElMessage({
-        type: 'success',
-        message: '复制成功'
-      })
-      clipboard.destroy(); // 销毁 ClipboardJS 实例
-    });
+  clipboard.on('success', () => {
+    ElMessage({
+      type: 'success',
+      message: '复制成功'
+    })
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
 
-    clipboard.on('error', () => {
-      ElMessage({
-        type: 'error',
-        message: '复制异常'
-      })
-      clipboard.destroy(); // 销毁 ClipboardJS 实例
-    });
-  closeDialog()
+  clipboard.on('error', () => {
+    ElMessage({
+      type: 'error',
+      message: '复制异常'
+    })
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
+  closeInfoDialog()
 };
 
 

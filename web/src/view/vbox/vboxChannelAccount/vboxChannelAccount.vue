@@ -288,7 +288,7 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
   ChannelCodeData.forEach(item => {
     if (item.children && item.children.length) {
       const option = {
-        value: item.channelCode,
+        value: item.channelCode + '',
         label: item.productName,
         children: []
       }
@@ -299,7 +299,7 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
       optionsData.push(option)
     } else {
       const option = {
-        value: item.channelCode,
+        value: item.channelCode + '',
         label: item.productName,
       }
       optionsData.push(option)
@@ -315,8 +315,8 @@ const formData = ref({
   acPwd: '',
   acRemark: '',
   token: '',
-  acId: 0,
-  cid: 0,
+  acId: '',
+  cid: '',
   dailyLimit: 0,
   totalLimit: 0,
   countLimit: 0,
@@ -372,7 +372,7 @@ const onSubmit = () => {
   })
 }
 
-// 分页
+// 分
 const handleSizeChange = (val) => {
   pageSize.value = val
   getTableData()
@@ -532,7 +532,7 @@ const closeDialog = () => {
     acPwd: '',
     acRemark: '',
     token: '',
-    acId: 0,
+    acId: '',
     cid: 0,
     dailyLimit: 0,
     totalLimit: 0,
@@ -545,7 +545,7 @@ const closeDialog = () => {
 const enterDialog = async () => {
   elFormRef.value?.validate(async (valid) => {
     if (!valid) return
-    formData.value.cid = Number(formData.value.cid)
+    formData.value.cid = formData.value.cid
     formData.value.status = Number(formData.value.status)
     let res
     switch (type.value) {

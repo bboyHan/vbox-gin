@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/valyala/fasthttp"
@@ -13,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -42,19 +42,9 @@ const (
 	DB      = 2
 )
 
-func NewProxyHTTPClient() *FastHttpClient {
-
-	//1. cache
-	//2. db
-	// 设置数据库连接参数
-	//dsn := "vbox_admin:Vbox123qwe@tcp(rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com:3306)/vbox_gin?charset=utf8mb4&parseTime=True&loc=Local"
-	//// 连接数据库
-	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	//var proxyDB vbox.Proxy
-	//err = db.Where("status = ?", 1).First(&proxyDB).Error
-
+func ProxyAddress2DB() string {
 	var proxyDB vbox.Proxy
-	err := global.GVA_DB.Where("status = ?", 1).First(&proxyDB).Error
+	err := global.GVA_DB.Where("status = ? and chan = ?", 1, "proxy").First(&proxyDB).Error
 	if err != nil {
 		log.Fatal("Proxy URL from DB parsing error:", err)
 	}
@@ -72,7 +62,23 @@ func NewProxyHTTPClient() *FastHttpClient {
 	}
 	res, err := c.Get(proxyDB.Url, options)
 	s := string(res.Body)
-	log.Printf("pppppppp: %v", s)
+	log.Printf("pppppppp: %v", strings.TrimSpace(s))
+
+	return s
+}
+
+func NewProxyHTTPClient() *FastHttpClient {
+
+	//1. cache
+	//2. db
+	// 设置数据库连接参数
+	//dsn := "vbox_admin:Vbox123qwe@tcp(rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com:3306)/vbox_gin?charset=utf8mb4&parseTime=True&loc=Local"
+	//// 连接数据库
+	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	//var proxyDB map[string]interface{}
+	//err = db.Where("status = ?", 1).First(&proxyDB).Error
+
+	s := ProxyAddress2DB()
 
 	return NewHTTPClient(s)
 }
@@ -211,7 +217,6 @@ func (c *FastHttpClient) sendRequest(method, url string, options *RequestOptions
 
 	// 设置代理
 	if options != nil && options.Proxy != "" {
-		global.GVA_LOG = core.Zap()
 		global.GVA_LOG.Info("使用代理: ->", zap.Any("addr", options.Proxy))
 		req.SetHost(options.Proxy)
 	}

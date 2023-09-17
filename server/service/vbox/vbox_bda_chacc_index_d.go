@@ -217,7 +217,7 @@ func (bdaChaccDService *VboxBdaChaccIndexDService) CronVboxBdaChaccIndexD() (err
 					return err
 				}
 				var vcp vbox.ChannelProduct
-				err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
+				err = global.GVA_DB.Where("product_id = ?", chId).First(&vcp).Error
 				if err != nil {
 					return err
 				}

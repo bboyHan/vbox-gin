@@ -24,6 +24,7 @@ type VboxPayOrderService struct {
 func (vpoService *VboxPayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimple) (rep *vboxRep.OrderSimpleRes, err error) {
 
 	// 1. 查单
+	//var order vboxRep.VboxPayOrderRes
 	var order vbox.VboxPayOrder
 	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).
 		Where("order_id = ?", vpo.OrderId).
@@ -62,6 +63,14 @@ func HandelResourceUrl(order vbox.VboxPayOrder) (string, error) {
 func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
 
 	// 1. 校验签名
+	var vpa vbox.PayAccount
+	err = global.GVA_DB.Debug().Model(&vbox.PayAccount{}).Table("vbox_pay_account").
+		Where("p_account = ?", vpo.Account).Find(&vpa).Error
+	if err != nil {
+		return nil, err
+	}
+
+	vpo.Key = vpa.PKey
 	signValid := utils.VerifySign(vpo)
 	if !signValid {
 		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
@@ -71,7 +80,7 @@ func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder
 	var order vbox.VboxPayOrder
 	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).
 		Where("order_id = ? and p_account = ?", vpo.OrderId, vpo.Account).
-		First(order).Error
+		First(&order).Error
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +112,15 @@ func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder
 //			OrderId:     "P1234",
 //		}
 func (vpoService *VboxPayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+
+	var vpa vbox.PayAccount
+	err = global.GVA_DB.Table("vbox_pay_account").
+		Where("p_account = ?", vpo.Account).First(&vpa).Error
+	if err != nil {
+		return nil, err
+	}
+
+	vpo.Key = vpa.PKey
 
 	// 1. 校验签名
 	signValid := utils.VerifySign(vpo)
@@ -172,6 +190,8 @@ func HandelPayUrl2Pacc(orderId string) (string, error) {
 }
 
 func HandleResourceUrl(vca vbox.ChannelAccount, cid string, money int) string {
+	//1. 如果是引导类的，获取引导地址 - channel shop
+
 	return ""
 }
 
@@ -231,7 +251,8 @@ func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.Vbox
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Select("vbox_pay_order.*, vbox_channel_account.ac_remark, vbox_channel_account.ac_account, vbox_channel_account.uid as user_id").
+	err = db.Debug().Limit(limit).Offset(offset).Select("vbox_pay_order.*,vbox_pay_order.created_at as created_time, vbox_channel_account.ac_remark, vbox_channel_account.ac_account, vbox_channel_account.uid as user_id").
+		//err = db.Debug().Limit(limit).Offset(offset).Select("vbox_pay_order.*, vbox_channel_account.*").
 		Joins("LEFT JOIN vbox_channel_account ON vbox_channel_account.ac_id = vbox_pay_order.ac_id").
 		Scan(&vpos).Error
 

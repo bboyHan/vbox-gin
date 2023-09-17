@@ -28,10 +28,15 @@ type CreateOrder2PayAccount struct {
 type QueryOrder2PayAccount struct {
 	Account string `json:"account" form:"account" url:"account"`
 	OrderId string `json:"order_id" form:"order_id" url:"order_id"`
+	Key     string `json:"key" form:"key" url:"key"`
 	Sign    string `json:"sign" form:"sign" url:"sign"`
 }
 
 // QueryOrderSimple 结构体
 type QueryOrderSimple struct {
-	OrderId string `json:"order_id" form:"order_id" url:"order_id"`
+	OrderId   string `json:"order_id" form:"order_id" url:"order_id"`
+	UserAgent string `json:"user_agent" form:"user_agent" url:"user_agent"`
+	PayIp     string `json:"pay_ip" form:"pay_ip" url:"pay_ip"`
+	PayRegion string `json:"pay_region" form:"pay_region" url:"pay_region"`
+	PayDevice string `json:"pay_device" form:"pay_device" url:"pay_device"`
 }

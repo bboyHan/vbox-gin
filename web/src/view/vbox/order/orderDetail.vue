@@ -1,45 +1,83 @@
 <template>
-  <div class="container">
-    <div class="content">
-      <div v-show="dialogCountVisible">
-        <count-down
-          :fire="fire"
-          :tiping="tiping"
-          :tipend="tipend"
-          time="12"
-          @statusChange="onStatusChange"
-          @end="onEnd"
-          :statusChange="[2000,500]"
-          width="180"
-          height="180"
-        >
-        </count-down>
-        <div class="buttons">
-          <el-row :gutter="6">
-            <el-col :span="24">
-              <el-button type="success" class="button" round>正在通过安全验证，请等待...</el-button>
+  <div>
+    <div v-show="dialogCountVisible">
+      <div class="c_container">
+        <div class="c_content">
+          <count-down
+            :fire="fire"
+            :tiping="tiping"
+            :tipend="tipend"
+            time="12"
+            @statusChange="onStatusChange"
+            @end="onEnd"
+            :statusChange="[2000,500]"
+            width="180"
+            height="180"
+          >
+          </count-down>
+          <div class="buttons">
+            <el-row :gutter="6">
+              <el-col :span="24">
+                <el-button type="success" class="c_button" round>正在通过安全验证，请等待...</el-button>
+              </el-col>
+              <el-col :span="24">
+                <el-button type="primary" class="c_button" round>订单正在匹配中，预计5-20秒</el-button>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-show="payVisible">
+      <!-- 显示新的 div 的代码... -->
+      <div class="p_container">
+<!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
+        <div class="p_blue-section" v-for="index in 10" :key="index" :style="{ backgroundColor: generateColor(index) }"></div>
+        <div class="p_content">
+          <el-row :gutter="12">
+            <el-col>
+              <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+            </el-col>
+            <el-col>
+              <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+            </el-col>
+            <el-col>
+              <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+            </el-col>
+            <el-col>
+              <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                <el-icon style="margin-right: 5px"><WarningFilled /></el-icon>请在规定时间内付款！
+              </div>
+            </el-col>
+            <el-col>
+              <div style="height: 100px;">
+              </div>
             </el-col>
             <el-col :span="24">
-              <el-button type="primary" class="button" round>订单正在匹配中，预计5-20秒</el-button>
+              <!--                <el-button class="p_button" type="primary">复制充值账号 立即付款</el-button>-->
             </el-col>
           </el-row>
         </div>
       </div>
-
-      <div v-show="payVisible">
-        <!-- 显示新的 div 的代码... -->
-        <h1>付款页面</h1>
-      </div>
-      <div v-show="notFoundVisible">
-        <!-- 显示新的 div 的代码... -->
-        <h1>订单不存在</h1>
-      </div>
-      <div v-show="finishedVisible">
-        <!-- 显示新的 div 的代码... -->
-        <h1>已付款成功</h1>
+      <div class="p_content_button">
+        <el-row :gutter="12">
+          <el-col>
+              <button class="p_button" @click="">立即付款</button>
+          </el-col>
+        </el-row>
       </div>
     </div>
+    <div v-show="notFoundVisible">
+      <!-- 显示新的 div 的代码... -->
+      <h1>订单不存在</h1>
+    </div>
+    <div v-show="finishedVisible">
+      <!-- 显示新的 div 的代码... -->
+      <h1>已付款成功</h1>
+    </div>
   </div>
+
 </template>
 
 <script setup>
@@ -48,6 +86,7 @@ import { onMounted, ref, onUnmounted } from 'vue';
 import CountDown from 'vue-canvas-countdown';
 import { queryOrderSimple } from '@/api/vboxPayOrder';
 import { useRoute } from 'vue-router';
+import { WarningFilled } from '@element-plus/icons-vue';
 
 // 弹窗控制标记
 const dialogCountVisible = ref(true)
@@ -55,6 +94,15 @@ const payVisible = ref(false)
 const finishedVisible = ref(false)
 const notFoundVisible = ref(false)
 const route = useRoute()
+
+// ---------- 付款页 ----------------
+
+const generateColor = (index) => {
+  const hue = 220; // 蓝色的色调，范围为0-360
+  const saturation = 90; // 蓝色的饱和度，范围为0-100
+  const lightness = 100 - ((index - 0) * 8); // 蓝色的亮度，范围为0-100
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
 
 // ---------- 倒计时 ----------------
 const fire = ref(0);
@@ -102,13 +150,18 @@ onUnmounted(() => {
   clearInterval(timerId);
 });
 
+const payData = ref({
+  money: 0,
+  resource_url: '',
+  status: 0,
+})
+
 const queryOrder = async () => {
   try {
     const orderId = route.query.orderId;
     console.log(orderId)
     const result = await queryOrderSimple({order_id: orderId}); // 发送 HTTP 请求
-    console.log(result)
-    console.log(result.code)
+    payData.value = result.data
     if (result) {
       clearInterval(timerId); // 如果状态发生变化，则停止定时器
     }
@@ -134,14 +187,14 @@ const queryOrder = async () => {
 </script>
 
 <style scoped>
-.container {
+.c_container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-.content {
+.c_content {
   text-align: center;
   color: #333;
 }
@@ -151,19 +204,58 @@ h1 {
   margin-bottom: 24px;
 }
 
-.buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center; /* 垂直居中对齐按钮 */
-  margin-top: 30px;
-}
 
-.button {
+.c_button {
   padding: 12px 24px;
   font-size: 18px;
   margin-top: 6px;
   width: 80%;
   height: 42px;
+}
+
+.p_container {
+  display: flex;
+  justify-content: space-between;
+  height: 45vh;
+}
+
+.p_blue-section {
+  flex-grow: 1;
+}
+
+.p_content {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  right: 5%;
+  height: 45%;
+  background-color: #f2f2f2;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.p_content_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 52%;
+  left: 5%;
+  right: 5%;
+}
+
+.p_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  //background-color: #1660f3;
+  background: linear-gradient(to right, #064954, #125280, #1247c9);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
 }
 </style>

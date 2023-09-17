@@ -2,6 +2,9 @@ package system
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -19,14 +22,20 @@ var store = captcha.NewDefaultRedisStore()
 
 type BaseApi struct{}
 
-// Captcha
+// ProxyTest
 // @Tags      Base
-// @Summary   生成验证码
+// @Summary   生成代理
 // @Security  ApiKeyAuth
 // @accept    application/json
 // @Produce   application/json
 // @Success   200  {object}  response.Response{data=systemRes.SysCaptchaResponse,msg=string}  "生成验证码,返回包括随机数id,base64,验证码长度,是否开启验证码"
 // @Router    /base/captcha [post]
+func (b *BaseApi) ProxyTest(c *gin.Context) {
+	s := http.ProxyAddress2DB()
+	log.Printf("pppppppp: %v", s)
+	response.OkWithData(gin.H{"addr": strings.ReplaceAll(s, "\r\n", "")}, c)
+}
+
 func (b *BaseApi) Captcha(c *gin.Context) {
 	// 判断验证码是否开启
 	openCaptcha := global.GVA_CONFIG.Captcha.OpenCaptcha               // 是否开启防爆次数

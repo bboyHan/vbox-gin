@@ -114,7 +114,7 @@
           </template>
         </el-table-column>
          <el-table-column align="left" label="创建时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.create_time) }}</template>
+            <template #default="scope">{{ formatDate(scope.row.created_at) }}</template>
          </el-table-column>
          <el-table-column align="left" label="通知时间" width="180">
             <template #default="scope">{{ formatDate(scope.row.call_time) }}</template>
@@ -186,25 +186,25 @@ const userStore = useUserStore()
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        order_id: '',
-        p_account: '',
-        cost: 0,
-        uid: 0,
-        ac_id: '',
-        channel_code: '',
-        platform_oid: '',
-        pay_device: '',
-        pay_ip: '',
-        resource_url:'',
-        pay_region: '',
-        notify_url: '',
-        order_status: 0,
-        callback_status: 0,
-        code_use_status: 0,
-        create_time: new Date(),
-        async_time: new Date(),
-        call_time: new Date(),
-        })
+  order_id: '',
+  p_account: '',
+  cost: 0,
+  uid: 0,
+  ac_id: '',
+  channel_code: '',
+  platform_oid: '',
+  pay_device: '',
+  pay_ip: '',
+  resource_url:'',
+  pay_region: '',
+  notify_url: '',
+  order_status: 0,
+  callback_status: 0,
+  code_use_status: 0,
+  created_at: new Date(),
+  async_time: new Date(),
+  call_time: new Date(),
+})
 
 // 验证规则
 const rule = reactive({
@@ -323,24 +323,24 @@ const openDialog = () => {
 const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
-        order_id: '',
-        p_account: '',
-        cost: 0,
-        uid: 0,
-        ac_id: '',
-        channel_code: '',
-        platform_oid: '',
-        pay_device: '',
-        pay_ip: '',
-        pay_region: '',
-        notify_url: '',
-        order_status: 0,
-        callback_status: 0,
-        code_use_status: 0,
-        create_time: new Date(),
-        async_time: new Date(),
-        call_time: new Date(),
-      }
+      order_id: '',
+      p_account: '',
+      cost: 0,
+      uid: 0,
+      ac_id: '',
+      channel_code: '',
+      platform_oid: '',
+      pay_device: '',
+      pay_ip: '',
+      pay_region: '',
+      notify_url: '',
+      order_status: 0,
+      callback_status: 0,
+      code_use_status: 0,
+      created_at: new Date(),
+      async_time: new Date(),
+      call_time: new Date(),
+    }
 }
 // 弹窗确定
 const enterDialog = async () => {

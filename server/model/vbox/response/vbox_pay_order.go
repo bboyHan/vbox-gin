@@ -1,12 +1,18 @@
 package response
 
-import "github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+import (
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	"time"
+)
 
 // VboxPayOrderRes 结构体
 type VboxPayOrderRes struct {
+	//vbox.ChannelAccount `json:"ca" gorm:"embedded"`
+	//vbox.VboxPayOrder   `json:"pa" gorm:"embedded"`
 	vbox.ChannelAccount `gorm:"embedded"`
 	vbox.VboxPayOrder   `gorm:"embedded"`
-	UserId              string `json:"user_id" gorm:"embedded"`
+	UserId              string    `json:"user_id" gorm:"embedded"`
+	CreatedTime         time.Time `json:"created_time" gorm:"embedded"`
 }
 
 // Order2PayAccountRes 结构体

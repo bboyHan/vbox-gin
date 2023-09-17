@@ -78,6 +78,12 @@ func (vpoApi *VboxPayOrderApi) QueryOrderSimple(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	vpo.PayIp = c.ClientIP()
+	vpo.UserAgent = c.Request.UserAgent()
+	vpo.PayRegion, _ = utils.SearchIp2Region(vpo.PayIp)
+	vpo.PayDevice = utils.GetDeviceSimpleInfo(vpo.UserAgent)
+
 	if order, err := vpoService.QueryOrderSimple(&vpo); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
