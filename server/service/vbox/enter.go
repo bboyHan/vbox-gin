@@ -14,4 +14,5 @@ type ServiceGroup struct {
 	VboxBdaChaccIndexDService
 	VboxTeamsUserService
 	VboxTeamsService
+	VboxChannelRateService
 }

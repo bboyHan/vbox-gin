@@ -16,6 +16,7 @@ type ApiGroup struct {
 	VboxBdaChaccIndexDApi
 	VboxTeamsUserApi
 	VboxTeamsApi
+	VboxChannelRateApi
 }
 
 var (

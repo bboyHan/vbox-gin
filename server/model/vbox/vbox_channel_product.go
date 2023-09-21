@@ -18,6 +18,11 @@ type ChannelProduct struct {
 	Children    []ChannelProduct `json:"children" gorm:"-"`
 }
 
+type UserChannelProductRate struct {
+	ChannelProduct
+	Rate float64 `json:"rate"`
+}
+
 // TableName VboxChannelProduct 表名
 func (ChannelProduct) TableName() string {
 	return "vbox_channel_product"

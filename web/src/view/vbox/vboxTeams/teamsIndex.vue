@@ -111,10 +111,10 @@
                     <el-table-column align="left" label="通道编码" prop="channelCode" width="120" />
                     <el-table-column align="left" label="产品名称" prop="productName" width="160" />
                     <el-table-column align="left" label="产品ID" prop="productId" width="120" />
-                    <el-table-column align="left" label="费率" prop="token" width="160">
+                    <el-table-column align="left" label="费率" prop="rate" width="160">
                     <template #default="scope">
                       <el-input
-                          v-model="scope.row.ID"
+                          v-model="scope.row.rate"
                           :rows="1"
                           readonly="readonly"
                       >
@@ -286,6 +286,9 @@ import {
   deleteVboxTeamsUser,
   transferTeamUserApi
 } from '@/api/vboxTeamsUser.js'
+import{
+  getVboxTeamUserChannelRateList
+} from '@/api/vboxChannelRate.js'
 
 import {
   getVboxChannelProductList
@@ -670,7 +673,7 @@ const searchInfo = ref({})
 
 // 查询
 const getTableData = async() => {
-  const table = await getVboxChannelProductList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const table = await getVboxTeamUserChannelRateList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
     console.log('==>bb' + JSON.stringify(tableData.value))
@@ -686,7 +689,7 @@ const upChannelRate = async (row) => {
   // caTokenInfo.value = JSON.parse(JSON.stringify(row))
   await nextTick()
   dialogRateFormVisible.value = true
-  
+  formData.value.rate = row.rate
   // const res = await updateTokenInfoFunc(req)
   // if (res.code === 0) {
   //   ElMessage({type: 'success', message: `更新CK${req.status === 0 ? '成功' : '失败'}`})

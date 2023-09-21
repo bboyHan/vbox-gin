@@ -15,4 +15,5 @@ type RouterGroup struct {
 	OrderRouter
 	VboxTeamsUserRouter
 	VboxTeamsRouter
+	VboxChannelRateRouter
 }
