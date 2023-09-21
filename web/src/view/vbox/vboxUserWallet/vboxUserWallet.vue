@@ -114,7 +114,7 @@
           <el-statistic title="可用划转积分" :value="rechargeData" />
         </el-col>
       </el-form-item>
-      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="100px">
         <!-- <el-form-item label="uid:"  prop="uid" >
           <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入" />
         </el-form-item>-->

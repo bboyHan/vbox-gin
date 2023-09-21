@@ -69,7 +69,7 @@ func RegisterTables() {
 		vbox.ChannelProduct{},
 		vbox.ChannelAccount{},
 		vbox.VboxBdaChIndexD{},
-		vbox.VboxBdaChaccIndexD{},
+		vbox.VboxBdaChaccIndexD{}, vbox.VboxTeamsUser{}, vbox.VboxTeams{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

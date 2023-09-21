@@ -14,6 +14,8 @@ type ApiGroup struct {
 	VboxUserWalletApi
 	VboxBdaChIndexDApi
 	VboxBdaChaccIndexDApi
+	VboxTeamsUserApi
+	VboxTeamsApi
 }
 
 var (

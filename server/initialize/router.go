@@ -90,6 +90,8 @@ func Routers() *gin.Engine {
 		vboxRouter.InitVboxUserWalletRouter(PrivateGroup)
 		vboxRouter.InitVboxBdaChIndexDRouter(PrivateGroup)
 		vboxRouter.InitVboxBdaChaccIndexDRouter(PrivateGroup)
+		vboxRouter.InitVboxTeamsUserRouter(PrivateGroup)
+		vboxRouter.InitVboxTeamsRouter(PrivateGroup)
 	}
 	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
 	global.GVA_LOG.Info("router register success")

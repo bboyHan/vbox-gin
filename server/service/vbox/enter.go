@@ -12,4 +12,6 @@ type ServiceGroup struct {
 	VboxUserWalletService
 	VboxBdaChIndexDService
 	VboxBdaChaccIndexDService
+	VboxTeamsUserService
+	VboxTeamsService
 }

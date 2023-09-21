@@ -246,6 +246,7 @@ const selectData = ref([])
 const loadDeptData = async(node, resolve) => {
   if (node.level === 0) {
     const res = await getOrgTree()
+    console.log('loadDeptData' + JSON.stringify(res))
     resolve(res.data.list)
     return
   }
@@ -408,6 +409,7 @@ const addUser = async() => {
 
 // 切换选中组织
 const getNowOrg = (e) => {
+  console.log('getNowOrg' + JSON.stringify(e))
   currentOrg.value = e.ID
   getUserTable()
 }
