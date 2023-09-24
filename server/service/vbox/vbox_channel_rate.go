@@ -94,6 +94,7 @@ func (chRateService *VboxChannelRateService) GetVboxTeamUserChannelRateList(info
 		"6002": 0.9,
 		"6003": 0.7,
 		"6006": 0.3,
+		"6101": 0.3,
 	}
 
 	processRateChannelProducts(channelProducts, channelCodeToRate, &rateChannelProducts)
@@ -132,14 +133,23 @@ func processRateChannelProducts(channelProducts []vbox.ChannelProduct, channelCo
 		}
 
 		rcp := vbox.UserChannelProductRate{
-			ChannelProduct: cp,
-			Rate:           rate,
+			ID:          cp.ID,
+			ParentId:    cp.ParentId,
+			ChannelCode: cp.ChannelCode,
+			ProductName: cp.ProductName,
+			ProductId:   cp.ProductId,
+			Ext:         cp.Ext,
+			Type:        cp.Type,
+			PayType:     cp.PayType,
+			Rate:        rate,
 		}
-
-		*result = append(*result, rcp)
 
 		if len(cp.Children) > 0 {
-			processRateChannelProducts(cp.Children, channelCodeToRate, result)
+			childrenResult := []vbox.UserChannelProductRate{}
+			processRateChannelProducts(cp.Children, channelCodeToRate, &childrenResult)
+			rcp.Children = childrenResult
 		}
+		*result = append(*result, rcp)
+
 	}
 }

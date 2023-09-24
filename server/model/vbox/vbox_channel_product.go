@@ -19,8 +19,16 @@ type ChannelProduct struct {
 }
 
 type UserChannelProductRate struct {
-	ChannelProduct
-	Rate float64 `json:"rate"`
+	ID          uint                     `gorm:"ID"` // 主键ID
+	ParentId    *uint                    `json:"parentId"`
+	ChannelCode string                   `json:"channelCode"`
+	ProductName string                   `json:"productName"`
+	ProductId   string                   `json:"productId"`
+	Ext         string                   `json:"ext"`
+	Type        uint                     `json:"type"`
+	PayType     string                   `json:"payType"`
+	Children    []UserChannelProductRate `json:"children" gorm:"-"`
+	Rate        float64                  `json:"rate"`
 }
 
 // TableName VboxChannelProduct 表名
