@@ -118,8 +118,9 @@
                           :rows="1"
                           readonly="readonly"
                       >
-                      %
+                      
                         <template #append>
+                         <i class="percent-symbol">%</i>
                           <el-button type="primary" link icon="edit" @click="upChannelRate(scope.row)"></el-button>
                         </template>
                       </el-input>
@@ -256,7 +257,8 @@
                destroy-on-close>
       <el-form :model="formData" label-position="right"  label-width="80px">
         <el-form-item label="费率" prop="rate">
-          <el-input v-model="formData.rate" type="textarea" :clearable="true" placeholder="请输入"/>
+          <!-- <el-input v-model="formData.rate" type="textarea" :clearable="true" placeholder="请输入"/> -->
+          <el-input-number v-model="formData.rate" :precision="2" :step="0.1" :max="100">%</el-input-number>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -287,8 +289,11 @@ import {
   transferTeamUserApi
 } from '@/api/vboxTeamsUser.js'
 import{
+  createLatestVboxChannelRate,
+  createVboxChannelRate,
   getVboxTeamUserChannelRateList
 } from '@/api/vboxChannelRate.js'
+
 
 import {
   getVboxChannelProductList
@@ -296,7 +301,9 @@ import {
 
 import { getUserList } from '@/api/user.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import icon from '@/view/superAdmin/menu/icon.vue'
 export default {
+  components: { icon },
   name: 'Organization',
 }
 </script>
@@ -686,10 +693,13 @@ const getTableData = async() => {
 const dialogRateFormVisible = ref(false)
 const upChannelRate = async (row) => {
   console.log(row)
+  console.log('==>row1' + JSON.stringify(row))
+
   // caTokenInfo.value = JSON.parse(JSON.stringify(row))
   await nextTick()
   dialogRateFormVisible.value = true
   formData.value.rate = row.rate
+  formRateDataRow.value = row
   // const res = await updateTokenInfoFunc(req)
   // if (res.code === 0) {
   //   ElMessage({type: 'success', message: `更新CK${req.status === 0 ? '成功' : '失败'}`})
@@ -703,20 +713,43 @@ const upChannelRate = async (row) => {
 const formData = ref({
   uid: 0,
   channelCode:0,
-  rate: "1%"
+  rate: 0
+})
+
+const formRateData = ref({
+        uid: 0,
+        channelCode: '',
+        productName: '',
+        productId: '',
+        rate: 0,
+        })
+const formRateDataRow = ref({
 })
 
 // 点击确定弹窗
 const enterRateDialog = () => {
   console.log(JSON.stringify(formData))
-  updateRateForChannel(formData)
+  formRateDataRow.value.rate = formData.value.rate
+  updateRateForChannel(formRateDataRow)
 }
 
 const updateRateForChannel = async (row) => {
-  const res = await findChannelAccount({ID: row.ID})
+  console.log('row2 ==> ' + JSON.stringify(formRateDataRow.value))
+
+  console.log('row3 ==> ' + JSON.stringify(row.value))
+  // const res = await findChannelAccount({ID: row.ID})
+  formRateData.value.channelCode = row.value.channelCode
+  formRateData.value.productName = row.value.productName
+  formRateData.value.productId = row.value.productId
+  formRateData.value.rate = row.value.rate
+
+
+  console.log('row4 ==> ' + JSON.stringify(formRateData.value))
+  const res = await createVboxChannelRate(formRateData.value)
   if (res.code === 0) {
-    formData.value = res.data.rate
-  
+    ElMessage.success('添加成功')
+    getTableData()
+    dialogRateFormVisible.value = false
   }
 }
 
@@ -725,7 +758,7 @@ const closeRateDialog = () => {
   dialogRateFormVisible.value = false
   formData.value = {
     uid: 0,
-    rate: "1%"
+    rate: 0
   }
 }
 </script>
@@ -795,5 +828,7 @@ const closeRateDialog = () => {
     width: calc(100% - 270px);
   }
 }
-
+.percent-symbol {
+  margin-right: 30px;
+}
 </style>

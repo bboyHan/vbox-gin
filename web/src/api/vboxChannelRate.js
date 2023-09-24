@@ -7,6 +7,22 @@ import service from '@/utils/request'
 // @Produce application/json
 // @Param data body model.VboxChannelRate true "创建VboxChannelRate"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /chRate/createLatestVboxChannelRate [post]
+export const createLatestVboxChannelRate = (data) => {
+  return service({
+    url: '/chRate/createLatestVboxChannelRate',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags VboxChannelRate
+// @Summary 创建VboxChannelRate
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.VboxChannelRate true "创建VboxChannelRate"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /chRate/createVboxChannelRate [post]
 export const createVboxChannelRate = (data) => {
   return service({
