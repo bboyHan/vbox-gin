@@ -118,9 +118,8 @@
                           :rows="1"
                           readonly="readonly"
                       >
-                      
                         <template #append>
-                         <i class="percent-symbol">%</i>
+                         <!-- <i class="percent-symbol">%</i> -->
                           <el-button type="primary" link icon="edit" @click="upChannelRate(scope.row)"></el-button>
                         </template>
                       </el-input>
@@ -258,7 +257,7 @@
       <el-form :model="formData" label-position="right"  label-width="80px">
         <el-form-item label="费率" prop="rate">
           <!-- <el-input v-model="formData.rate" type="textarea" :clearable="true" placeholder="请输入"/> -->
-          <el-input-number v-model="formData.rate" :precision="2" :step="0.1" :max="100">%</el-input-number>
+          <el-input-number v-model="formData.rate" :precision="2" :step="0.1" :max="100"></el-input-number>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -648,6 +647,7 @@ init()
 
 const drawer = ref(false);
 const direction = ref('rtl');
+const userId = ref(0)
 
 const handleClose = (done) => {
   window.confirm('确认关闭？') ? done() : {};
@@ -655,7 +655,9 @@ const handleClose = (done) => {
 const opdendrawer = (row) => {
   drawer.value = true
   console.log('opdendrawer row ==> ' + JSON.stringify(row))
-  getTableData()
+  userId.value = row.uid
+  getDataRow.value = row
+  getTableData(row)
   // activeRow.value = row
 
 }
@@ -679,8 +681,9 @@ const tableData = ref([])
 const searchInfo = ref({})
 
 // 查询
-const getTableData = async() => {
-  const table = await getVboxTeamUserChannelRateList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+const getTableData = async(row) => {
+  console.log('getTableData row ==> ' + row.uid)
+  const table = await getVboxTeamUserChannelRateList({ page: page.value, pageSize: pageSize.value, teamId: row.teamId,uid :row.uid })
   if (table.code === 0) {
     tableData.value = table.data.list
     console.log('==>bb' + JSON.stringify(tableData.value))
@@ -707,7 +710,8 @@ const upChannelRate = async (row) => {
   // }
 }
 
-
+const getDataRow = ref({
+})
 
 // rate update form
 const formData = ref({
@@ -742,13 +746,14 @@ const updateRateForChannel = async (row) => {
   formRateData.value.productName = row.value.productName
   formRateData.value.productId = row.value.productId
   formRateData.value.rate = row.value.rate
+  formRateData.value.uid = userId.value
 
 
   console.log('row4 ==> ' + JSON.stringify(formRateData.value))
   const res = await createVboxChannelRate(formRateData.value)
   if (res.code === 0) {
     ElMessage.success('添加成功')
-    getTableData()
+    getTableData(getDataRow.value)
     dialogRateFormVisible.value = false
   }
 }

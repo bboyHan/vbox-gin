@@ -83,18 +83,30 @@ func (chRateService *VboxChannelRateService) GetVboxChannelRateInfoList(info vbo
 	return chRates, total, err
 }
 
-func (chRateService *VboxChannelRateService) GetVboxTeamUserChannelRateList(info vboxReq.VboxChannelRateSearch) (list []vbox.UserChannelProductRate, total int64, err error) {
+func (chRateService *VboxChannelRateService) GetVboxTeamUserChannelRateList(info vboxReq.VboxChannelRateReq) (list []vbox.UserChannelProductRate, total int64, err error) {
+	queryP := `SELECT r.*
+			FROM vbox_channel_rate AS r
+			JOIN (
+				SELECT uid, channel_code,rate, MAX(updated_at) AS max_updated_at
+				FROM vbox_channel_rate
+				where uid = ?
+				GROUP BY uid, channel_code
+			) AS t ON r.uid = t.uid AND r.channel_code = t.channel_code AND r.created_at = t.max_updated_at;
+`
+	userId := info.Uid
+	var chRates []vbox.VboxChannelRate
+	err = global.GVA_DB.Raw(queryP, userId).Find(&chRates).Error
+	if err != nil {
+		return
+	}
+
 	channelProducts, err := GetVboxChannelProductInfoList()
 	rateChannelProducts := make([]vbox.UserChannelProductRate, 0)
 
-	// todo
-	channelCodeToRate := map[string]float64{
-		"6000": 0.5,
-		"6001": 0.8,
-		"6002": 0.9,
-		"6003": 0.7,
-		"6006": 0.3,
-		"6101": 0.3,
+	channelCodeToRate := make(map[string]float64)
+	// 遍历 chRates 数组，将数据存入 map
+	for _, rate := range chRates {
+		channelCodeToRate[rate.ChannelCode] = rate.Rate
 	}
 
 	processRateChannelProducts(channelProducts, channelCodeToRate, &rateChannelProducts)

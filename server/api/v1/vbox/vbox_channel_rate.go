@@ -180,12 +180,13 @@ func (chRateApi *VboxChannelRateApi) GetVboxChannelRateList(c *gin.Context) {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /chRate/getVboxTeamUserChannelRateList [get]
 func (chRateApi *VboxChannelRateApi) GetVboxTeamUserChannelRateList(c *gin.Context) {
-	var pageInfo vboxReq.VboxChannelRateSearch
+	var pageInfo vboxReq.VboxChannelRateReq
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	//fmt.Println("==", pageInfo)
 	if list, total, err := chRateService.GetVboxTeamUserChannelRateList(pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
