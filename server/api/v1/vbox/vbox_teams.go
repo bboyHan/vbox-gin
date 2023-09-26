@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"time"
 )
 
 type VboxTeamsApi struct {
@@ -109,6 +110,7 @@ func (teamsApi *VboxTeamsApi) UpdateVboxTeams(c *gin.Context) {
 		return
 	}
 	teams.UpdatedBy = utils.GetUserID(c)
+	teams.CreatedAt = time.Now()
 	if err := teamsService.UpdateVboxTeams(teams); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)

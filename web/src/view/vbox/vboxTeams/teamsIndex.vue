@@ -100,7 +100,7 @@
                 v-model="drawer"
                 :direction="direction"
                 :before-close="handleClose">
-                <span><el-tag>{{ row.userName }} 的费率</el-tag></span>
+                <span><el-tag>{{ selectUserName }} 的费率</el-tag></span>
                 <div>
                   <el-table
                     :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
@@ -396,11 +396,12 @@ const orgClear = () => {
 // 编辑组织弹窗打开
 const editOrg = async(row) => {
   const res = await findVboxTeams({ ID: row.ID })
+  console.log('editOrg res ==' + JSON.stringify(res.data))
   if (res.code === 0) {
     orgForm.value = {
-      ID: res.data.reorg.ID,
-      parentID: res.data.reorg.parentID,
-      name: res.data.reorg.name,
+      ID: res.data.reteams.ID,
+      parentID: res.data.reteams.parentID,
+      name: res.data.reteams.name,
     }
     orgType.value = 'edit'
     orgDialog.value = true
@@ -648,6 +649,7 @@ init()
 const drawer = ref(false);
 const direction = ref('rtl');
 const userId = ref(0)
+const selectUserName = ref('')
 
 const handleClose = (done) => {
   window.confirm('确认关闭？') ? done() : {};
@@ -656,6 +658,7 @@ const opdendrawer = (row) => {
   drawer.value = true
   console.log('opdendrawer row ==> ' + JSON.stringify(row))
   userId.value = row.uid
+  selectUserName.value = row.userName
   getDataRow.value = row
   getTableData(row)
   // activeRow.value = row
