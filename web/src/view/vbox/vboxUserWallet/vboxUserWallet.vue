@@ -67,9 +67,11 @@
                 <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
             </template>
             </el-popover>
+           <el-button  type="success" @click="exportExcel">导出excle</el-button>
         </div>
         <el-table
         ref="multipleTable"
+        id="tableToExcle"
         style="width: 100%"
         tooltip-effect="dark"
         :data="tableData"
@@ -182,6 +184,7 @@ import {
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive,onMounted } from 'vue'
+import {useExcle} from "@/utils/excle";
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -502,6 +505,12 @@ const getAvailablePoints = async() => {
       // console.log('rechargeData.value=' + rechargeData.value)
     }
 }
+
+const exportExcel = async() => {
+  useExcle("明细.xlsx",'#tableToExcle');
+}
+
+
 </script>
 
 <style>

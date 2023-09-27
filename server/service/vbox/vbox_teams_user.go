@@ -5,7 +5,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-	organization "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
 	"gorm.io/gorm"
 )
 
@@ -214,7 +213,7 @@ func (tUsersService *VboxTeamsUserService) FindTeamUserAll(teamID string) ([]uin
 func (tUsersService *VboxTeamsUserService) TransferTeamUser(ids []uint, orgID, toOrgID uint) (err error) {
 	return global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 		var CUsers []vbox.VboxTeamsUser
-		err := global.GVA_DB.Where("uid in (?) and team_id in (?)", ids, []uint{orgID, toOrgID}).Delete(&[]organization.OrgUser{}).Error
+		err := global.GVA_DB.Where("uid in (?) and team_id in (?)", ids, []uint{orgID, toOrgID}).Delete(&[]vbox.VboxTeamsUser{}).Error
 		if err != nil {
 			return err
 		}

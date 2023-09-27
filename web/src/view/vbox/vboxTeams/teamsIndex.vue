@@ -610,6 +610,7 @@ const cloesTransferOrgUser = () => {
 
 // 成员切换组织
 const transferOrgUser = async() => {
+  console.log('transferOrgUser='+ JSON.stringify(targetOrg.value))
   const res = await transferTeamUserApi(targetOrg.value)
   if (res.code === 0) {
     ElMessage.success('转移成功')
