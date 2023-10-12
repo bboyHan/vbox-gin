@@ -87,20 +87,20 @@
             </el-table-column>
             <el-table-column label="操作列" min-width="220">
               <template #default="{row}">
-                <el-button link type="primary" @click="opdendrawer(row)"> 费率详情</el-button>
+                <el-button link type="primary" @click="opdendrawer(row)"> 通道单价详情</el-button>
                 <el-button link type="primary" @click="openTransferOrgUser(row.uid)"> 更换团队</el-button>
                 <el-button link type="primary" @click="deleteUser([row.uid])"> 移出团队</el-button>
                 <el-button v-if="!row.isAdmin" link type="primary" @click="setAdmin(row.uid,true)"> 设置队长</el-button>
                 <el-button v-else link type="primary" @click="setAdmin(row.uid,false)"> 取消队长</el-button>
                 
                 <el-drawer
-                title="费率详情"
+                title="通道单价详情"
                 size="40%"
                 v-if="drawer" 
                 v-model="drawer"
                 :direction="direction"
                 :before-close="handleClose">
-                <span><el-tag>{{ selectUserName }} 的费率</el-tag></span>
+                <span><el-tag>{{ selectUserName }} 的单价表</el-tag></span>
                 <div>
                   <el-table
                     :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
@@ -111,10 +111,10 @@
                     <el-table-column align="left" label="通道编码" prop="channelCode" width="120" />
                     <el-table-column align="left" label="产品名称" prop="productName" width="160" />
                     <el-table-column align="left" label="产品ID" prop="productId" width="120" />
-                    <el-table-column align="left" label="费率" prop="rate" width="160">
+                    <el-table-column align="left" label="单价积分" prop="unit_price" width="160">
                     <template #default="scope">
                       <el-input
-                          v-model="scope.row.rate"
+                          v-model="scope.row.unitPrice"
                           :rows="1"
                           readonly="readonly"
                       >
@@ -252,12 +252,12 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="dialogRateFormVisible" :before-close="closeRateDialog" :title="'变更费率'"
+    <el-dialog v-model="dialogRateFormVisible" :before-close="closeRateDialog" :title="'变更单价'"
                destroy-on-close>
       <el-form :model="formData" label-position="right"  label-width="80px">
-        <el-form-item label="费率" prop="rate">
+        <el-form-item label="单价" prop="unitPrice">
           <!-- <el-input v-model="formData.rate" type="textarea" :clearable="true" placeholder="请输入"/> -->
-          <el-input-number v-model="formData.rate" :precision="2" :step="0.1" :max="100"></el-input-number>
+          <el-input-number v-model="formData.unitPrice" :precision="2" :step="1" :max="99999999999"></el-input-number>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -705,7 +705,7 @@ const upChannelRate = async (row) => {
   // caTokenInfo.value = JSON.parse(JSON.stringify(row))
   await nextTick()
   dialogRateFormVisible.value = true
-  formData.value.rate = row.rate
+  formData.value.unitPrice = row.unitPrice
   formRateDataRow.value = row
   // const res = await updateTokenInfoFunc(req)
   // if (res.code === 0) {
@@ -721,7 +721,7 @@ const getDataRow = ref({
 const formData = ref({
   uid: 0,
   channelCode:0,
-  rate: 0
+  unitPrice: 0
 })
 
 const formRateData = ref({
@@ -729,7 +729,7 @@ const formRateData = ref({
         channelCode: '',
         productName: '',
         productId: '',
-        rate: 0,
+        unitPrice: 0,
         })
 const formRateDataRow = ref({
 })
@@ -737,7 +737,7 @@ const formRateDataRow = ref({
 // 点击确定弹窗
 const enterRateDialog = () => {
   console.log(JSON.stringify(formData))
-  formRateDataRow.value.rate = formData.value.rate
+  formRateDataRow.value.unitPrice = formData.value.unitPrice
   updateRateForChannel(formRateDataRow)
 }
 
@@ -749,7 +749,7 @@ const updateRateForChannel = async (row) => {
   formRateData.value.channelCode = row.value.channelCode
   formRateData.value.productName = row.value.productName
   formRateData.value.productId = row.value.productId
-  formRateData.value.rate = row.value.rate
+  formRateData.value.unitPrice = row.value.unitPrice
   formRateData.value.uid = userId.value
 
 
@@ -767,7 +767,7 @@ const closeRateDialog = () => {
   dialogRateFormVisible.value = false
   formData.value = {
     uid: 0,
-    rate: 0
+    unitPrice: 0
   }
 }
 </script>

@@ -26,6 +26,7 @@ type VboxPayOrder struct {
 	CodeUseStatus  int        `json:"code_use_status" form:"code_use_status" gorm:"column:code_use_status;comment:取码状态;size:2;"`
 	AsyncTime      *time.Time `json:"async_time" form:"async_time" gorm:"column:async_time;comment:异步执行时间;"`
 	CallTime       *time.Time `json:"call_time" form:"call_time" gorm:"column:call_time;comment:回调时间;"`
+	UnitPrice      int        `json:"unit_price" form:"unit_price" gorm:"column:unit_price;comment:单价积分;"`
 }
 
 // TableName VboxPayOrder 表名

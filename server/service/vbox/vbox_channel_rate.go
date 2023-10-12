@@ -87,7 +87,7 @@ func (chRateService *VboxChannelRateService) GetVboxTeamUserChannelRateList(info
 	queryP := `SELECT r.*
 			FROM vbox_channel_rate AS r
 			JOIN (
-				SELECT uid, channel_code,rate, MAX(updated_at) AS max_updated_at
+				SELECT uid, channel_code,unit_price, MAX(updated_at) AS max_updated_at
 				FROM vbox_channel_rate
 				where uid = ?
 				GROUP BY uid, channel_code
@@ -103,10 +103,10 @@ func (chRateService *VboxChannelRateService) GetVboxTeamUserChannelRateList(info
 	channelProducts, err := GetVboxChannelProductInfoList()
 	rateChannelProducts := make([]vbox.UserChannelProductRate, 0)
 
-	channelCodeToRate := make(map[string]float64)
+	channelCodeToRate := make(map[string]int)
 	// 遍历 chRates 数组，将数据存入 map
 	for _, rate := range chRates {
-		channelCodeToRate[rate.ChannelCode] = rate.Rate
+		channelCodeToRate[rate.ChannelCode] = rate.UnitPrice
 	}
 
 	processRateChannelProducts(channelProducts, channelCodeToRate, &rateChannelProducts)
@@ -137,11 +137,11 @@ func findChildrenChannelProduct(vcp *vbox.ChannelProduct) (err error) {
 	return err
 }
 
-func processRateChannelProducts(channelProducts []vbox.ChannelProduct, channelCodeToRate map[string]float64, result *[]vbox.UserChannelProductRate) {
+func processRateChannelProducts(channelProducts []vbox.ChannelProduct, channelCodeToRate map[string]int, result *[]vbox.UserChannelProductRate) {
 	for _, cp := range channelProducts {
 		rate, exists := channelCodeToRate[cp.ChannelCode]
 		if !exists {
-			rate = 0.0 // 如果没有设置对应的 rate，默认为 0.0
+			rate = 1 // 如果没有设置对应的 rate，默认为 0.0
 		}
 
 		rcp := vbox.UserChannelProductRate{
@@ -153,7 +153,7 @@ func processRateChannelProducts(channelProducts []vbox.ChannelProduct, channelCo
 			Ext:         cp.Ext,
 			Type:        cp.Type,
 			PayType:     cp.PayType,
-			Rate:        rate,
+			UnitPrice:   rate,
 		}
 
 		if len(cp.Children) > 0 {

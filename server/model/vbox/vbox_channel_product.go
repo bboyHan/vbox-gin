@@ -28,7 +28,8 @@ type UserChannelProductRate struct {
 	Type        uint                     `json:"type"`
 	PayType     string                   `json:"payType"`
 	Children    []UserChannelProductRate `json:"children" gorm:"-"`
-	Rate        float64                  `json:"rate"`
+	//Rate        float64                  `json:"rate"`
+	UnitPrice int `json:"unitPrice" `
 }
 
 // TableName VboxChannelProduct 表名
