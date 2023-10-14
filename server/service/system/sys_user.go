@@ -147,9 +147,9 @@ func (userService *UserService) GetOwnerUserInfoList(info request.PageInfo, id u
 
 	querySub := `
 		WITH RECURSIVE cte (id) AS (SELECT id FROM sys_users WHERE id = ? UNION ALL SELECT sys_users.id FROM sys_users 
-			JOIN cte ON sys_users.parent_id = cte.id)
+			JOIN cte ON sys_users.parent_id = cte.id and sys_users.deleted_at is null)
 		SELECT id,uuid,username,password,nick_name,side_mode,header_img,base_color,active_color,authority_id,phone,email,enable,parent_id
-		FROM sys_users WHERE id IN (SELECT id FROM cte);
+		FROM sys_users WHERE id IN (SELECT id FROM cte) and deleted_at is null;
     `
 	//var userListSub []system.SysUser
 	err = db.Raw(querySub, id).Limit(limit).Offset(offset).Preload("Authorities").Preload("Authority").Find(&userList).Error
@@ -179,7 +179,7 @@ func (userService *UserService) GetOwnerUserIdsList(id uint) (list []system.SysU
 		WITH RECURSIVE cte (id) AS (SELECT id FROM sys_users WHERE id = ? UNION ALL SELECT sys_users.id FROM sys_users 
 			JOIN cte ON sys_users.parent_id = cte.id)
 		SELECT id,uuid,username,password,nick_name,side_mode,header_img,base_color,active_color,authority_id,phone,email,enable,parent_id
-		FROM sys_users WHERE id IN (SELECT id FROM cte);
+		FROM sys_users WHERE id IN (SELECT id FROM cte) and deleted_at is null;
     `
 	//var userListSub []system.SysUser
 	err = db.Raw(querySub, id).Preload("Authorities").Preload("Authority").Find(&userList).Error
@@ -210,7 +210,7 @@ func (userService *UserService) GetOwnerUserIdsListNoContainSelf(id uint) (list 
 		WITH RECURSIVE cte (id) AS (SELECT id FROM sys_users WHERE id = ? UNION ALL SELECT sys_users.id FROM sys_users 
 			JOIN cte ON sys_users.parent_id = cte.id)
 		SELECT id,uuid,username,password,nick_name,side_mode,header_img,base_color,active_color,authority_id,phone,email,enable,parent_id
-		FROM sys_users WHERE id IN (SELECT id FROM cte) and id != ?;
+		FROM sys_users WHERE id IN (SELECT id FROM cte) and id != ? and deleted_at is null;
     `
 	//var userListSub []system.SysUser
 	err = db.Raw(querySub, id, id).Preload("Authorities").Preload("Authority").Find(&userList).Error

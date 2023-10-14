@@ -20,7 +20,7 @@ zap:
 # redis configuration
 redis:
   db: 0
-  size: 200
+  size: 2
   addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
   password: "Vbox123qwe"
 
@@ -30,7 +30,7 @@ rabbitmq:
   port: 8083
   username: admin
   password: "Vbox123qwe"
-  poolSize: 100
+  poolSize: 1
   retryReConnDelay: 3
 
 # email configuration

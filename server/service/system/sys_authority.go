@@ -182,10 +182,10 @@ func (authorityService *AuthorityService) GetOwnerAuthorityInfoList(info request
 	offset := info.PageSize * (info.Page - 1)
 	db := global.GVA_DB.Model(&system.SysAuthority{})
 	if err = db.Where("parent_id = ? or authority_id = ?", authId, authId).Count(&total).Error; total == 0 || err != nil {
-		fmt.Printf("total a = ", total)
+		fmt.Printf("total a = %v", total)
 		return
 	}
-	fmt.Printf("total = ", total)
+	fmt.Printf("total = %v", total)
 	var authority []system.SysAuthority
 	err = db.Limit(limit).Offset(offset).Preload("DataAuthorityId").Where("parent_id = ? or authority_id = ?", authId, authId).Find(&authority).Error
 	for k := range authority {
