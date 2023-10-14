@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.7+incompatible
 	github.com/aws/aws-sdk-go v1.44.307
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/casbin/casbin/v2 v2.71.1
 	github.com/casbin/gorm-adapter/v3 v3.18.0
 	github.com/flipped-aurora/ws v1.0.2
@@ -15,6 +16,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/gomodule/redigo v1.8.9
 	github.com/gookit/color v1.5.4
 	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.21.8+incompatible
 	github.com/jordan-wright/email v0.0.0-20200824153738-3f5bafa1cd84
@@ -25,11 +27,11 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/otp v1.4.0
 	github.com/qiniu/api.v7/v7 v7.4.1
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.14.1
 	github.com/shirou/gopsutil/v3 v3.23.6
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/songzhibin97/gkit v1.2.11
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4

@@ -10,7 +10,7 @@ jwt:
 zap:
   level: info
   format: console
-  prefix: "[github.com/flipped-aurora/gin-vue-admin/server]"
+  prefix: "[vbox-server]"
   director: log
   show-line: true
   encode-level: LowercaseColorLevelEncoder
@@ -20,8 +20,18 @@ zap:
 # redis configuration
 redis:
   db: 0
-  addr: 127.0.0.1:6379
-  password: ""
+  size: 200
+  addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
+  password: "Vbox123qwe"
+
+# RabbitMQ configuration
+rabbitmq:
+  addr: 60.204.145.173
+  port: 8083
+  username: admin
+  password: "Vbox123qwe"
+  poolSize: 100
+  retryReConnDelay: 3
 
 # email configuration
 email:

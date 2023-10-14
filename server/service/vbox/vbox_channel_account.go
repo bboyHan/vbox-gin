@@ -15,7 +15,7 @@ type ChannelAccountService struct {
 // CreateChannelAccount 创建ChannelAccount记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount) (err error) {
-	vca.AcId = rand_string.RandomLetter(8)
+	vca.AcId = rand_string.RandomInt(8)
 	err = global.GVA_DB.Create(vca).Error
 	return err
 }

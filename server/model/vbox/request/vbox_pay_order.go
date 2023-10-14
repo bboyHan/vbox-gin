@@ -40,3 +40,13 @@ type QueryOrderSimple struct {
 	PayRegion string `json:"pay_region" form:"pay_region" url:"pay_region"`
 	PayDevice string `json:"pay_device" form:"pay_device" url:"pay_device"`
 }
+
+// CreateOrderTest 结构体
+type CreateOrderTest struct {
+	Money       int    `json:"money" form:"money" url:"money"`
+	ChannelCode string `json:"channel_code" form:"channel_code" url:"channel_code"`
+	AuthCaptcha string `json:"auth_captcha" form:"auth_captcha" url:"auth_captcha"`
+	Username    string `json:"username" form:"username" url:"username"`
+	UserId      uint   `json:"userId" form:"userId" url:"userId"`
+	NotifyUrl   string `json:"notify_url" form:"notify_url" url:"notify_url"`
+}

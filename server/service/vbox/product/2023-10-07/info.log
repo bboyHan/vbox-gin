@@ -1,0 +1,5 @@
+2023/10/07 - 16:36:56.557	info	ret:  ->	{"qq": "1337088888", "water list": null}
+2023/10/07 - 16:36:56.671	info	ret:  ->	{"查询充值记录失败：%v\n": "dial tcp [::1]:6379: connectex: No connection could be made because the target machine actively refused it."}
+2023/10/07 - 16:36:56.672	info	ret:  ->	{"row": {}}
+2023/10/07 - 16:36:56.672	info	ret:  ->	{"QB": null}
+2023/10/07 - 17:28:05.374	info	ret:  ->	{"qq": "1337088888", "water list": null}

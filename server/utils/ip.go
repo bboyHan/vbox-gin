@@ -7,7 +7,7 @@ import (
 )
 
 func SearchIp2Region(ip string) (region string, err error) {
-	var dbPath = "ip2region.xdb"
+	var dbPath = "utils/ip2region.xdb"
 	searcher, err := xdb.NewWithFileOnly(dbPath)
 	if err != nil {
 		fmt.Printf("failed to create searcher: %s\n", err.Error())

@@ -1,7 +1,10 @@
 package vbox
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
@@ -9,6 +12,9 @@ import (
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"go.uber.org/zap"
+	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,6 +35,14 @@ func (vpoService *VboxPayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderS
 	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).
 		Where("order_id = ?", vpo.OrderId).
 		First(&order).Error
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("vpo=", vpo)
+	err = global.GVA_DB.Model(&vbox.VboxPayOrder{}).Where("order_id = ?", vpo.OrderId).
+		Update("pay_ip", vpo.PayIp).Update("pay_region", vpo.PayRegion).Update("pay_device", vpo.PayDevice).Error
+
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +75,22 @@ func HandelResourceUrl(order vbox.VboxPayOrder) (string, error) {
 //			Sign:        "123",
 //		}
 func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
-
 	// 1. 校验签名
 	var vpa vbox.PayAccount
-	err = global.GVA_DB.Debug().Model(&vbox.PayAccount{}).Table("vbox_pay_account").
-		Where("p_account = ?", vpo.Account).Find(&vpa).Error
-	if err != nil {
-		return nil, err
+	count, err := global.GVA_REDIS.Exists(context.Background(), vpo.Account).Result()
+	if count == 0 {
+		global.GVA_LOG.Warn("缓存中暂无", zap.Any("当前 pacc", vpo.Account))
+		jsonStr, _ := global.GVA_REDIS.Get(context.Background(), vpo.Account).Bytes()
+		err = json.Unmarshal(jsonStr, &vpa)
+	} else { //查库看有没有
+		err = global.GVA_DB.Model(&vbox.PayAccount{}).Table("vbox_pay_account").
+			Where("p_account = ?", vpo.Account).Find(&vpa).Error
+		if err != nil {
+			return nil, err
+		} else { //有的话，更新一下redis
+			jsonStr, _ := json.Marshal(vpa)
+			global.GVA_REDIS.Set(context.Background(), vpa.PAccount, jsonStr, 0)
+		}
 	}
 
 	vpo.Key = vpa.PKey
@@ -111,44 +134,197 @@ func (vpoService *VboxPayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder
 //			NotifyUrl:   "http://1.1.1.1",
 //			OrderId:     "P1234",
 //		}
+
 func (vpoService *VboxPayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+	rdConn := global.GVA_REDIS.Conn()
+	defer rdConn.Close()
 
 	var vpa vbox.PayAccount
-	err = global.GVA_DB.Table("vbox_pay_account").
-		Where("p_account = ?", vpo.Account).First(&vpa).Error
-	if err != nil {
-		return nil, err
+	//count, err := global.GVA_REDIS.Exists(context.Background(), vpo.Account).Result()
+	count, err := rdConn.Exists(context.Background(), vpo.Account).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+		}
+		global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("orderId", vpo.OrderId))
+
+		err = global.GVA_DB.Table("vbox_pay_account").
+			Where("p_account = ?", vpo.Account).First(&vpa).Error
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.Marshal(vpa)
+		//global.GVA_REDIS.Set(context.Background(), vpo.Account, jsonStr, 10*time.Minute)
+		rdConn.Set(context.Background(), vpo.Account, jsonStr, 10*time.Minute)
+	} else {
+		//jsonStr, _ := global.GVA_REDIS.Get(context.Background(), vpo.Account).Bytes()
+		jsonStr, _ := rdConn.Get(context.Background(), vpo.Account).Bytes()
+		err = json.Unmarshal(jsonStr, &vpa)
 	}
 
 	vpo.Key = vpa.PKey
 
 	// 1. 校验签名
-	signValid := utils.VerifySign(vpo)
+	/*signValid := utils.VerifySign(vpo)
 	if !signValid {
 		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
-	}
+	}*/
 
-	var total int64 = 0
 	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
-	db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").Count(&total)
+	/*var total int64 = 0
+	userList, tot, err := GetOwnerUserIdsList(vpa.Uid)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+	db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").
+		Where("uid in (?)", idList).Count(&total)
 
 	limit, offset := utils.RandSize2DB(int(total), 20)
 	var vcas []vbox.ChannelAccount
 	err = db.Debug().Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", vpo.ChannelCode).
-		Limit(limit).Offset(offset).
+		Where("uid in (?)", idList).Limit(limit).Offset(offset).
 		Find(&vcas).Error
 	if err != nil || len(vcas) == 0 {
+		if len(vcas) == 0 {
+			err = errors.New("库存不足！ 请联系对接人。")
+		}
+		return nil, err
+	}
+
+	vca := vcas[0]*/
+
+	//count, err = global.GVA_REDIS.Exists(context.Background(), vpo.OrderId).Result()
+	count, err = rdConn.Exists(context.Background(), vpo.OrderId).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		}
+		global.GVA_LOG.Info("当前缓存池无此订单，可继续。。。", zap.Any("orderId", vpo.OrderId))
+		//global.GVA_REDIS.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
+		rdConn.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
+		go func() {
+			order := &vbox.VboxPayOrder{
+				PlatformOid:    utils.GenerateID("VB"),
+				ChannelCode:    vpo.ChannelCode,
+				PAccount:       vpo.Account,
+				OrderId:        vpo.OrderId,
+				Money:          vpo.Money,
+				NotifyUrl:      vpo.NotifyUrl,
+				OrderStatus:    2,
+				CallbackStatus: 2,
+			}
+
+			err = global.GVA_DB.Create(order).Error
+			/*if err != nil {
+				s := err.Error()
+				if strings.Contains(s, "Duplicate") {
+					return nil, errors.New("订单已存在，请勿重复创建")
+				}
+				return nil, err
+			}*/
+
+			var (
+				orderWaitExchange = "vbox.order.waiting_exchange"
+				orderWaitKey      = "vbox.order.waiting"
+			)
+			marshal, _ := json.Marshal(order)
+			conn, err := utils.ConnPool.GetConnection()
+			if err != nil {
+				log.Fatalf("Failed to get connection from pool: %v", err)
+			}
+			defer utils.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				fmt.Errorf("new mq channel err: %v", err)
+			}
+
+			err = ch.Publish(orderWaitExchange, orderWaitKey, marshal)
+		}()
+	} else {
+		return nil, errors.New("订单已存在，请勿重复创建")
+	}
+
+	/*go func() {
+		marshal, _ := json.Marshal(order)
+		conn, err := utils.ConnPool.GetConnection()
+		if err != nil {
+			log.Fatalf("Failed to get connection from pool: %v", err)
+		}
+		defer utils.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			fmt.Errorf("new mq channel err: %v", err)
+		}
+
+		err = ch.Publish(orderWaitExchange, orderWaitKey, marshal)
+	}()*/
+
+	var payUrl string
+	payUrl, err = HandelPayUrl2Pacc(vpo.OrderId)
+
+	rep = &vboxRep.Order2PayAccountRes{
+		OrderId:   vpo.OrderId,
+		Money:     vpo.Money,
+		PayUrl:    payUrl,
+		Status:    2,
+		NotifyUrl: vpo.NotifyUrl,
+	}
+	return rep, err
+}
+
+// CreateOrderTest 创建CreateOrderTest
+//
+//	p := &vbox.CreateOrderTest{
+//			Money:       10,
+//			ChannelCode: "6001",
+//			AuthCaptcha: "P1234",
+//		}
+func (vpoService *VboxPayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest) (rep *vboxRep.Order2PayAccountRes, err error) {
+
+	var total int64 = 0
+	// 1. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
+
+	userList, tot, err := GetOwnerUserIdsList(vpo.UserId)
+	var idList []int
+	for _, user := range userList {
+		idList = append(idList, int(user.ID))
+	}
+	if err != nil || tot == 0 {
+		return
+	}
+	db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").
+		Where("uid in (?)", idList).Count(&total)
+
+	limit, offset := utils.RandSize2DB(int(total), 20)
+	var vcas []vbox.ChannelAccount
+	err = db.Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", vpo.ChannelCode).
+		Where("uid in (?)", idList).Limit(limit).Offset(offset).
+		Find(&vcas).Error
+	if err != nil || len(vcas) == 0 {
+		if len(vcas) == 0 {
+			err = errors.New("无库存账号！ 请联系对接人。")
+		}
 		return nil, err
 	}
 
 	vca := vcas[0]
 
+	oid := "TEST" + strconv.FormatInt(time.Now().UnixMilli(), 10)
+
+	vpo.NotifyUrl, _ = HandelNotifyUrl2Test(oid)
+
 	order := &vbox.VboxPayOrder{
-		PlatformOid:    time.Now().String(),
+		PlatformOid:    oid,
 		ChannelCode:    vca.Cid,
 		Uid:            vca.Uid,
-		PAccount:       vpo.Account,
-		OrderId:        vpo.OrderId,
+		PAccount:       "TEST_" + vpo.Username,
+		OrderId:        oid,
 		Money:          vpo.Money,
 		NotifyUrl:      vpo.NotifyUrl,
 		OrderStatus:    2,
@@ -164,11 +340,18 @@ func (vpoService *VboxPayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrd
 		}
 		return nil, err
 	}
+	//var (
+	//	exchangeName = "vbox.order.direct"
+	//	keyName      = "vbox.order.waiting"
+	//)
+	//marshal, _ := json.Marshal(order)
+	//err = utils.NewChannel().Publish(exchangeName, keyName, marshal)
+
 	var payUrl string
-	payUrl, err = HandelPayUrl2Pacc(vpo.OrderId)
+	payUrl, err = HandelPayUrl2Pacc(oid)
 
 	rep = &vboxRep.Order2PayAccountRes{
-		OrderId:   vpo.OrderId,
+		OrderId:   oid,
 		Money:     vpo.Money,
 		PayUrl:    payUrl,
 		Status:    2,
@@ -178,19 +361,68 @@ func (vpoService *VboxPayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrd
 }
 
 func HandelPayUrl2Pacc(orderId string) (string, error) {
+	conn := global.GVA_REDIS.Conn()
+	defer conn.Close()
+	key := "pacc_create"
+	var url string
+	//paccCreateUrl, err := global.GVA_REDIS.Ping(context.Background()).Result()
+	paccCreateUrl, err := conn.Ping(context.Background()).Result()
+	fmt.Printf(paccCreateUrl)
+	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		}
+
+		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+
+		var proxy vbox.Proxy
+		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+		err = db.Where("status = ?", 1).Where("chan = ?", "pacc_create").
+			First(&proxy).Error
+		if err != nil || proxy.Url == "" {
+			return "", err
+		}
+		url = proxy.Url + orderId
+
+		//global.GVA_REDIS.Set(context.Background(), key, proxy.Url, 0)
+		conn.Set(context.Background(), key, proxy.Url, 0)
+		return url, nil
+	} else if err != nil {
+		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+	} else {
+		var preUrl string
+		//preUrl, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+		preUrl, err = conn.Get(context.Background(), key).Result()
+		url = preUrl + orderId
+		global.GVA_LOG.Info("缓存池取出：", zap.Any("pacc create url", url))
+	}
+	return url, err
+}
+
+func HandelNotifyUrl2Test(orderId string) (string, error) {
 	var proxy vbox.Proxy
 	db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
-	err := db.Where("status = ?", 1).Where("chan = ?", "pacc_create").
+	err := db.Where("status = ?", 1).Where("chan = ?", "test_notify").
 		First(&proxy).Error
 	if err != nil || proxy.Url == "" {
 		return "", err
 	}
-	var url = proxy.Url + orderId
+	var url = proxy.Url
 	return url, nil
 }
 
 func HandleResourceUrl(vca vbox.ChannelAccount, cid string, money int) string {
 	//1. 如果是引导类的，获取引导地址 - channel shop
+	var shop channelshop.ChannelShop
+	db := global.GVA_DB.Model(&channelshop.ChannelShop{}).Table("vbox_channel_shop")
+	err := db.Where("status = ?", 1).
+		Where("money = ?", money).
+		Where("cid = ?", cid).
+		First(&shop).Error
+	if err == nil {
+		return shop.Address
+	}
 
 	return ""
 }
@@ -251,7 +483,7 @@ func (vpoService *VboxPayOrderService) GetVboxPayOrderInfoList(info vboxReq.Vbox
 		return
 	}
 
-	err = db.Debug().Limit(limit).Offset(offset).Select("vbox_pay_order.*,vbox_pay_order.created_at as created_time, vbox_channel_account.ac_remark, vbox_channel_account.ac_account, vbox_channel_account.uid as user_id").
+	err = db.Limit(limit).Offset(offset).Select("vbox_pay_order.*,vbox_pay_order.created_at as created_time, vbox_channel_account.ac_remark, vbox_channel_account.ac_account, vbox_channel_account.uid as user_id").
 		//err = db.Debug().Limit(limit).Offset(offset).Select("vbox_pay_order.*, vbox_channel_account.*").
 		Joins("LEFT JOIN vbox_channel_account ON vbox_channel_account.ac_id = vbox_pay_order.ac_id").
 		Scan(&vpos).Error

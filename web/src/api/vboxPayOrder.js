@@ -1,6 +1,22 @@
 import service from '@/utils/request'
 
 // @Tags VboxPayOrder
+// @Summary 创建VboxPayOrder
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.VboxPayOrder true "创建VboxPayOrder"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/orderTest [post]
+export const createOrderTest = (data) => {
+  return service({
+    url: '/vpo/orderTest',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags VboxPayOrder
 // @Summary 用order_id查询VboxPayOrder
 // @Security ApiKeyAuth
 // @accept application/json
@@ -92,7 +108,6 @@ export const getHomePagePayOrderAnalysis = () => {
   return service({
     url: '/vpo/getHomePagePayOrderAnalysis',
     method: 'get'
-    
   })
 }
 

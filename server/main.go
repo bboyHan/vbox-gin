@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"go.uber.org/zap"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
@@ -28,6 +29,9 @@ func main() {
 	global.GVA_DB = initialize.Gorm() // gorm连接数据库
 	initialize.Timer()
 	initialize.DBList()
+	initialize.MQ()
+	go utils.MqOrderWaitingTask()
+	go utils.MqOrderWaitingTask2()
 	initialize.CronTableAnalysisTimer()
 	if global.GVA_DB != nil {
 		initialize.RegisterTables() // 初始化表

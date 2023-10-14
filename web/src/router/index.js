@@ -19,6 +19,11 @@ const routes = [{
   name: 'Pay',
   component: () => import('@/view/vbox/order/orderDetail.vue')
 },
+{
+  path: '/payTest',
+  name: 'PayTest',
+  component: () => import('@/view/vbox/order/orderTest.vue')
+},
 // {
 //   path: '/order/:ch',
 //   name: 'OrderTask',

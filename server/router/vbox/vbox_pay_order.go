@@ -2,6 +2,7 @@ package vbox
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
+	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,11 +11,11 @@ type VboxPayOrderRouter struct {
 
 // InitVboxPayOrderRouter 初始化 VboxPayOrder 路由信息
 func (s *VboxPayOrderRouter) InitVboxPayOrderRouter(Router *gin.RouterGroup) {
-	//vpoRouter := Router.Group("vpo").Use(middleware.OperationRecord())
+	vpoRouter := Router.Group("vpo").Use(middleware.OperationRecord())
 	vpoRouterWithoutRecord := Router.Group("vpo")
 	var vpoApi = v1.ApiGroupApp.Vbox.VboxPayOrderApi
 	{
-		//vpoRouter.POST("createVboxPayOrder", vpoApi.CreateVboxPayOrder) // 新建VboxPayOrder
+		vpoRouter.POST("orderTest", vpoApi.CreateOrderTest) // 新建CreateOrderTest
 	}
 	{
 		vpoRouterWithoutRecord.GET("findVboxPayOrder", vpoApi.FindVboxPayOrder)                                                         // 根据ID获取VboxPayOrder

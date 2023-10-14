@@ -63,7 +63,7 @@
       <div class="p_content_button">
         <el-row :gutter="12">
           <el-col>
-              <button class="p_button" @click="">立即付款</button>
+            <button class="p_button" @click="openPay(payData)">立即付款</button>
           </el-col>
         </el-row>
       </div>
@@ -132,6 +132,10 @@ const onStatusChange = async (payload) => {
 
 const onEnd = async () => {
   console.log('倒计时结束的回调函数');
+};
+
+const openPay = async (payData) => {
+  location.href = payData.resource_url;
 };
 
 // 添加一个空变量作为定时器的 ID

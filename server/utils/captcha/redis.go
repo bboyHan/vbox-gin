@@ -42,6 +42,15 @@ func (rs *RedisStore) Set(id string, value string) error {
 	return nil
 }
 
+func (rs *RedisStore) GetK(key string) (string, error) {
+	val, err := global.GVA_REDIS.Get(rs.Context, key).Result()
+	if err != nil {
+		global.GVA_LOG.Error("RedisStoreGetError!", zap.Error(err))
+		return "", err
+	}
+	return val, err
+}
+
 func (rs *RedisStore) Get(key string, clear bool) string {
 	val, err := global.GVA_REDIS.Get(rs.Context, key).Result()
 	if err != nil {

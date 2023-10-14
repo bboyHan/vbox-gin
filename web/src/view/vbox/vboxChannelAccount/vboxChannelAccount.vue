@@ -545,7 +545,6 @@ const closeDialog = () => {
 const enterDialog = async () => {
   elFormRef.value?.validate(async (valid) => {
     if (!valid) return
-    formData.value.cid = formData.value.cid
     formData.value.status = Number(formData.value.status)
     let res
     switch (type.value) {
