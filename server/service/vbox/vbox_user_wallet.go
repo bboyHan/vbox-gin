@@ -105,8 +105,11 @@ func (vuwService *VboxUserWalletService) GetVboxUserWalletAvailablePoints(uid ui
 
 	queryB := `
         SELECT coalesce(sum(cost),0) as recharge
+		from (
+		   SELECT (money * coalesce(unit_price,0)) as cost
 		FROM vbox_pay_order
-		WHERE  uid = ? and order_status = ?;
+		WHERE  uid = ? and order_status = ?
+		)t;
     `
 
 	resultA := 0
