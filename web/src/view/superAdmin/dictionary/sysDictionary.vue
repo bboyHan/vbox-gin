@@ -8,6 +8,7 @@
         <div class="flex justify-between items-center">
           <span class="text font-bold">字典列表</span>
           <el-button
+
             type="primary"
             @click="openDialog"
           >
