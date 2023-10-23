@@ -16,13 +16,8 @@
           <img
             alt
             class="w-9 h-9 p-1 bg-white rounded-full"
-            :src="$GIN_VUE_ADMIN.appLogo"
+            src="@/assets/logo.png"
           >
-          <div
-            v-if="isSider"
-            class="inline-flex font-bold text-2xl"
-            :style="{color:textColor}"
-          >{{ $GIN_VUE_ADMIN.appName }}</div>
         </div>
         <Aside class="aside" />
       </el-aside>
@@ -108,36 +103,6 @@
                           </div>
                           <template #dropdown>
                             <el-dropdown-menu>
-                              <el-dropdown-item>
-                                <span class="font-bold">
-                                  当前角色：{{ userStore.userInfo.authority.authorityName }}
-                                </span>
-                              </el-dropdown-item>
-                              <template v-if="userStore.userInfo.authorities">
-                                <el-dropdown-item
-                                  v-for="item in userStore.userInfo.authorities.filter(i=>i.authorityId!==userStore.userInfo.authorityId)"
-                                  :key="item.authorityId"
-                                  @click="changeUserAuth(item.authorityId)"
-                                >
-                                  <span>
-                                    切换为：{{ item.authorityName }}
-                                  </span>
-                                </el-dropdown-item>
-                              </template>
-                              <el-dropdown-item icon="avatar">
-                                <div
-                                  class="command-box"
-                                  style="display: flex"
-                                  @click="handleCommand"
-                                >
-                                  <div>指令菜单</div>
-                                  <div style="margin-left: 8px">
-                                    <span class="button">{{ first }}</span>
-                                    +
-                                    <span class="button">K</span>
-                                  </div>
-                                </div>
-                              </el-dropdown-item>
                               <el-dropdown-item
                                 icon="avatar"
                                 @click="toPerson"

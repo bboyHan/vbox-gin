@@ -1,7 +1,9 @@
+//@author: [bstdn](https://github.com/bstdn)
+//@description: ESlint 语法检测
 module.exports = {
   root: true,
   parserOptions: {
-    parser: '@babel/eslint-parser',
+    parser: 'babel-eslint',
     sourceType: 'module'
   },
   env: {
@@ -10,12 +12,27 @@ module.exports = {
     es6: true
   },
   extends: ['plugin:vue/recommended', 'eslint:recommended'],
+  globals: {
+    defineProps: "readonly",
+    defineEmits: "readonly",
+    defineExpose: "readonly",
+    withDefaults: "readonly",
+  },
   rules: {
-    'vue/no-v-model-argument': 0,
-    'vue/max-attributes-per-line': 2,
+    'vue/no-v-model-argument':'off',
+    'vue/max-attributes-per-line': [
+      2,
+      {
+        singleline: 10,
+        multiline: {
+          max: 1,
+          allowFirstLine: false
+        }
+      }
+    ],
     'vue/singleline-html-element-content-newline': 'off',
     'vue/multiline-html-element-content-newline': 'off',
-    'vue/multi-word-component-names': 'off',
+    'vue/name-property-casing': ['error', 'PascalCase'],
     'vue/no-v-html': 'off',
     'accessor-pairs': 2,
     'arrow-spacing': [

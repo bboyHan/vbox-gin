@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization"
 	swaggerFiles "github.com/swaggo/files"
 	"net/http"
 
@@ -20,7 +21,6 @@ func Routers() *gin.Engine {
 	if global.GVA_CONFIG.System.Env == "public" {
 		gin.SetMode(gin.ReleaseMode) //DebugMode ReleaseMode TestMode
 	}
-
 	Router := gin.New()
 
 	if global.GVA_CONFIG.System.Env != "public" {
@@ -41,7 +41,7 @@ func Routers() *gin.Engine {
 	Router.StaticFS(global.GVA_CONFIG.Local.StorePath, http.Dir(global.GVA_CONFIG.Local.StorePath)) // 为用户头像和文件提供静态地址
 	// Router.Use(middleware.LoadTls())  // 如果需要使用https 请打开此中间件 然后前往 core/server.go 将启动模式 更变为 Router.RunTLS("端口","你的cre/pem文件","你的key文件")
 	// 跨域，如需跨域可以打开下面的注释
-	// Router.Use(middleware.Cors()) // 直接放行全部跨域请求
+	Router.Use(middleware.Cors()) // 直接放行全部跨域请求
 	// Router.Use(middleware.CorsByRules()) // 按照配置的规则放行跨域请求
 	//global.GVA_LOG.Info("use middleware cors")
 	docs.SwaggerInfo.BasePath = global.GVA_CONFIG.System.RouterPrefix
@@ -83,6 +83,19 @@ func Routers() *gin.Engine {
 
 	}
 
+	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
+	{
+		vboxRouter := router.RouterGroupApp.Vbox
+		vboxRouter.InitPubAccessRouter(PublicGroup) //不做鉴权
+
+		vboxRouter.InitChannelAccountRouter(PrivateGroup)
+		vboxRouter.InitChannelProductRouter(PrivateGroup)
+		vboxRouter.InitPayOrderRouter(PrivateGroup)
+		vboxRouter.InitPayAccountRouter(PrivateGroup)
+		vboxRouter.InitVboxProxyRouter(PrivateGroup)
+		vboxRouter.InitChannelShopRouter(PrivateGroup)
+		vboxRouter.InitOrgProductRouter(PrivateGroup)
+	}
 	global.GVA_LOG.Info("router register success")
 	return Router
 }
