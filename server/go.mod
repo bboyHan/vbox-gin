@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.7+incompatible
 	github.com/aws/aws-sdk-go v1.44.307
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/casbin/casbin/v2 v2.71.1
 	github.com/casbin/gorm-adapter/v3 v3.18.0
 	github.com/flipped-aurora/ws v1.0.2
@@ -18,11 +19,14 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.21.8+incompatible
 	github.com/jordan-wright/email v0.0.0-20200824153738-3f5bafa1cd84
+	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20231013030745-3066d243cd04
 	github.com/mojocn/base64Captcha v1.3.5
 	github.com/otiai10/copy v1.7.0
 	github.com/pkg/errors v0.9.1
+	github.com/pquerna/otp v1.4.0
 	github.com/qiniu/api.v7/v7 v7.4.1
 	github.com/qiniu/qmgo v1.1.8
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.14.1
@@ -34,13 +38,13 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.1
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.42
+	github.com/tuotoo/qrcode v0.0.0-20220425170535-52ccc2bebf5d
 	github.com/unrolled/secure v1.13.0
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/text v0.11.0
-	gorm.io/datatypes v1.2.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
@@ -51,6 +55,7 @@ require (
 require (
 	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
@@ -91,6 +96,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/maruel/rs v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/microsoft/go-mssqldb v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -135,4 +141,5 @@ require (
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.6.0 // indirect
 	modernc.org/sqlite v1.23.0 // indirect
+	rsc.io/qr v0.2.0 // indirect
 )

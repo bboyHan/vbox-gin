@@ -191,7 +191,7 @@ hua-wei-obs:
 excel:
   dir: ./resource/excel/
 
-# timer task db clear table
+# timer vbox db clear table
 Timer:
   start: true
   spec: "@daily"  # 定时任务详细配置参考 https://pkg.go.dev/github.com/robfig/cron/v3
