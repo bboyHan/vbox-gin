@@ -5,6 +5,7 @@ import (
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	"gorm.io/gorm"
 )
 
@@ -99,8 +100,29 @@ func (dictionaryService *DictionaryService) GetSysDictionary(Type string, Id uin
 //@param: info request.SysDictionarySearch
 //@return: err error, list interface{}, total int64
 
-func (dictionaryService *DictionaryService) GetSysDictionaryInfoList() (list interface{}, err error) {
+func (dictionaryService *DictionaryService) GetSysDictionaryInfoList(info request.SysDictionarySearch) (list interface{}, total int64, err error) {
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	// 创建db
+	db := global.GVA_DB.Model(&system.SysDictionary{})
 	var sysDictionarys []system.SysDictionary
-	err = global.GVA_DB.Find(&sysDictionarys).Error
-	return sysDictionarys, err
+	// 如果有条件搜索 下方会自动创建搜索语句
+	if info.Name != "" {
+		db = db.Where("`name` LIKE ?", "%"+info.Name+"%")
+	}
+	if info.Type != "" {
+		db = db.Where("`type` LIKE ?", "%"+info.Type+"%")
+	}
+	if info.Status != nil {
+		db = db.Where("`status` = ?", info.Status)
+	}
+	if info.Desc != "" {
+		db = db.Where("`desc` LIKE ?", "%"+info.Desc+"%")
+	}
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
+	err = db.Limit(limit).Offset(offset).Find(&sysDictionarys).Error
+	return sysDictionarys, total, err
 }

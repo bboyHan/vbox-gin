@@ -10,5 +10,7 @@ type System struct {
 	LimitTimeIP   int    `mapstructure:"iplimit-time" json:"iplimit-time" yaml:"iplimit-time"`
 	UseMultipoint bool   `mapstructure:"use-multipoint" json:"use-multipoint" yaml:"use-multipoint"` // 多点登录拦截
 	UseRedis      bool   `mapstructure:"use-redis" json:"use-redis" yaml:"use-redis"`                // 使用redis
-	UseMongo      bool   `mapstructure:"use-mongo" json:"use-mongo" yaml:"use-mongo"`                // 使用redis
+	UseMongo      bool   `mapstructure:"use-mongo" json:"use-mongo" yaml:"use-mongo"`                // 使用mongo
+	UseMQ         bool   `mapstructure:"use-mq" json:"use-mq" yaml:"use-mq"`                         // 使用mq
+	UseMQTask     bool   `mapstructure:"use-mq-task" json:"use-mq-task" yaml:"use-mq-task"`          // vbox mq task
 }
