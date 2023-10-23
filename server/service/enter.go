@@ -3,11 +3,13 @@ package service
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox"
 )
 
 type ServiceGroup struct {
 	SystemServiceGroup  system.ServiceGroup
 	ExampleServiceGroup example.ServiceGroup
+	VboxServiceGroup    vbox.ServiceGroup
 }
 
 var ServiceGroupApp = new(ServiceGroup)

@@ -1,0 +1,19 @@
+package vbox
+
+import (
+	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
+	"github.com/gin-gonic/gin"
+)
+
+type PayOrderRouter struct {
+}
+
+// InitPayOrderRouter 初始化 订单 路由信息
+func (s *PayOrderRouter) InitPayOrderRouter(Router *gin.RouterGroup) {
+	payOrderRouterWithoutRecord := Router.Group("payOrder")
+	var payOrderApi = v1.ApiGroupApp.VboxApiGroup.PayOrderApi
+	{
+		payOrderRouterWithoutRecord.GET("findPayOrder", payOrderApi.FindPayOrder)       // 根据ID获取订单
+		payOrderRouterWithoutRecord.GET("getPayOrderList", payOrderApi.GetPayOrderList) // 获取订单列表
+	}
+}
