@@ -122,11 +122,10 @@ mysql:
     prefix: ""
     port: "3306"
     config: charset=utf8mb4&parseTime=True&loc=Local
-    db-name: vbox_system
+    db-name: vbox_gin_db
     username: vbox_admin
     password: Vbox123qwe
-#    path: rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com
-    path: vboxsql.rwlb.rds.aliyuncs.com
+    path: rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com
     engine: ""
     log-mode: error
     max-idle-conns: 10
@@ -174,13 +173,11 @@ rabbitmq:
     port: "8083"
     password: Vbox123qwe
     username: admin
-    poolSize: 5
+    poolSize: 1
     retryReConnDelay: 3ns
 redis:
-#    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
-    addr: 60.204.145.173:10818
+    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
     password: Vbox123qwe
-#    password: ""
     db: 0
 sqlite:
     prefix: ""

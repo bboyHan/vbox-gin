@@ -28,7 +28,6 @@ func (s *OrganizationRouter) InitOrganizationRouter(Router *gin.RouterGroup) {
 		orgRouterWithoutRecord.GET("getOrganizationList", orgApi.GetOrganizationList) // 获取Organization列表
 		orgRouterWithoutRecord.GET("findOrgUserAll", orgApi.FindOrgUserAll)           // 获取当前组织下所有用户ID
 		orgRouterWithoutRecord.GET("findOrgUserList", orgApi.FindOrgUserList)         // 获取当前组织下所有用户(分页)
-		orgRouterWithoutRecord.GET("findOrgUserListSelf", orgApi.FindOrgUserListSelf) // 获取当前用户组织下所有用户(分页)
 		orgRouterWithoutRecord.DELETE("deleteOrgUser", orgApi.DeleteOrgUser)          // 删除当前组织下选中用户
 		orgRouterWithoutRecord.PUT("transferOrgUser", orgApi.TransferOrgUser)         // 用户转移组织
 	}

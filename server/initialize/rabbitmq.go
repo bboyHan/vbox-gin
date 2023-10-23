@@ -1,17 +1,20 @@
 package initialize
 
-/*
 import (
 	"context"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	MQ    = new(Mq)
+	delay = global.GVA_CONFIG.RabbitMQ.RetryReConnDelay
 )
 
 type (
@@ -47,7 +50,7 @@ func (m *Mq) Init() (err error) {
 			mqCfg.Password,
 			mqCfg.Addr,
 			mqCfg.Port)
-		conn, err := mq.MQ.Dial(url)
+		conn, err := MQ.Dial(url)
 		if err != nil {
 			log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 		}
@@ -80,7 +83,7 @@ func (m *Mq) Dial(url string) (*Connection, error) {
 			// reconnect if not closed by developer
 			for {
 				// wait 1s for reconnect
-				time.Sleep(global.GVA_CONFIG.RabbitMQ.RetryReConnDelay * time.Second)
+				time.Sleep(delay * time.Second)
 
 				conn, err := amqp.Dial(url)
 				if err == nil {
@@ -163,7 +166,7 @@ func (ch *Channel) Consume(queue, consumer string, autoAck, exclusive, noLocal, 
 			d, err := ch.Channel.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 			if err != nil {
 				log.Printf("consume failed, err: %v", err)
-				time.Sleep(global.GVA_CONFIG.RabbitMQ.RetryReConnDelay * time.Second)
+				time.Sleep(delay * time.Second)
 				continue
 			}
 
@@ -172,7 +175,7 @@ func (ch *Channel) Consume(queue, consumer string, autoAck, exclusive, noLocal, 
 			}
 
 			// sleep before IsClose call. closed flag may not set before sleep.
-			time.Sleep(global.GVA_CONFIG.RabbitMQ.RetryReConnDelay * time.Second)
+			time.Sleep(delay * time.Second)
 
 			if ch.IsClosed() {
 				break
@@ -208,7 +211,7 @@ func (c *Connection) Channel() (*Channel, error) {
 			// reconnect if not closed by developer
 			for {
 				// wait 1s for connection reconnect
-				time.Sleep(global.GVA_CONFIG.RabbitMQ.RetryReConnDelay * time.Second)
+				time.Sleep(delay * time.Second)
 
 				ch, err := c.Connection.Channel()
 				if err == nil {
@@ -242,4 +245,3 @@ func (cp *MqConnPool) GetConnection() (*Connection, error) {
 func (cp *MqConnPool) ReturnConnection(conn *Connection) {
 	cp.pool <- conn // 归还连接到连接池
 }
-*/

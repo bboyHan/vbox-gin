@@ -84,7 +84,6 @@ func Routers() *gin.Engine {
 
 	}
 
-	//插件初始化
 	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
 	PluginInit(PublicGroup, geo.CreateGeoPlug())
 	{
@@ -98,7 +97,6 @@ func Routers() *gin.Engine {
 		vboxRouter.InitVboxProxyRouter(PrivateGroup)
 		vboxRouter.InitChannelShopRouter(PrivateGroup)
 		vboxRouter.InitOrgProductRouter(PrivateGroup)
-		vboxRouter.InitChannelPayCodeRouter(PrivateGroup)
 	}
 	global.GVA_LOG.Info("router register success")
 	return Router
