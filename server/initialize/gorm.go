@@ -9,7 +9,6 @@ import (
 
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channel"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/channelshop"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/student"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox_channel_guideimg"
 	"go.uber.org/zap"
@@ -56,7 +55,6 @@ func RegisterTables() {
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
 		example.ExaFileUploadAndDownload{},
-		student.Student{},
 		channelshop.ChannelShop{},
 		channel.Channel{},
 		vbox_channel_guideimg.ChannelGuideImg{},

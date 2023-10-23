@@ -303,7 +303,7 @@ func (vpoService *VboxPayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderT
 
 	limit, offset := utils.RandSize2DB(int(total), 20)
 	var vcas []vbox.ChannelAccount
-	err = db.Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", vpo.ChannelCode).
+	err = db.Debug().Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", vpo.ChannelCode).
 		Where("uid in (?)", idList).Limit(limit).Offset(offset).
 		Find(&vcas).Error
 	if err != nil || len(vcas) == 0 {

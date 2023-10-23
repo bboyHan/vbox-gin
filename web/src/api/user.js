@@ -26,10 +26,22 @@ export const captcha = (data) => {
 // @Summary 用户注册
 // @Produce  application/json
 // @Param data body {username:"string",password:"string"}
-// @Router /base/resige [post]
+// @Router /base/admin_register [post]
 export const register = (data) => {
   return service({
     url: '/user/admin_register',
+    method: 'post',
+    data: data
+  })
+}
+
+// @Summary 子账户注册
+// @Produce  application/json
+// @Param data body {username:"string",password:"string"}
+// @Router /base/owner_register [post]
+export const ownerRegister = (data) => {
+  return service({
+    url: '/user/owner_register',
     method: 'post',
     data: data
   })

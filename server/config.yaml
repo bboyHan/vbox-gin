@@ -2,10 +2,10 @@
 
 # jwt configuration
 jwt:
-  signing-key: qmPlus
-  expires-time: 7d
+  signing-key: VboxKey
+  expires-time: 1d
   buffer-time: 1d
-  issuer: qmPlus
+  issuer: vbox
 # zap logger configuration
 zap:
   level: info
@@ -46,7 +46,7 @@ email:
 # system configuration
 system:
   env: public # Change to "develop" to skip authentication for development mode
-  addr: 9999
+  addr: 7777
   db-type: mysql
   oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
   use-redis: true # 使用redis

@@ -79,7 +79,11 @@
   </div>
 
 </template>
-
+<script>
+export default {
+  name: 'Pay',
+}
+</script>
 <script setup>
 import { ElButton } from 'element-plus';
 import { onMounted, ref, onUnmounted } from 'vue';

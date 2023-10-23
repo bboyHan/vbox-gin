@@ -16,6 +16,15 @@ export const getOwnerAuthorityList = (data) => {
   })
 }
 
+// @Router /authority/getOwnerAuthorityList [post]
+export const getOwnerAuthorityInfoListNoContainSelf = (data) => {
+  return service({
+    url: '/authority/getOwnerAuthorityInfoListNoContainSelf',
+    method: 'post',
+    data
+  })
+}
+
 
 // @Summary 删除角色
 // @Security ApiKeyAuth

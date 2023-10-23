@@ -1,6 +1,11 @@
 <template>
   <div>
     <div v-show="dialogCountVisible">
+      <div class="background-image">
+        <img
+            src="@/assets/login_bg.jpg"
+            alt="banner">
+      </div>
       <div class="c_container">
         <div class="c_content">
           <el-row :gutter="12">
@@ -60,7 +65,11 @@
   </div>
 
 </template>
-
+<script>
+export default {
+  name: 'PayTest',
+}
+</script>
 <script setup>
 import {ElButton, ElMessageBox} from 'element-plus';
 import { onMounted, ref, onUnmounted } from 'vue';
@@ -248,5 +257,18 @@ h1 {
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   height: 50px;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.background-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>

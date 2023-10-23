@@ -71,7 +71,7 @@ func (vpoApi *VboxPayOrderApi) CreateOrderTest(c *gin.Context) {
 				return
 			}
 		} else {
-			if user.AuthCaptcha != "666" {
+			if vpo.AuthCaptcha != "666" {
 				err = errors.New("双因子认证码错误")
 				response.FailWithMessage(err.Error(), c)
 				return

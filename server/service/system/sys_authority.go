@@ -194,6 +194,32 @@ func (authorityService *AuthorityService) GetOwnerAuthorityInfoList(info request
 	return authority, total, err
 }
 
+//@function: GetAuthorityInfoListNoContainSelf
+//@description: 分页获取数据
+//@param: info request.PageInfo
+//@return: list interface{}, total int64, err error
+
+func (authorityService *AuthorityService) GetOwnerAuthorityInfoListNoContainSelf(info request.PageInfo, userId uint) (list interface{}, total int64, err error) {
+	var u system.SysUser
+	err = global.GVA_DB.Where("`id` = ?", userId).First(&u).Error
+	authId := u.AuthorityId
+	fmt.Println("authId=", authId)
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	db := global.GVA_DB.Model(&system.SysAuthority{})
+	if err = db.Where("parent_id = ?", authId).Count(&total).Error; total == 0 || err != nil {
+		fmt.Printf("total a = %v", total)
+		return
+	}
+	fmt.Printf("total = %v", total)
+	var authority []system.SysAuthority
+	err = db.Limit(limit).Offset(offset).Preload("DataAuthorityId").Where("parent_id = ?", authId).Find(&authority).Error
+	for k := range authority {
+		err = authorityService.findChildrenAuthority(&authority[k])
+	}
+	return authority, total, err
+}
+
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: GetAuthorityInfo
 //@description: 获取所有角色信息

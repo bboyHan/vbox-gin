@@ -209,7 +209,7 @@
               v-for="item in userList"
               :key="item.ID"
               :disabled="disabledUserMap[item.ID]"
-              :label="item.nickName"
+              :label="item.userName"
               :value="item.ID"
             />
           </el-select>

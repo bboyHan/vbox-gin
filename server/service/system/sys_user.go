@@ -36,6 +36,19 @@ func (userService *UserService) Register(u system.SysUser) (userInter system.Sys
 	return u, err
 }
 
+func (userService *UserService) OwnerRegister(u system.SysUser) (userInter system.SysUser, err error) {
+	var user system.SysUser
+	if !errors.Is(global.GVA_DB.Where("username = ?", u.Username).First(&user).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
+		return userInter, errors.New("用户名已注册")
+	}
+	// 否则 附加uuid 密码hash加密 注册
+	u.Password = utils.BcryptHash(u.Password)
+	u.UUID = uuid.Must(uuid.NewV4())
+
+	err = global.GVA_DB.Create(&u).Error
+	return u, err
+}
+
 //@author: [piexlmax](https://github.com/piexlmax)
 //@author: [SliverHorn](https://github.com/SliverHorn)
 //@function: Login

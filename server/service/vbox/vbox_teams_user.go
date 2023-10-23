@@ -80,7 +80,7 @@ func (tUsersService *VboxTeamsUserService) GetVboxTeamsUserInfoList(info vboxReq
 	db := global.GVA_DB.Model(&vbox.VboxTeamsUser{}).Where("team_id = ?", info.Team_id)
 	// 创建db
 	db = db.Select("vbox_teams_user.*, t1.username,t2.authority_name").
-		Joins("left join sys_users t1 on t1.id = vbox_teams_user.uid").
+		Joins("inner join sys_users t1 on t1.id = vbox_teams_user.uid and t1.deleted_at is null").
 		Joins("left join sys_authorities t2 on t1.authority_id = t2.authority_id")
 
 	//if info.Team_name != "" {
