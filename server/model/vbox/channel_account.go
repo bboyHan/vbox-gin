@@ -5,7 +5,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 )
 
-// 通道账号 结构体  ChannelAccount
+// ChannelAccount 通道账号 结构体
 type ChannelAccount struct {
 	global.GVA_MODEL
 	AcId       string `json:"acId" form:"acId" gorm:"column:ac_id;comment:账户ID;size:50;"`                   //账户ID

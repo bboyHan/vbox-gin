@@ -1,6 +1,55 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 
+export const formatPayedColor = (status, acId) => {
+  if (status === 2 && acId === "") { //匹配账号未支付
+    return '#a64406'
+  } else if(status === 2 && acId !== "") { //未匹配账号的
+    return '#606266'
+  } else if(status === 1) {
+    return '#05811d'
+  } else if(status === 3) {
+    return '#3118dc'
+  } else {
+    return '-'
+  }
+}
+
+export const formatPayed = (status, acId) => {
+  console.log(status + " --- " +acId)
+  if (status === 2 && acId !== "") {
+    return '待支付'
+  } else if(status === 2 && acId === "") {
+    return '待取码'
+  } else if(status === 1) {
+    return '已支付'
+  } else if(status === 3) {
+    return '支付超时'
+  } else {
+    return '-'
+  }
+}
+
+export const formatNotifyColor = (status) => {
+  if (status === 2) {
+    return '#606266'
+  } else if(status === 1) {
+    return '#05811d'
+  } else {
+    return ''
+  }
+}
+
+export const formatNotify = (status) => {
+  if (status === 2) {
+    return '未通知'
+  } else if(status === 1) {
+    return '已通知'
+  } else {
+    return '-'
+  }
+}
+
 export const formatBoolean = (bool) => {
   if (bool !== null) {
     return bool ? '是' : '否'

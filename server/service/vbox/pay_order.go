@@ -137,25 +137,22 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	defer rdConn.Close()
 
 	var vpa vbox.PayAccount
-	//count, err := global.GVA_REDIS.Exists(context.Background(), vpo.Account).Result()
-	count, err := rdConn.Exists(context.Background(), vpo.Account).Result()
+	count, err := rdConn.Exists(context.Background(), global.PayAccPrefix+vpo.Account).Result()
 	if count == 0 {
 		if err != nil {
 			global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
 		}
-		global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("orderId", vpo.OrderId))
+		global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", vpo.Account))
 
 		err = global.GVA_DB.Table("vbox_pay_account").
 			Where("p_account = ?", vpo.Account).First(&vpa).Error
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("无此商户，请核查！")
 		}
 		jsonStr, _ := json.Marshal(vpa)
-		//global.GVA_REDIS.Set(context.Background(), vpo.Account, jsonStr, 10*time.Minute)
-		rdConn.Set(context.Background(), vpo.Account, jsonStr, 10*time.Minute)
+		rdConn.Set(context.Background(), global.PayAccPrefix+vpo.Account, jsonStr, 10*time.Minute)
 	} else {
-		//jsonStr, _ := global.GVA_REDIS.Get(context.Background(), vpo.Account).Bytes()
-		jsonStr, _ := rdConn.Get(context.Background(), vpo.Account).Bytes()
+		jsonStr, _ := rdConn.Get(context.Background(), global.PayAccPrefix+vpo.Account).Bytes()
 		err = json.Unmarshal(jsonStr, &vpa)
 	}
 
@@ -194,7 +191,45 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 	vca := vcas[0]*/
 
-	//count, err = global.GVA_REDIS.Exists(context.Background(), vpo.OrderId).Result()
+	// ----- 校验该组织是否有此产品 -----------
+	var channelCodeList []string
+	c, err := rdConn.Exists(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10)).Result()
+	if c == 0 {
+		var productIds []uint
+		if err != nil {
+			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
+		}
+		global.GVA_LOG.Info("当前缓存池此用户对应的orgIds，查一下库。。。", zap.Any("商户", vpa.PRemark))
+		orgIds := utils2.GetDeepOrg(vpa.Uid)
+		db := global.GVA_DB.Model(&vbox.OrgProduct{})
+		if err = db.Debug().Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", orgIds).Find(&productIds).Error; err != nil {
+			return nil, err
+		}
+		if err = db.Debug().Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
+			return nil, err
+		}
+
+		jsonStr, _ := json.Marshal(channelCodeList)
+		rdConn.Set(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10), jsonStr, 10*time.Minute)
+	} else {
+		jsonStr, _ := rdConn.Get(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10)).Bytes()
+		err = json.Unmarshal(jsonStr, &channelCodeList)
+	}
+
+	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpa.Uid), zap.Any("商户", vpa.PRemark))
+	exist := utils.Contains(channelCodeList, vpo.ChannelCode)
+	if !exist {
+		return nil, fmt.Errorf("该账户不存在此产品，请核查！ 目前支持的通道：%v", channelCodeList)
+	}
+	/*var checkTotal int64
+	if err = global.GVA_DB.Debug().Model(&vbox.ChannelProduct{}).Where("id in ?", productIds).Where("channel_code = ?", vpo.ChannelCode).Count(&checkTotal).Error; err != nil {
+		return nil, err
+	}
+	if checkTotal < 1 {
+		return nil, fmt.Errorf("该账户不存在此产品，请核查！")
+	}*/
+	// ----- 校验该组织是否有此产品 -----------
+
 	count, err = rdConn.Exists(context.Background(), vpo.OrderId).Result()
 	if count == 0 {
 		if err != nil {
