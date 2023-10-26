@@ -84,6 +84,12 @@ func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.Ch
 	return
 }
 
+// GetChannelAccountByAcId 根据AcId获取通道账号记录
+func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (vca vbox.ChannelAccount, err error) {
+	err = global.GVA_DB.Where("ac_id = ?", acId).First(&vca).Error
+	return
+}
+
 // GetChannelAccountInfoList 分页获取通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.ChannelAccountSearch, ids []uint) (list []vbox.ChannelAccount, total int64, err error) {
