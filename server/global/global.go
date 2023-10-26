@@ -17,6 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	UserOrgChannelCodePrefix = "user_org_channel_code_ids:"
+	PayAccPrefix             = "pacc_id:"
+)
+
 var (
 	GVA_DB     *gorm.DB
 	GVA_DBList map[string]*gorm.DB

@@ -206,12 +206,23 @@ func (vcaApi *ChannelAccountApi) FindChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if revca, err := vcaService.GetChannelAccount(vca.ID); err != nil {
-		global.GVA_LOG.Error("查询失败!", zap.Error(err))
-		response.FailWithMessage("查询失败", c)
-	} else {
-		response.OkWithData(gin.H{"revca": revca}, c)
+	if vca.ID != 0 {
+		if revca, err := vcaService.GetChannelAccount(vca.ID); err != nil {
+			global.GVA_LOG.Error("查询失败!", zap.Error(err))
+			response.FailWithMessage("查询失败", c)
+		} else {
+			response.OkWithData(gin.H{"revca": revca}, c)
+		}
 	}
+	if vca.AcId != "" {
+		if revca, err := vcaService.GetChannelAccountByAcId(vca.AcId); err != nil {
+			global.GVA_LOG.Error("查询失败!", zap.Error(err))
+			response.FailWithMessage("查询失败", c)
+		} else {
+			response.OkWithData(gin.H{"revca": revca}, c)
+		}
+	}
+
 }
 
 // GetChannelAccountList 分页获取通道账号列表

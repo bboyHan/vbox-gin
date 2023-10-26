@@ -32,9 +32,10 @@
                 <el-tabs type="card" tab-position="top" :span="24">
                   <el-tab-pane :label="itemInfo.productName" v-for="(itemInfo, index2) in item.children" :key="index2">
                     <el-row :gutter="12">
-                      <el-col v-for="(itemTable, indexTable) in chanMap[itemInfo.channelCode]" :key="indexTable" :span="6">
+                      <el-col v-for="(itemTable, indexTable) in chanMap[itemInfo.channelCode]" :key="indexTable" :span="8">
                         <el-card shadow="hover">
                           <template #header>
+                            <el-button type="info" style="font-size: 24px">{{ item.shopRemark }}</el-button>
                             <el-descriptions :title="item.shopRemark" :column="6" border>
                               <template #extra>
                                 <el-button link>商铺ID：{{ itemTable.productId }}</el-button>
@@ -59,30 +60,49 @@
                                 <template #label><div>未开启</div></template>
                                 <el-tag type="danger" effect="dark"> {{ statusOffCountFunc(itemTable.list) }} </el-tag>
                               </el-descriptions-item>
-                              <el-descriptions-item :span="6">
+                              <el-descriptions-item :span="6" align="center">
                                 <template #label><div>启用占比</div></template>
-                                <el-progress type="dashboard" :percentage="calPercentage(itemTable.list)">
-                                  <template #default="{ percentage }">
-                                    <span class="percentage-value">{{ percentage }}%</span>
-                                    <span class="percentage-label">Running</span>
-                                  </template>
-                                </el-progress>
+                                <el-row>
+                                  <el-col :span="12">
+                                    <el-progress type="dashboard" :percentage="calPercentage(itemTable.list)">
+                                      <template #default="{ percentage }">
+                                        <span class="percentage-value">{{ percentage }}%</span>
+                                        <span class="percentage-label">Running</span>
+                                      </template>
+                                    </el-progress>
+                                  </el-col>
+                                  <el-col :span="12">
+                                    <el-row>
+                                      <el-col :span="12">
+                                        <el-popconfirm @confirm="switchEnableAll(itemTable, 1)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="确定要一键启用所有商品？">
+                                          <template #reference>
+                                            <el-button type="success" style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键开启</el-button>
+                                          </template>
+                                        </el-popconfirm>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-popconfirm @confirm="switchEnableAll(itemTable, 0)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="确定要一键启用所有商品？">
+                                          <template #reference>
+                                            <el-button type="danger" style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键关闭</el-button>
+                                          </template>
+                                        </el-popconfirm>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-button type="primary" icon="edit" @click="updShopNameDialog(itemTable)" round style="margin-top: 10px; margin-bottom: 5px; width: 110px">店名修改</el-button>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-button round color="#626aef" icon="edit" @click="updDialog(itemTable)" style="margin-top: 10px; margin-bottom: 5px; width: 110px">地址管理</el-button>
+                                      </el-col>
+                                    </el-row>
+
+
+                                  </el-col>
+                                </el-row>
                               </el-descriptions-item>
                             </el-descriptions>
                           </template>
                           <el-row :gutter="12">
-                            <el-col :span="12">
-                              <el-button type="primary" icon="edit" @click="updShopNameDialog(itemTable)">店名修改</el-button>
-                            </el-col>
-                            <el-col :span="12">
-                              <el-button type="primary" icon="edit" @click="updDialog(itemTable)">地址管理</el-button>
-                            </el-col>
-                          </el-row>
-                          <el-divider />
-                          <el-row :gutter="12">
-                            <el-col :span="12">
-                              <el-button type="primary" icon="search" @click="">统计概览</el-button>
-                            </el-col>
+                            <el-button round color="#626aef" icon="search" @click="">统计概览</el-button>
                           </el-row>
                         </el-card>
                       </el-col>
@@ -264,9 +284,9 @@
                 <el-table-column label="开关" prop="status" width="100px">
                   <template #default="scope">
                     <el-switch v-if="activeUpdIndex === scope.$index" v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
-                               inactive-text="关闭" inline-prompt size="large" width="70px"></el-switch>
+                               inactive-text="关闭" inline-prompt size="large" width="70px" @change="()=>{switchEnable(scope.row)}"></el-switch>
                     <el-switch v-else v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
-                               inactive-text="关闭" inline-prompt size="large" width="70px"></el-switch>
+                               inactive-text="关闭" inline-prompt size="large" width="70px" @change="()=>{switchEnable(scope.row)}"></el-switch>
                   </template>
                 </el-table-column>
                 <el-table-column align="right" width="200">
@@ -341,8 +361,9 @@ import {
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
-import { Delete, Edit, InfoFilled, Plus, Select } from '@element-plus/icons-vue';
+import {ref, reactive, nextTick} from 'vue'
+import {CircleCheck, CircleClose, Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';
+import {setUserInfo} from "@/api/user";
 
 defineOptions({
   name: 'ChannelShop'
@@ -424,7 +445,6 @@ const lengthFunc = (list) => {
 const calPercentage = (list) => {
   let c = 0;
   for (let i = 0; i < list.length; i++) {
-    console.log(list[i])
     if (list[i].status === 1) {
       c++;
     }
@@ -435,7 +455,6 @@ const calPercentage = (list) => {
 const statusOnCountFunc = (list) => {
   let c = 0;
   for (let i = 0; i < list.length; i++) {
-    console.log(list[i])
     if (list[i].status === 1) {
       c++;
     }
@@ -446,7 +465,6 @@ const statusOnCountFunc = (list) => {
 const statusOffCountFunc = (list) => {
   let c = 0;
   for (let i = 0; i < list.length; i++) {
-    console.log(list[i])
     if (list[i].status === 0) {
       c++;
     }
@@ -464,8 +482,6 @@ const processChanMap = (list) => {
       chanMap.value[item.cid] = [item];
     }
   }
-
-  console.log(chanMap.value)
 }
 // -------------- 同一通道产品的归集 ------------------------
 
@@ -506,6 +522,51 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
     }
   })
 }
+
+// ------------ 开关商品 -----------------
+// 开关单条
+const switchEnable = async(row) => {
+  console.log(row)
+  // userInfo.value = JSON.parse(JSON.stringify(row))
+  await nextTick()
+  const req = {
+    type: 2,
+    ...row
+  }
+  console.log(req)
+  if (req.id){
+    const res = await updateChannelShop(req)
+    if (res.code === 0) {
+      ElMessage({ type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}单条商品成功` })
+      await getTableData()
+    }
+  } else {
+    console.log("没id的数据，不操作")
+  }
+}
+
+// 开关所有
+const switchEnableAll = async(row, status) => {
+  console.log(row)
+  // userInfo.value = JSON.parse(JSON.stringify(row))
+  await nextTick()
+  const req = {
+    type: 3,
+    status: status,
+    ...row
+  }
+  console.log(req)
+  if (req.productId){
+    const res = await updateChannelShop(req)
+    if (res.code === 0) {
+      ElMessage({ type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}店铺成功` })
+      await getTableData()
+    }
+  } else {
+    console.log("没productId的数据，不操作")
+  }
+}
+// ------------ 开关商品 -----------------
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -575,11 +636,11 @@ const initForm = () => {
 
 // 查询
 const getTableData = async() => {
-  initForm()
   const table = await getChannelShopList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   const vcpTable = await getChannelProductSelf({ page: 1, pageSize: 999, ...searchInfo.value })
 
   if (table.code === 0) {
+    initForm()
     tableData.value = table.data.list
     total.value = table.data.total
     page.value = table.data.page
@@ -738,9 +799,8 @@ const enterDialog = async () => {
         res = await updateChannelShop(formData.value)
         break
       case 'updateShopRemark':
-        console.log(formData.value.productId)
-        console.log(formData.value.shopRemark)
         res = await updateChannelShop({
+          type: 1,
           cid: formData.value.cid,
           productId: formData.value.productId,
           shopRemark: formData.value.shopRemark,

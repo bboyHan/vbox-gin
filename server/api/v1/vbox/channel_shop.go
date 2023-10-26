@@ -112,20 +112,13 @@ func (channelShopApi *ChannelShopApi) DeleteChannelShopByIds(c *gin.Context) {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
 // @Router /channelShop/updateChannelShop [put]
 func (channelShopApi *ChannelShopApi) UpdateChannelShop(c *gin.Context) {
-	var channelShop vbox.ChannelShop
+	var channelShop vboxReq.ChannelShopReq
 	err := c.ShouldBindJSON(&channelShop)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
 	channelShop.UpdatedBy = utils.GetUserID(c)
-	verify := utils.Rules{
-		"ShopRemark": {utils.NotEmpty()},
-	}
-	if err := utils.Verify(channelShop, verify); err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
 	if err := channelShopService.UpdateChannelShop(channelShop); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
