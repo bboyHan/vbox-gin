@@ -119,13 +119,6 @@ func (channelShopApi *ChannelShopApi) UpdateChannelShop(c *gin.Context) {
 		return
 	}
 	channelShop.UpdatedBy = utils.GetUserID(c)
-	verify := utils.Rules{
-		"ShopRemark": {utils.NotEmpty()},
-	}
-	if err := utils.Verify(channelShop, verify); err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
 	if err := channelShopService.UpdateChannelShop(channelShop); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
