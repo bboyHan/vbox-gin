@@ -2,96 +2,149 @@
   <div>
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
-      <el-form-item label="创建日期" prop="createdAt">
-      <template #label>
-        <span>
-          创建日期
-          <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
-            <el-icon><QuestionFilled /></el-icon>
-          </el-tooltip>
-        </span>
-      </template>
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始日期" :disabled-date="time=> searchInfo.endCreatedAt ? time.getTime() > searchInfo.endCreatedAt.getTime() : false"></el-date-picker>
-       —
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束日期" :disabled-date="time=> searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker>
-      </el-form-item>
+        <el-form-item label="付方单号" prop="orderId">
+          <el-input v-model="searchInfo.orderId" placeholder="搜索条件" />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
+          <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-table-box">
-        <div class="gva-btn-list">
-            <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-            <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
-            <p>确定要删除吗？</p>
-            <div style="text-align: right; margin-top: 8px;">
-                <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-                <el-button type="primary" @click="onDelete">确定</el-button>
+      <!--   简约版   -->
+      <el-table
+          v-if="isSimple"
+          ref="multipleTable"
+          style="width: 100%"
+          tooltip-effect="dark"
+          :data="tableData"
+          row-key="ID"
+          border
+          @selection-change="handleSelectionChange"
+      >
+        <el-table-column align="center" label="账号ID" prop="acId" width="180" >
+          <template #default="scope">
+            <div v-if="isPendingAcc(scope.row)">
+              {{ scope.row.acId }}
+              <el-button type="primary" link class="table-button" @click="getAccDetails(scope.row)">
+                <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
+              </el-button>
             </div>
-            <template #reference>
-                <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
-            </template>
-            </el-popover>
-        </div>
-        <el-table
+            <div v-else>
+              <el-button type="info" :loading-icon="Eleme" loading link class="table-button">匹配中</el-button>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="订单ID" prop="orderId" width="220" />
+        <el-table-column align="center" label="金额" prop="money" width="120" />
+        <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">{{ formatPayed(scope.row.orderStatus, scope.row.acId) }}</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="回调状态" prop="callbackStatus" width="120">
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.callbackStatus)">{{ formatNotify(scope.row.callbackStatus) }}</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="创建时间" width="180">
+          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+        </el-table-column>
+        <el-table-column align="left" label="操作">
+          <template #default="scope">
+            <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
+              <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
+              详情
+            </el-button>
+            <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+              <el-icon style="margin-right: 5px"><Position /></el-icon>
+              补单
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!--   详情版   -->
+      <el-table
+        v-else
         ref="multipleTable"
         style="width: 100%"
         tooltip-effect="dark"
         :data="tableData"
         row-key="ID"
+        border
         @selection-change="handleSelectionChange"
-        >
+      >
         <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="日期" width="180">
-            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="订单ID" prop="orderId" width="120" />
-        <el-table-column align="left" label="付方ID" prop="pAccount" width="120" />
-        <el-table-column align="left" label="金额" prop="money" width="120" />
+        <el-table-column align="left" label="付方ID" prop="pAccount" width="120">
+          <template #default="scope">
+            {{ scope.row.pAccount }}
+            <el-button type="primary" link class="table-button" @click="getPADetails(scope.row.pAccount)">
+              <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
+              详情
+            </el-button>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="单价积分" prop="unitPrice" width="120" />
         <el-table-column align="left" label="用户ID" prop="uid" width="120" />
-        <el-table-column align="left" label="账号ID" prop="acId" width="120" />
         <el-table-column align="left" label="通道编码" prop="channelCode" width="120" />
-        <el-table-column align="left" label="平台id" prop="platformOid" width="120" />
+        <el-table-column align="left" label="平台id" prop="platformOid" width="220" />
         <el-table-column align="left" label="客户ip" prop="payIp" width="120" />
         <el-table-column align="left" label="区域" prop="payRegion" width="120" />
         <el-table-column align="left" label="客户端设备" prop="payDevice" width="120" />
-                      <el-table-column label="支付链接" width="200">
-                         <template #default="scope">
-                            [富文本内容]
-                         </template>
-                      </el-table-column>
+        <el-table-column align="left" label="支付链接" prop="resourceUrl" width="200"/>
         <el-table-column align="left" label="回调地址" prop="notifyUrl" width="120" />
+        <el-table-column align="left" label="账号ID" prop="acId" width="180" >
+          <template #default="scope">
+            <div v-if="isPendingAcc(scope.row)">
+              {{ scope.row.acId }}
+              <el-button type="primary" link class="table-button" @click="getAccDetails(scope.row)">
+                <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
+              </el-button>
+            </div>
+            <div v-else>
+              <el-button type="info" :loading-icon="Eleme" loading>匹配中</el-button>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="订单ID" prop="orderId" width="220" />
+        <el-table-column align="left" label="金额" prop="money" width="120" />
         <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
-            <template #default="scope">{{ formatBoolean(scope.row.orderStatus) }}</template>
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">{{ formatPayed(scope.row.orderStatus, scope.row.acId) }}</el-button>
+          </template>
         </el-table-column>
         <el-table-column align="left" label="回调状态" prop="callbackStatus" width="120">
-            <template #default="scope">{{ formatBoolean(scope.row.callbackStatus) }}</template>
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.callbackStatus)">{{ formatNotify(scope.row.callbackStatus) }}</el-button>
+          </template>
         </el-table-column>
-        <el-table-column align="left" label="取码状态" prop="codeUseStatus" width="120">
-            <template #default="scope">{{ formatBoolean(scope.row.codeUseStatus) }}</template>
+                <el-table-column align="left" label="取码状态" prop="codeUseStatus" width="120">
+                  <template #default="scope">{{ formatBoolean(scope.row.codeUseStatus) }}</template>
+                </el-table-column>
+                <el-table-column align="left" label="异步执行时间" width="180">
+                  <template #default="scope">{{ formatDate(scope.row.asyncTime) }}</template>
+                </el-table-column>
+        <el-table-column align="left" label="回调时间" width="180">
+          <template #default="scope">{{ formatDate(scope.row.callTime) }}</template>
         </el-table-column>
-         <el-table-column align="left" label="异步执行时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.asyncTime) }}</template>
-         </el-table-column>
-         <el-table-column align="left" label="回调时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.callTime) }}</template>
-         </el-table-column>
         <el-table-column align="left" label="操作">
-            <template #default="scope">
+          <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
-                <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
-                查看详情
+              <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
+              详情
             </el-button>
-            <el-button type="primary" link icon="edit" class="table-button" @click="updatePayOrderFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-            </template>
+          </template>
         </el-table-column>
-        </el-table>
-        <div class="gva-pagination">
-            <el-pagination
+      </el-table>
+      <div class="gva-pagination">
+        <el-pagination
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
             :page-size="pageSize"
@@ -99,67 +152,53 @@
             :total="total"
             @current-change="handleCurrentChange"
             @size-change="handleSizeChange"
-            />
-        </div>
+        />
+      </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-scrollbar height="500px">
-          <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-            <el-form-item label="订单ID:"  prop="orderId" >
-              <el-input v-model="formData.orderId" :clearable="true"  placeholder="请输入订单ID" />
-            </el-form-item>
-            <el-form-item label="付方ID:"  prop="pAccount" >
-              <el-input v-model="formData.pAccount" :clearable="true"  placeholder="请输入付方ID" />
-            </el-form-item>
-            <el-form-item label="金额:"  prop="money" >
-              <el-input v-model.number="formData.money" :clearable="true" placeholder="请输入金额" />
-            </el-form-item>
-            <el-form-item label="单价积分:"  prop="unitPrice" >
-              <el-input v-model.number="formData.unitPrice" :clearable="true" placeholder="请输入单价积分" />
-            </el-form-item>
-            <el-form-item label="用户ID:"  prop="uid" >
-              <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入用户ID" />
-            </el-form-item>
-            <el-form-item label="账号ID:"  prop="acId" >
-              <el-input v-model="formData.acId" :clearable="true"  placeholder="请输入账号ID" />
-            </el-form-item>
-            <el-form-item label="通道编码:"  prop="channelCode" >
-              <el-input v-model="formData.channelCode" :clearable="true"  placeholder="请输入通道编码" />
-            </el-form-item>
-            <el-form-item label="平台id:"  prop="platformOid" >
-              <el-input v-model="formData.platformOid" :clearable="true"  placeholder="请输入平台id" />
-            </el-form-item>
-            <el-form-item label="客户ip:"  prop="payIp" >
-              <el-input v-model="formData.payIp" :clearable="true"  placeholder="请输入客户ip" />
-            </el-form-item>
-            <el-form-item label="区域:"  prop="payRegion" >
-              <el-input v-model="formData.payRegion" :clearable="true"  placeholder="请输入区域" />
-            </el-form-item>
-            <el-form-item label="客户端设备:"  prop="payDevice" >
-              <el-input v-model="formData.payDevice" :clearable="true"  placeholder="请输入客户端设备" />
-            </el-form-item>
-            <el-form-item label="支付链接:"  prop="resourceUrl" >
-              <RichEdit v-model="formData.resourceUrl"/>
-            </el-form-item>
-            <el-form-item label="回调地址:"  prop="notifyUrl" >
-              <el-input v-model="formData.notifyUrl" :clearable="true"  placeholder="请输入回调地址" />
-            </el-form-item>
-            <el-form-item label="订单状态:"  prop="orderStatus" >
-              <el-switch v-model="formData.orderStatus" active-color="#13ce66" inactive-color="#ff4949" active-text="是" inactive-text="否" clearable ></el-switch>
-            </el-form-item>
-            <el-form-item label="回调状态:"  prop="callbackStatus" >
-              <el-switch v-model="formData.callbackStatus" active-color="#13ce66" inactive-color="#ff4949" active-text="是" inactive-text="否" clearable ></el-switch>
-            </el-form-item>
-            <el-form-item label="取码状态:"  prop="codeUseStatus" >
-              <el-switch v-model="formData.codeUseStatus" active-color="#13ce66" inactive-color="#ff4949" active-text="是" inactive-text="否" clearable ></el-switch>
-            </el-form-item>
-            <el-form-item label="异步执行时间:"  prop="asyncTime" >
-              <el-date-picker v-model="formData.asyncTime" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-            </el-form-item>
-            <el-form-item label="回调时间:"  prop="callTime" >
-              <el-date-picker v-model="formData.callTime" type="date" style="width:100%" placeholder="选择日期" :clearable="true"  />
-            </el-form-item>
-          </el-form>
+
+    <!-- 订单查看详情 -->
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-descriptions column="1" border>
+          <el-descriptions-item label="订单ID">{{ formData.orderId }}</el-descriptions-item>
+          <el-descriptions-item label="付方ID">{{ formData.pAccount }}</el-descriptions-item>
+          <el-descriptions-item label="金额">{{ formData.money }}</el-descriptions-item>
+          <el-descriptions-item label="单价积分">{{ formData.unitPrice }}</el-descriptions-item>
+          <el-descriptions-item label="用户ID">{{ formData.uid }}</el-descriptions-item>
+          <el-descriptions-item label="账号ID">{{ formData.acId }}</el-descriptions-item>
+          <el-descriptions-item label="通道编码">{{ formData.channelCode }}</el-descriptions-item>
+          <el-descriptions-item label="平台id">{{ formData.platformOid }}</el-descriptions-item>
+          <el-descriptions-item label="客户ip">{{ formData.payIp }}</el-descriptions-item>
+          <el-descriptions-item label="区域">{{ formData.payRegion }}</el-descriptions-item>
+          <el-descriptions-item label="客户端设备">{{ formData.payDevice }}</el-descriptions-item>
+          <el-descriptions-item label="支付链接">{{ formData.resourceUrl }}</el-descriptions-item>
+          <el-descriptions-item label="回调地址">{{ formData.notifyUrl }}</el-descriptions-item>
+          <el-descriptions-item label="订单状态">{{ formatBoolean(formData.orderStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="回调状态">{{ formatBoolean(formData.callbackStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="取码状态">{{ formatBoolean(formData.codeUseStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="异步执行时间">{{ formatDate(formData.asyncTime) }}</el-descriptions-item>
+          <el-descriptions-item label="回调时间">{{ formatDate(formData.callTime) }}</el-descriptions-item>
+        </el-descriptions>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!--  补单  -->
+    <el-dialog
+        v-model="dialogFormVisible"
+        :before-close="closeDialog"
+        :title="typeTitle"
+        destroy-on-close
+        style="width: 450px"
+    >
+      <el-scrollbar height="100px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="120px">
+          <el-form-item label="订单ID" prop="authCaptcha">
+            <el-input disabled v-model="formData.orderId" :clearable="true" placeholder="请输入" style="width: 80%"/>
+          </el-form-item>
+          <el-form-item label="防爆验证码" prop="authCaptcha">
+            <el-input v-model="formData.authCaptcha" :clearable="true" placeholder="请输入防爆验证码" style="width: 80%"/>
+          </el-form-item>
+        </el-form>
       </el-scrollbar>
       <template #footer>
         <div class="dialog-footer">
@@ -169,63 +208,22 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+    <!-- 账号查看详情 -->
+    <el-dialog v-model="detailAccShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow" title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
-        <el-descriptions column="1" border>
-                <el-descriptions-item label="订单ID">
-                        {{ formData.orderId }}
-                </el-descriptions-item>
-                <el-descriptions-item label="付方ID">
-                        {{ formData.pAccount }}
-                </el-descriptions-item>
-                <el-descriptions-item label="金额">
-                        {{ formData.money }}
-                </el-descriptions-item>
-                <el-descriptions-item label="单价积分">
-                        {{ formData.unitPrice }}
-                </el-descriptions-item>
-                <el-descriptions-item label="用户ID">
-                        {{ formData.uid }}
-                </el-descriptions-item>
-                <el-descriptions-item label="账号ID">
-                        {{ formData.acId }}
-                </el-descriptions-item>
-                <el-descriptions-item label="通道编码">
-                        {{ formData.channelCode }}
-                </el-descriptions-item>
-                <el-descriptions-item label="平台id">
-                        {{ formData.platformOid }}
-                </el-descriptions-item>
-                <el-descriptions-item label="客户ip">
-                        {{ formData.payIp }}
-                </el-descriptions-item>
-                <el-descriptions-item label="区域">
-                        {{ formData.payRegion }}
-                </el-descriptions-item>
-                <el-descriptions-item label="客户端设备">
-                        {{ formData.payDevice }}
-                </el-descriptions-item>
-                <el-descriptions-item label="支付链接">
-                        [富文本内容]
-                </el-descriptions-item>
-                <el-descriptions-item label="回调地址">
-                        {{ formData.notifyUrl }}
-                </el-descriptions-item>
-                <el-descriptions-item label="订单状态">
-                    {{ formatBoolean(formData.orderStatus) }}
-                </el-descriptions-item>
-                <el-descriptions-item label="回调状态">
-                    {{ formatBoolean(formData.callbackStatus) }}
-                </el-descriptions-item>
-                <el-descriptions-item label="取码状态">
-                    {{ formatBoolean(formData.codeUseStatus) }}
-                </el-descriptions-item>
-                <el-descriptions-item label="异步执行时间">
-                      {{ formatDate(formData.asyncTime) }}
-                </el-descriptions-item>
-                <el-descriptions-item label="回调时间">
-                      {{ formatDate(formData.callTime) }}
-                </el-descriptions-item>
+        <el-descriptions column="6" border>
+          <el-descriptions-item label="用户id" :span="6">{{ formAccData.uid }}</el-descriptions-item>
+          <el-descriptions-item label="账户ID" :span="6">{{ formAccData.acId }}</el-descriptions-item>
+          <el-descriptions-item label="账户备注" :span="6">{{ formAccData.acRemark }}</el-descriptions-item>
+          <el-descriptions-item label="通道账户" :span="3">{{ formAccData.acAccount }}</el-descriptions-item>
+          <el-descriptions-item label="账户密码" :span="3">{{ formAccData.acPwd }}</el-descriptions-item>
+          <el-descriptions-item label="ck" :span="6">{{ formAccData.token }}</el-descriptions-item>
+          <el-descriptions-item label="通道id" :span="6">{{ formAccData.cid }}</el-descriptions-item>
+          <el-descriptions-item label="笔数限制" :span="2">{{ formAccData.countLimit }}</el-descriptions-item>
+          <el-descriptions-item label="日限额" :span="2">{{ formAccData.dailyLimit }}</el-descriptions-item>
+          <el-descriptions-item label="总限额" :span="2">{{ formAccData.totalLimit }}</el-descriptions-item>
+          <el-descriptions-item label="状态开关" :span="3">{{ formAccData.status===0?'关闭':'开启' }}</el-descriptions-item>
+          <el-descriptions-item label="系统开关" :span="3">{{ formAccData.sysStatus===0?'关闭':'开启' }}</el-descriptions-item>
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
@@ -235,45 +233,65 @@
 <script setup>
 import {
   createPayOrder,
-  deletePayOrder,
-  deletePayOrderByIds,
-  updatePayOrder,
   findPayOrder,
   getPayOrderList
 } from '@/api/payOrder'
-// 富文本组件
-import RichEdit from '@/components/richtext/rich-edit.vue'
-
+import {
+  findChannelAccount,
+} from '@/api/channelAccount'
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
+import {
+  getDictFunc,
+  formatDate,
+  formatBoolean,
+  filterDict,
+  ReturnArrImg,
+  onDownloadFile,
+  formatNotify, formatPayed, formatPayedColor, formatNotifyColor
+} from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import {Eleme, InfoFilled, Position} from "@element-plus/icons-vue";
 
 defineOptions({
-    name: 'PayOrder'
+  name: 'PayOrder'
 })
+
+//页面简约切换
+const isSimple = ref(true)
+
+// 获取付方账号详情
+const getPADetails = (paID) => {
+  console.log("查当前详情付方账号：" +paID)
+}
+
+// 重置
+const resetSimple = (status) => {
+  isSimple.value = status
+}
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        orderId: '',
-        pAccount: '',
-        money: 0,
-        unitPrice: 0,
-        uid: 0,
-        acId: '',
-        channelCode: '',
-        platformOid: '',
-        payIp: '',
-        payRegion: '',
-        payDevice: '',
-        resourceUrl: '',
-        notifyUrl: '',
-        orderStatus: false,
-        callbackStatus: false,
-        codeUseStatus: false,
-        asyncTime: new Date(),
-        callTime: new Date(),
-        })
+  authCaptcha: '',
+  orderId: '',
+  pAccount: '',
+  money: 0,
+  unitPrice: 0,
+  uid: 0,
+  acId: '',
+  channelCode: '',
+  platformOid: '',
+  payIp: '',
+  payRegion: '',
+  payDevice: '',
+  resourceUrl: '',
+  notifyUrl: '',
+  orderStatus: false,
+  callbackStatus: false,
+  codeUseStatus: false,
+  asyncTime: new Date(),
+  callTime: new Date(),
+})
 
 
 // 验证规则
@@ -283,16 +301,16 @@ const rule = reactive({
 const searchRule = reactive({
   createdAt: [
     { validator: (rule, value, callback) => {
-      if (searchInfo.value.startCreatedAt && !searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写结束日期'))
-      } else if (!searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写开始日期'))
-      } else if (searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt && (searchInfo.value.startCreatedAt.getTime() === searchInfo.value.endCreatedAt.getTime() || searchInfo.value.startCreatedAt.getTime() > searchInfo.value.endCreatedAt.getTime())) {
-        callback(new Error('开始日期应当早于结束日期'))
-      } else {
-        callback()
-      }
-    }, trigger: 'change' }
+        if (searchInfo.value.startCreatedAt && !searchInfo.value.endCreatedAt) {
+          callback(new Error('请填写结束日期'))
+        } else if (!searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt) {
+          callback(new Error('请填写开始日期'))
+        } else if (searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt && (searchInfo.value.startCreatedAt.getTime() === searchInfo.value.endCreatedAt.getTime() || searchInfo.value.startCreatedAt.getTime() > searchInfo.value.endCreatedAt.getTime())) {
+          callback(new Error('开始日期应当早于结束日期'))
+        } else {
+          callback()
+        }
+      }, trigger: 'change' }
   ],
 })
 
@@ -319,13 +337,13 @@ const onSubmit = () => {
     page.value = 1
     pageSize.value = 10
     if (searchInfo.value.orderStatus === ""){
-        searchInfo.value.orderStatus=null
+      searchInfo.value.orderStatus=null
     }
     if (searchInfo.value.callbackStatus === ""){
-        searchInfo.value.callbackStatus=null
+      searchInfo.value.callbackStatus=null
     }
     if (searchInfo.value.codeUseStatus === ""){
-        searchInfo.value.codeUseStatus=null
+      searchInfo.value.codeUseStatus=null
     }
     getTableData()
   })
@@ -370,19 +388,19 @@ setOptions()
 const multipleSelection = ref([])
 // 多选
 const handleSelectionChange = (val) => {
-    multipleSelection.value = val
+  multipleSelection.value = val
 }
 
 // 删除行
 const deleteRow = (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
-            deletePayOrderFunc(row)
-        })
-    }
+  ElMessageBox.confirm('确定要删除吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    deletePayOrderFunc(row)
+  })
+}
 
 
 // 批量删除控制标记
@@ -390,59 +408,50 @@ const deleteVisible = ref(false)
 
 // 多选删除
 const onDelete = async() => {
-      const ids = []
-      if (multipleSelection.value.length === 0) {
-        ElMessage({
-          type: 'warning',
-          message: '请选择要删除的数据'
-        })
-        return
-      }
-      multipleSelection.value &&
-        multipleSelection.value.map(item => {
-          ids.push(item.ID)
-        })
-      const res = await deletePayOrderByIds({ ids })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === ids.length && page.value > 1) {
-          page.value--
-        }
-        deleteVisible.value = false
-        getTableData()
-      }
+  const ids = []
+  if (multipleSelection.value.length === 0) {
+    ElMessage({
+      type: 'warning',
+      message: '请选择要删除的数据'
+    })
+    return
+  }
+  multipleSelection.value &&
+  multipleSelection.value.map(item => {
+    ids.push(item.ID)
+  })
+  const res = await deletePayOrderByIds({ ids })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '删除成功'
+    })
+    if (tableData.value.length === ids.length && page.value > 1) {
+      page.value--
     }
+    deleteVisible.value = false
+    getTableData()
+  }
+}
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
-
-// 更新行
-const updatePayOrderFunc = async(row) => {
-    const res = await findPayOrder({ ID: row.ID })
-    type.value = 'update'
-    if (res.code === 0) {
-        formData.value = res.data.repayOrder
-        dialogFormVisible.value = true
-    }
-}
+const typeTitle = ref('')
 
 
 // 删除行
 const deletePayOrderFunc = async (row) => {
-    const res = await deletePayOrder({ ID: row.ID })
-    if (res.code === 0) {
-        ElMessage({
-                type: 'success',
-                message: '删除成功'
-            })
-            if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-        }
-        getTableData()
+  const res = await deletePayOrder({ ID: row.ID })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '删除成功'
+    })
+    if (tableData.value.length === 1 && page.value > 1) {
+      page.value--
     }
+    getTableData()
+  }
 }
 
 // 弹窗控制标记
@@ -469,90 +478,173 @@ const getDetails = async (row) => {
   }
 }
 
-
 // 关闭详情弹窗
 const closeDetailShow = () => {
   detailShow.value = false
   formData.value = {
-          orderId: '',
-          pAccount: '',
-          money: 0,
-          unitPrice: 0,
-          uid: 0,
-          acId: '',
-          channelCode: '',
-          platformOid: '',
-          payIp: '',
-          payRegion: '',
-          payDevice: '',
-          notifyUrl: '',
-          orderStatus: false,
-          callbackStatus: false,
-          codeUseStatus: false,
-          asyncTime: new Date(),
-          callTime: new Date(),
-          }
+    orderId: '',
+    pAccount: '',
+    money: 0,
+    unitPrice: 0,
+    uid: 0,
+    acId: '',
+    channelCode: '',
+    platformOid: '',
+    payIp: '',
+    payRegion: '',
+    payDevice: '',
+    notifyUrl: '',
+    orderStatus: false,
+    callbackStatus: false,
+    codeUseStatus: false,
+    asyncTime: new Date(),
+    callTime: new Date(),
+  }
 }
 
-
+// ---- 补单 ----
 // 打开弹窗
 const openDialog = () => {
-    type.value = 'create'
-    dialogFormVisible.value = true
+  type.value = 'notify'
+  dialogFormVisible.value = true
+  typeTitle.value = '补单'
+}
+
+// 打开详情（补单使用）
+const notifyPayOrder = async (row) => {
+  // 打开弹窗
+  const res = await findPayOrder({ ID: row.ID })
+  if (res.code === 0) {
+    formData.value = res.data.repayOrder
+    openDialog()
+  }
 }
 
 // 关闭弹窗
 const closeDialog = () => {
-    dialogFormVisible.value = false
-    formData.value = {
-        orderId: '',
-        pAccount: '',
-        money: 0,
-        unitPrice: 0,
-        uid: 0,
-        acId: '',
-        channelCode: '',
-        platformOid: '',
-        payIp: '',
-        payRegion: '',
-        payDevice: '',
-        notifyUrl: '',
-        orderStatus: false,
-        callbackStatus: false,
-        codeUseStatus: false,
-        asyncTime: new Date(),
-        callTime: new Date(),
-        }
+  dialogFormVisible.value = false
+  formData.value = {
+    authCaptcha: '',
+    orderId: '',
+    pAccount: '',
+    money: 0,
+    unitPrice: 0,
+    uid: 0,
+    acId: '',
+    channelCode: '',
+    platformOid: '',
+    payIp: '',
+    payRegion: '',
+    payDevice: '',
+    notifyUrl: '',
+    orderStatus: false,
+    callbackStatus: false,
+    codeUseStatus: false,
+    asyncTime: new Date(),
+    callTime: new Date(),
+  }
 }
 // 弹窗确定
 const enterDialog = async () => {
-     elFormRef.value?.validate( async (valid) => {
-             if (!valid) return
-              let res
-              switch (type.value) {
-                case 'create':
-                  res = await createPayOrder(formData.value)
-                  break
-                case 'update':
-                  res = await updatePayOrder(formData.value)
-                  break
-                default:
-                  res = await createPayOrder(formData.value)
-                  break
-              }
-              if (res.code === 0) {
-                ElMessage({
-                  type: 'success',
-                  message: '创建/更改成功'
-                })
-                closeDialog()
-                getTableData()
-              }
-      })
+  elFormRef.value?.validate( async (valid) => {
+    if (!valid) return
+    switch (type.value) {
+      case 'notify':
+        console.log(formData.value)
+        await console.log("准备补单")
+    }
+  })
 }
+
+
+
+// ------ 账户匹配 ------
+const isPendingAcc = (row) => {
+  console.log(row.adId)
+  return row.acId !== "";
+}
+// ------ 账户匹配 ------
+
+// ------ 账户详情 ------
+const formAccData = ref({
+  acId: '',
+  acRemark: '',
+  acAccount: '',
+  acPwd: '',
+  token: '',
+  cid: '',
+  countLimit: 0,
+  dailyLimit: 0,
+  totalLimit: 0,
+  status: 0,
+  sysStatus: 0,
+  uid: 0,
+})
+const detailAccShow = ref(false)
+// 打开详情弹窗
+const openAccDetailShow = () => {
+  detailAccShow.value = true
+}
+// 打开详情
+const getAccDetails = async(row) => {
+  // 打开弹窗
+  const res = await findChannelAccount({ acId: row.acId })
+  if (res.code === 0) {
+    formAccData.value = res.data.revca
+    openAccDetailShow()
+  }
+}
+// 关闭详情弹窗
+const closeAccDetailShow = () => {
+  detailAccShow.value = false
+  formAccData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+// ------ 账户详情 ------
 
 </script>
 
 <style>
+.el-table__body, .el-table__header {
+  border-collapse: collapse;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+}
 
+.el-table__body tr, .el-table__header tr {
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+}
+
+.el-table__body td, .el-table__header th {
+  border-right-width: 2px;
+  border-right-style: solid;
+}
+
+// loading
+.el-button .custom-loading .circular {
+  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  animation: loading-rotate 2s linear infinite;
+}
+.el-button .custom-loading .circular .path {
+  animation: loading-dash 1.5s ease-in-out infinite;
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  stroke-width: 2;
+  stroke: var(--el-button-text-color);
+  stroke-linecap: round;
+}
 </style>

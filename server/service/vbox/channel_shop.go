@@ -8,6 +8,7 @@ import (
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"gorm.io/gorm"
+	"sort"
 	"time"
 )
 
@@ -91,12 +92,25 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 	return err
 }
 
-// UpdateChannelShop 更新引导商铺记录（只允许更新店名）
-// Author [piexlmax](https://github.com/piexlmax)
-func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox.ChannelShop) (err error) {
-	err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
-		Update("shop_remark", channelShop.ShopRemark).
-		Update("updated_by", channelShop.UpdatedBy).Error
+// UpdateChannelShop 更新引导商铺记录（ type: 1-更新店名 2-开关单条 3-开关整个店 ）
+func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vboxReq.ChannelShopReq) (err error) {
+	// 1-更新店名 2-开关单条 3-开关整个店
+	if channelShop.Type == 1 {
+		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
+			Update("shop_remark", channelShop.ShopRemark).
+			Update("updated_by", channelShop.UpdatedBy).Error
+	} else if channelShop.Type == 2 {
+		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.Id).
+			Update("status", channelShop.Status).
+			Update("updated_by", channelShop.UpdatedBy).Error
+	} else if channelShop.Type == 3 {
+		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
+			Update("status", channelShop.Status).
+			Update("updated_by", channelShop.UpdatedBy).Error
+	} else {
+		err = fmt.Errorf("不支持的操作，type检查")
+	}
+
 	return err
 }
 
@@ -185,6 +199,8 @@ func (channelShopService *ChannelShopService) GetChannelShopInfoList(info vboxRe
 
 		res = append(res, csNew)
 	}
+
+	sort.Sort(vboxReq.ChannelShopList(res))
 
 	return res, err
 }
