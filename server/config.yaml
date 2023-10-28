@@ -173,7 +173,7 @@ rabbitmq:
     port: "8083"
     password: Vbox123qwe
     username: admin
-    poolSize: 1
+    poolSize: 5
     retryReConnDelay: 3ns
 redis:
     addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379

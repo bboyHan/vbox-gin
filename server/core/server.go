@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"time"
 
@@ -27,14 +28,17 @@ func RunWindowsServer() {
 		}
 	}
 	if global.GVA_CONFIG.System.UseMQ {
-		err := initialize.MQ.Init()
+		err := mq.MQ.Init()
 		if err != nil {
 			zap.L().Error(fmt.Sprintf("%+v", err))
 		}
 	}
 	if global.GVA_CONFIG.System.UseMQTask {
 		go task.OrderWaitingTask()
+		go task.OrderConfirmTask()
 	}
+	//TODO 任务入口
+	//initialize.Timer()
 	// 从db加载jwt数据
 	if global.GVA_DB != nil {
 		system.LoadAll()
