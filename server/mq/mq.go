@@ -1,17 +1,19 @@
-package initialize
+package mq
 
-/*
 import (
 	"context"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	MQ = new(Mq)
 )
 
 type (
@@ -24,20 +26,20 @@ type (
 		closed int32
 	}
 
-	MqConnPool struct {
+	ConnPool struct {
 		pool  chan *Connection
 		mutex sync.Mutex
 	}
 
 	Mq struct {
-		ConnPool *MqConnPool
+		ConnPool *ConnPool
 		Channel  *Channel
 	}
 )
 
 func (m *Mq) Init() (err error) {
 	mqCfg := global.GVA_CONFIG.RabbitMQ
-	m.ConnPool = &MqConnPool{
+	m.ConnPool = &ConnPool{
 		pool: make(chan *Connection, mqCfg.PoolSize),
 	}
 
@@ -47,7 +49,7 @@ func (m *Mq) Init() (err error) {
 			mqCfg.Password,
 			mqCfg.Addr,
 			mqCfg.Port)
-		conn, err := mq.MQ.Dial(url)
+		conn, err := MQ.Dial(url)
 		if err != nil {
 			log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 		}
@@ -226,7 +228,7 @@ func (c *Connection) Channel() (*Channel, error) {
 	return channel, nil
 }
 
-func (cp *MqConnPool) GetConnection() (*Connection, error) {
+func (cp *ConnPool) GetConnection() (*Connection, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 
@@ -239,7 +241,6 @@ func (cp *MqConnPool) GetConnection() (*Connection, error) {
 	}
 }
 
-func (cp *MqConnPool) ReturnConnection(conn *Connection) {
+func (cp *ConnPool) ReturnConnection(conn *Connection) {
 	cp.pool <- conn // 归还连接到连接池
 }
-*/

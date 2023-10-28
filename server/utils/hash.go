@@ -43,6 +43,6 @@ func GenerateID(prefix string) string {
 	timestamp := time.Now().Format("20060102150405")
 	orderID := node.Generate().Int64()
 
-	uniqueID := fmt.Sprintf("%s%s%d", prefix, timestamp, orderID)
+	uniqueID := fmt.Sprintf("%s%s%d", prefix, timestamp, orderID)[:24]
 	return uniqueID
 }

@@ -17,3 +17,10 @@ export const showDictLabel = (dict, code) => {
   })
   return dictMap[code]
 }
+
+// 获取数据中指定key的value集合
+function getCollection2Key(list, key) {
+  return list.map(function(item) {
+    return item[key];
+  });
+}

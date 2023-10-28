@@ -49,7 +49,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.I
 }
 
 // SwitchEnableChannelAccount 开关通道账号
-// Author [piexlmax](https://github.com/piexlmax)
+// Author [bboyhan](https://github.com/bboyhan)
 func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.ChannelAccountUpd) (err error) {
 	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Error
 	return err

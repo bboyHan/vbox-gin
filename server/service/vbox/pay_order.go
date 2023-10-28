@@ -9,7 +9,9 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"go.uber.org/zap"
 	"strconv"
@@ -219,6 +221,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpa.Uid), zap.Any("商户", vpa.PRemark))
 	exist := utils.Contains(channelCodeList, vpo.ChannelCode)
 	if !exist {
+		global.GVA_LOG.Warn("该账户不存在此产品，请核查！", zap.Any("目前支持的通道：%v", channelCodeList))
 		return nil, fmt.Errorf("该账户不存在此产品，请核查！ 目前支持的通道：%v", channelCodeList)
 	}
 	/*var checkTotal int64
@@ -251,51 +254,25 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			}
 
 			err = global.GVA_DB.Create(order).Error
-			/*if err != nil {
-				s := err.Error()
-				if strings.Contains(s, "Duplicate") {
-					return nil, errors.New("订单已存在，请勿重复创建")
+			go func() {
+				marshal, _ := json.Marshal(order)
+				conn, err := mq.MQ.ConnPool.GetConnection()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
 				}
-				return nil, err
-			}*/
+				defer mq.MQ.ConnPool.ReturnConnection(conn)
 
-			/*var (
-				orderWaitExchange = "vbox.order.waiting_exchange"
-				orderWaitKey      = "vbox.order.waiting"
-			)
-			marshal, _ := json.Marshal(order)
-			conn, err := initialize.MQ.ConnPool.GetConnection()
-			if err != nil {
-				log.Fatalf("Failed to get connection from pool: %v", err)
-			}
-			defer initialize.MQ.ConnPool.ReturnConnection(conn)
+				ch, err := conn.Channel()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				}
 
-			ch, err := conn.Channel()
-			if err != nil {
-				fmt.Errorf("new mq channel err: %v", err)
-			}
-
-			err = ch.Publish(orderWaitExchange, orderWaitKey, marshal)*/
+				err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
+			}()
 		}()
 	} else {
 		return nil, errors.New("订单已存在，请勿重复创建")
 	}
-
-	/*go func() {
-		marshal, _ := json.Marshal(order)
-		conn, err := utils.ConnPool.GetConnection()
-		if err != nil {
-			log.Fatalf("Failed to get connection from pool: %v", err)
-		}
-		defer utils.ConnPool.ReturnConnection(conn)
-
-		ch, err := conn.Channel()
-		if err != nil {
-			fmt.Errorf("new mq channel err: %v", err)
-		}
-
-		err = ch.Publish(orderWaitExchange, orderWaitKey, marshal)
-	}()*/
 
 	var payUrl string
 	payUrl, err = HandelPayUrl2Pacc(vpo.OrderId)
