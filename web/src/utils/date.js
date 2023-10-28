@@ -28,3 +28,43 @@ export function formatTimeToStr(times, pattern) {
   }
   return d.toLocaleString()
 }
+
+
+export function get5MinNearlyOneHour() {
+  // 获取当前时间
+  let now = new Date();
+
+  // 计算当前时间的分钟数
+  let currentMinute = now.getMinutes();
+
+  // 计算最新的时间点
+  let latestMinute = Math.floor(currentMinute / 5) * 5;
+
+  // 创建一个空数组来存储时间点
+  let timePoints = [];
+
+  // 循环生成时间点
+  for (let i = 0; i < 12; i++) { // 12 表示一个小时内的时间点数量
+                                 // 计算每个时间点的小时和分钟数
+    let hour = now.getHours();
+    let minute = latestMinute - (i * 5);
+
+    // 处理小时和分钟的边界情况
+    if (minute < 0) {
+      hour -= 1;
+      minute += 60;
+    }
+
+    // 格式化小时和分钟，确保是两位数
+    hour = hour.toString().padStart(2, '0');
+    minute = minute.toString().padStart(2, '0');
+
+    // 拼接时间点字符串并添加到数组中
+    let timePoint = hour + ':' + minute;
+    timePoints.unshift(timePoint); // 使用 unshift() 方法将时间点添加到数组的开头
+  }
+
+// 输出时间点数组
+//   console.log(timePoints);
+  return timePoints
+}

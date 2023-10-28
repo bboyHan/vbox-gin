@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/plugin/geo"
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization"
 	swaggerFiles "github.com/swaggo/files"
 	"net/http"
@@ -83,7 +84,9 @@ func Routers() *gin.Engine {
 
 	}
 
+	//插件初始化
 	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
+	PluginInit(PublicGroup, geo.CreateGeoPlug())
 	{
 		vboxRouter := router.RouterGroupApp.Vbox
 		vboxRouter.InitPubAccessRouter(PublicGroup) //不做鉴权
