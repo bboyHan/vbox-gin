@@ -84,6 +84,7 @@ func Routers() *gin.Engine {
 
 	}
 
+	//插件初始化
 	PluginInit(PublicGroup, organization.CreateOrganizationPlug())
 	PluginInit(PublicGroup, geo.CreateGeoPlug())
 	{
