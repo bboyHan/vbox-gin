@@ -132,6 +132,26 @@ func (orgService *OrganizationService) GetOrgUserList(info organizationReq.OrgUs
 	return orgs, total, err
 }
 
+// GetOrgUserListSelf 分页获取当前用户所属组织下用户记录
+func (orgService *OrganizationService) GetOrgUserListSelf(info organizationReq.OrgUserSearch) (list interface{}, total int64, err error) {
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+	// 创建db
+	db := global.GVA_DB.Model(&organization.OrgUser{}).Joins("SysUser").Preload("SysUser.Authority")
+	var orgs []organization.OrgUser
+	// 如果有条件搜索 下方会自动创建搜索语句
+	db = db.Where("organization_id in ?", info.OrgIds)
+	if info.UserName != "" {
+		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.UserName+"%")
+	}
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
+	err = db.Limit(limit).Offset(offset).Find(&orgs).Error
+	return orgs, total, err
+}
+
 func (orgService *OrganizationService) SetOrgUserAdmin(id uint, flag bool) (err error) {
 	return global.GVA_DB.Model(&organization.OrgUser{}).Where("sys_user_id = ?", id).Update("is_admin", flag).Error
 }

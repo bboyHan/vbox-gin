@@ -66,6 +66,16 @@ export const formatDate = (time) => {
   }
 }
 
+export const formatUtcTimestamp = (utcTimestamp) => {
+  if (utcTimestamp !== null && utcTimestamp !== '') {
+    const date = new Date(0) // 创建一个时间对象，并将其初始化为 1970 年 1 月 1 日 00:00:00 UTC 时间
+    date.setUTCSeconds(utcTimestamp) // 将时间戳设置为 UTC 时间
+    return formatTimeToStr(date, 'yyyy-MM-dd hh:mm:ss')
+  } else {
+    return ''
+  }
+}
+
 export const filterDict = (value, options) => {
   const rowLabel = options && options.filter(item => item.value === value)
   return rowLabel && rowLabel[0] && rowLabel[0].label

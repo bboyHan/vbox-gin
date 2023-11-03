@@ -47,10 +47,10 @@ func (b *BaseApi) Login(c *gin.Context) {
 		global.BlackCache.Set(key, 1, time.Second*time.Duration(openCaptchaTimeOut))
 	}
 
-	var oc bool = openCaptcha == 0 || openCaptcha < interfaceToInt(v)
+	var oc = openCaptcha == 0 || openCaptcha < interfaceToInt(v)
 
 	if !oc || (l.CaptchaId != "" && l.Captcha != "" && store.Verify(l.CaptchaId, l.Captcha, true)) {
-		u := &system.SysUser{Username: l.Username, Password: l.Password}
+		u := &system.SysUser{Username: l.Username, Password: l.Password, AuthCaptcha: l.AuthCaptcha}
 		user, err := userService.Login(u)
 		if err != nil {
 			global.GVA_LOG.Error("登陆失败! 用户名不存在或者密码错误!", zap.Error(err))
@@ -132,6 +132,39 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser) {
 	}
 }
 
+// SelfRegister
+// @Tags     SysUser
+// @Summary  用户注册账号
+// @Produce   application/json
+// @Param    data  body      systemReq.Register                                            true  "用户名, 昵称, 密码, 角色ID"
+// @Success  200   {object}  response.Response{data=systemRes.SysUserResponse,msg=string}  "用户注册账号,返回包括用户信息"
+// @Router   /user/self_register [post]
+func (b *BaseApi) SelfRegister(c *gin.Context) {
+	var r systemReq.SelfRegister
+	err := c.ShouldBindJSON(&r)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	verify := utils.Rules{
+		"password": {utils.NotEmpty()},
+		"username": {utils.NotEmpty()},
+	}
+	err = utils.Verify(r, verify)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	r.CreateBy = utils.GetUserID(c)
+	userReturn, err := userService.SelfRegister(r)
+	if err != nil {
+		global.GVA_LOG.Error("注册失败!", zap.Error(err))
+		response.FailWithDetailed(systemRes.SysUserResponse{User: userReturn}, "注册失败", c)
+		return
+	}
+	response.OkWithDetailed(systemRes.SysUserResponse{User: userReturn}, "注册成功", c)
+}
+
 // Register
 // @Tags     SysUser
 // @Summary  用户注册账号
@@ -193,6 +226,37 @@ func (b *BaseApi) ChangePassword(c *gin.Context) {
 	if err != nil {
 		global.GVA_LOG.Error("修改失败!", zap.Error(err))
 		response.FailWithMessage("修改失败，原密码与当前账户不符", c)
+		return
+	}
+	response.OkWithMessage("修改成功", c)
+}
+
+// ResetAuthCaptcha
+// @Tags      SysUser
+// @Summary   重置双因子认证
+// @Security  ApiKeyAuth
+// @Produce  application/json
+// @Param     data  body      systemReq.ResetAuthCaptcha    true  "用户名, 原密码, 新密码"
+// @Success   200   {object}  response.Response{msg=string}  "用户修改密码"
+// @Router    /user/changePassword [post]
+func (b *BaseApi) ResetAuthCaptcha(c *gin.Context) {
+	var req systemReq.ChangeAuthCaptchaReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	err = utils.Verify(req, utils.ResetAuthCaptchaVerify)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	req.ID = utils.GetUserID(c)
+	_, err = userService.ResetAuthCaptcha(req)
+	if err != nil {
+		global.GVA_LOG.Error("修改失败!", zap.Error(err))
+		response.FailWithMessage("修改失败，密码与当前账户不符", c)
 		return
 	}
 	response.OkWithMessage("修改成功", c)

@@ -7,6 +7,8 @@ import (
 	organization "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
 	organizationReq "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/service"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -166,6 +168,24 @@ func (orgApi *OrganizationApi) FindOrgUserList(c *gin.Context) {
 	var pageInfo organizationReq.OrgUserSearch
 	c.ShouldBindQuery(&pageInfo)
 	if list, total, err := orgService.GetOrgUserList(pageInfo); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
+}
+
+func (orgApi *OrganizationApi) FindOrgUserListSelf(c *gin.Context) {
+	var pageInfo organizationReq.OrgUserSearch
+	uid := utils.GetUserID(c)
+	pageInfo.OrgIds = utils2.GetDeepOrg(uid)
+	c.ShouldBindQuery(&pageInfo)
+	if list, total, err := orgService.GetOrgUserListSelf(pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

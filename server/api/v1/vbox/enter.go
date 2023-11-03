@@ -8,4 +8,5 @@ type ApiGroup struct {
 	PayAccountApi
 	VboxProxyApi
 	ChannelShopApi
+	UserWalletApi
 }

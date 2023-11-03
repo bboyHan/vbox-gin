@@ -1,11 +1,39 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	systemReq "github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid/v5"
 )
+
+func GetRoleID(id uint) (uint, error) {
+	var userAuthority system.SysUserAuthority
+	err := global.GVA_DB.Model(&system.SysUserAuthority{}).Find(&userAuthority, "sys_user_id = ?", id).Error
+	if err != nil {
+		global.GVA_LOG.Error(fmt.Sprintf("%v", err))
+		return 0, err
+	}
+	return userAuthority.SysAuthorityAuthorityId, err
+}
+
+func GetSubRoleID(id uint) (uint, error) {
+	var userAuthority system.SysUserAuthority
+	err := global.GVA_DB.Model(&system.SysUserAuthority{}).Find(&userAuthority, "sys_user_id = ?", id).Error
+	if err != nil {
+		global.GVA_LOG.Error(fmt.Sprintf("%v", err))
+		return 0, err
+	}
+	var subAuthority system.SysAuthority
+	err = global.GVA_DB.Model(&system.SysAuthority{}).Find(&subAuthority, "parent_id = ?", userAuthority.SysAuthorityAuthorityId).Error
+	if err != nil {
+		global.GVA_LOG.Error(fmt.Sprintf("%v", err))
+		return 0, err
+	}
+	return subAuthority.AuthorityId, err
+}
 
 func GetClaims(c *gin.Context) (*systemReq.CustomClaims, error) {
 	token := c.Request.Header.Get("x-token")

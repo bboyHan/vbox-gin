@@ -106,6 +106,14 @@ export const findOrgUserList = (params) => {
   })
 }
 
+export const findOrgUserListSelf = (params) => {
+  return service({
+    url: '/org/findOrgUserListSelf',
+    method: 'get',
+    params
+  })
+}
+
 export const setOrgUserAdmin = (data) => {
   return service({
     url: '/org/setOrgUserAdmin',

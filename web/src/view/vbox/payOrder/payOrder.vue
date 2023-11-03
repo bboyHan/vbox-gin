@@ -195,8 +195,8 @@
           <el-form-item label="订单ID" prop="authCaptcha">
             <el-input disabled v-model="formData.orderId" :clearable="true" placeholder="请输入" style="width: 80%"/>
           </el-form-item>
-          <el-form-item label="防爆验证码" prop="authCaptcha">
-            <el-input v-model="formData.authCaptcha" :clearable="true" placeholder="请输入防爆验证码" style="width: 80%"/>
+          <el-form-item label="安全码" prop="authCaptcha">
+            <el-input v-model="formData.authCaptcha" :clearable="true" placeholder="请输入安全码" style="width: 80%"/>
           </el-form-item>
         </el-form>
       </el-scrollbar>
@@ -616,7 +616,7 @@ const closeAccDetailShow = () => {
 </script>
 
 <style>
-.el-table__body, .el-table__header {
+/*.el-table__body, .el-table__header {
   border-collapse: collapse;
   border-bottom-width: 2px;
   border-bottom-style: solid;
@@ -646,5 +646,5 @@ const closeAccDetailShow = () => {
   stroke-width: 2;
   stroke: var(--el-button-text-color);
   stroke-linecap: round;
-}
+}*/
 </style>

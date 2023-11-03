@@ -5,7 +5,7 @@ var (
 	ApiVerify              = Rules{"Path": {NotEmpty()}, "Description": {NotEmpty()}, "ApiGroup": {NotEmpty()}, "Method": {NotEmpty()}}
 	MenuVerify             = Rules{"Path": {NotEmpty()}, "ParentId": {NotEmpty()}, "Name": {NotEmpty()}, "Component": {NotEmpty()}, "Sort": {Ge("0")}}
 	MenuMetaVerify         = Rules{"Title": {NotEmpty()}}
-	LoginVerify            = Rules{"CaptchaId": {NotEmpty()}, "Username": {NotEmpty()}, "Password": {NotEmpty()}}
+	LoginVerify            = Rules{"CaptchaId": {NotEmpty()}, "Username": {NotEmpty()}, "Password": {NotEmpty()}, "AuthCaptch": {NotEmpty()}}
 	RegisterVerify         = Rules{"Username": {NotEmpty()}, "NickName": {NotEmpty()}, "Password": {NotEmpty()}, "AuthorityId": {NotEmpty()}}
 	PageInfoVerify         = Rules{"Page": {NotEmpty()}, "PageSize": {NotEmpty()}}
 	CustomerVerify         = Rules{"CustomerName": {NotEmpty()}, "CustomerPhoneData": {NotEmpty()}}
@@ -16,4 +16,5 @@ var (
 	OldAuthorityVerify     = Rules{"OldAuthorityId": {NotEmpty()}}
 	ChangePasswordVerify   = Rules{"Password": {NotEmpty()}, "NewPassword": {NotEmpty()}}
 	SetUserAuthorityVerify = Rules{"AuthorityId": {NotEmpty()}}
+	ResetAuthCaptchaVerify = Rules{"Password": {NotEmpty()}}
 )

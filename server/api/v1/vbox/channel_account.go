@@ -18,6 +18,33 @@ type ChannelAccountApi struct {
 
 var vcaService = service.ServiceGroupApp.VboxServiceGroup.ChannelAccountService
 
+func (vcaApi *ChannelAccountApi) QueryAccOrderHis(c *gin.Context) {
+	var vca vbox.ChannelAccount
+	err := c.ShouldBindJSON(&vca)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if res, err := vcaService.QueryAccOrderHis(&vca); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": res}, c)
+	}
+}
+
+// CountAcc ChannelAccount当前开启数
+func (vcaApi *ChannelAccountApi) CountAcc(c *gin.Context) {
+	ids := utils2.GetUserIDS(c)
+	if res, err := vcaService.CountAcc(ids); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": res}, c)
+	}
+}
+
 // SwitchEnableChannelAccount 开启或关闭ChannelAccount
 // @Tags ChannelAccount
 // @Summary 开启或关闭ChannelAccount

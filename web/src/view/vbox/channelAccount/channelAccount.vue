@@ -1,5 +1,21 @@
 <template>
   <div>
+    <div class="gva-table-box">
+      <el-row :gutter="16">
+      <div v-for="item in countItem">
+          <el-col :span="16">
+            通道ID： {{ item.cid }}
+            <el-button color="#05411d">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              已开启数量： {{ item.total }}
+            </el-button>
+          </el-col>
+      </div>
+      </el-row>
+    </div>
+    <el-divider/>
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
                @keyup.enter="onSubmit">
@@ -74,87 +90,40 @@
           </template>
         </el-popover>
       </div>
-      <el-table
-          ref="multipleTable"
-          style="width: 100%"
-          tooltip-effect="dark"
-          :data="tableData"
-          row-key="ID"
-          @selection-change="handleSelectionChange"
-      >
+      <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="归属用户ID" prop="uid" width="120"/>
-        <el-table-column align="left" label="通道账户" prop="acAccount" width="120">
+        <el-table-column align="left" label="归属用户" prop="uid" width="80"/>
+        <el-table-column align="left" label="通道id" prop="cid" width="80"/>
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="120" />
+        <el-table-column align="left" label="通道账户" prop="acAccount" width="120"/>
+        <el-table-column align="left" label="账户密钥" prop="acPwd" width="120"/>
+        <el-table-column align="left" label="CK" prop="token" width="260">
           <template #default="scope">
-            <el-popover trigger="hover" placement="right-end" width="auto">
-              <template #default>
-                <div>ID: {{ scope.row.acId }}</div>
-                <div>备注: {{ scope.row.acRemark }}</div>
-                <div>帐户名: {{ scope.row.acAccount }}</div>
-                <div>密钥: {{ scope.row.acPwd }}</div>
-                <div>创建时间: {{ formatDate(scope.row.CreatedAt) }}</div>
-              </template>
-              <template #reference>
-                <el-tag>备注: {{ scope.row.acRemark }}</el-tag>
-              </template>
-            </el-popover>
-            <el-tag>账户名: {{ scope.row.acAccount }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="通道id" prop="cid" width="120"/>
-        <el-table-column align="left" label="CK" prop="token" width="160">
-          <template #default="scope">
-            <el-input
-                v-model="scope.row.token"
-                :rows="2"
-                readonly="readonly"
-            >
+            <el-input v-model="scope.row.token" :rows="3" readonly="readonly" >
               <template #append>
-                <el-button type="primary" link icon="edit" @click="updTokenInfo(scope.row)"></el-button>
+                <el-button type="primary" link icon="edit" @click="updateCaTokenFunc(scope.row)"></el-button>
               </template>
             </el-input>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="限额设置" prop="dailyLimit" width="120">
-          <template #default="scope">
-            <el-tag>日限额: {{ scope.row.dailyLimit }}</el-tag>
-            <el-tag>总限额: {{ scope.row.totalLimit }}</el-tag>
-            <el-tag>笔数限制: {{ scope.row.countLimit }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="总限额" prop="totalLimit" width="120"/>
+        <el-table-column align="center" label="日限额" prop="dailyLimit" width="120"/>
+        <el-table-column align="center" label="总限额" prop="totalLimit" width="120"/>
+        <el-table-column align="center" label="笔数限额" prop="countLimit" width="120"/>
         <el-table-column align="left" label="状态 / 系统开关" prop="status" width="140">
           <template #default="scope">
             <el-row :gutter="12">
-              <el-col :span="11">
-                <el-switch
-                    v-model="scope.row.status"
-                    inline-prompt
-                    :active-value="1"
-                    active-text="开启"
-                    :inactive-value="0"
-                    inactive-text="关闭"
-                    size="large"
-                    @change="()=>{switchEnable(scope.row)}"
-                />
+              <el-col :span="12">
+                <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启" :inactive-value="0" inactive-text="关闭" size="large" @change="()=>{switchEnable(scope.row)}"/>
               </el-col>
-              <el-col :span="11">
-                <el-switch
-                    v-model="scope.row.sysStatus"
-                    inline-prompt
-                    :active-value="1"
-                    active-text="开启"
-                    :inactive-value="0"
-                    inactive-text="关闭"
-                    size="large"
-                    disabled
-                />
+              <el-col :span="12">
+                <el-switch v-model="scope.row.sysStatus" inline-prompt :active-value="1" active-text="开启" :inactive-value="0" inactive-text="关闭" size="large" disabled/>
               </el-col>
             </el-row>
           </template>
         </el-table-column>
         <el-table-column align="left" label="操作">
           <template #default="scope">
+            <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值查询</el-button>
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">详情</el-button>
             <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)">变更</el-button>
             <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
@@ -175,12 +144,7 @@
     </div>
 
     <!--  创建  -->
-    <el-dialog
-      v-model="dialogFormVisible"
-      :before-close="closeDialog"
-      :title="typeTitle"
-      destroy-on-close
-    >
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="账户备注" prop="acRemark">
@@ -201,13 +165,7 @@
           <el-row>
             <el-col :span="24">
               <el-form-item label="通道id" prop="cid">
-                <el-cascader
-                    v-model="formData.cid"
-                    :options="channelCodeOptions"
-                    :props="channelCodeProps"
-                    @change="handleChange"
-                    style="width: 100%"
-                />
+                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change="handleChange" style="width: 100%"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -215,6 +173,11 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
+            <el-col :span="6"></el-col>
+            <el-col :span="12">
+              <warning-bar title="注：默认0，则无限额控制" />
+            </el-col>
+            <el-col :span="6"></el-col>
             <el-col :span="8">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
@@ -246,12 +209,7 @@
     </el-dialog>
 
     <!--  修改  -->
-    <el-dialog
-      v-model="dialogUpdFormVisible"
-      :before-close="closeDialog"
-      :title="typeTitle"
-      destroy-on-close
-    >
+    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="账户备注" prop="acRemark">
@@ -280,6 +238,11 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
+            <el-col :span="6"></el-col>
+            <el-col :span="12">
+              <warning-bar title="注：默认0，则无限额控制" />
+            </el-col>
+            <el-col :span="6"></el-col>
             <el-col :span="8">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
@@ -345,6 +308,28 @@
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
+
+    <!-- 查看充值详情 -->
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow" title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
+          <el-table-column align="left" label="充值类型" prop="ShowName" width="180"/>
+          <el-table-column align="left" label="渠道" prop="PayChannel" width="100"/>
+          <el-table-column align="left" label="上游订单" prop="SerialNo" width="380"/>
+          <el-table-column align="left" label="充值账号" prop="ProvideID" width="120"/>
+          <el-table-column align="left" label="金额" prop="PayAmt" width="120">
+            <template #default="scope">
+              {{ Number(scope.row.PayAmt) / 100 }}
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="充值时间" prop="PayTime" width="160">
+          <template #default="scope">
+            {{ formatUtcTimestamp(scope.row.PayTime) }}
+          </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
   </div>
 </template>
 
@@ -356,6 +341,8 @@ import {
   updateChannelAccount,
   findChannelAccount,
   getChannelAccountList,
+  queryAccOrderHis,
+  countAcc,
   switchEnableCA,
   switchEnableCAByIds,
 } from '@/api/channelAccount'
@@ -364,13 +351,45 @@ import {
 } from '@/api/channelProduct'
 
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
+import {
+  getDictFunc,
+  formatDate,
+  formatBoolean,
+  filterDict,
+  ReturnArrImg,
+  onDownloadFile,
+  formatUtcTimestamp
+} from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, nextTick } from 'vue'
+import WarningBar from "@/components/warningBar/warningBar.vue";
+import {Loading} from "@element-plus/icons-vue";
 
 defineOptions({
   name: 'ChannelAccount'
 })
+
+const countItem = ref([])
+const queryAccOrderHisFunc = async (row) => {
+  const req = {...row}
+  console.log(req)
+
+  let res = await queryAccOrderHis(req)
+  console.log(res.data)
+  if (res.code === 0) {
+    orderHisTableData.value = res.data.list.WaterList
+  }
+}
+// queryAccOrderHisFunc()
+
+//countAcc
+const countAccFunc = async () => {
+  let res = await countAcc()
+  if (res.code === 0) {
+    countItem.value = res.data.list
+  }
+  console.log(res.data);
+}
 
 //通道产品
 
@@ -511,6 +530,7 @@ const handleCurrentChange = (val) => {
 const getTableData = async() => {
   const table = await getChannelAccountList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value})
+  await countAccFunc()
 
   if (table.code === 0) {
     tableData.value = table.data.list
@@ -684,6 +704,7 @@ const closeDialog = () => {
 const enterDialog = async() => {
   elFormRef.value?.validate(async(valid) => {
     if (!valid) return
+    formData.value.status = Number(formData.value.status)
     let res
     switch (type.value) {
       case 'create':
@@ -808,6 +829,17 @@ const caTokenInfo = ref({
   token: '',
   id: '',
 })
+
+const updateCaTokenFunc = async(row) => {
+  const res = await findChannelAccount({ ID: row.ID })
+  type.value = 'update'
+  typeTitle.value = '修改'
+  if (res.code === 0) {
+    formData.value = res.data.revca
+    dialogTokenFormVisible.value = true
+  }
+}
+
 const updTokenInfo = async (row) => {
   console.log(row)
   caTokenInfo.value = JSON.parse(JSON.stringify(row))
@@ -817,7 +849,7 @@ const updTokenInfo = async (row) => {
   }
   const res = await updateTokenInfoFunc(req)
   if (res.code === 0) {
-    ElMessage({type: 'success', message: `更新CK${req.status === 0 ? '成功' : '失败'}`})
+    ElMessage({type: 'success', message: `更新CK${req.code === 0 ? '成功' : '失败'}`})
     await getTableData()
   }
 }
@@ -830,6 +862,22 @@ const updateTokenInfoFunc = async (row) => {
     dialogTokenFormVisible.value = true
   }
 }
+
+// 充值记录查询
+const orderHisVisible = ref(false)
+const channelCode = ref("")
+const orderHisTableData = ref([])
+const closeOrderHisShow = () => {
+  orderHisVisible.value = false
+  orderHisTableData.value = []
+}
+const openOrderHisShow = async (row) => {
+  orderHisVisible.value = true
+  let req = {...row}
+  console.log(req)
+  await queryAccOrderHisFunc(req)
+}
+
 
 </script>
 

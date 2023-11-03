@@ -111,6 +111,12 @@ func CreateOrganizationPlug() *OrganizationPlugin {
 			Method:      "GET",
 		},
 		system.SysApi{
+			Path:        "/org/findOrgUserListSelf",
+			Description: "获取当前用户所属组织下所有用户（分页）",
+			ApiGroup:    "组织管理",
+			Method:      "GET",
+		},
+		system.SysApi{
 			Path:        "/org/deleteOrgUser",
 			Description: "删除当前组织下选中用户",
 			ApiGroup:    "组织管理",
