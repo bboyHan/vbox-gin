@@ -13,5 +13,6 @@ type OrganizationSearch struct {
 type OrgUserSearch struct {
 	organization.OrgUser
 	UserName string `json:"userName" form:"userName"`
+	OrgIds   []uint `json:"orgIds" form:"orgIds"`
 	request.PageInfo
 }

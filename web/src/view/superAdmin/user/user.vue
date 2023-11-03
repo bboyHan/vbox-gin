@@ -3,11 +3,7 @@
     <warning-bar title="注：右上角头像下拉可切换角色" />
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button
-          type="primary"
-          icon="plus"
-          @click="addUser"
-        >新增用户</el-button>
+        <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
       </div>
       <el-table
         :data="tableData"

@@ -4,6 +4,15 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 )
 
+// SelfRegister Vbox注册子账号
+type SelfRegister struct {
+	Username   string `json:"userName" example:"用户名"`
+	Password   string `json:"passWord" example:"密码"`
+	Enable     int    `json:"enable" example:"int 是否启用"`
+	EnableAuth int    `json:"enableAuth" example:"int 是否启用防爆验证码"`
+	CreateBy   uint   `json:"createBy" example:"创建者"`
+}
+
 // Register User register structure
 type Register struct {
 	Username     string `json:"userName" example:"用户名"`
@@ -17,27 +26,36 @@ type Register struct {
 	Email        string `json:"email" example:"电子邮箱"`
 }
 
-// User login structure
+// Login User login structure
 type Login struct {
-	Username  string `json:"username"`  // 用户名
-	Password  string `json:"password"`  // 密码
-	Captcha   string `json:"captcha"`   // 验证码
-	CaptchaId string `json:"captchaId"` // 验证码ID
+	Username    string `json:"username"`    // 用户名
+	Password    string `json:"password"`    // 密码
+	Captcha     string `json:"captcha"`     // 验证码
+	CaptchaId   string `json:"captchaId"`   // 验证码ID
+	AuthCaptcha string `json:"authCaptcha"` // 防爆验证码
 }
 
-// Modify password structure
+// ChangePasswordReq Modify password structure
 type ChangePasswordReq struct {
 	ID          uint   `json:"-"`           // 从 JWT 中提取 user id，避免越权
 	Password    string `json:"password"`    // 密码
 	NewPassword string `json:"newPassword"` // 新密码
 }
 
-// Modify  user's auth structure
+// ChangeAuthCaptchaReq Modify auth captcha structure
+type ChangeAuthCaptchaReq struct {
+	ID       uint   `json:"-"`        // 从 JWT 中提取 user id，避免越权
+	ToUid    uint   `json:"toUid"`    // 重置子账户
+	Type     uint   `json:"type"`     // 1-重置子账户、 0-重置自己账户
+	Password string `json:"password"` // 密码
+}
+
+// SetUserAuth Modify  user's auth structure
 type SetUserAuth struct {
 	AuthorityId uint `json:"authorityId"` // 角色ID
 }
 
-// Modify  user's auth structure
+// SetUserAuthorities Modify  user's auth structure
 type SetUserAuthorities struct {
 	ID           uint
 	AuthorityIds []uint `json:"authorityIds"` // 角色ID

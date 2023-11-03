@@ -23,10 +23,22 @@ export const captcha = (data) => {
   })
 }
 
+// @Summary 子用户注册
+// @Produce  application/json
+// @Param data body {username:"string",password:"string"}
+// @Router /user/self_register [post]
+export const selfRegister = (data) => {
+  return service({
+    url: '/user/self_register',
+    method: 'post',
+    data: data
+  })
+}
+
 // @Summary 用户注册
 // @Produce  application/json
 // @Param data body {username:"string",password:"string"}
-// @Router /base/resige [post]
+// @Router /base/admin_register [post]
 export const register = (data) => {
   return service({
     url: '/user/admin_register',
@@ -42,6 +54,18 @@ export const register = (data) => {
 export const changePassword = (data) => {
   return service({
     url: '/user/changePassword',
+    method: 'post',
+    data: data
+  })
+}
+
+// @Summary 重置防爆验证码
+// @Produce  application/json
+// @Param data body {username:"string",password:"string",newPassword:"string"}
+// @Router /user/changePassword [post]
+export const resetCaptcha = (data) => {
+  return service({
+    url: '/user/resetAuthCaptcha',
     method: 'post',
     data: data
   })

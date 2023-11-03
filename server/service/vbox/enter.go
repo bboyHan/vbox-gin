@@ -8,4 +8,5 @@ type ServiceGroup struct {
 	PayAccountService
 	ProxyService
 	ChannelShopService
+	UserWalletService
 }

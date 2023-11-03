@@ -40,6 +40,7 @@ require (
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.42
 	github.com/tuotoo/qrcode v0.0.0-20220425170535-52ccc2bebf5d
 	github.com/unrolled/secure v1.13.0
+	github.com/valyala/fasthttp v1.50.0
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0
@@ -55,6 +56,7 @@ require (
 require (
 	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -90,7 +92,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
@@ -119,6 +121,7 @@ require (
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect

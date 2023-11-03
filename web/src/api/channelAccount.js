@@ -1,13 +1,45 @@
 import service from '@/utils/request'
 
 // @Tags ChannelAccount
+// @Summary 获取通道账号充值记录
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.SysUser true "获取通道账号充值记录"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"操作成功"}"
+// @Router /vca/queryAccOrderHis [get]
+export const queryAccOrderHis = (data) => {
+  return service({
+    url: '/vca/queryAccOrderHis',
+    method: 'post',
+    data: data
+  })
+}
+
+// @Tags ChannelAccount
+// @Summary 获取通道账号可用数
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.SysUser true "获取通道账号可用数"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"操作成功"}"
+// @Router /vca/countAcc [get]
+export const countAcc = (data) => {
+  return service({
+    url: '/vca/countAcc',
+    method: 'get',
+    params: data
+  })
+}
+
+// @Tags ChannelAccount
 // @Summary 开启/关闭通道账号
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
 // @Param data body model.SysUser true "设置通道账号开关"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"操作成功"}"
-// @Router /user/switchEnableCA [put]
+// @Router /vca/switchEnableCA [put]
 export const switchEnableCA = (data) => {
   return service({
     url: '/vca/switchEnable',
@@ -23,7 +55,7 @@ export const switchEnableCA = (data) => {
 // @Produce application/json
 // @Param data body model.SysUser true "设置通道账号开关"（批量）
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"操作成功"}"
-// @Router /user/switchEnableCA [put]
+// @Router /vca/switchEnableCA [put]
 export const switchEnableCAByIds = (data) => {
   return service({
     url: '/vca/switchEnableByIds',

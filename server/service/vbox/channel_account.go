@@ -1,14 +1,67 @@
 package vbox
 
 import (
+	"context"
+	"errors"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"gorm.io/gorm"
+	"time"
 )
 
 type ChannelAccountService struct {
+}
+
+// QueryAccOrderHis 查询通道账号的官方记录
+func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccount) (res interface{}, err error) {
+
+	rdConn := global.GVA_REDIS.Conn()
+	defer rdConn.Close()
+	var url string
+
+	c, err := rdConn.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.TxContains(vca.Cid) { // tx系
+			channelCode = "qb_proxy"
+		}
+
+		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&url).Error
+
+		if err != nil {
+			return nil, errors.New("该信道无资源配置")
+		}
+
+		rdConn.Set(context.Background(), global.ProductRecordQBPrefix, url, 10*time.Minute)
+
+	} else {
+		url, _ = rdConn.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+	}
+
+	if global.TxContains(vca.Cid) { // tx系
+
+		openID, openKey, err := product.Secret(vca.Token)
+		if err != nil {
+			return nil, err
+		}
+		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+		//classifier := product.Classifier(records.WaterList)
+		return records, nil
+	}
+
+	return res, err
+}
+
+// CountAcc 查询可用通道的 当前等待取用的账号个数
+func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.ChannelAccountUnused, err error) {
+	err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
+		Group("cid").Order("id desc").Find(&res).Error
+	return res, err
 }
 
 // CreateChannelAccount 创建通道账号记录
@@ -123,6 +176,6 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Where("created_by in (?)", ids).Find(&vcas).Error
+	err = db.Where("created_by in (?)", ids).Order("id desc").Find(&vcas).Error
 	return vcas, total, err
 }

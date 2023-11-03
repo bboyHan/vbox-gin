@@ -19,20 +19,20 @@ func AuthQrCode(userName string) (string, error) {
 	}
 
 	// 生成 TOTP URL
-	url := key.URL()
+	_url := key.URL()
 	//secret := key.Secret()
 
 	// 生成二维码图片并保存到文件
-	//err = qrcode.WriteFile(url, qrcode.Medium, 256, "qrcode.png")
+	//err = qrcode.WriteFile(_url, qrcode.Medium, 256, "qrcode.png")
 	//if err != nil {
 	//	fmt.Println("生成二维码出错:", err)
 	//	return "", err
 	//}
 
 	//fmt.Println("请使用双因子认证器扫描以下二维码进行认证:")
-	fmt.Println(url)
+	fmt.Println(_url)
 	//fmt.Println(secret)
-	return url, err
+	return _url, err
 }
 
 func ValidateCode(secret string, code string) bool {

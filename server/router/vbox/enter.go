@@ -9,4 +9,5 @@ type RouterGroup struct {
 	ChannelShopRouter
 	OrderRouter
 	OrgProductRouter
+	UserWalletRouter
 }
