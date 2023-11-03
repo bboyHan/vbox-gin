@@ -18,8 +18,27 @@ import (
 )
 
 const (
-	UserOrgChannelCodePrefix = "user_org_channel_code_ids:"
-	PayAccPrefix             = "pacc_id:"
+	ProductRecordQBPrefix = "product_record:qb:proxy" //QB查询
+)
+
+const (
+	UserOrgChannelCodePrefix = "user_org_channel_code_ids:" //组织下拥有的产品id
+	PayAccPrefix             = "pacc_id:"                   //商户信息
+)
+
+const (
+	WalletRechargeType = 1 // 直充
+	WalletTransferType = 2 // 划转
+	WalletOrderType    = 3 // 订单积分消费
+)
+
+const (
+	WalletEventRechargePrefix = "VBIN"                // 充值或者划转
+	WalletEventTransferPrefix = "VBTS"                // 充值或者划转
+	WalletEventOrderPrefix    = "VBOD"                // 充值或者划转
+	WalletEventRecharge       = "充值积分[%d]"            // 充值或者划转
+	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 充值或者划转
+	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 充值或者划转
 )
 
 var (

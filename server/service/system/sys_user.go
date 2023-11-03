@@ -3,6 +3,11 @@ package system
 import (
 	"errors"
 	"fmt"
+	systemReq "github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -13,14 +18,87 @@ import (
 	"gorm.io/gorm"
 )
 
-//@author: [piexlmax](https://github.com/piexlmax)
-//@function: Register
-//@description: 用户注册
-//@param: u model.SysUser
-//@return: userInter system.SysUser, err error
-
 type UserService struct{}
 
+// SelfRegister
+// @function: SelfRegister
+// @description: 注册子用户（子角色存在才能建立）
+// @param: u model.SysUser
+// @return: userInter system.SysUser, err error
+func (userService *UserService) SelfRegister(u systemReq.SelfRegister) (userInter system.SysUser, err error) {
+	var user system.SysUser
+	if !errors.Is(global.GVA_DB.Where("username = ?", u.Username).First(&user).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
+		return userInter, errors.New("用户名已注册")
+	}
+
+	// 只允许建 当前角色的子角色账户(目前只支持 子角色为单一角色，多角色不支持)
+	roleID, err := utils.GetSubRoleID(u.CreateBy)
+	if err != nil || roleID == 0 {
+		return userInter, errors.New("当前用户无权创建成员用户，请联系管理员")
+	}
+
+	u.Password = utils.BcryptHash(u.Password)
+
+	authorities := []system.SysAuthority{
+		{
+			AuthorityId: roleID,
+		},
+	}
+
+	create := system.SysUser{
+		UUID:        uuid.Must(uuid.NewV4()),
+		Username:    u.Username,
+		Password:    u.Password,
+		NickName:    u.Username,
+		Enable:      u.Enable,
+		EnableAuth:  u.EnableAuth,
+		Authorities: authorities,
+	}
+
+	if u.EnableAuth == 1 {
+		create.AuthCaptcha, err = captcha.AuthQrCode(u.Username)
+		if err != nil {
+			return userInter, errors.New("当前用户设置防爆码异常，请联系管理员")
+		}
+	}
+
+	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+		TxErr := tx.Create(&create).Error
+		if TxErr != nil {
+			return TxErr
+		}
+
+		orgIds := utils2.GetSelfOrg(u.CreateBy)
+
+		for _, orgId := range orgIds {
+			var Users []model.OrgUser
+			var CUsers []model.OrgUser
+			err := global.GVA_DB.Find(&Users, "organization_id = ?", orgId).Error
+			if err != nil {
+				return err
+			}
+			var UserIdMap = make(map[uint]bool)
+			for i := range Users {
+				UserIdMap[Users[i].SysUserID] = true
+			}
+
+			if !UserIdMap[create.ID] {
+				CUsers = append(CUsers, model.OrgUser{SysUserID: create.ID, OrganizationID: orgId})
+			}
+			err = global.GVA_DB.Create(&CUsers).Error
+		}
+
+		// 返回 nil 提交事务
+		return nil
+	})
+	return create, err
+}
+
+// Register
+// @function: Register
+// @description: 用户注册
+// @param: u model.SysUser
+// @return: userInter system.SysUser, err error
 func (userService *UserService) Register(u system.SysUser) (userInter system.SysUser, err error) {
 	var user system.SysUser
 	if !errors.Is(global.GVA_DB.Where("username = ?", u.Username).First(&user).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
@@ -51,6 +129,21 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 		if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
 			return nil, errors.New("密码错误")
 		}
+		if user.EnableAuth == 1 { //开启走自己的防爆码
+			var secret string
+			secret, _ = captcha.GetSecret(user.AuthCaptcha)
+			if ok := captcha.ValidateCode(secret, u.AuthCaptcha); !ok {
+				return nil, errors.New("双因子认证码错误")
+			}
+		} else { //未开启走系统自定义防爆码
+			var capAuth string
+			err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+				Where("chan = ?", "auth_captcha").Where("type = ? and status = ?", 1, 1).
+				Find(&capAuth).Error
+			if u.AuthCaptcha != capAuth || err != nil {
+				return nil, errors.New("双因子认证码错误")
+			}
+		}
 		MenuServiceApp.UserAuthorityDefaultRouter(&user)
 	}
 	return &user, err
@@ -73,7 +166,44 @@ func (userService *UserService) ChangePassword(u *system.SysUser, newPassword st
 	user.Password = utils.BcryptHash(newPassword)
 	err = global.GVA_DB.Save(&user).Error
 	return &user, err
+}
 
+// ResetAuthCaptcha
+// @function: ResetAuthCaptcha
+// @description: 重置防爆码
+// @param: u *model.SysUser, newPassword string
+// @return: userInter *model.SysUser,err error
+func (userService *UserService) ResetAuthCaptcha(req systemReq.ChangeAuthCaptchaReq) (userInter *system.SysUser, err error) {
+	var user system.SysUser
+	// 1. 核对当前登录账户的密码过验
+	if err = global.GVA_DB.Where("id = ?", req.ID).First(&user).Error; err != nil {
+		return nil, err
+	}
+	if ok := utils.BcryptCheck(req.Password, user.Password); !ok {
+		return nil, errors.New("密码错误，不允许重置双因子认证")
+	}
+
+	// 2. 核对是否为同组织下的用户，不允许跨组织修改别人账户
+	uIds := utils2.GetDeepUserIDs(req.ID)
+	exist := utils.Contains(uIds, req.ToUid)
+	if !exist {
+		return nil, errors.New("不允许修改非同一团队的账户信息")
+	}
+
+	if req.Type == 1 { // 重置子账户防爆
+		var otherUser system.SysUser
+		if err = global.GVA_DB.Where("id = ?", req.ToUid).First(&otherUser).Error; err != nil {
+			return nil, err
+		}
+		otherUser.AuthCaptcha, err = captcha.AuthQrCode(otherUser.Username)
+		err = global.GVA_DB.Save(&otherUser).Error
+		return &otherUser, err
+	} else { // 重置自己账户的防爆
+		user.AuthCaptcha, err = captcha.AuthQrCode(user.Username)
+		err = global.GVA_DB.Save(&user).Error
+	}
+
+	return &user, err
 }
 
 //@author: [piexlmax](https://github.com/piexlmax)
@@ -153,6 +283,9 @@ func (userService *UserService) DeleteUser(id int) (err error) {
 			return err
 		}
 		if err := tx.Delete(&[]system.SysUserAuthority{}, "sys_user_id = ?", id).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&[]model.OrgUser{}, "sys_user_id = ?", id).Error; err != nil {
 			return err
 		}
 		return nil

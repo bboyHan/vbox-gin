@@ -46,3 +46,8 @@ func GenerateID(prefix string) string {
 	uniqueID := fmt.Sprintf("%s%s%d", prefix, timestamp, orderID)[:24]
 	return uniqueID
 }
+
+func Prefix(prefix string, target string) string {
+	uniqueID := fmt.Sprintf("%s%s", prefix, target)
+	return uniqueID
+}
