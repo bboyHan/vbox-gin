@@ -177,8 +177,10 @@ rabbitmq:
     poolSize: 5
     retryReConnDelay: 3ns
 redis:
-    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
+#    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
+    addr: 60.204.145.173:10818
     password: Vbox123qwe
+#    password: ""
     db: 0
 sqlite:
     prefix: ""
