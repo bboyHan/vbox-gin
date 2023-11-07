@@ -23,7 +23,7 @@ func (s *ChannelAccountRouter) InitChannelAccountRouter(Router *gin.RouterGroup)
 		vcaRouter.PUT("switchEnableByIds", vcaApi.SwitchEnableChannelAccountByIds)      // 开关VboxPayAccount
 	}
 	{
-		vcaRouterWithoutRecord.POST("queryAccOrderHis", vcaApi.QueryAccOrderHis)          // 查询账户所有的通道账号可用个数
+		vcaRouterWithoutRecord.POST("queryAccOrderHis", vcaApi.QueryAccOrderHis)          // 查询账户所有的充值记录
 		vcaRouterWithoutRecord.GET("countAcc", vcaApi.CountAcc)                           // 查询账户所有的通道账号可用个数
 		vcaRouterWithoutRecord.GET("findChannelAccount", vcaApi.FindChannelAccount)       // 根据ID获取通道账号
 		vcaRouterWithoutRecord.GET("getChannelAccountList", vcaApi.GetChannelAccountList) // 获取通道账号列表

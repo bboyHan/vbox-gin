@@ -5,7 +5,7 @@
         <div class="w-full h-full bg-white px-4 py-8 rounded-lg shadow-lg box-border">
           <div class="user-card px-6 text-center bg-white shrink-0">
             <div class="flex justify-center">
-              <SelectImage
+              <Image
                 v-model="userStore.userInfo.headerImg"
                 file-type="image"
               />
@@ -16,76 +16,13 @@
                 class="text-3xl flex justify-center items-center gap-4"
               >
                 {{ userStore.userInfo.nickName }}
-                <el-icon
-                  class="cursor-pointer text-sm"
-                  color="#66b1ff"
-                  @click="openEdit"
-                >
-                  <edit />
-                </el-icon>
               </p>
-              <p
-                v-if="editFlag"
-                class="flex justify-center items-center gap-4"
-              >
-                <el-input v-model="nickName" />
-                <el-icon
-                  class="cursor-pointer"
-                  color="#67c23a"
-                  @click="enterEdit"
-                >
-                  <check />
-                </el-icon>
-                <el-icon
-                  class="cursor-pointer"
-                  color="#f23c3c"
-                  @click="closeEdit"
-                >
-                  <close />
-                </el-icon>
-              </p>
-              <p class="text-gray-500 mt-2 text-md">这个家伙很懒，什么都没有留下</p>
+              <p class="text-gray-500 mt-2 text-md">有需求带上米，联系管理员</p>
             </div>
             <div class="w-full h-full text-left">
               <ul class="inline-block h-full w-full">
                 <li class="info-list">
-                  <el-icon>
-                    <user />
-                  </el-icon>
-                  {{ userStore.userInfo.nickName }}
                 </li>
-                <el-tooltip
-                  class="item"
-                  effect="light"
-                  content="北京反转极光科技有限公司-技术部-前端事业群"
-                  placement="top"
-                >
-                  <li class="info-list">
-                    <el-icon>
-                      <data-analysis />
-                    </el-icon>
-                    北京反转极光科技有限公司-技术部-前端事业群
-                  </li>
-                </el-tooltip>
-                <li class="info-list">
-                  <el-icon>
-                    <video-camera />
-                  </el-icon>
-                  中国·北京市·朝阳区
-                </li>
-                <el-tooltip
-                  class="item"
-                  effect="light"
-                  content="GoLang/JavaScript/Vue/Gorm"
-                  placement="top"
-                >
-                  <li class="info-list">
-                    <el-icon>
-                      <medal />
-                    </el-icon>
-                    GoLang/JavaScript/Vue/Gorm
-                  </li>
-                </el-tooltip>
               </ul>
             </div>
           </div>
@@ -102,47 +39,30 @@
               name="second"
             >
               <ul>
-                <li class="borderd">
-                  <p class="pb-2.5 text-xl text-gray-600">密保手机</p>
-                  <p class="pb-2.5 text-lg text-gray-400">
-                    已绑定手机:{{ userStore.userInfo.phone }}
-                    <a
-                      href="javascript:void(0)"
-                      class="float-right text-blue-400"
-                      @click="changePhoneFlag = true"
-                    >立即修改</a>
-                  </p>
-                </li>
                 <li class="borderd pt-2.5">
-                  <p class="pb-2.5 text-xl text-gray-600">密保邮箱</p>
-                  <p class="pb-2.5 text-lg text-gray-400">
-                    已绑定邮箱：{{ userStore.userInfo.email }}
-                    <a
-                      href="javascript:void(0)"
-                      class="float-right text-blue-400"
-                      @click="changeEmailFlag = true"
-                    >立即修改</a>
-                  </p>
-                </li>
-                <li class="borderd pt-2.5">
-                  <p class="pb-2.5 text-xl text-gray-600">密保问题</p>
-                  <p class="pb-2.5 text-lg text-gray-400">
-                    未设置密保问题
-                    <a
-                      href="javascript:void(0)"
-                      class="float-right text-blue-400"
-                    >去设置</a>
-                  </p>
-                </li>
-                <li class="borderd pt-2.5">
-                  <p class="pb-2.5 text-xl text-gray-600">修改密码</p>
+                  <p class="pb-2.5 text-xl text-gray-600">密码设置</p>
                   <p class="pb-2.5 text-lg text-gray-400">
                     修改个人密码
                     <a
                       href="javascript:void(0)"
                       class="float-right text-blue-400"
                       @click="showPassword = true"
-                    >修改密码</a>
+                    >
+                      <el-button type="primary" link icon="magic-stick"> 重置密码 </el-button>
+                    </a>
+                  </p>
+                </li>
+                <li class="borderd pt-2.5">
+                  <p class="pb-2.5 text-xl text-gray-600">安全码设置</p>
+                  <p class="pb-2.5 text-lg text-gray-400">
+                    修改安全码
+                    <a
+                      href="javascript:void(0)"
+                      class="float-right text-blue-400"
+                      @click="getAuthCaptcha(userStore.userInfo)"
+                    >
+                      <el-button type="primary" link icon="lock"> 设置安全码 </el-button>
+                    </a>
                   </p>
                 </li>
               </ul>
@@ -210,106 +130,35 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="changePhoneFlag"
-      title="绑定手机"
-      width="600px"
-    >
-      <el-form :model="phoneForm">
-        <el-form-item
-          label="手机号"
-          label-width="120px"
-        >
-          <el-input
-            v-model="phoneForm.phone"
-            placeholder="请输入手机号"
-            autocomplete="off"
-          />
+    <!-- 防爆验证码 -->
+    <el-dialog v-model="showAuthCaptcha" title="重置安全码" width="360px" @close="clearAuthCaptcha">
+      <el-form ref="modifyCapForm" :model="capModify" label-width="80px">
+        <el-form-item label="用户ID" prop="toUid">
+          <el-input v-model="capModify.ID" disabled />
         </el-form-item>
-        <el-form-item
-          label="验证码"
-          label-width="120px"
-        >
-          <div class="flex w-full gap-4">
-            <el-input
-              v-model="phoneForm.code"
-              class="flex-1"
-              autocomplete="off"
-              placeholder="请自行设计短信服务，此处为模拟随便写"
-              style="width:300px"
-            />
-            <el-button
-              type="primary"
-              :disabled="time>0"
-              @click="getCode"
-            >{{ time>0?`(${time}s)后重新获取`:'获取验证码' }}</el-button>
-          </div>
+        <el-form-item label="登录密码" prop="password">
+          <el-input v-model="capModify.password" show-password />
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
-          <el-button
-
-            @click="closeChangePhone"
-          >取消</el-button>
-          <el-button
-            type="primary"
-
-            @click="changePhone"
-          >更改</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button @click="showAuthCaptcha = false">取 消</el-button>
+          <el-button type="primary" @click="resetAuthCaptcha">确 定</el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="changeEmailFlag"
-      title="绑定邮箱"
-      width="600px"
-    >
-      <el-form :model="emailForm">
-        <el-form-item
-          label="邮箱"
-          label-width="120px"
-        >
-          <el-input
-            v-model="emailForm.email"
-            placeholder="请输入邮箱"
-            autocomplete="off"
-          />
-        </el-form-item>
-        <el-form-item
-          label="验证码"
-          label-width="120px"
-        >
-          <div class="flex w-full gap-4">
-            <el-input
-              v-model="emailForm.code"
-              class="flex-1"
-              placeholder="请自行设计邮件服务，此处为模拟随便写"
-              autocomplete="off"
-              style="width:300px"
-            />
-            <el-button
-              type="primary"
-              :disabled="emailTime>0"
-              @click="getEmailCode"
-            >{{ emailTime>0?`(${emailTime}s)后重新获取`:'获取验证码' }}</el-button>
-          </div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button
-
-            @click="closeChangeEmail"
-          >取消</el-button>
-          <el-button
-            type="primary"
-
-            @click="changeEmail"
-          >更改</el-button>
-        </span>
-      </template>
+    <!-- 查看 -->
+    <el-dialog v-model="showQRCode" title="安全码" width="300px" @close="closeAuthCaptcha">
+      <div class="qrcode-generator">
+        <div v-if="isNotSetting" style="margin-bottom: 20px">
+          暂未设置安全码，请尽快设置！
+        </div>
+        <div v-else>
+          <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
+        </div>
+        <el-button link type="primary" icon="lock" @click="resetShowAuthCaptcha"> 设置(或重置) </el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -319,7 +168,8 @@ import { setSelfInfo, changePassword } from '@/api/user.js'
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
-import SelectImage from '@/components/selectImage/selectImage.vue'
+import Image from '@/components/selectImage/Image.vue'
+import QRCode from "qrcode";
 
 defineOptions({
   name: 'Person',
@@ -490,6 +340,70 @@ const changeEmail = async() => {
   }
 }
 
+// ---------- 重置防爆码 ----------
+const modifyCapForm = ref(null)
+const showAuthCaptcha = ref(false)
+const capModify = ref({})
+const resetShowAuthCaptcha = async() => {
+  showAuthCaptcha.value = true
+}
+const resetAuthCaptcha = () => {
+  modifyCapForm.value.validate((valid) => {
+    if (valid) {
+      resetCaptcha({
+        password: capModify.value.password,
+        toUid: capModify.value.ID,
+        type: 1,
+      }).then((res) => {
+        if (res.code === 0) {
+          ElMessage.success('重置安全码成功！')
+        }
+        showQRCode.value = false
+        showAuthCaptcha.value = false
+      })
+    } else {
+      return false
+    }
+  })
+}
+const clearAuthCaptcha = () => {
+  capModify.value = {
+    password: '',
+  }
+  modifyCapForm.value.clearValidate()
+}
+
+const closeAuthCaptcha = async() => {
+  showQRCode.value = false
+}
+
+const url = ref('');
+const qrcodeUrl = ref('');
+const showQRCode = ref(false);
+const isNotSetting = ref(false);
+
+// 查看防爆码
+const getAuthCaptcha = (row) => {
+  console.log(row)
+  let authCaptcha = row.authCaptcha;
+  capModify.value = JSON.parse(JSON.stringify(row))
+  if (authCaptcha !== "") {
+    QRCode.toDataURL(authCaptcha)
+        .then((dataUrl) => {
+          console.log(dataUrl)
+          qrcodeUrl.value = dataUrl;
+          isNotSetting.value = false;
+          showQRCode.value = true;
+        })
+        .catch((error) => {
+          console.error('Failed to generate QR code:', error);
+        });
+  }else {
+    isNotSetting.value = true;
+    showQRCode.value = true;
+  }
+};
+// ---------- 重置防爆码 end ----------
 </script>
 
 <style lang="scss">
