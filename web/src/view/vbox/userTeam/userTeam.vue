@@ -263,7 +263,7 @@ const addUserClear = () => {
 
 // 添加组织成员
 const addUserEnter = async() => {
-  userForm.value.authEnable = Number(userForm.value.authEnable)
+  userForm.value.enableAuth = Number(userForm.value.enableAuth)
   userForm.value.enable = Number(userForm.value.enable)
   const res = await selfRegister(userForm.value)
   if (res.code === 0) {
@@ -275,7 +275,7 @@ const addUserEnter = async() => {
     confirmPassword: '',
     newPassword: '',
     enable: '1',
-    authEnable: '1',
+    enableAuth: '1',
   }
   addUserDialog.value = false
 }

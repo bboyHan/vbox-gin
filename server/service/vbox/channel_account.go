@@ -3,6 +3,7 @@ package vbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
@@ -14,6 +15,58 @@ import (
 )
 
 type ChannelAccountService struct {
+}
+
+// QueryOrgAccAvailable 查询通道账号的官方记录
+func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelAccount) (res interface{}, err error) {
+	//rdConn := global.GVA_REDIS.Conn()
+	//defer rdConn.Close()
+
+	// 创建布隆过滤器
+	bloomFilterKey := "myFilter"
+	bloomFilterErrorRate := 0.01
+	bloomFilterCapacity := 10000
+	global.GVA_REDIS.Do(context.Background(), "BF.RESERVE", bloomFilterKey, bloomFilterErrorRate, bloomFilterCapacity)
+	if err != nil {
+		fmt.Println("创建布隆过滤器失败:", err)
+		return
+	}
+
+	// 将元素添加到布隆过滤器中
+	err = global.GVA_REDIS.Do(context.Background(), "BF.ADD", "myFilter", "hello").Err()
+	if err != nil {
+		panic(err)
+	}
+
+	// 检查元素是否存在于布隆过滤器中
+	exists, err := global.GVA_REDIS.Do(context.Background(), "BF.EXISTS", "myFilter", "hello").Result()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(exists) // 输出 true
+
+	if boolValue, ok := exists.(bool); ok {
+		// 如果接口类型的值是bool类型，那么boolValue就是该值的bool表示
+		// 在这里你可以使用boolValue
+		fmt.Println("The interface value is a bool:", boolValue)
+	} else {
+		// 如果接口类型的值不是bool类型，这里的代码将会执行
+		fmt.Println("The interface value is not a bool")
+	}
+	// 尝试检查不存在的元素
+	exists, err = global.GVA_REDIS.Do(context.Background(), "BF.EXISTS", "myFilter", "world").Result()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(exists) // 输出 false
+
+	// 清除布隆过滤器
+	err = global.GVA_REDIS.Do(context.Background(), "DEL", "myFilter").Err()
+	if err != nil {
+		panic(err)
+	}
+
+	return nil, err
 }
 
 // QueryAccOrderHis 查询通道账号的官方记录
