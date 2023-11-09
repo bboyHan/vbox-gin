@@ -22,10 +22,10 @@
               </template>
               <el-row :gutter="12">
                 <el-col :span="12">
-                  <el-button>批量添加</el-button>
+                  <el-button type="link" icon="plus" @click="openBatchDialog(item)">批量添加</el-button>
                 </el-col>
                 <el-col :span="12">
-                  <el-button type="primary" icon="plus" @click="openDialog">添加账号</el-button>
+                  <el-button type="primary" icon="plus" @click="openDialog(item)">添加账号</el-button>
                 </el-col>
               </el-row>
             </el-card>
@@ -34,9 +34,8 @@
       </div>
     </div>
 
-    <!--  账号添加/修改  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'"
-               destroy-on-close>
+    <!--  账号添加  -->
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="添加" destroy-on-close>
       <el-form :model="accFormData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="账户备注" prop="acRemark">
           <el-input v-model="accFormData.acRemark" :clearable="true" placeholder="请输入"/>
@@ -70,6 +69,11 @@
           <el-input v-model="accFormData.token" type="textarea" :clearable="true" placeholder="请输入"/>
         </el-form-item>
         <el-row>
+          <el-col :span="6"></el-col>
+          <el-col :span="12">
+            <warning-bar title="注：默认0，则无限额控制" />
+          </el-col>
+          <el-col :span="6"></el-col>
           <el-col :span="8">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="accFormData.dailyLimit" :clearable="true" placeholder="请输入"/>
@@ -98,6 +102,41 @@
         </div>
       </template>
     </el-dialog>
+
+    <!--  账号批量添加  -->
+    <el-dialog v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" title="批量添加" destroy-on-close>
+      <el-form :model="accBatchFormData" label-position="right" ref="elBatchFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="24">
+            <warning-bar title="格式说明：一行填写一个账号信息用”|”隔开（shift+\）,非必填的内容也需要用“|”隔开，格式内容为：账号备注|账号名|账号密码|token|日限额|总限额|笔数限额|状态开关(0-关闭，1-开启)，一次最多添加50个" />
+          </el-col>
+          <el-col :span="8"></el-col>
+          <el-col :span="16">
+            <warning-bar title="示例：小黑|188123123|abc123|ck=123;...|0|0|0|1" />
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="通道编码" prop="cid">
+              <el-cascader
+                  v-model="accFormData.cid"
+                  :options="channelCodeOptions"
+                  :props="channelCodeProps"
+                  @change="handleChange"
+                  style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="" prop="acRemark">
+          <el-input type="textarea" v-model="accBatchFormData.acRemark" :autosize="{ minRows: 5, maxRows: 10 }" placeholder="请输入账号信息，格式内容为：账号备注|账号名|账号密码|token|日限额|总限额|笔数限额|状态开关(0-关闭，1-开启)，一次最多添加50个"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeBatchDialog">取 消</el-button>
+          <el-button type="primary" @click="enterBatchDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -115,6 +154,7 @@ import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDow
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import { typeMap, payTypeMap } from "@/utils/channel";
+import WarningBar from "@/components/warningBar/warningBar.vue";
 
 defineOptions({
   name: 'OrgProduct'
@@ -225,9 +265,12 @@ const setOptions = async() => {
 const type = ref('')
 
 // 打开弹窗
-const openDialog = () => {
+const openDialog = (row) => {
   type.value = 'create'
   dialogFormVisible.value = true
+  channelCodeOptions.value = []
+  setChannelCodeOptionsDetail(vcpTableData.value, channelCodeOptions.value, false, row.channelCode)
+  console.log(row)
 }
 
 // 关闭弹窗
@@ -253,6 +296,9 @@ const enterDialog = async () => {
     switch (type.value) {
       case 'create':
         res = await createChannelAccount(accFormData.value)
+        break
+      case 'createBatch':
+        console.log("我要开始批量添加了")
         break
       default:
         res = await createChannelAccount(accFormData.value)
@@ -303,6 +349,106 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
         label: item.productName,
       }
       optionsData.push(option)
+    }
+  })
+}
+
+const setChannelCodeOptionsDetail = (ChannelCodeData, optionsData, disabled, channelCode) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    if (String(channelCode) !== String(item.channelCode)){
+      console.log("非当前产品，不递归")
+      return
+    }
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+        children: []
+      }
+      setChannelCodeOptions(
+          item.children,
+          option.children,
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+      }
+      optionsData.push(option)
+    }
+  })
+}
+
+// 批量添加通道账户
+const dialogBatchFormVisible = ref(false)
+const batchFormData = ref({
+  channelCode: '',
+  ext: '',
+  parentId: 0,
+  payType: '',
+  productId: '',
+  productName: '',
+  type: false,
+})
+// 打开弹窗
+const openBatchDialog = (row) => {
+  type.value = 'createBatch'
+  dialogBatchFormVisible.value = true
+  channelCodeOptions.value = []
+  setChannelCodeOptionsDetail(vcpTableData.value, channelCodeOptions.value, false, row.channelCode)
+  console.log(row)
+}
+
+// 关闭弹窗
+const closeBatchDialog = () => {
+  dialogBatchFormVisible.value = false
+  batchFormData.value = {
+    channelCode: '',
+    ext: '',
+    parentId: 0,
+    payType: '',
+    productId: '',
+    productName: '',
+    type: false,
+  }
+}
+const elBatchFormRef = ref()
+const accBatchFormData = ref({
+  uid: 0,
+  acAccount: '',
+  acPwd: '',
+  acRemark: '',
+  token: '',
+  acId: '',
+  cid: 0,
+  dailyLimit: 0,
+  totalLimit: 0,
+  countLimit: 0,
+  status: 1,
+  sysStatus: 0,
+})
+// 弹窗确定
+const enterBatchDialog = async () => {
+  elBatchFormRef.value?.validate(async (valid) => {
+    if (!valid) return
+    accBatchFormData.value.status = Number(accBatchFormData.value.status)
+    let res
+    switch (type.value) {
+      case 'createBatch':
+        console.log("我要开始批量添加了")
+        break
+      default:
+        break
+    }
+    if (res.code === 0) {
+      ElMessage({
+        type: 'success',
+        message: '创建成功'
+      })
+      closeBatchDialog()
+      getTableData()
     }
   })
 }

@@ -146,6 +146,31 @@ func (vpoApi *PayOrderApi) QueryOrderSimple(c *gin.Context) {
 	}
 }
 
+// QueryIpRegion 查询IP区域分布情况
+// @Tags VboxPayOrder
+// @Summary 查询QueryIpRegion
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.VboxPayOrder true "查询IP区域分布情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /base/queryIpRegion [get]
+func (vpoApi *PayOrderApi) QueryIpRegion(c *gin.Context) {
+	var vpo vboxReq.QueryOrderSimple
+	err := c.ShouldBind(&vpo) // 可接收 from - json - xml
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if region, err := utils.SearchIp2Region(vpo.PayIp); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithDetailed(region, "查询成功", c)
+	}
+}
+
 // FindPayOrder 用id查询订单
 // @Tags PayOrder
 // @Summary 用id查询订单

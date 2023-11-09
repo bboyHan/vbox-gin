@@ -48,19 +48,19 @@ export const deletePayOrderByIds = (data) => {
   })
 }
 
-// @Tags PayOrder
-// @Summary 更新订单
+// @Tags Ip
+// @Summary 查询ip归属
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.PayOrder true "更新订单"
+// @Param data body model.PayOrder true "查询ip归属"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
-// @Router /payOrder/updatePayOrder [put]
-export const updatePayOrder = (data) => {
+// @Router /payOrder/queryIpRegion [get]
+export const queryIpRegion = (params) => {
   return service({
-    url: '/payOrder/updatePayOrder',
-    method: 'put',
-    data
+    url: '/payOrder/queryIpRegion',
+    method: 'get',
+    params
   })
 }
 

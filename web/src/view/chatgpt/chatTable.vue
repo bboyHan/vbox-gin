@@ -117,11 +117,12 @@ import { ref, reactive } from 'vue'
 
 const chatToken = ref(null)
 const skObj = reactive({
-  sk: '',
+  sk: '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',
 })
 const sql = ref('')
 const getSK = async() => {
   const res = await getSKApi()
+  console.log(res)
   chatToken.value = res.data.ok
 }
 
