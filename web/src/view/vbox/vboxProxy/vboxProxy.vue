@@ -35,12 +35,12 @@
             </el-popover>
         </div>
         <el-table
-        ref="multipleTable"
-        style="width: 100%"
-        tooltip-effect="dark"
-        :data="tableData"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
+            ref="multipleTable"
+            style="width: 100%"
+            tooltip-effect="dark"
+            :data="tableData"
+            row-key="ID"
+            @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="日期" width="180">
@@ -147,12 +147,12 @@ defineOptions({
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        chan: '',
-        type: 0,
-        status: 0,
-        url: '',
-        remark: '',
-        })
+  chan: '',
+  type: 0,
+  status: 0,
+  url: '',
+  remark: '',
+})
 
 
 // 验证规则

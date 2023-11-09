@@ -5,7 +5,7 @@
     @click="open"
   >
     <el-icon class="text-xl">
-      <warning-filled />
+      <warning-filled/>
     </el-icon>
     <span>
       {{ title }}
