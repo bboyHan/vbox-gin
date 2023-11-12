@@ -9,4 +9,5 @@ type ServiceGroup struct {
 	ProxyService
 	ChannelShopService
 	UserWalletService
+	VboxChannelPayCodeService
 }
