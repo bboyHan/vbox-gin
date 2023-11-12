@@ -10,4 +10,5 @@ type RouterGroup struct {
 	OrderRouter
 	OrgProductRouter
 	UserWalletRouter
+	VboxChannelPayCodeRouter
 }
