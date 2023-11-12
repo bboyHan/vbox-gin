@@ -60,7 +60,7 @@ func RegisterTables() {
 		vbox.Proxy{},
 		vbox.ChannelShop{},
 		vbox.OrgProduct{},
-		vbox.UserWallet{},
+		vbox.UserWallet{}, vbox.VboxChannelPayCode{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))
