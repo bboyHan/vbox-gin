@@ -87,6 +87,9 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 	if info.Location != "" {
 		db = db.Where("location = ?", info.Location)
 	}
+	if info.Operator != "" {
+		db = db.Where("operator = ?", info.Location)
+	}
 	if info.Mid != "" {
 		db = db.Where("mid = ?", info.Mid)
 	}

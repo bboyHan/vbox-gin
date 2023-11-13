@@ -1,12 +1,21 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 
+// 格式化时间为时分秒的形式(时分秒)
+export const formatTime = (seconds) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  return `${hours} 时 ${minutes} 分 ${remainingSeconds} 秒`;
+};
+
+// 字符串连接
 export const formatJoin = (separator, ...str) => {
   return str.join(separator);
 }
 
+// 付款码状态
 export const formatPayCodeStatus = (status) => {
-  console.log(status)
   if(status === 2) {
     return '待使用'
   } else if(status === 1) {
@@ -18,8 +27,8 @@ export const formatPayCodeStatus = (status) => {
   }
 }
 
+// 付款码样式
 export const formatPayCodeColor = (status) => {
-  console.log(status)
   if (status === 3) {
     return '#606266'
   } else if(status === 2) {
@@ -31,6 +40,7 @@ export const formatPayCodeColor = (status) => {
   }
 }
 
+// 订单付款样式
 export const formatPayedColor = (status, acId) => {
   if (status === 2 && acId === "") { //匹配账号未支付
     return '#a64406'

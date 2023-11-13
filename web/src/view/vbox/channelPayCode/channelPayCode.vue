@@ -32,6 +32,13 @@
             <el-option label="已失效" value="3"/>
           </el-select>
         </el-form-item>
+        <el-form-item label="运营商" prop="status">
+          <el-select v-model="searchInfo.operator" placeholder="选择ISP">
+            <el-option label="移动" value="移动"/>
+            <el-option label="联通" value="联通"/>
+            <el-option label="电信" value="电信"/>
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
@@ -61,20 +68,24 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="日期" width="180">
+        <el-table-column align="left" label="创建日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="通道ID" prop="cid" width="120" />
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="120" />
         <el-table-column align="left" label="过期时间" prop="timeLimit" width="160" />
-        <el-table-column align="left" label="剩余时间" prop="timeLimit" width="120">
+        <el-table-column align="left" label="剩余时间" prop="timeLimit" width="140">
           <template #default="scope">
-            <span v-if="countdowns[scope.$index] > 0">{{ countdowns[scope.$index] }} 秒</span>
+            <span v-if="countdowns[scope.$index] > 0">{{ formatTime(countdowns[scope.$index]) }} </span>
             <span v-else>-1 （已过期）</span>
           </template>
         </el-table-column>
         <el-table-column align="left" label="运营商" prop="operator" width="120" />
-        <el-table-column align="left" label="地区" prop="location" width="120" />
+        <el-table-column align="center" label="地区" prop="location" width="180">
+          <template #default="{ row }">
+            {{ codeToText[row.location.slice(0, 2)] }} | {{ codeToText[row.location.slice(0, 4)] }} | {{ codeToText[row.location.slice(0, 6)] }}
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="状态" prop="codeStatus" width="120" >
           <template #default="scope">
             <el-button style="width: 90px" :color="formatPayCodeColor(scope.row.codeStatus)">
@@ -84,11 +95,11 @@
         </el-table-column>
         <el-table-column align="left" label="付款码" prop="imgBaseStr" width="120" >
           <template #default="{ row }">
-            <div v-if="!dialogImageShow">
-              <el-button link icon="search" @click="dialogImageShow = true" >预览</el-button>
+            <div v-if="!dialogImageShow[row.ID]">
+              <el-button link icon="search" @click="toggleDialog(row.ID)" >预览</el-button>
             </div>
             <div v-else>
-              <el-button link icon="search" @click="dialogImageShow = false">取消预览</el-button>
+              <el-button link icon="search" @click="toggleDialog(row.ID)">取消预览</el-button>
               <el-image :src="row.imgBaseStr" fit="contain" class="thumbnail-image"/>
             </div>
           </template>
@@ -171,7 +182,6 @@
           <el-form-item label="地区"  prop="selectedCity" >
             <el-cascader
                 style="width:100%"
-                size="small"
                 :options="optionsRegion"
                 v-model="selectedCity"
                 @change="chge"
@@ -265,18 +275,25 @@ import {
   ReturnArrImg,
   onDownloadFile,
   formatPayCodeStatus,
-  formatJoin, formatPayedColor, formatPayed, formatPayCodeColor,
+  formatJoin,
+  formatPayCodeColor,
+  formatTime,
 } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, onMounted } from 'vue'
-import { regionData } from 'element-china-area-data';
+import { codeToText, regionData } from 'element-china-area-data';
 import { InfoFilled, Plus } from '@element-plus/icons-vue';
 
 defineOptions({
     name: 'ChannelPayCode'
 })
 
-const dialogImageShow = ref(false)
+// 缩略图
+const dialogImageShow = ref({})
+const toggleDialog = (id) => {
+  console.log(id)
+  dialogImageShow.value[id] = !dialogImageShow.value[id];
+};
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -375,7 +392,7 @@ const optionsRegion = regionData;
 const chge = () => {
   const lastElement = selectedCity.value[selectedCity.value.length - 1]
   formData.value.location = lastElement
-  console.log(optionsRegion.value);
+  console.log(optionsRegion);
 };
 
 // --------- 获取通信商 -----------
