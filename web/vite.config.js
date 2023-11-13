@@ -45,6 +45,11 @@ export default ({
       entryFileNames: '087AC4D233B64EB0[name].js',
       chunkFileNames: '087AC4D233B64EB0[name].js',
       assetFileNames: '087AC4D233B64EB0[name].[ext]',
+      manualChunks(id){
+        if (id.includes('node_modules')) {
+          return id.toString().split('node_modules/')[1].split('/')[0].toString();
+        }
+      }
     },
   }
 
@@ -72,6 +77,7 @@ export default ({
       },
     },
     build: {
+      chunkSizeWarningLimit: 1500, // 设置为你需要的大小限制
       minify: 'terser', // 是否进行压缩,boolean | 'terser' | 'esbuild',默认使用terser
       manifest: false, // 是否产出manifest.json
       sourcemap: false, // 是否产出sourcemap.json

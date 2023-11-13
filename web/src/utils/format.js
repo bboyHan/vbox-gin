@@ -1,6 +1,36 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 
+export const formatJoin = (separator, ...str) => {
+  return str.join(separator);
+}
+
+export const formatPayCodeStatus = (status) => {
+  console.log(status)
+  if(status === 2) {
+    return '待使用'
+  } else if(status === 1) {
+    return '已使用'
+  } else if(status === 3) {
+    return '已失效'
+  } else {
+    return '-'
+  }
+}
+
+export const formatPayCodeColor = (status) => {
+  console.log(status)
+  if (status === 3) {
+    return '#606266'
+  } else if(status === 2) {
+    return '#a64406'
+  } else if(status === 1) {
+    return '#05811d'
+  } else {
+    return ''
+  }
+}
+
 export const formatPayedColor = (status, acId) => {
   if (status === 2 && acId === "") { //匹配账号未支付
     return '#a64406'
@@ -11,7 +41,7 @@ export const formatPayedColor = (status, acId) => {
   } else if(status === 3) {
     return '#3118dc'
   } else {
-    return '-'
+    return ''
   }
 }
 

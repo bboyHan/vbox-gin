@@ -4,10 +4,24 @@ import (
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 )
+
+// string 去重方法
+func UniqStr(array []string) []string {
+	var uintMap = make(map[string]bool)
+	var res []string
+	for _, u := range array {
+		if !uintMap[u] {
+			uintMap[u] = true
+			res = append(res, u)
+		}
+	}
+	return res
+}
 
 // uint 去重方法
 func Uniq(array []uint) []uint {
@@ -29,6 +43,21 @@ const (
 	Deep    = 3 // 当前部门及以下
 	All     = 4 // 所有
 )
+
+// 获取当前部门所有产品
+func GetChannelCodeByOrgID(orgID uint) []string {
+	var Products []vbox.OrgProduct
+	var ids []string
+	err := global.GVA_DB.Model(&vbox.OrgProduct{}).Joins("ChannelProduct").Preload("ChannelProduct").
+		Find(&Products, "organization_id = ?", orgID).Error
+	if err != nil {
+		return []string{}
+	}
+	for i := range Products {
+		ids = append(ids, Products[i].ChannelProduct.ChannelCode)
+	}
+	return UniqStr(ids)
+}
 
 // 获取当前部门ID
 func GetSelfOrg(id uint) []uint {
@@ -67,9 +96,9 @@ func GetAllOrgID() []uint {
 	return Uniq(orgids)
 }
 
-// 获取当前部门及以下部门id
-func GetDeepOrg(id uint) []uint {
-	orgId := GetSelfOrg(id)
+// 获取当前部门及以下部门id (传参userId)
+func GetDeepOrg(userId uint) []uint {
+	orgId := GetSelfOrg(userId)
 	if len(orgId) == 0 {
 		return []uint{}
 	}

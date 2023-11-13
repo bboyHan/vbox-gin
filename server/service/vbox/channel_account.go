@@ -9,20 +9,19 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"strconv"
 	"time"
 )
 
 type ChannelAccountService struct {
 }
 
-// QueryOrgAccAvailable 查询通道账号的官方记录
-func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelAccount) (res interface{}, err error) {
-	//rdConn := global.GVA_REDIS.Conn()
-	//defer rdConn.Close()
-
-	// 创建布隆过滤器
+/*
+    创建布隆过滤器
 	bloomFilterKey := "myFilter"
 	bloomFilterErrorRate := 0.01
 	bloomFilterCapacity := 10000
@@ -65,6 +64,82 @@ func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelA
 	if err != nil {
 		panic(err)
 	}
+*/
+
+// QueryOrgAccAvailable 查询通道账号的官方记录
+func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelAccount) (res interface{}, err error) {
+
+	// filterKey设置
+
+	// 当前用户所属部门
+	allOrgIDs := utils2.GetAllOrgID()
+
+	for _, orgID := range allOrgIDs {
+		var accList = make(map[string][]interface{})
+
+		// 当前部门拥有的产品
+		chanCodeIDs := utils2.GetChannelCodeByOrgID(orgID)
+
+		// 当前部门的所有用户
+		userIDs := utils2.GetUsersByOrgIds([]uint{orgID})
+
+		fmt.Printf("org id : %v  ", orgID)
+		fmt.Printf("code ids : %v  ", chanCodeIDs)
+		fmt.Printf("user ids : %v\n", userIDs)
+		var accTempList []vbox.ChannelAccount
+
+		err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("created_by in ?", userIDs).
+			Where("cid in ?", chanCodeIDs).Where("status = ? and sys_status = ?", 1, 1).Find(&accTempList).Error
+		if err != nil {
+			global.GVA_LOG.Error("查询可用通道账号失败:", zap.Error(err))
+			return
+		}
+
+		// 根据 chan code 分组
+		for _, accT := range accTempList {
+			if _, ok := accList[accT.Cid]; ok {
+				accList[accT.Cid] = append(accList[accT.Cid], accT.AcAccount)
+			} else {
+				accList[accT.Cid] = []interface{}{accT.AcAccount}
+			}
+		}
+
+		// 遍历分组后的acc
+		for k, accL := range accList {
+			fmt.Printf("key : %s", k)
+			fmt.Printf("accL : %v\n", accL)
+
+			blKey := fmt.Sprintf(global.ChanOrgAccFilter, strconv.FormatUint(uint64(orgID), 10), k)
+			global.GVA_REDIS.Do(context.Background(), "BF.RESERVE", blKey, global.BloomFilterErrorRate, global.BloomFilterCapacity)
+
+			err = global.GVA_REDIS.Do(context.Background(), "BF.MADD", blKey, "accL", "a", "b").Err()
+			if err != nil {
+				global.GVA_LOG.Error("查询可用通道账号添加到BL失败:", zap.Error(err))
+				return
+			}
+
+			var count interface{}
+			count, err = global.GVA_REDIS.Do(context.Background(), "BF.COUNT", blKey).Result()
+			if err != nil {
+				global.GVA_LOG.Error("查询可用通道账号添加到BL失败:", zap.Error(err))
+				return
+			}
+
+			fmt.Printf("accL count : %v\n", count)
+
+		}
+
+	}
+
+	// deepUserIDs := utils2.GetDeepUserIDs(userId)
+
+	//
+
+	//global.GVA_REDIS.Do(context.Background(), "BF.RESERVE", , global.BloomFilterErrorRate, global.BloomFilterCapacity)
+	//if err != nil {
+	//	global.GVA_LOG.Error("创建布隆过滤器失败:", zap.Error(err))
+	//	return
+	//}
 
 	return nil, err
 }
