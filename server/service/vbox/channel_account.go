@@ -295,6 +295,9 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.Status != nil {
 		db = db.Where("status = ?", info.Status)
 	}
+	if info.AcId != "" {
+		db = db.Where("ac_id = ?", info.AcId)
+	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
