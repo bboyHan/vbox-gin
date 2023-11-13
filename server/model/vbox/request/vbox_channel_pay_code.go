@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-type VboxChannelPayCodeSearch struct {
-	vbox.VboxChannelPayCode
+type ChannelPayCodeSearch struct {
+	vbox.ChannelPayCode
 	StartCreatedAt *time.Time `json:"startCreatedAt" form:"startCreatedAt"`
 	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
 	request.PageInfo

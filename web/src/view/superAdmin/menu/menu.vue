@@ -410,7 +410,6 @@
               <div>
                 <el-button
                   type="danger"
-
                   icon="delete"
                   @click="deleteParameter(form.parameters,scope.$index)"
                 >删除</el-button>
