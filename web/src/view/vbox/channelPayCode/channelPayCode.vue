@@ -68,12 +68,12 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="创建日期" width="180">
+        <el-table-column align="left" label="创建日期" width="160">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="通道ID" prop="cid" width="100" />
-        <el-table-column align="left" label="通道账户名" prop="acAccount" width="120" />
-        <el-table-column align="left" label="备注" prop="acRemark" width="120" />
+        <el-table-column align="left" label="通道ID" prop="cid" width="80" />
+        <el-table-column align="left" label="通道账户名" prop="acAccount" width="100" />
+        <el-table-column align="left" label="备注" prop="acRemark" width="100" />
         <el-table-column align="left" label="过期时间" prop="timeLimit" width="160" />
         <el-table-column align="left" label="剩余时间" prop="timeLimit" width="140">
           <template #default="scope">
