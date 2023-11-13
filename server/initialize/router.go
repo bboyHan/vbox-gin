@@ -95,7 +95,7 @@ func Routers() *gin.Engine {
 		vboxRouter.InitChannelShopRouter(PrivateGroup)
 		vboxRouter.InitOrgProductRouter(PrivateGroup)
 		vboxRouter.InitUserWalletRouter(PrivateGroup)
-		vboxRouter.InitVboxChannelPayCodeRouter(PrivateGroup)
+		vboxRouter.InitChannelPayCodeRouter(PrivateGroup)
 	}
 	global.GVA_LOG.Info("router register success")
 	return Router

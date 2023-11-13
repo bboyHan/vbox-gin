@@ -18,12 +18,19 @@ import (
 )
 
 const (
-	ProductRecordQBPrefix = "product_record:qb:proxy" //QB查询
+	BloomFilterErrorRate = 0.001
+	BloomFilterCapacity  = 100000
+
+	ChanOrgAccFilter = "vb_accFilter:org_%s:chan_%s" // 同组织通道下可用账号（过滤器）
 )
 
 const (
-	UserOrgChannelCodePrefix = "user_org_channel_code_ids:" //组织下拥有的产品id
-	PayAccPrefix             = "pacc_id:"                   //商户信息
+	ProductRecordQBPrefix = "product_record:qb:proxy" // QB查询
+)
+
+const (
+	UserOrgChannelCodePrefix = "user_org_channel_code_ids:" // 组织下拥有的产品id
+	PayAccPrefix             = "pacc_id:"                   // 商户信息
 )
 
 const (
@@ -33,12 +40,12 @@ const (
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                // 充值或者划转
-	WalletEventTransferPrefix = "VBTS"                // 充值或者划转
-	WalletEventOrderPrefix    = "VBOD"                // 充值或者划转
-	WalletEventRecharge       = "充值积分[%d]"            // 充值或者划转
-	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 充值或者划转
-	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 充值或者划转
+	WalletEventRechargePrefix = "VBIN"                         // 充值
+	WalletEventTransferPrefix = "VBTS"                         // 划转
+	WalletEventOrderPrefix    = "VBOD"                         // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"                 // 充值
+	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 划转
+	WalletEventIncome         = "积分增加[%d], 来自[%s]"       // 划转
 )
 
 var (

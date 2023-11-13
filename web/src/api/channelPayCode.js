@@ -7,10 +7,10 @@ import service from '@/utils/request'
 // @Produce application/json
 // @Param data body model.VboxChannelPayCode true "创建通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
-// @Router /vboxChannelPayCode/createVboxChannelPayCode [post]
-export const createVboxChannelPayCode = (data) => {
+// @Router /channelPayCode/createVboxChannelPayCode [post]
+export const createChannelPayCode = (data) => {
   return service({
-    url: '/vboxChannelPayCode/createVboxChannelPayCode',
+    url: '/channelPayCode/createChannelPayCode',
     method: 'post',
     data
   })
@@ -23,10 +23,10 @@ export const createVboxChannelPayCode = (data) => {
 // @Produce application/json
 // @Param data body model.VboxChannelPayCode true "删除通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"删除成功"}"
-// @Router /vboxChannelPayCode/deleteVboxChannelPayCode [delete]
-export const deleteVboxChannelPayCode = (data) => {
+// @Router /channelPayCode/deleteVboxChannelPayCode [delete]
+export const deleteChannelPayCode = (data) => {
   return service({
-    url: '/vboxChannelPayCode/deleteVboxChannelPayCode',
+    url: '/channelPayCode/deleteChannelPayCode',
     method: 'delete',
     data
   })
@@ -39,10 +39,10 @@ export const deleteVboxChannelPayCode = (data) => {
 // @Produce application/json
 // @Param data body request.IdsReq true "批量删除通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"删除成功"}"
-// @Router /vboxChannelPayCode/deleteVboxChannelPayCode [delete]
-export const deleteVboxChannelPayCodeByIds = (data) => {
+// @Router /channelPayCode/deleteVboxChannelPayCode [delete]
+export const deleteChannelPayCodeByIds = (data) => {
   return service({
-    url: '/vboxChannelPayCode/deleteVboxChannelPayCodeByIds',
+    url: '/channelPayCode/deleteChannelPayCodeByIds',
     method: 'delete',
     data
   })
@@ -55,10 +55,10 @@ export const deleteVboxChannelPayCodeByIds = (data) => {
 // @Produce application/json
 // @Param data body model.VboxChannelPayCode true "更新通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
-// @Router /vboxChannelPayCode/updateVboxChannelPayCode [put]
-export const updateVboxChannelPayCode = (data) => {
+// @Router /channelPayCode/updateVboxChannelPayCode [put]
+export const updateChannelPayCode = (data) => {
   return service({
-    url: '/vboxChannelPayCode/updateVboxChannelPayCode',
+    url: '/channelPayCode/updateChannelPayCode',
     method: 'put',
     data
   })
@@ -71,10 +71,10 @@ export const updateVboxChannelPayCode = (data) => {
 // @Produce application/json
 // @Param data query model.VboxChannelPayCode true "用id查询通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
-// @Router /vboxChannelPayCode/findVboxChannelPayCode [get]
-export const findVboxChannelPayCode = (params) => {
+// @Router /channelPayCode/findVboxChannelPayCode [get]
+export const findChannelPayCode = (params) => {
   return service({
-    url: '/vboxChannelPayCode/findVboxChannelPayCode',
+    url: '/channelPayCode/findChannelPayCode',
     method: 'get',
     params
   })
@@ -87,10 +87,10 @@ export const findVboxChannelPayCode = (params) => {
 // @Produce application/json
 // @Param data query request.PageInfo true "分页获取通道账户付款二维码列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
-// @Router /vboxChannelPayCode/getVboxChannelPayCodeList [get]
-export const getVboxChannelPayCodeList = (params) => {
+// @Router /channelPayCode/getVboxChannelPayCodeList [get]
+export const getChannelPayCodeList = (params) => {
   return service({
-    url: '/vboxChannelPayCode/getVboxChannelPayCodeList',
+    url: '/channelPayCode/getChannelPayCodeList',
     method: 'get',
     params
   })

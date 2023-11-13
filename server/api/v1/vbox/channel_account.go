@@ -26,6 +26,8 @@ func (vcaApi *ChannelAccountApi) QueryOrgAccAvailable(c *gin.Context) {
 		return
 	}
 
+	//userId := utils.GetUserID(c)
+
 	if res, err := vcaService.QueryOrgAccAvailable(&vca); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)

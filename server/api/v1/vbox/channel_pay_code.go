@@ -6,35 +6,36 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-type VboxChannelPayCodeApi struct {
+type ChannelPayCodeApi struct {
 }
 
-var vboxChannelPayCodeService = service.ServiceGroupApp.VboxServiceGroup.VboxChannelPayCodeService
+var channelPayCodeService = service.ServiceGroupApp.VboxServiceGroup.ChannelPayCodeService
 
-// CreateVboxChannelPayCode 创建通道账户付款二维码
-// @Tags VboxChannelPayCode
+// CreateChannelPayCode 创建通道账户付款二维码
+// @Tags ChannelPayCode
 // @Summary 创建通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body vbox.VboxChannelPayCode true "创建通道账户付款二维码"
+// @Param data body vbox.ChannelPayCode true "创建通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
 // @Router /vboxChannelPayCode/createVboxChannelPayCode [post]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) CreateVboxChannelPayCode(c *gin.Context) {
-	var vboxChannelPayCode vbox.VboxChannelPayCode
-	err := c.ShouldBindJSON(&vboxChannelPayCode)
+func (channelPayCodeApi *ChannelPayCodeApi) CreateChannelPayCode(c *gin.Context) {
+	var channelPayCode vbox.ChannelPayCode
+	err := c.ShouldBindJSON(&channelPayCode)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	vboxChannelPayCode.CreatedBy = utils.GetUserID(c)
-	if err := vboxChannelPayCodeService.CreateVboxChannelPayCode(&vboxChannelPayCode); err != nil {
+	channelPayCode.CreatedBy = utils.GetUserID(c)
+	if err := channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
@@ -42,24 +43,24 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) CreateVboxChannelPayCode(c *
 	}
 }
 
-// DeleteVboxChannelPayCode 删除通道账户付款二维码
-// @Tags VboxChannelPayCode
+// DeleteChannelPayCode 删除通道账户付款二维码
+// @Tags ChannelPayCode
 // @Summary 删除通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body vbox.VboxChannelPayCode true "删除通道账户付款二维码"
+// @Param data body vbox.ChannelPayCode true "删除通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"删除成功"}"
 // @Router /vboxChannelPayCode/deleteVboxChannelPayCode [delete]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCode(c *gin.Context) {
-	var vboxChannelPayCode vbox.VboxChannelPayCode
-	err := c.ShouldBindJSON(&vboxChannelPayCode)
+func (channelPayCodeApi *ChannelPayCodeApi) DeleteChannelPayCode(c *gin.Context) {
+	var channelPayCode vbox.ChannelPayCode
+	err := c.ShouldBindJSON(&channelPayCode)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	vboxChannelPayCode.DeletedBy = utils.GetUserID(c)
-	if err := vboxChannelPayCodeService.DeleteVboxChannelPayCode(vboxChannelPayCode); err != nil {
+	channelPayCode.DeletedBy = utils.GetUserID(c)
+	if err := channelPayCodeService.DeleteChannelPayCode(channelPayCode); err != nil {
 		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
@@ -67,8 +68,8 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCode(c *
 	}
 }
 
-// DeleteVboxChannelPayCodeByIds 批量删除通道账户付款二维码
-// @Tags VboxChannelPayCode
+// DeleteChannelPayCodeByIds 批量删除通道账户付款二维码
+// @Tags ChannelPayCode
 // @Summary 批量删除通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json
@@ -76,7 +77,7 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCode(c *
 // @Param data body request.IdsReq true "批量删除通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"批量删除成功"}"
 // @Router /vboxChannelPayCode/deleteVboxChannelPayCodeByIds [delete]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCodeByIds(c *gin.Context) {
+func (channelPayCodeApi *ChannelPayCodeApi) DeleteChannelPayCodeByIds(c *gin.Context) {
 	var IDS request.IdsReq
 	err := c.ShouldBindJSON(&IDS)
 	if err != nil {
@@ -84,7 +85,7 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCodeById
 		return
 	}
 	deletedBy := utils.GetUserID(c)
-	if err := vboxChannelPayCodeService.DeleteVboxChannelPayCodeByIds(IDS, deletedBy); err != nil {
+	if err := channelPayCodeService.DeleteChannelPayCodeByIds(IDS, deletedBy); err != nil {
 		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
@@ -93,23 +94,23 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) DeleteVboxChannelPayCodeById
 }
 
 // UpdateVboxChannelPayCode 更新通道账户付款二维码
-// @Tags VboxChannelPayCode
+// @Tags ChannelPayCode
 // @Summary 更新通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body vbox.VboxChannelPayCode true "更新通道账户付款二维码"
+// @Param data body vbox.ChannelPayCode true "更新通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
 // @Router /vboxChannelPayCode/updateVboxChannelPayCode [put]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) UpdateVboxChannelPayCode(c *gin.Context) {
-	var vboxChannelPayCode vbox.VboxChannelPayCode
-	err := c.ShouldBindJSON(&vboxChannelPayCode)
+func (channelPayCodeApi *ChannelPayCodeApi) UpdateVboxChannelPayCode(c *gin.Context) {
+	var channelPayCode vbox.ChannelPayCode
+	err := c.ShouldBindJSON(&channelPayCode)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	vboxChannelPayCode.UpdatedBy = utils.GetUserID(c)
-	if err := vboxChannelPayCodeService.UpdateVboxChannelPayCode(vboxChannelPayCode); err != nil {
+	channelPayCode.UpdatedBy = utils.GetUserID(c)
+	if err := channelPayCodeService.UpdateChannelPayCode(channelPayCode); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {
@@ -117,47 +118,48 @@ func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) UpdateVboxChannelPayCode(c *
 	}
 }
 
-// FindVboxChannelPayCode 用id查询通道账户付款二维码
-// @Tags VboxChannelPayCode
+// FindChannelPayCode 用id查询通道账户付款二维码
+// @Tags ChannelPayCode
 // @Summary 用id查询通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data query vbox.VboxChannelPayCode true "用id查询通道账户付款二维码"
+// @Param data query vbox.ChannelPayCode true "用id查询通道账户付款二维码"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
 // @Router /vboxChannelPayCode/findVboxChannelPayCode [get]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) FindVboxChannelPayCode(c *gin.Context) {
-	var vboxChannelPayCode vbox.VboxChannelPayCode
+func (channelPayCodeApi *ChannelPayCodeApi) FindChannelPayCode(c *gin.Context) {
+	var vboxChannelPayCode vbox.ChannelPayCode
 	err := c.ShouldBindQuery(&vboxChannelPayCode)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if revboxChannelPayCode, err := vboxChannelPayCodeService.GetVboxChannelPayCode(vboxChannelPayCode.ID); err != nil {
+	if reChannelPayCode, err := channelPayCodeService.GetChannelPayCode(vboxChannelPayCode.ID); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {
-		response.OkWithData(gin.H{"revboxChannelPayCode": revboxChannelPayCode}, c)
+		response.OkWithData(gin.H{"rechannelPayCode": reChannelPayCode}, c)
 	}
 }
 
-// GetVboxChannelPayCodeList 分页获取通道账户付款二维码列表
-// @Tags VboxChannelPayCode
+// GetChannelPayCodeList 分页获取通道账户付款二维码列表
+// @Tags ChannelPayCode
 // @Summary 分页获取通道账户付款二维码列表
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data query vboxReq.VboxChannelPayCodeSearch true "分页获取通道账户付款二维码列表"
+// @Param data query vboxReq.ChannelPayCodeSearch true "分页获取通道账户付款二维码列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /vboxChannelPayCode/getVboxChannelPayCodeList [get]
-func (vboxChannelPayCodeApi *VboxChannelPayCodeApi) GetVboxChannelPayCodeList(c *gin.Context) {
-	var pageInfo vboxReq.VboxChannelPayCodeSearch
+func (channelPayCodeApi *ChannelPayCodeApi) GetChannelPayCodeList(c *gin.Context) {
+	var pageInfo vboxReq.ChannelPayCodeSearch
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := vboxChannelPayCodeService.GetVboxChannelPayCodeInfoList(pageInfo); err != nil {
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := channelPayCodeService.GetChannelPayCodeInfoList(pageInfo, ids); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
