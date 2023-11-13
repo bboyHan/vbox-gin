@@ -71,8 +71,9 @@
         <el-table-column align="left" label="创建日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="通道ID" prop="cid" width="120" />
+        <el-table-column align="left" label="通道ID" prop="cid" width="100" />
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="120" />
+        <el-table-column align="left" label="备注" prop="acRemark" width="120" />
         <el-table-column align="left" label="过期时间" prop="timeLimit" width="160" />
         <el-table-column align="left" label="剩余时间" prop="timeLimit" width="140">
           <template #default="scope">
@@ -80,7 +81,7 @@
             <span v-else>-1 （已过期）</span>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="运营商" prop="operator" width="120" />
+        <el-table-column align="left" label="运营商" prop="operator" width="80" />
         <el-table-column align="center" label="地区" prop="location" width="180">
           <template #default="{ row }">
             {{ codeToText[row.location.slice(0, 2)] }} | {{ codeToText[row.location.slice(0, 4)] }} | {{ codeToText[row.location.slice(0, 6)] }}
@@ -141,16 +142,17 @@
           </el-form-item>
           <el-form-item label="通道账户"  prop="acAccount" >
             <el-select
-                v-model="formData.acAccount"
+                v-model="formData.acId"
                 placeholder="请选择通道账号"
                 filterable
                 style="width: 100%"
+                @change="handleAccChange"
             >
               <el-option
                   v-for="item in accList"
                   :key="item.acAccount"
                   :label="formatJoin(' -- 备注： ', item.acAccount, item.acRemark)"
-                  :value="item.acAccount"
+                  :value="item.acId"
               />
             </el-select>
           </el-form-item>
@@ -299,6 +301,8 @@ const toggleDialog = (id) => {
 const formData = ref({
         cid: '',
         acAccount: '',
+        acId: '',
+        acRemark: '',
         timeLimit: '',
         operator: '',
         location: '',
@@ -414,8 +418,23 @@ const operators = [
 
 // ------- 获取通道账号 -------
 const accList = ref([])
-const sysUserAccs = ref('')
+const sysUserAcId = ref('')
 const endTime = ref('')
+const handleAccChange = (value) => {
+  // console.log(value)
+  getACCChannelAccountByAcid()
+}
+// 获取唯一通道账号
+const getACCChannelAccountByAcid = async() => {
+  const res = await getChannelAccountList({ acId: formData.value.acId ,page: 1, pageSize: 999})
+  accList.value = res.data.list
+  total.value = res.data.total
+  // console.log(JSON.stringify(accList))
+  formData.value.acAccount = accList.value[0].acAccount
+  formData.value.acRemark = accList.value[0].acRemark
+  console.log(JSON.stringify(formData.value))
+}
+
 
 // 获取通道账号
 const getALlChannelAccount = async() => {
@@ -642,13 +661,15 @@ const getDetails = async (row) => {
 const closeDetailShow = () => {
   detailShow.value = false
   formData.value = {
-          cid: '',
-          acAccount: '',
-          timeLimit: '',
-          operator: '',
-          location: '',
-          imgBaseStr: '',
-          uid: 0,
+        cid: '',
+        acAccount: '',
+        acId: '',
+        acRemark: '',
+        timeLimit: '',
+        operator: '',
+        location: '',
+        imgBaseStr: '',
+        uid: 0
           }
 }
 
@@ -666,11 +687,13 @@ const closeDialog = () => {
     formData.value = {
         cid: '',
         acAccount: '',
+        acId: '',
+        acRemark: '',
         timeLimit: '',
         operator: '',
         location: '',
         imgBaseStr: '',
-        uid: 0,
+        uid: 0
         }
 }
 // 弹窗确定

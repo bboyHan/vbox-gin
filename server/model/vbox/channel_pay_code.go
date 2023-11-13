@@ -10,6 +10,8 @@ type ChannelPayCode struct {
 	global.GVA_MODEL
 	Cid        string `json:"cid" form:"cid" gorm:"column:cid;comment:通道id;size:10;"`                                                //通道id
 	AcAccount  string `json:"acAccount" form:"acAccount" gorm:"column:ac_account;comment:通道账户名;size:128;"`                           //通道账户名
+	AcId       string `json:"acId" form:"acId" gorm:"column:ac_id;comment:账户ID;size:50;"`                                            //账户ID
+	AcRemark   string `json:"acRemark" form:"acRemark" gorm:"column:ac_remark;comment:账户备注;size:128;"`                               //账户备注
 	TimeLimit  string `json:"timeLimit" form:"timeLimit" gorm:"column:time_limit;comment:过期时间;size:64;"`                             //过期时间
 	Operator   string `json:"operator" form:"operator" gorm:"column:operator;comment:运营商;size:64;"`                                  //运营商
 	Location   string `json:"location" form:"location" gorm:"column:location;comment:省市;size:128;"`                                  //省市
