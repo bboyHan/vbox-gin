@@ -22,6 +22,7 @@ func (s *PayAccountRouter) InitPayAccountRouter(Router *gin.RouterGroup) {
 		paccRouter.PUT("switchEnable", paccApi.SwitchEnablePayAccount)            // 开关VboxPayAccount
 	}
 	{
+		paccRouterWithoutRecord.GET("getPAccGateway", paccApi.GetPAccGateway)       // 获取付方网关
 		paccRouterWithoutRecord.GET("findPayAccount", paccApi.FindPayAccount)       // 根据ID获取付方
 		paccRouterWithoutRecord.GET("getPayAccountList", paccApi.GetPayAccountList) // 获取付方列表
 	}

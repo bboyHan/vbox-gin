@@ -11,6 +11,7 @@ import (
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
+	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"strconv"
@@ -195,6 +196,7 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.Ch
 // CreateChannelAccount 创建通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount) (err error) {
+	vca.AcId = rand_string.RandomInt(8)
 	err = global.GVA_DB.Create(vca).Error
 	return err
 }

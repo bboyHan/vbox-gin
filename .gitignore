@@ -21,6 +21,7 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+*.xdb
 
 /server/log/
 /server/gva

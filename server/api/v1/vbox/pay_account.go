@@ -203,3 +203,27 @@ func (paccApi *PayAccountApi) GetPayAccountList(c *gin.Context) {
 		}, "获取成功", c)
 	}
 }
+
+// GetPAccGateway 用付方信道地址（API）
+// @Tags Proxy
+// @Summary 用id查询信道
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vbox.Proxy true "用id查询信道"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /pacc/getPAccGateway [get]
+func (paccApi *PayAccountApi) GetPAccGateway(c *gin.Context) {
+	var req vboxReq.VboxProxySearch
+	err := c.ShouldBindQuery(&req)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if reProxy, err := paccService.GetPAccGateway(req); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败", c)
+	} else {
+		response.OkWithData(reProxy, c)
+	}
+}

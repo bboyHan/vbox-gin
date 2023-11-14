@@ -16,5 +16,6 @@ func (s *PayOrderRouter) InitPayOrderRouter(Router *gin.RouterGroup) {
 		payOrderRouterWithoutRecord.GET("findPayOrder", payOrderApi.FindPayOrder)       // 根据ID获取订单
 		payOrderRouterWithoutRecord.GET("getPayOrderList", payOrderApi.GetPayOrderList) // 获取订单列表
 		payOrderRouterWithoutRecord.GET("queryIpRegion", payOrderApi.QueryIpRegion)     // 查询IP区域
+		payOrderRouterWithoutRecord.POST("orderTest", payOrderApi.CreateOrderTest)      // 测试订单
 	}
 }

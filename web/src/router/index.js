@@ -15,6 +15,21 @@ const routes = [{
   component: () => import('@/view/login/index.vue')
 },
 {
+  path: '/pay',
+  name: 'Pay',
+  component: () => import('@/view/vbox/payOrder/orderDetail.vue')
+},
+{
+  path: '/payTest',
+  name: 'PayTest',
+  component: () => import('@/view/vbox/payOrder/orderTest.vue')
+},
+// {
+//   path: '/order/:ch',
+//   name: 'OrderTask',
+//   component: () => import('@/view/vbox/order/orderPayTask.vue')
+// },
+{
   path: '/:catchAll(.*)',
   meta: {
     closeTab: true,
