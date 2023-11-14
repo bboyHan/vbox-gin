@@ -61,7 +61,7 @@ export const useRouterStore = defineStore('router', () => {
   const SetAsyncRouter = async() => {
     asyncRouterFlag.value++
     const baseRouter = [{
-      path: '/layout',
+      path: '/',
       name: 'layout',
       component: 'view/layout/index.vue',
       meta: {

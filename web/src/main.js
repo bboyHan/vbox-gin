@@ -14,8 +14,6 @@ import auth from '@/directive/auth'
 import { store } from '@/pinia'
 import App from './App.vue'
 import { initDom } from './utils/positionToCode'
-import VForm3 from 'vform3-builds'
-import 'vform3-builds/dist/designer.style.css'
 
 initDom()
 /**
@@ -39,7 +37,6 @@ app
   .use(store)
   .use(auth)
   .use(router)
-  .use(VForm3)
   .mount('#app')
 
 export default app

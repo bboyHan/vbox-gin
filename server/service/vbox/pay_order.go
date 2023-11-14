@@ -299,7 +299,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	var total int64 = 0
 	// 1. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 
-	idList := utils2.GetCurrentUserIDs(vpo.UserId)
+	idList := utils2.GetDeepUserIDs(vpo.UserId)
 	db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").
 		Where("uid in ?", idList).Count(&total)
 
@@ -365,11 +365,11 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 func HandelPayUrl2Pacc(orderId string) (string, error) {
 	conn := global.GVA_REDIS.Conn()
 	defer conn.Close()
-	key := "pacc_create"
+	key := global.PAccPay
 	var url string
 	//paccCreateUrl, err := global.GVA_REDIS.Ping(context.Background()).Result()
-	paccCreateUrl, err := conn.Ping(context.Background()).Result()
-	fmt.Printf(paccCreateUrl)
+	//paccCreateUrl, err := conn.Ping(context.Background()).Result()
+	//fmt.Printf(paccCreateUrl)
 	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
 	if count == 0 {
 		if err != nil {
@@ -380,7 +380,7 @@ func HandelPayUrl2Pacc(orderId string) (string, error) {
 
 		var proxy vbox.Proxy
 		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
-		err = db.Where("status = ?", 1).Where("chan = ?", "pacc_create").
+		err = db.Where("status = ?", 1).Where("chan = ?", key).
 			First(&proxy).Error
 		if err != nil || proxy.Url == "" {
 			return "", err

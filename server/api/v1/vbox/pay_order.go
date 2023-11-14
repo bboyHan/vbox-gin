@@ -74,9 +74,11 @@ func (vpoApi *PayOrderApi) CreateOrderTest(c *gin.Context) {
 				return
 			}
 		} else {
-			if vpo.AuthCaptcha != "666" {
-				err = errors.New("双因子认证码错误")
-				response.FailWithMessage(err.Error(), c)
+			var capAuth string
+			err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+				Where("chan = ?", "auth_captcha").Where("type = ? and status = ?", 1, 1).
+				Find(&capAuth).Error
+			if vpo.AuthCaptcha != capAuth || err != nil {
 				return
 			}
 		}

@@ -4,7 +4,7 @@ import getPageTitle from '@/utils/page'
 import router from '@/router'
 import Nprogress from 'nprogress'
 
-const whiteList = ['Login', 'Init']
+const whiteList = ['Login', 'Init', 'Pay', 'PayTest']
 
 const getRouter = async(userStore) => {
   const routerStore = useRouterStore()
@@ -44,12 +44,15 @@ router.beforeEach(async(to, from) => {
   const token = userStore.token
   // 在白名单中的判断情况
   document.title = getPageTitle(to.meta.title, to)
+  console.log(to.name)
   if (whiteList.indexOf(to.name) > -1) {
     if (token) {
       if (!routerStore.asyncRouterFlag && whiteList.indexOf(from.name) < 0) {
         await getRouter(userStore)
       }
       // token 可以解析但是却是不存在的用户 id 或角色 id 会导致无限调用
+      // 这里我给他注释掉，即便有默认初始的跳转路由存在时，不想让它跳转（防止无需授权的页面被强制跳转）
+     /* console.log(userStore.userInfo?.authority?.defaultRouter)
       if (userStore.userInfo?.authority?.defaultRouter != null) {
         if (router.hasRoute(userStore.userInfo.authority.defaultRouter)) {
           return { name: userStore.userInfo.authority.defaultRouter }
@@ -65,7 +68,8 @@ router.beforeEach(async(to, from) => {
             redirect: document.location.hash
           }
         }
-      }
+      }*/
+      return true
     } else {
       return true
     }
@@ -84,9 +88,10 @@ router.beforeEach(async(to, from) => {
         } else {
           return {
             name: 'Login',
-            query: { redirect: to.href }
+            query: {redirect: to.href}
           }
         }
+        return { ...to, replace: true }
       } else {
         if (to.matched.length) {
           return true

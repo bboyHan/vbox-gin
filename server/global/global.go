@@ -34,18 +34,24 @@ const (
 )
 
 const (
+	PAccPay    = "pacc_pay"
+	PAccCreate = "pacc_create"
+	PAccQuery  = "pacc_query"
+)
+
+const (
 	WalletRechargeType = 1 // 直充
 	WalletTransferType = 2 // 划转
 	WalletOrderType    = 3 // 订单积分消费
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                         // 充值
-	WalletEventTransferPrefix = "VBTS"                         // 划转
-	WalletEventOrderPrefix    = "VBOD"                         // 订单消费
-	WalletEventRecharge       = "充值积分[%d]"                 // 充值
+	WalletEventRechargePrefix = "VBIN"                // 充值
+	WalletEventTransferPrefix = "VBTS"                // 划转
+	WalletEventOrderPrefix    = "VBOD"                // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"            // 充值
 	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 划转
-	WalletEventIncome         = "积分增加[%d], 来自[%s]"       // 划转
+	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 划转
 )
 
 var (

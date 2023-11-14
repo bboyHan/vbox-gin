@@ -95,3 +95,36 @@ export const getPayOrderList = (params) => {
     params
   })
 }
+
+
+// @Tags PayOrder
+// @Summary 创建VboxPayOrder
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.VboxPayOrder true "创建VboxPayOrder"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /vpo/orderTest [post]
+export const createOrderTest = (data) => {
+  return service({
+    url: '/payOrder/orderTest',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags PayOrder
+// @Summary 用order_id查询VboxPayOrder
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query model.VboxPayOrder true "用id查询VboxPayOrder"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vpo/findVboxPayOrder [get]
+export const queryOrderSimple = (params) => {
+  return service({
+    url: '/order/detail',
+    method: 'get',
+    params
+  })
+}

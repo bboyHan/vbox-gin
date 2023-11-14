@@ -95,3 +95,10 @@ func (paccService *PayAccountService) GetPayAccountInfoList(info vboxReq.PayAcco
 	err = db.Find(&paccs).Error
 	return paccs, total, err
 }
+
+// GetPAccGateway 根据id获取信道记录
+func (paccService *PayAccountService) GetPAccGateway(req vboxReq.VboxProxySearch) (vboxProxy vbox.Proxy, err error) {
+	Chan := req.Chan
+	err = global.GVA_DB.Where("chan = ?", Chan).First(&vboxProxy).Error
+	return
+}
