@@ -190,7 +190,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="地区"  prop="selectedCity" >
+          <el-form-item label="地区"  prop="location" >
             <el-cascader
                 :change-on-select="true"
                 style="width:100%"
@@ -203,7 +203,7 @@
             >
             </el-cascader>
           </el-form-item>
-          <el-form-item label="图片上传"  prop="img_base_str" >
+          <el-form-item label="图片上传"  prop="imgBaseStr" >
             <el-upload
                 class="avatar-uploader"
                 action=""
@@ -362,13 +362,13 @@ const rule = reactive({
     trigger: ['blur'],
   }
   ],
-  selectedCity: [{
+  location: [{
     required: true,
     message: '请选择省或者省市',
     trigger: ['input', 'blur'],
   }
   ],
-  img_base_str: [{
+  imgBaseStr: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
