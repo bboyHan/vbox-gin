@@ -105,6 +105,6 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Where("created_by in ?", ids).Find(&vboxChannelPayCodes).Error
+	err = db.Where("created_by in ?", ids).Order("id desc").Find(&vboxChannelPayCodes).Error
 	return vboxChannelPayCodes, total, err
 }
