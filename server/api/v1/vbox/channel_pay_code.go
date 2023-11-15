@@ -9,6 +9,7 @@ import (
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -34,8 +35,19 @@ func (channelPayCodeApi *ChannelPayCodeApi) CreateChannelPayCode(c *gin.Context)
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 验证图片二维码合法性
+	imgB64 := channelPayCode.ImgBaseStr
+	content, err := captcha.ParseQrCodeImageFromBase64(imgB64)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	global.GVA_LOG.Info("图片解析内容 ----", zap.Any("content", content))
+
+	channelPayCode.ImgContent = content
 	channelPayCode.CreatedBy = utils.GetUserID(c)
-	if err := channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
+	if err = channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
 	} else {
