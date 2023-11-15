@@ -374,6 +374,12 @@ const rule = reactive({
     trigger: ['input', 'blur'],
   }
   ],
+  money: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  }
+  ]
   
 })
 
@@ -732,15 +738,17 @@ const getDetails = async (row) => {
 const closeDetailShow = () => {
   detailShow.value = false
   formData.value = {
-        cid: '',
-        acAccount: '',
-        acId: '',
-        acRemark: '',
-        timeLimit: '',
-        operator: '',
-        location: '',
-        imgBaseStr: '',
-        uid: 0
+          cid: '',
+          acId: '',
+          acAccount: '',
+          acRemark: '',
+          timeLimit: '',
+          operator: '',
+          location: '',
+          imgBaseStr: '',
+          mid: '',
+          codeStatus: 0,
+          money: 0,
           }
 }
 
@@ -752,33 +760,36 @@ const openDialog = () => {
     dialogFormVisible.value = true
     // getALlChannelAccount()
     formData.value = {
-        cid: '',
-        acAccount: '',
-        acId: '',
-        acRemark: '',
-        timeLimit: '',
-        operator: '',
-        location: '',
-        imgBaseStr: '',
-        uid: 0
-        }
+          cid: '',
+          acId: '',
+          acAccount: '',
+          acRemark: '',
+          timeLimit: '',
+          operator: '',
+          location: '',
+          imgBaseStr: '',
+          mid: '',
+          codeStatus: 0,
+          money: 0,
+          }
 }
 
 // 关闭弹窗
 const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
-      cid: '',
-      acAccount: '',
-      acId: '',
-      acRemark: '',
-      money: 0,
-      timeLimit: '',
-      operator: '',
-      location: '',
-      imgBaseStr: '',
-      uid: 0
-    }
+          cid: '',
+          acId: '',
+          acAccount: '',
+          acRemark: '',
+          timeLimit: '',
+          operator: '',
+          location: '',
+          imgBaseStr: '',
+          mid: '',
+          codeStatus: 0,
+          money: 0,
+          }
 }
 // 弹窗确定
 const enterDialog = async () => {
