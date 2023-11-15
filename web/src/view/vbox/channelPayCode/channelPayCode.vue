@@ -183,11 +183,14 @@
           </el-form-item>
           <el-form-item label="地区"  prop="selectedCity" >
             <el-cascader
+                :change-on-select="true"
                 style="width:100%"
                 :options="optionsRegion"
                 v-model="selectedCity"
                 @change="chge"
                 placeholder="省 / 市 / 区"
+                filterable
+                :props="{checkStrictly: true}"
             >
             </el-cascader>
           </el-form-item>
@@ -312,9 +315,65 @@ const formData = ref({
         })
 
 
+
 // 验证规则
 const rule = reactive({
+  acAccount: [{
+    required: true,
+    message: '',
+    trigger: [ 'blur'],
+  }
+  ],
+  cid: [{
+    required: true,
+    message: '请选择',
+    trigger: [ 'blur'],
+  }
+  ],
+  acId: [{
+    required: true,
+    message: '请选择',
+    trigger: ['input', 'blur'],
+  }
+  ],
+  timeLimit: [{
+    required: true,
+    message: '过期时刻要大于当前时间',
+    trigger: [ 'blur'],
+  },
+  { 
+      validator: checkExpirationTime, 
+      trigger: 'blur' 
+    }
+  ],
+  operator: [{
+    required: true,
+    message: '',
+    trigger: ['blur'],
+  }
+  ],
+  selectedCity: [{
+    required: true,
+    message: '请选择省或者省市',
+    trigger: ['input', 'blur'],
+  }
+  ],
+  img_base_str: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  }
+  ],
+  
 })
+
+function checkExpirationTime(rule, value, callback) {
+  if (new Date(value).getTime() <= new Date().getTime()) {
+    callback(new Error('过期时刻要大于当前时间'));
+  } else {
+    callback();
+  }
+}
 
 const searchRule = reactive({
   createdAt: [
@@ -396,8 +455,10 @@ const optionsRegion = regionData;
 const chge = () => {
   const lastElement = selectedCity.value[selectedCity.value.length - 1]
   formData.value.location = lastElement
-  console.log(optionsRegion);
+  console.log(selectedCity);
 };
+
+
 
 // --------- 获取通信商 -----------
 const operatorSelect = ref('')
@@ -677,8 +738,20 @@ const closeDetailShow = () => {
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
+    selectedCity.value = [];
     dialogFormVisible.value = true
     // getALlChannelAccount()
+    formData.value = {
+        cid: '',
+        acAccount: '',
+        acId: '',
+        acRemark: '',
+        timeLimit: '',
+        operator: '',
+        location: '',
+        imgBaseStr: '',
+        uid: 0
+        }
 }
 
 // 关闭弹窗
