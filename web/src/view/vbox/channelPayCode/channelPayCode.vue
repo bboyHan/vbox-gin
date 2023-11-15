@@ -94,6 +94,8 @@
             </el-button>
           </template>
         </el-table-column>
+        <el-table-column align="left" label="金额" prop="money" width="80" >
+        </el-table-column>
         <el-table-column align="left" label="付款码" prop="imgBaseStr" width="120" >
           <template #default="{ row }">
             <div v-if="!dialogImageShow[row.ID]">
@@ -155,6 +157,13 @@
                   :value="item.acId"
               />
             </el-select>
+          </el-form-item>
+          <el-form-item label="金额"  prop="money" >
+              <el-input v-model.number="formData.money"
+                        placeholder="输入金额"
+                        :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                        :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
+              </el-input>
           </el-form-item>
           <el-form-item label="过期时间"  prop="timeLimit" >
             <el-date-picker
@@ -302,17 +311,18 @@ const toggleDialog = (id) => {
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        cid: '',
-        acAccount: '',
-        acId: '',
-        acRemark: '',
-        timeLimit: '',
-        operator: '',
-        location: '',
-        imgBaseStr: '',
-        mid: '',
-        codeStatus: 0,
-        })
+  cid: '',
+  acId: '',
+  acAccount: '',
+  acRemark: '',
+  timeLimit: '',
+  operator: '',
+  location: '',
+  imgBaseStr: '',
+  mid: '',
+  codeStatus: 0,
+  money: 0,
+})
 
 
 
@@ -758,16 +768,17 @@ const openDialog = () => {
 const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
-        cid: '',
-        acAccount: '',
-        acId: '',
-        acRemark: '',
-        timeLimit: '',
-        operator: '',
-        location: '',
-        imgBaseStr: '',
-        uid: 0
-        }
+      cid: '',
+      acAccount: '',
+      acId: '',
+      acRemark: '',
+      money: 0,
+      timeLimit: '',
+      operator: '',
+      location: '',
+      imgBaseStr: '',
+      uid: 0
+    }
 }
 // 弹窗确定
 const enterDialog = async () => {
@@ -775,6 +786,9 @@ const enterDialog = async () => {
   elFormRef.value?.validate( async (valid) => {
         // console.log('formData' + JSON.stringify(formData.value))
         if (!valid) return
+
+    formData.value.money = Number(formData.value.money)
+
         let res
         switch (type.value) {
           case 'create':
