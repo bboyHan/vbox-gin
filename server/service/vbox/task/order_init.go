@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+// 订单等待查询
+// - 订单确认查询
 const (
 	OrderWaitExchange = "vbox.order.waiting_exchange"
 	OrderWaitQueue    = "vbox.order.waiting_queue"

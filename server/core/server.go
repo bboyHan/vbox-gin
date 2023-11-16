@@ -36,6 +36,7 @@ func RunWindowsServer() {
 	if global.GVA_CONFIG.System.UseMQTask {
 		go task.OrderWaitingTask()
 		go task.OrderConfirmTask()
+		go task.ChanAccEnableCheckTask()
 	}
 	//TODO 任务入口
 	//initialize.Timer()
