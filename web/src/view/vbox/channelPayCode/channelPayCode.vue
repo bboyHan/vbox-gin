@@ -142,11 +142,12 @@
                 style="width: 100%"
             />
           </el-form-item>
-          <el-form-item label="通道账户"  prop="acAccount" >
+          <el-form-item label="通道账户"  prop="acId" >
             <el-select
                 v-model="formData.acId"
                 placeholder="请选择通道账号"
                 filterable
+                clearable
                 style="width: 100%"
                 @change="handleAccChange"
             >
@@ -324,7 +325,20 @@ const formData = ref({
   money: 0,
 })
 
-
+const accFormData = ref({
+  acId: '',
+  acRemark: '',
+  acAccount: '',
+  acPwd: '',
+  token: '',
+  cid: '',
+  countLimit: 0,
+  dailyLimit: 0,
+  totalLimit: 0,
+  status: 0,
+  sysStatus: 0,
+  uid: 0,
+})
 
 // 验证规则
 const rule = reactive({
@@ -495,21 +509,25 @@ const operators = [
 
 // ------- 获取通道账号 -------
 const accList = ref([])
+const acIdList = ref([])
 const sysUserAcId = ref('')
-const endTime = ref('')
+const selectCid = ref('')
 const handleAccChange = (value) => {
   // console.log(value)
-  getACCChannelAccountByAcid()
+  // getACCChannelAccountByAcid()
+  getALlChannelAccount()
+
 }
 // 获取唯一通道账号
 const getACCChannelAccountByAcid = async() => {
   const res = await getChannelAccountList({ acId: formData.value.acId ,page: 1, pageSize: 999})
-  accList.value = res.data.list
+  acIdList.value = res.data.list
   total.value = res.data.total
   // console.log(JSON.stringify(accList))
-  formData.value.acAccount = accList.value[0].acAccount
-  formData.value.acRemark = accList.value[0].acRemark
+  formData.value.acAccount = acIdList.value[0].acAccount
+  formData.value.acRemark = acIdList.value[0].acRemark
   console.log(JSON.stringify(formData.value))
+  return res
 }
 
 
@@ -793,7 +811,11 @@ const closeDialog = () => {
 }
 // 弹窗确定
 const enterDialog = async () => {
-  console.log('formData' + JSON.stringify(formData.value))
+  const accInfo = await getACCChannelAccountByAcid()
+
+  console.log('accInfo ' + JSON.stringify(accInfo.data.list))
+  console.log('formData pre' + JSON.stringify(formData.value))
+  
   elFormRef.value?.validate( async (valid) => {
         // console.log('formData' + JSON.stringify(formData.value))
         if (!valid) return
