@@ -205,7 +205,7 @@ func GetUserIDS(c *gin.Context) []uint {
 func GetOrgIDS(c *gin.Context) []uint {
 	user := utils.GetUserInfo(c)
 	var data model.DataAuthority
-	err := global.GVA_DB.Debug().First(&data, "authority_id = ?", user.AuthorityId).Error
+	err := global.GVA_DB.First(&data, "authority_id = ?", user.AuthorityId).Error
 	if err != nil {
 		global.GVA_LOG.Error(fmt.Sprintf("err: %s", err))
 		return []uint{}

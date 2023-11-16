@@ -46,3 +46,11 @@ export const getSysOperationRecordList = (params) => {
     params
   })
 }
+
+export const getSysOperationRecordSelf = (params) => {
+  return service({
+    url: '/sysOperationRecord/getSysOperationRecordSelf',
+    method: 'get',
+    params
+  })
+}

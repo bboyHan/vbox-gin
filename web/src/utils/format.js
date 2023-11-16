@@ -1,6 +1,19 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 
+// 付款码状态
+export const formatStatus2ETag = (status) => {
+  if(status >= 500) {
+    return 'danger'
+  } else if(status >= 200 && status <= 299) {
+    return 'success'
+  } else if(status >= 300 && status <= 499) {
+    return ''
+  } else {
+    return 'info'
+  }
+}
+
 // 格式化时间为时分秒的形式(时分秒)
 export const formatTime = (seconds) => {
   const hours = Math.floor(seconds / 3600);

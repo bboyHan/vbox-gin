@@ -193,7 +193,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 
 // CountAcc 查询可用通道的 当前等待取用的账号个数
 func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.ChannelAccountUnused, err error) {
-	err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
+	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
 		Group("cid").Order("id desc").Find(&res).Error
 	return res, err
 }
