@@ -2,6 +2,7 @@ package vbox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -9,8 +10,12 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
+	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"github.com/gin-gonic/gin"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -233,7 +238,46 @@ func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.I
 
 // SwitchEnableChannelAccount 开关通道账号
 // Author [bboyhan](https://github.com/bboyhan)
-func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.ChannelAccountUpd) (err error) {
+func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.ChannelAccountUpd, c *gin.Context) (err error) {
+	var vcaDB vbox.ChannelAccount
+	err = global.GVA_DB.Where("id = ?", vca.ID).First(&vcaDB).Error
+	if err != nil {
+		return fmt.Errorf("不存在的账号，请核查")
+	}
+
+	// 如果是开启，则发起一条消息，去查这个账号是否能开启
+	if vca.Status == 1 {
+		go func() {
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			body := http2.DoGinContextBody(c)
+
+			oc := vboxReq.ChanAccAndCtx{
+				Obj: vcaDB,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  c.ClientIP(),
+					Method:    c.Request.Method,
+					UrlPath:   c.Request.URL.Path,
+					UserAgent: c.Request.UserAgent(),
+					UserID:    int(vcaDB.CreatedBy),
+				},
+			}
+			marshal, err := json.Marshal(oc)
+
+			err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+		}()
+	}
+
 	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Error
 	return err
 }

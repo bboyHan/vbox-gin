@@ -86,7 +86,7 @@ func (vcaApi *ChannelAccountApi) SwitchEnableChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := vcaService.SwitchEnableChannelAccount(channelAccount); err != nil {
+	if err := vcaService.SwitchEnableChannelAccount(channelAccount, c); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {

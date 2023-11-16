@@ -2,12 +2,15 @@ package http
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	"github.com/gin-gonic/gin"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -299,4 +302,31 @@ func (c *FastHttpClient) sendRequest(method, url string, options *RequestOptions
 	})
 
 	return response, nil
+}
+
+func DoGinContextBody(c *gin.Context) []byte {
+	var body []byte
+	if c.Request.Method != http.MethodGet {
+		var err error
+		body, err = io.ReadAll(c.Request.Body)
+		if err != nil {
+			global.GVA_LOG.Error("read body from request error:", zap.Error(err))
+		} else {
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+		}
+	} else {
+		query := c.Request.URL.RawQuery
+		query, _ = url.QueryUnescape(query)
+		split := strings.Split(query, "&")
+		m := make(map[string]string)
+		for _, v := range split {
+			kv := strings.Split(v, "=")
+			if len(kv) == 2 {
+				m[kv[0]] = kv[1]
+			}
+		}
+		body, _ = json.Marshal(&m)
+	}
+
+	return body
 }
