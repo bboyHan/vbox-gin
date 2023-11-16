@@ -130,8 +130,8 @@
         />
       </div>
     </div>
-    <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
-      <el-scrollbar height="600px" >
+    <el-dialog width="25%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+      <el-scrollbar height="450px" >
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="通道" prop="cid">
             <el-cascader
@@ -813,8 +813,8 @@ const closeDialog = () => {
 const enterDialog = async () => {
   const accInfo = await getACCChannelAccountByAcid()
 
-  console.log('accInfo ' + JSON.stringify(accInfo.data.list))
-  console.log('formData pre' + JSON.stringify(formData.value))
+  // console.log('accInfo ' + JSON.stringify(accInfo.data.list))
+  // console.log('formData pre' + JSON.stringify(formData.value))
   
   elFormRef.value?.validate( async (valid) => {
         // console.log('formData' + JSON.stringify(formData.value))
