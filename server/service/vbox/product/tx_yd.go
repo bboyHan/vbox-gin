@@ -1,10 +1,12 @@
 package product
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"go.uber.org/zap"
@@ -29,6 +31,41 @@ var headers = map[string]string{
 var options = &vbHttp.RequestOptions{
 	Headers:      headers,
 	MaxRedirects: 3,
+}
+
+func QryQQRecords(vca vbox.ChannelAccount) error {
+	var Url string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.TxContains(vca.Cid) { // tx系
+			channelCode = "qb_proxy"
+		}
+
+		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&Url).Error
+
+		if err != nil {
+			return errors.New("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, Url, 10*time.Minute)
+
+	} else {
+		Url, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+	}
+
+	openID, openKey, err := Secret(vca.Token)
+	if err != nil {
+		return err
+	}
+	records := Records(Url, openID, openKey, 24*30*time.Hour)
+	if records == nil {
+		return errors.New("查询官方记录异常")
+	}
+	//classifier := product.Classifier(records.WaterList)
+	return nil
 }
 
 func Secret(token string) (string, string, error) {

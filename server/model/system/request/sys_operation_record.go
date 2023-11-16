@@ -8,4 +8,5 @@ import (
 type SysOperationRecordSearch struct {
 	system.SysOperationRecord
 	request.PageInfo
+	Ids []uint `json:"ids" form:"ids" url:"ids"`
 }

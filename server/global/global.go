@@ -17,6 +17,19 @@ import (
 	"gorm.io/gorm"
 )
 
+// acc 相关
+
+const (
+	ChanAccDailyUsed       = "chan_acc_daily_used:ac_id:%s"
+	ChanAccTotalUsed       = "chan_acc_total_used:ac_id:%s"
+	ChanAccCountUsed       = "chan_acc_count_used:ac_id:%s"
+	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
+	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
+	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
+	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+)
+
 const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
@@ -33,11 +46,15 @@ const (
 	PayAccPrefix             = "pacc_id:"                   // 商户信息
 )
 
+// PAcc 相关
+
 const (
 	PAccPay    = "pacc_pay"
 	PAccCreate = "pacc_create"
 	PAccQuery  = "pacc_query"
 )
+
+// 用户充值消费相关
 
 const (
 	WalletRechargeType = 1 // 直充

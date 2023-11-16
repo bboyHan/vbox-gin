@@ -67,14 +67,14 @@ func (vcpService *ChannelProductService) GetOrgProductList(ids []uint) (list []v
 	// 创建db
 	var productIds []uint
 	db := global.GVA_DB.Model(&vbox.OrgProduct{})
-	if err = db.Debug().Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", ids).Find(&productIds).Error; err != nil {
+	if err = db.Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", ids).Find(&productIds).Error; err != nil {
 		return
 	}
 
 	db = global.GVA_DB.Model(&vbox.ChannelProduct{})
 	var channelProducts []vbox.ChannelProduct
 
-	err = db.Debug().Select("vbox_channel_product.*").
+	err = db.Select("vbox_channel_product.*").
 		Where("id in ?", productIds).Find(&channelProducts).Error
 
 	channelProducts = SetChildren(channelProducts)
