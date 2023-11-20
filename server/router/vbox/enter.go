@@ -11,4 +11,7 @@ type RouterGroup struct {
 	OrgProductRouter
 	UserWalletRouter
 	VboxChannelPayCodeRouter
+	BdaChIndexDRouter
+	BdaChaccIndexDRouter
+	BdaChShopIndexDRouter
 }
