@@ -10,4 +10,7 @@ type ServiceGroup struct {
 	ChannelShopService
 	UserWalletService
 	ChannelPayCodeService
+	BdaChIndexDService
+	BdaChaccIndexDService
+	BdaChShopIndexDService
 }

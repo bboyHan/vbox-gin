@@ -10,4 +10,7 @@ type ApiGroup struct {
 	ChannelShopApi
 	UserWalletApi
 	ChannelPayCodeApi
+	BdaChIndexDApi
+	BdaChaccIndexDApi
+	BdaChShopIndexDApi
 }
