@@ -150,6 +150,20 @@ func GetDeepUserIDs(id uint) []uint {
 	return GetUsersByOrgIds(orgids)
 }
 
+// GetUsersByOrgId 根据部门获取部门下用户ID(单个)
+func GetUsersByOrgId(orgId uint) []uint {
+	var orgUser []model.OrgUser
+	err := global.GVA_DB.Find(&orgUser, "organization_id = ?", orgId).Error
+	if err != nil {
+		return []uint{}
+	}
+	var userIDS []uint
+	for _, m := range orgUser {
+		userIDS = append(userIDS, m.SysUserID)
+	}
+	return Uniq(userIDS)
+}
+
 // 根据部门获取部门下用户ID
 func GetUsersByOrgIds(orgIds []uint) []uint {
 	var orgUser []model.OrgUser

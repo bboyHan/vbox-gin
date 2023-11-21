@@ -20,7 +20,7 @@ func (s *ChannelAccountRouter) InitChannelAccountRouter(Router *gin.RouterGroup)
 		vcaRouter.DELETE("deleteChannelAccountByIds", vcaApi.DeleteChannelAccountByIds) // 批量删除通道账号
 		vcaRouter.PUT("updateChannelAccount", vcaApi.UpdateChannelAccount)              // 更新通道账号
 		vcaRouter.PUT("switchEnable", vcaApi.SwitchEnableChannelAccount)                // 开关VboxPayAccount
-		vcaRouter.PUT("switchEnableByIds", vcaApi.SwitchEnableChannelAccountByIds)      // 开关VboxPayAccount
+		vcaRouter.PUT("switchEnableByIds", vcaApi.SwitchEnableChannelAccountByIds)      // 批量开关VboxPayAccount
 	}
 	{
 		vcaRouterWithoutRecord.POST("queryAccOrderHis", vcaApi.QueryAccOrderHis)          // 查询账户所有的充值记录

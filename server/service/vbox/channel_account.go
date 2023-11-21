@@ -223,9 +223,9 @@ func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAc
 
 // DeleteChannelAccountByIds 批量删除通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.IdsReq, deleted_by uint) (err error) {
+func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.IdsReq, deletedBy uint) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
+		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", ids.Ids).Update("deleted_by", deletedBy).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("id in ?", ids.Ids).Delete(&vbox.ChannelAccount{}).Error; err != nil {
@@ -278,14 +278,58 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 		}()
 	}
 
-	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Error
+	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err
 }
 
 // SwitchEnableChannelAccountByIds 批量开关通道账号记录
 // Author [bboyhan](https://github.com/bboyhan)
-func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vboxReq.ChannelAccountUpd, updatedBy uint) (err error) {
+func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vboxReq.ChannelAccountUpd, updatedBy uint, c *gin.Context) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+		// 如果是开启，则发起一条消息，去查这个账号是否能开启
+		if upd.Status == 1 {
+
+			go func() {
+				conn, err := mq.MQ.ConnPool.GetConnection()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+				}
+				defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+				for _, ID := range upd.Ids {
+					var vcaDB vbox.ChannelAccount
+					err = global.GVA_DB.Where("id = ?", ID).First(&vcaDB).Error
+					if err != nil {
+						fmt.Println("SwitchEnableChannelAccountByIds.不存在的账号，请核查, id:" + strconv.Itoa(int(ID)))
+						continue
+					}
+
+					ch, err := conn.Channel()
+					if err != nil {
+						global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+					}
+
+					body := http2.DoGinContextBody(c)
+
+					oc := vboxReq.ChanAccAndCtx{
+						Obj: vcaDB,
+						Ctx: vboxReq.Context{
+							Body:      string(body),
+							ClientIP:  c.ClientIP(),
+							Method:    c.Request.Method,
+							UrlPath:   c.Request.URL.Path,
+							UserAgent: c.Request.UserAgent(),
+							UserID:    int(vcaDB.CreatedBy),
+						},
+					}
+					marshal, err := json.Marshal(oc)
+
+					err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+				}
+			}()
+		}
+
 		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
 			return err
 		}

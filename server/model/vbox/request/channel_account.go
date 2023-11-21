@@ -16,7 +16,8 @@ type ChannelAccountSearch struct {
 }
 
 type ChannelAccountUpd struct {
-	Ids    []uint `json:"ids" form:"ids" url:"ids"`
-	ID     uint   `json:"id" form:"id" url:"id"`
-	Status uint   `json:"status" form:"status" url:"status"`
+	Ids       []uint `json:"ids" form:"ids" url:"ids"`
+	ID        uint   `json:"id" form:"id" url:"id"`
+	Status    uint   `json:"status" form:"status" url:"status"`
+	UpdatedBy uint   `json:"updatedBy" form:"updatedBy" url:"updatedBy"`
 }

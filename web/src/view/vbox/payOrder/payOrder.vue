@@ -125,12 +125,12 @@
             <el-button style="width: 90px" :color="formatNotifyColor(scope.row.callbackStatus)">{{ formatNotify(scope.row.callbackStatus) }}</el-button>
           </template>
         </el-table-column>
-                <el-table-column align="left" label="取码状态" prop="codeUseStatus" width="120">
-                  <template #default="scope">{{ formatBoolean(scope.row.codeUseStatus) }}</template>
-                </el-table-column>
-                <el-table-column align="left" label="异步执行时间" width="180">
-                  <template #default="scope">{{ formatDate(scope.row.asyncTime) }}</template>
-                </el-table-column>
+        <el-table-column align="left" label="取码状态" prop="codeUseStatus" width="120">
+          <template #default="scope">{{ formatBoolean(scope.row.codeUseStatus) }}</template>
+        </el-table-column>
+        <el-table-column align="left" label="异步执行时间" width="180">
+          <template #default="scope">{{ formatDate(scope.row.asyncTime) }}</template>
+        </el-table-column>
         <el-table-column align="left" label="回调时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.callTime) }}</template>
         </el-table-column>

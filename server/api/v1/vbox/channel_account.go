@@ -86,6 +86,8 @@ func (vcaApi *ChannelAccountApi) SwitchEnableChannelAccount(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	channelAccount.UpdatedBy = utils.GetUserID(c)
+
 	if err := vcaService.SwitchEnableChannelAccount(channelAccount, c); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
@@ -111,7 +113,7 @@ func (vcaApi *ChannelAccountApi) SwitchEnableChannelAccountByIds(c *gin.Context)
 		return
 	}
 	updatedBy := utils.GetUserID(c)
-	if err := vcaService.SwitchEnableChannelAccountByIds(upd, updatedBy); err != nil {
+	if err := vcaService.SwitchEnableChannelAccountByIds(upd, updatedBy, c); err != nil {
 		global.GVA_LOG.Error("批量操作失败!", zap.Error(err))
 		response.FailWithMessage("批量操作失败", c)
 	} else {
