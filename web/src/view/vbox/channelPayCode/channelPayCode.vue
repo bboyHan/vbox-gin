@@ -204,15 +204,15 @@
             >
             </el-cascader>
           </el-form-item>
-          <el-form-item label="图片上传"  prop="imgBaseStr" >
+          <el-form-item label="图片上传" >
             <el-upload
                 class="avatar-uploader"
                 action=""
                 :on-change="getFiles"
                 :on-remove="handlePicRemoves"
                 :on-preview="handlePicPreviews"
-                v-model="img_base_str"
-                :limit="1"
+                v-model="lists"
+                :limit="8"
                 list-type="picture-card"
                 :file-list="fileList"
                 :auto-upload="false"
@@ -382,12 +382,12 @@ const rule = reactive({
     trigger: ['input', 'blur'],
   }
   ],
-  imgBaseStr: [{
-    required: true,
-    message: '',
-    trigger: ['input', 'blur'],
-  }
-  ],
+  // imgBaseStr: [{
+  //   required: true,
+  //   message: '',
+  //   trigger: ['input', 'blur'],
+  // }
+  // ],
   money: [{
     required: true,
     message: '',
@@ -428,7 +428,7 @@ const dialogImageUrs = ref("");
 const fileList = ref([]);
 
 const dialogVisibles = ref(false);
-const lists = ref("");
+const lists = ref([]);
 
 const uploadImgToBase64 = (file) => {
 				// 核心方法，将图片转成base64字符串形式
@@ -442,27 +442,52 @@ const uploadImgToBase64 = (file) => {
 					reader.onerror = reject;
 				});
 		}
-const getFiles = async (file, fileList) => {
-  const isLt2M = file.size / 1024 / 1024 < 2;
-  if (isLt2M) {
-    try {
-      const data = await uploadImgToBase64(file.raw);
-      img_base_str.value = data.result;
-      lists.value= data.result;
 
-    } catch (error) {
-      console.error(error);
-    }
-  } else {
-    ElMessage({
-                  type: 'error',
-                  message: '上传图片大小不能超过 2MB!'
-                })
-  }
-  // console.log("fileList-111", fileList);
-  // console.log("file-111", file);
-  formData.value.imgBaseStr=img_base_str.value
+    const getFiles = async (file ,fileList) => {
+        const isLt2M = file.size / 1024 / 1024 < 2;
+        if (isLt2M) {
+          try {
+            const data = await uploadImgToBase64(file.raw);
+            // img_base_str.value = data.result;
+            lists.value.push(data.result) ;
+
+          } catch (error) {
+            console.error(error);
+          }
+        } else {
+          ElMessage({
+                        type: 'error',
+                        message: '上传图片大小不能超过 2MB!'
+                      })
+        }
+
+  
+        console.log("file-111", JSON.stringify(file));
+        console.log("fileList-111", JSON.stringify(fileList));
+        console.log("list-111", JSON.stringify(lists));
+  // formData.value.imgBaseStr=img_base_str.value
 }
+// const getFiles = async (file, fileList) => {
+//   const isLt2M = file.size / 1024 / 1024 < 2;
+//   if (isLt2M) {
+//     try {
+//       const data = await uploadImgToBase64(file.raw);
+//       img_base_str.value = data.result;
+//       lists.value= data.result;
+
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   } else {
+//     ElMessage({
+//                   type: 'error',
+//                   message: '上传图片大小不能超过 2MB!'
+//                 })
+//   }
+//   // console.log("fileList-111", fileList);
+//   // console.log("file-111", file);
+//   formData.value.imgBaseStr=img_base_str.value
+// }
 
 const handlePicRemoves = (file, fileList) => {
   let hideUploadEdit = fileList.length
@@ -790,6 +815,7 @@ const openDialog = () => {
           codeStatus: 0,
           money: 0,
           }
+    
 }
 
 // 关闭弹窗
@@ -808,13 +834,14 @@ const closeDialog = () => {
           codeStatus: 0,
           money: 0,
           }
+    lists.value =[]
 }
 // 弹窗确定
 const enterDialog = async () => {
   const accInfo = await getACCChannelAccountByAcid()
 
-  // console.log('accInfo ' + JSON.stringify(accInfo.data.list))
-  // console.log('formData pre' + JSON.stringify(formData.value))
+  console.log('accInfo ' + JSON.stringify(accInfo.data.list))
+  console.log('formData pre' + JSON.stringify(formData.value))
   
   elFormRef.value?.validate( async (valid) => {
         // console.log('formData' + JSON.stringify(formData.value))
@@ -825,7 +852,15 @@ const enterDialog = async () => {
         let res
         switch (type.value) {
           case 'create':
-            res = await createChannelPayCode(formData.value)
+            // console.log(">>>>>>" + lists.value.length)
+              for (let i = 0; i < lists.value.length; i++) {
+
+                // console.log('formData lists.value[i] ' + i + '  ' + JSON.stringify(lists.value[i]))
+                formData.value.imgBaseStr = lists.value[i]
+                // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
+                res = await createChannelPayCode(formData.value)
+              }
+              
             break
           case 'update':
             res = await updateChannelPayCode(formData.value)
