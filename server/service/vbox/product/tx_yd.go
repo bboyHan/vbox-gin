@@ -61,7 +61,7 @@ func QryQQRecords(vca vbox.ChannelAccount) error {
 		return err
 	}
 	records := Records(Url, openID, openKey, 24*30*time.Hour)
-	if records == nil {
+	if records == nil || records.Ret != 0 {
 		return errors.New("查询官方记录异常")
 	}
 	//classifier := product.Classifier(records.WaterList)

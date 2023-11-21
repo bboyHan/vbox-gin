@@ -19,7 +19,6 @@ import (
 )
 
 // 账号开启查询
-
 const (
 	ChanAccEnableCheckExchange = "vbox.channel.acc_enable_check_exchange"
 	ChanAccEnableCheckQueue    = "vbox.order.acc_enable_check_queue"
@@ -73,14 +72,15 @@ func ChanAccEnableCheckTask() {
 				v := vboxReq.ChanAccAndCtx{}
 				err := json.Unmarshal(msg.Body, &v)
 				if err != nil {
-					global.GVA_LOG.Info("错了，直接丢了..." + err.Error())
+					global.GVA_LOG.Error("错了，直接丢了..." + err.Error())
 					_ = msg.Reject(false)
 					continue
 				}
 
 				// 1. 查询该用户的余额是否充足
 				var balance int
-				err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge), 0) as balance").Where("uid = ?", v.Obj.CreatedBy).Scan(&balance).Error
+				err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge), 0) as balance").
+					Where("uid = ?", v.Obj.CreatedBy).Scan(&balance).Error
 				if err != nil {
 					global.GVA_LOG.Info("查询该用户的余额错了，直接丢了..." + err.Error())
 					_ = msg.Reject(false)
@@ -104,7 +104,8 @@ func ChanAccEnableCheckTask() {
 					if err != nil {
 						global.GVA_LOG.Error("余额不足情况下，record 入库失败..." + err.Error())
 					}
-
+					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+						Update("sys_status", 0).Error
 					// 不允许开启sys_status， 到这里结束
 					_ = msg.Reject(false)
 					continue
@@ -128,6 +129,8 @@ func ChanAccEnableCheckTask() {
 						if err != nil {
 							global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
 							_ = msg.Reject(false)
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
 							continue
 						}
 
@@ -158,6 +161,9 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("当前账号日消耗已经超限额情况下，record 入库失败..." + err.Error())
 							}
 
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+
 							global.GVA_LOG.Info("当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
@@ -171,7 +177,7 @@ func ChanAccEnableCheckTask() {
 					if err == redis.Nil { // redis中无，查一下库
 						var totalSum int
 
-						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
 							Where("ac_id = ?", v.Obj.AcId).
 							Where("order_status = ?", 1).Scan(&totalSum).Error
 
@@ -187,6 +193,7 @@ func ChanAccEnableCheckTask() {
 					} else if err != nil {
 						global.GVA_LOG.Error("当前账号计算总消耗差redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
+
 						continue
 					} else { // redis查出来了，直接比一下
 						if totalUsed > v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
@@ -208,6 +215,8 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("当前账号总消耗已经超限额情况下，record 入库失败..." + err.Error())
 							}
 
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
 							global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
@@ -237,7 +246,7 @@ func ChanAccEnableCheckTask() {
 						_ = msg.Reject(false)
 						continue
 					} else { // redis查出来了，直接比一下
-						if countUsed > v.Obj.TotalLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+						if countUsed > v.Obj.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
 							record := sysModel.SysOperationRecord{
@@ -255,7 +264,8 @@ func ChanAccEnableCheckTask() {
 							if err != nil {
 								global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
 							}
-
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
 							global.GVA_LOG.Info("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
@@ -286,6 +296,8 @@ func ChanAccEnableCheckTask() {
 							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
 						}
 
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							Update("sys_status", 0).Error
 						global.GVA_LOG.Info("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 						_ = msg.Reject(false)
 						continue
@@ -297,7 +309,7 @@ func ChanAccEnableCheckTask() {
 				}
 
 				//2. 校验都没啥问题，开启sys_status = 1，即可以调度订单使用
-				global.GVA_LOG.Info("消息 : ", zap.Any("msg", msg.Body))
+				//global.GVA_LOG.Info("消息 : ", zap.Any("msg", msg.Body))
 				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
 
 				if err != nil {

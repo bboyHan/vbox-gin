@@ -126,7 +126,7 @@ func (bdaChIndexDService *BdaChIndexDService) CronVboxBdaChIndexD() (err error) 
 			yOkGroupedCosts := make(map[string]int)
 
 			for _, order := range yInfoList {
-				uid := strconv.Itoa(order.Uid) + "-" + order.ChannelCode
+				uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode
 				yGroupedCounts[uid]++
 				if order.OrderStatus == 1 {
 					yOkGroupedCounts[uid]++

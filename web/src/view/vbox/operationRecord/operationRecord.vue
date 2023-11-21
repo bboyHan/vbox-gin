@@ -153,8 +153,8 @@ const fmtBody = (value) => {
 .popover-box {
   background: #112435;
   color: #f08047;
-  height: 500px;
-  width: 520px;
+  height: 300px;
+  width: 420px;
   overflow: auto;
 }
 .popover-box::-webkit-scrollbar {

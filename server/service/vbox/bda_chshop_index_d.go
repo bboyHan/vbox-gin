@@ -134,7 +134,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() 
 				yOkGroupedCosts := make(map[string]int)
 
 				for _, order := range yInfoList {
-					uid := strconv.Itoa(order.Uid) + "-" + order.ChannelCode + "-" + order.ResourceUrl
+					uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode + "-" + order.ResourceUrl
 					yGroupedCounts[uid]++
 					if order.OrderStatus == 1 {
 						yOkGroupedCounts[uid]++
