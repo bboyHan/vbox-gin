@@ -5,6 +5,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"gorm.io/gorm"
 	"time"
@@ -107,4 +108,17 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 
 	err = db.Where("created_by in ?", ids).Order("id desc").Find(&vboxChannelPayCodes).Error
 	return vboxChannelPayCodes, total, err
+}
+
+func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocation(info vboxReq.ChannelPayCodeSearch, ids []uint) (list []vboxResp.ChannelPayCodeStatistics, total int64, err error) {
+
+	var payCodeStatisList []vboxResp.ChannelPayCodeStatistics
+	reqLocation := info.Location
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.ChannelPayCode{})
+	var vboxChannelPayCodes []vbox.ChannelPayCode
+	err = db.Where("created_by in ? and location = ?", ids, reqLocation).Order("id desc").Find(&vboxChannelPayCodes).Error
+	//todo 统计逻辑
+	return payCodeStatisList, total, err
+
 }
