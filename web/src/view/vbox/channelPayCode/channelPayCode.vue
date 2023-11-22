@@ -519,15 +519,15 @@ const chge = () => {
 const operatorSelect = ref('')
 const operators = [
   {
-    value: '电信',
+    value: 'dianxin',
     label: '电信',
   },
   {
-    value: '移动',
+    value: 'yidong',
     label: '移动',
   },
   {
-    value: '联通',
+    value: 'liantong',
     label: '联通',
   }
 ]
