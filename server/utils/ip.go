@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
+	"strings"
 	"time"
 )
 
@@ -27,4 +28,16 @@ func SearchIp2Region(ip string) (region string, err error) {
 
 	// 备注：并发使用，每个 goroutine 需要创建一个独立的 searcher 对象。
 	return region, err
+}
+
+func ISP(ispCtx string) string {
+	if strings.Contains(ispCtx, "电信") {
+		return "dianxin"
+	} else if strings.Contains(ispCtx, "联通") {
+		return "liantong"
+	} else if strings.Contains(ispCtx, "移动") {
+		return "yidong"
+	} else {
+		return ""
+	}
 }

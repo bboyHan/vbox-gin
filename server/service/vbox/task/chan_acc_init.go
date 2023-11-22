@@ -141,7 +141,7 @@ func ChanAccEnableCheckTask() {
 						global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
-					} else { // redis查出来了，直接比一下
+					} else {                              // redis查出来了，直接比一下
 						if dailyUsed > v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -195,7 +195,7 @@ func ChanAccEnableCheckTask() {
 						_ = msg.Reject(false)
 
 						continue
-					} else { // redis查出来了，直接比一下
+					} else {                              // redis查出来了，直接比一下
 						if totalUsed > v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -245,7 +245,7 @@ func ChanAccEnableCheckTask() {
 						global.GVA_LOG.Error("当前账号笔数消耗查redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
-					} else { // redis查出来了，直接比一下
+					} else {                              // redis查出来了，直接比一下
 						if countUsed > v.Obj.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -311,6 +311,8 @@ func ChanAccEnableCheckTask() {
 				//2. 校验都没啥问题，开启sys_status = 1，即可以调度订单使用
 				//global.GVA_LOG.Info("消息 : ", zap.Any("msg", msg.Body))
 				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
+
+				//key := fmt.Sprintf(global.ChanOrgAccZSet, strconv.FormatUint(uint64(orgID), 10), chanID)
 
 				if err != nil {
 					_ = msg.Reject(false)
