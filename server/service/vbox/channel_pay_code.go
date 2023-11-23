@@ -1,6 +1,7 @@
 package vbox
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
@@ -8,6 +9,7 @@ import (
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"gorm.io/gorm"
+	"math"
 	"time"
 )
 
@@ -110,15 +112,164 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 	return vboxChannelPayCodes, total, err
 }
 
+/*
+*
+todo 当只选了省或者市包含到下游个数的展示
+*/
 func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocation(info vboxReq.ChannelPayCodeSearch, ids []uint) (list []vboxResp.ChannelPayCodeStatistics, total int64, err error) {
+	query := `
+		    SELECT
+			 code as location,count(mid) as codeNums
+			FROM(
+			
+				SELECT  
+					t.mid,
+					a.name as code
+				from (
+					SELECT location, mid
+					from vbox_channel_pay_code
+					where  location !='' and created_by in ?
+				) t 
+				join geo_provinces a 
+				on a.code = SUBSTRING(t.location,1,?)
+			
+			)b
+			GROUP BY code
+		    ORDER BY codeNums desc
+		;
+		`
 
-	var payCodeStatisList []vboxResp.ChannelPayCodeStatistics
-	reqLocation := info.Location
+	querySubF := `
+		    SELECT
+			 code as location,count(mid) as codeNums
+			FROM(
+				SELECT  
+					t.mid,
+					a.name as code
+				from (
+					SELECT location, mid
+					from vbox_channel_pay_code
+					where  location !='' and created_by in ?
+					and SUBSTRING(location,1,?) = ?
+				) t 
+				join geo_cities a 
+				on a.code = SUBSTRING(t.location,1,?)
+				and LENGTH(location) >= ?
+			
+			)b
+			GROUP BY code
+		    ORDER BY codeNums desc
+		;
+		`
+	querySubS := `
+		    SELECT
+			 code as location,count(mid) as codeNums
+			FROM(
+				SELECT  
+					t.mid,
+					a.name as code
+				from (
+					SELECT location, mid
+					from vbox_channel_pay_code
+					where  location !='' and created_by in ?
+					and SUBSTRING(location,1,?) = ?
+					and LENGTH(location) = ?
+				) t 
+				join geo_areas a 
+				on a.code = SUBSTRING(t.location,1,?)
+			
+			)b
+			GROUP BY code
+		    ORDER BY codeNums desc
+		;
+		`
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.ChannelPayCode{})
-	var vboxChannelPayCodes []vbox.ChannelPayCode
-	err = db.Where("created_by in ? and location = ?", ids, reqLocation).Order("id desc").Find(&vboxChannelPayCodes).Error
-	//todo 统计逻辑
-	return payCodeStatisList, total, err
+
+	var totalGroup int64 = 0
+
+	fmt.Println("info.Location:", info.Location)
+
+	var codeStatisResultList []vboxResp.ChannelPayCodeStatisticsResult
+	// 全国各省
+	if info.Location == "" {
+		fmt.Println("0>>>>>")
+		rows, err := db.Raw(query, ids, 2).Rows()
+		if err != nil {
+			// 处理错误
+		}
+
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxResp.ChannelPayCodeStatisticsResult
+			err := rows.Scan(&result.Location, &result.CodeNums)
+			if err != nil {
+				// 处理错误
+			}
+			codeStatisResultList = append(codeStatisResultList, result)
+			totalGroup += int64(result.CodeNums)
+		}
+
+	}
+
+	if len(info.Location) == 2 {
+		fmt.Println("4>>>>>")
+		rows, err := db.Raw(querySubF, ids, 2, info.Location, 4, 4).Rows()
+		if err != nil {
+			// 处理错误
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxResp.ChannelPayCodeStatisticsResult
+			err := rows.Scan(&result.Location, &result.CodeNums)
+			if err != nil {
+				// 处理错误
+			}
+			codeStatisResultList = append(codeStatisResultList, result)
+			totalGroup += int64(result.CodeNums)
+		}
+	}
+
+	if len(info.Location) == 4 {
+		fmt.Println("6>>>>>")
+		rows, err := db.Raw(querySubS, ids, 4, info.Location, 6, 6).Rows()
+		if err != nil {
+			// 处理错误
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxResp.ChannelPayCodeStatisticsResult
+			err := rows.Scan(&result.Location, &result.CodeNums)
+			if err != nil {
+				// 处理错误
+			}
+			codeStatisResultList = append(codeStatisResultList, result)
+			totalGroup += int64(result.CodeNums)
+		}
+
+	}
+	for i, statis := range codeStatisResultList {
+		fmt.Println("A num: ", i, "code: ", statis.Location, "total", totalGroup, "codeNums", statis.CodeNums)
+		ratio := math.Round(float64(statis.CodeNums)/float64(totalGroup)*10000) / 10000
+		entity := vboxResp.ChannelPayCodeStatistics{
+			Order:    uint(i + 1),
+			Location: statis.Location,
+			CodeNums: statis.CodeNums,
+			Ratio:    ratio,
+		}
+		list = append(list, entity)
+	}
+	total = int64(len(list))
+	fmt.Println("total:", total)
+	if total == 0 {
+		entity := vboxResp.ChannelPayCodeStatistics{
+			Order:    1,
+			Location: "无",
+			CodeNums: 0,
+			Ratio:    1,
+		}
+		list = append(list, entity)
+	}
+	return list, total, err
 
 }
