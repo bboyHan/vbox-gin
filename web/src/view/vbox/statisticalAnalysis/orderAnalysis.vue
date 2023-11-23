@@ -26,9 +26,9 @@
                 :default-sort="{ prop: 'codeNums', order: 'descending' }"
                 >
                 <el-table-column align="left" label="排名" prop="order" width="100" />
-                <el-table-column align="left" label="区域" prop="location" width="120" />
+                <el-table-column align="left" label="下层区域" prop="location" width="120" />
                 <el-table-column align="left" label="产码数" prop="codeNums" width="100" />
-                <el-table-column align="left" label="占比" prop="ratio" width="120" />
+                <el-table-column align="left" label="占比" prop="ratio" width="120" :formatter="formatPercentage"/>
                 </el-table>
                 <div class="gva-pagination">
                     <el-pagination
@@ -56,6 +56,12 @@
   getBdaChIndexDList
 } from '@/api/bdaChIndexD'
 
+import {
+  getChannelPayCodeStatisByLocation
+} from '@/api/channelPayCode'
+
+
+const location = ref('');
 // =========== 表格控制部分 ===========
 const page = ref(1)
 const total = ref(0)
@@ -93,7 +99,7 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getBdaChIndexDList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, location: location.value })
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
@@ -102,8 +108,29 @@ const getTableData = async() => {
   }
 }
 
+
+
 getTableData()
 
+
+const formatPercentage = (row, column, cellValue) => {
+  return (cellValue * 100).toFixed(2) + '%';
+};
+
+// ---地图悬浮显示
+const provicesData = ref([
+
+])
+const getProviceTableData = async() => {
+  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, location: location.value })
+  if (table.code === 0) {
+    provicesData.value = table.data.list
+    // console.log(JSON.stringify(provicesData.value ))
+  }
+}
+
+
+getProviceTableData()
 // ==== map ===
 
   
@@ -126,19 +153,24 @@ getTableData()
             },
             // 自定义提示框自动调用函数
             formatter: function (params) {
-                console.log('params', params)
-                console.log('params json', JSON.stringify(params))
-                console.log('params name', params.name)
+                // console.log('params', params)
+                // console.log('params json', JSON.stringify(params))
+                // console.log('params name', params.name)
                 let provinceName = params.name
                 let adcode = ''; 
+                let codenums = ''; 
                 if (provinceName) {
                     // 查找当前省份对应的 adcode
                     let feature = mapData.features.find(item => item.properties.name === provinceName);
                     adcode = feature?.properties.adcode;
-                    console.log('params adcode', adcode)
+                    // console.log('params adcode', adcode)
+                    // console.log('params provicesData', JSON.stringify(provicesData.value))
+                    const filteredData = provicesData.value.filter(item => item.location === provinceName);
+                    codenums = filteredData.length > 0 ? filteredData.map(item => item.codeNums) : 0;
+                    // console.log('params codenums', codenums)
                 }
                 // 将adcode信息添加到弹框中进行展示
-                return `${provinceName} <br/> adcode: ${adcode}`; 
+                return `省份: ${provinceName} <br/> adcode: ${adcode} <br/> 产码数: ${codenums}`; 
             },
           },
         geo: {
@@ -302,15 +334,15 @@ getTableData()
   // ------------获取省市 -------
 const selectedCity = ref([]);
 
-const location = ref('');
 const optionsRegion = regionData;
 const chge = () => {
 
   const lastElement = selectedCity.value[selectedCity.value.length - 1]
   location.value= lastElement
-  console.log(selectedCity);
+//   console.log(selectedCity);
   console.log('location:', location.value);
-  showProvince('山西省')
+//   showProvince('山西省')
+    getTableData()
 };
 
 // ---------   -----
@@ -338,7 +370,7 @@ const emphasisAreaColor = ["#1D99F5 ", "#1D99F5 "]; //移入地图省份时的�
   #myecharts {
     width: 1400px;
     height: 1100px;
-    margin-left: -200px;
+    margin-left: -100px;
   }
 
   .container {

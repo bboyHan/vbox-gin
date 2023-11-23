@@ -21,7 +21,8 @@ func (s *VboxChannelPayCodeRouter) InitChannelPayCodeRouter(Router *gin.RouterGr
 		vboxChannelPayCodeRouter.PUT("updateChannelPayCode", vboxChannelPayCodeApi.UpdateVboxChannelPayCode)          // 更新通道账户付款二维码
 	}
 	{
-		vboxChannelPayCodeRouterWithoutRecord.GET("findChannelPayCode", vboxChannelPayCodeApi.FindChannelPayCode)       // 根据ID获取通道账户付款二维码
-		vboxChannelPayCodeRouterWithoutRecord.GET("getChannelPayCodeList", vboxChannelPayCodeApi.GetChannelPayCodeList) // 获取通道账户付款二维码列表
+		vboxChannelPayCodeRouterWithoutRecord.GET("findChannelPayCode", vboxChannelPayCodeApi.FindChannelPayCode)                               // 根据ID获取通道账户付款二维码
+		vboxChannelPayCodeRouterWithoutRecord.GET("getChannelPayCodeList", vboxChannelPayCodeApi.GetChannelPayCodeList)                         // 获取通道账户付款二维码列表
+		vboxChannelPayCodeRouterWithoutRecord.GET("getChannelPayCodeStatisByLocation", vboxChannelPayCodeApi.GetChannelPayCodeStatisByLocation) // 分页获取二维码统计排名列表
 	}
 }

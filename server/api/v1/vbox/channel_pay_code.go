@@ -184,16 +184,16 @@ func (channelPayCodeApi *ChannelPayCodeApi) GetChannelPayCodeList(c *gin.Context
 	}
 }
 
-// GetChannelPayCodeList 分页获取通道账户付款二维码列表
+// GetChannelPayCodeStatisByLocation 分页获取二维码统计排名列表
 // @Tags ChannelPayCode
 // @Summary 分页获取通道账户付款二维码列表
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data query vboxReq.ChannelPayCodeSearch true "分页获取通道账户付款二维码列表"
+// @Param data query vboxReq.getChannelPayCodeStatisByLocation true "分页获取二维码统计排名列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
-// @Router /vboxChannelPayCode/getVboxChannelPayCodeList [get]
-func (channelPayCodeApi *ChannelPayCodeApi) GetChannelPayCodeNumsByLocation(c *gin.Context) {
+// @Router /vboxChannelPayCode/getChannelPayCodeStatisByLocation [get]
+func (channelPayCodeApi *ChannelPayCodeApi) GetChannelPayCodeStatisByLocation(c *gin.Context) {
 	var pageInfo vboxReq.ChannelPayCodeSearch
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
