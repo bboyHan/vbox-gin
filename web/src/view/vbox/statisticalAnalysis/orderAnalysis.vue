@@ -65,7 +65,7 @@ const location = ref('');
 // =========== 表格控制部分 ===========
 const page = ref(1)
 const total = ref(0)
-const pageSize = ref(10)
+const pageSize = ref(30)
 const tableData = ref([])
 
 
