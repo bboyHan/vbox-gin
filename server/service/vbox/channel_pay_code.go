@@ -114,8 +114,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 
 /*
 *
-todo 当只选了省或者市包含到下游个数的展示
-*/
+ */
 func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocation(info vboxReq.ChannelPayCodeSearch, ids []uint) (list []vboxResp.ChannelPayCodeStatistics, total int64, err error) {
 	query := `
 		    SELECT
@@ -140,60 +139,114 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 		`
 
 	querySubF := `
-		    SELECT
-			 code as location,count(mid) as codeNums
-			FROM(
-				SELECT  
+			SELECT
+			    location,
+			   codeNums
+			from (
+			SELECT code AS location,
+				count( mid ) AS codeNums 
+			FROM
+				(
+				SELECT
 					t.mid,
-					a.name as code
-				from (
-					SELECT location, mid
-					from vbox_channel_pay_code
-					where  location !='' and created_by in ?
-					and SUBSTRING(location,1,?) = ?
-				) t 
-				join geo_cities a 
-				on a.code = SUBSTRING(t.location,1,?)
-				and LENGTH(location) >= ?
-			
-			)b
+					a.name AS code 
+				FROM
+					( SELECT 
+					      location,
+					      mid 
+					  FROM vbox_channel_pay_code 
+					  WHERE location != '' 
+						   AND created_by IN ? 
+						   AND SUBSTRING( location, 1,? ) = ? ) t
+					JOIN geo_cities a ON a.code = SUBSTRING( t.location, 1,? ) 
+					AND LENGTH( location ) >= ? 
+				) b 
 			GROUP BY code
-		    ORDER BY codeNums desc
+			UNION ALL
+			SELECT
+				'无具体省市区' AS location,
+				count( mid ) AS codeNums 
+			FROM
+				( SELECT location, mid FROM vbox_channel_pay_code WHERE location != '' AND created_by IN ? AND location = ? ) c 
+			) d 
+		where codeNums > 0
+		ORDER BY
+				codeNums DESC
 		;
 		`
 	querySubS := `
-		    SELECT
-			 code as location,count(mid) as codeNums
-			FROM(
-				SELECT  
-					t.mid,
-					a.name as code
-				from (
-					SELECT location, mid
-					from vbox_channel_pay_code
-					where  location !='' and created_by in ?
-					and SUBSTRING(location,1,?) = ?
-					and LENGTH(location) = ?
-				) t 
-				join geo_areas a 
-				on a.code = SUBSTRING(t.location,1,?)
-			
-			)b
-			GROUP BY code
-		    ORDER BY codeNums desc
+			SELECT
+				location,
+				codeNums 
+			FROM
+				(
+				SELECT code AS location,
+					count(mid) AS codeNums 
+				FROM
+					(
+					SELECT
+						t.mid,
+						a.name AS code 
+					FROM
+						(
+						SELECT
+							location,
+							mid 
+						FROM
+							vbox_channel_pay_code 
+						WHERE location != '' 
+							AND created_by IN ? 
+							AND SUBSTRING( location, 1,? ) = ? 
+							AND LENGTH( location ) = ? 
+						) t
+						JOIN geo_areas a ON a.code = SUBSTRING( t.location, 1,? ) 
+					) b 
+				GROUP BY code
+				UNION ALL
+				SELECT
+					'无具体省市区' AS location,
+					count( mid ) AS codeNums 
+				FROM
+					( SELECT location, mid FROM vbox_channel_pay_code WHERE location != '' AND created_by IN ? AND location = ? ) c 
+				) d 
+			where codeNums > 0
+			ORDER BY
+				codeNums DESC
 		;
 		`
+
+	querySubCity := `
+		SELECT
+			a.name AS location ,
+			codeNums
+		FROM
+			(
+			SELECT
+				location,
+				count(mid) as codeNums 
+			FROM
+				vbox_channel_pay_code 
+			WHERE location != '' 
+				AND created_by IN ? 
+				AND location = ?
+			group by location
+			) t
+			JOIN geo_areas a
+			ON a.code =  t.location 
+;
+		`
+
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.ChannelPayCode{})
 
 	var totalGroup int64 = 0
 
-	fmt.Println("info.Location:", info.Location)
+	//fmt.Println("info.Location:", info.Location)
 
 	var codeStatisResultList []vboxResp.ChannelPayCodeStatisticsResult
 	// 全国各省
 	if info.Location == "" {
-		fmt.Println("0>>>>>")
+		//fmt.Println("0 >>>>>")
 		rows, err := db.Raw(query, ids, 2).Rows()
 		if err != nil {
 			// 处理错误
@@ -213,8 +266,8 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 	}
 
 	if len(info.Location) == 2 {
-		fmt.Println("4>>>>>")
-		rows, err := db.Raw(querySubF, ids, 2, info.Location, 4, 4).Rows()
+		//fmt.Println("2 >>>>>")
+		rows, err := db.Raw(querySubF, ids, 2, info.Location, 4, 4, ids, info.Location).Rows()
 		if err != nil {
 			// 处理错误
 		}
@@ -231,8 +284,8 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 	}
 
 	if len(info.Location) == 4 {
-		fmt.Println("6>>>>>")
-		rows, err := db.Raw(querySubS, ids, 4, info.Location, 6, 6).Rows()
+		//fmt.Println("4 >>>>>")
+		rows, err := db.Raw(querySubS, ids, 4, info.Location, 6, 6, ids, info.Location).Rows()
 		if err != nil {
 			// 处理错误
 		}
@@ -248,8 +301,27 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 		}
 
 	}
+	if len(info.Location) == 6 {
+		//fmt.Println("6 >>>>>")
+		rows, err := db.Raw(querySubCity, ids, info.Location).Rows()
+		if err != nil {
+			// 处理错误
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxResp.ChannelPayCodeStatisticsResult
+			// scan中有严格的字段顺序 要和sql中的一致
+			err := rows.Scan(&result.Location, &result.CodeNums)
+			if err != nil {
+				// 处理错误
+			}
+			codeStatisResultList = append(codeStatisResultList, result)
+			totalGroup += int64(result.CodeNums)
+		}
+
+	}
 	for i, statis := range codeStatisResultList {
-		fmt.Println("A num: ", i, "code: ", statis.Location, "total", totalGroup, "codeNums", statis.CodeNums)
+		//fmt.Println("A num: ", i, "code: ", statis.Location, "total", totalGroup, "codeNums", statis.CodeNums)
 		ratio := math.Round(float64(statis.CodeNums)/float64(totalGroup)*10000) / 10000
 		entity := vboxResp.ChannelPayCodeStatistics{
 			Order:    uint(i + 1),
