@@ -26,10 +26,11 @@ type Order2PayAccountRes struct {
 
 // OrderSimpleRes 结构体
 type OrderSimpleRes struct {
-	OrderId     string `json:"order_id" form:"order_id" url:"order_id"`
-	Account     string `json:"account" form:"account" url:"account"`
-	ResourceUrl string `json:"resource_url" form:"resource_url" url:"resource_url"`
-	ChannelCode string `json:"channel_code" form:"channel_code" url:"channel_code"`
-	Money       int    `json:"money" form:"money" url:"money"`
-	Status      int    `json:"status" form:"status" url:"status"`
+	OrderId     string    `json:"order_id" form:"order_id" url:"order_id"`
+	Account     string    `json:"account" form:"account" url:"account"`
+	ResourceUrl string    `json:"resource_url" form:"resource_url" url:"resource_url"`
+	ChannelCode string    `json:"channel_code" form:"channel_code" url:"channel_code"`
+	Money       int       `json:"money" form:"money" url:"money"`
+	ExpTime     time.Time `json:"expTime" form:"expTime" url:"expTime"`
+	Status      int       `json:"status" form:"status" url:"status"`
 }

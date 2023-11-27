@@ -46,7 +46,7 @@ func (vcaApi *ChannelAccountApi) QueryAccOrderHis(c *gin.Context) {
 
 	if res, err := vcaService.QueryAccOrderHis(&vca); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
-		response.FailWithMessage("查询失败", c)
+		response.FailWithMessage("查询失败, Info: "+err.Error(), c)
 	} else {
 		response.OkWithData(gin.H{"list": res}, c)
 	}

@@ -48,6 +48,10 @@
             <el-col>
               <div style="color: #e81239; margin-top: 10px; font-size: 16px">
                 <el-icon style="margin-right: 5px"><WarningFilled /></el-icon>请在规定时间内付款！
+                <div>
+                  <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                  <span v-else>-1 （已过期）</span>
+                </div>
               </div>
             </el-col>
             <el-col>
@@ -76,6 +80,10 @@
       <!-- 显示新的 div 的代码... -->
       <h1>已付款成功</h1>
     </div>
+    <div v-show="timeoutVisible">
+      <!-- 显示新的 div 的代码... -->
+      <h1>订单已超时</h1>
+    </div>
   </div>
 
 </template>
@@ -91,11 +99,13 @@ import CountDown from 'vue-canvas-countdown';
 import { queryOrderSimple } from '@/api/payOrder';
 import { useRoute } from 'vue-router';
 import { WarningFilled } from '@element-plus/icons-vue';
+import {formatTime} from "@/utils/format";
 
 // 弹窗控制标记
 const dialogCountVisible = ref(true)
 const payVisible = ref(false)
 const finishedVisible = ref(false)
+const timeoutVisible = ref(false)
 const notFoundVisible = ref(false)
 const route = useRoute()
 
@@ -151,6 +161,7 @@ onMounted(() => {
   fireCD();
   // 启动定时器，每秒钟请求一次 HTTP 接口
   timerId = setInterval(queryOrder, 2000);
+  calculateCountdown();
 });
 
 onUnmounted(() => {
@@ -160,6 +171,7 @@ onUnmounted(() => {
 
 const payData = ref({
   money: 0,
+  expTime: 0,
   resource_url: '',
   status: 0,
 })
@@ -190,6 +202,19 @@ const queryOrder = async () => {
     console.log(error);
   }
 }
+
+// 倒计时数组
+const countdowns = ref([]);
+
+// 计算倒计时
+const calculateCountdown = () => {
+  setInterval(() => {
+    const currentTime = new Date();
+    const timeLimit = new Date(payData.value.expTime);
+    const timeDiffInSeconds = (timeLimit - currentTime) / 1000;
+    countdowns.value[0] = timeDiffInSeconds > 0 ? Math.floor(timeDiffInSeconds) : -1;
+  }, 1000);
+};
 
 
 </script>

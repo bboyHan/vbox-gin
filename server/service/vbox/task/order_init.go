@@ -1,16 +1,21 @@
 package task
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
-	"math/rand"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,6 +33,10 @@ const (
 	OrderConfirmDeadRoutingKey    = "vbox.order.confirm_dead_routing_key"
 	OrderConfirmDeadExchange      = "vbox.order.confirm_dead_exchange"
 	OrderConfirmDeadQueue         = "vbox.order.confirm_dead_queue"
+
+	OrderCallbackExchange = "vbox.order.callback_exchange"
+	OrderCallbackQueue    = "vbox.order.callback_queue"
+	OrderCallbackKey      = "vbox.order.callback"
 )
 
 // OrderWaitingTask 订单入库匹配
@@ -68,66 +77,162 @@ func OrderWaitingTask() {
 			}
 
 			for msg := range deliveries {
-				//v := &map[string]interface{}{}
-				//err := json.Unmarshal(msg.Body, v)
-				//global.GVA_LOG.Info(fmt.Sprintf("%v", v))
+				//v1 := &map[string]interface{}{}
+				//err := json.Unmarshal(msg.Body, v1)
+				//global.GVA_LOG.Info(fmt.Sprintf("%v", v1))
 
-				v := &vbox.PayOrder{}
-				err := json.Unmarshal(msg.Body, v)
+				v := request.PayOrderAndCtx{}
+				err = json.Unmarshal(msg.Body, &v)
 				if err != nil {
 					global.GVA_LOG.Info("MqOrderWaitingTask..." + err.Error())
 				}
+				global.GVA_LOG.Info("收到一条需要进行匹配的订单消息", zap.Any("order ID", v.Obj.OrderId), zap.Any("order", v))
 
 				//1. 筛选匹配是哪个产品
+
+				//1.0 核查商户
 				var vpa vbox.PayAccount
-				err = global.GVA_DB.Table("vbox_pay_account").
-					Where("p_account = ?", v.PAccount).First(&vpa).Error
-				if err != nil {
-					global.GVA_LOG.Info("MqOrderWaitingTask..." + err.Error())
+				count, err := global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
+				if count == 0 {
+					if err != nil {
+						global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+					}
+					global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
+
+					err = global.GVA_DB.Table("vbox_pay_account").
+						Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
+					jsonStr, _ := json.Marshal(vpa)
+					global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
+				} else {
+					jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
+					err = json.Unmarshal(jsonStr, &vpa)
 				}
 
-				//2. 查询产品对应的账号池是否有可用账号
-				var total int64 = 0
-				idList := utils2.GetDeepUserIDs(vpa.Uid)
+				//2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 
-				db := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").
-					Where("uid in (?)", idList).Count(&total)
+				//2.0 查一下单，如果发起初始化的时候已经匹配过账号了，就不用再匹配一次了
+				var accID, acAccount string
+				//获取当前组织
+				orgIDs := utils2.GetDeepOrg(vpa.Uid)
+				if v.Obj.AcId != "" {
+					accID = v.Obj.AcId
+				} else {
+					for _, orgID := range orgIDs {
+						key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, v.Obj.ChannelCode, v.Obj.Money)
 
-				limit, offset := utils.RandSize2DB(int(total), 20)
-				var vcas []vbox.ChannelAccount
-				err = db.Where("status = ? and sys_status = ?", 1, 1).Where("cid = ?", v.ChannelCode).
-					Where("uid in (?)", idList).Limit(limit).Offset(offset).
-					Find(&vcas).Error
-				if err != nil || len(vcas) == 0 {
-					if len(vcas) == 0 {
-						err = errors.New("库存不足！ 请联系对接人。")
-						//TODO
-						// 如果库存不足，丢弃消息并且更新订单（要么重试、要么订单更新为异常单）
-						global.GVA_LOG.Error("库存不足..." + err.Error())
+						var resList []string
+						resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+							Min:    "0",
+							Max:    "0",
+							Offset: 0,
+							Count:  1,
+						}).Result()
 
-						_ = msg.Reject(false)
-						continue
+						if err != nil {
+							fmt.Printf("当前组织无账号可用, org : %d", orgID)
+							continue
+						}
+						if resList != nil && len(resList) > 0 {
+							accTmp := resList[0]
+
+							// 2.1 把账号设置为已用
+							global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+								Score:  1,
+								Member: accTmp,
+							})
+
+							// 2.2 把可用的账号给出来继续往下执行建单步骤
+							split := strings.Split(accTmp, "_")
+							accID = split[0]
+							acAccount = split[1]
+							break
+						} else {
+							fmt.Printf("当前组织无账号可用, org : %d", orgID)
+							continue
+						}
 					}
 
-					global.GVA_LOG.Info("MqOrderWaitingTask..." + err.Error())
+					if accID == "" || acAccount == "" {
+						//return nil, fmt.Errorf("后台账号资源不足！ 请核查")
+
+						_ = msg.Ack(true)
+						return
+					}
 				}
 
-				vca := vcas[rand.Intn(len(vcas))]
-				marshal, err := json.Marshal(v)
-				if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.ID).Update("uid", vca.Uid).Update("ac_id", vca.AcId).Error; err != nil {
-					global.GVA_LOG.Info("MqOrderWaitingTask..." + err.Error())
+				var vca vbox.ChannelAccount
+				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", accID).First(&vca).Error
+				if err != nil {
+					//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+					global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
+
+					_ = msg.Ack(true)
+					return
 				}
+				global.GVA_LOG.Info("匹配账号", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
+
+				// 2.1 判断当前产品属于那种类型 1-商铺关联，2-付码关联
+				eventType, _ := HandleEventType(v.Obj.ChannelCode)
+
+				var eventID string
+				var rsUrl string
+
+				if eventType == 1 {
+					// 轮询获取同通道 指定金额的 商铺地址+ID
+					eventID, err = HandleEventID2chShop(v.Obj.ChannelCode, v.Obj.Money, orgIDs)
+					if err != nil {
+						global.GVA_LOG.Error("商铺未匹配", zap.Error(err))
+					}
+					// 获取 ID后，获取具体的跳转Url
+					rsUrl, err = HandleResourceUrl2chShop(eventID)
+					if err != nil {
+						global.GVA_LOG.Error("商铺地址未匹配", zap.Error(err))
+					}
+					global.GVA_LOG.Info("商铺匹配", zap.Any("eventID", eventID), zap.Any("rsUrl", rsUrl))
+
+				} else if eventType == 2 {
+					eventID, err = HandleEventID2payCode(v.Obj.ChannelCode, v.Obj.Money, orgIDs)
+				}
+
+				// 2.2 获取过期时间
+				expTime, err := HandleExpTime2Product(v.Obj.ChannelCode)
+				if err != nil {
+					//return nil, err
+				}
+
+				v.Obj.ExpTime = time.Now().Add(expTime)
+				v.Obj.CreatedBy = vca.CreatedBy
+				v.Obj.EventType = eventType
+				v.Obj.EventId = eventID
+				v.Obj.ResourceUrl = rsUrl
+				v.Obj.AcId = vca.AcId
+				v.Ctx.UserID = int(vca.CreatedBy)
+
+				if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Updates(v); err != nil {
+					global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(err.Error))
+				}
+
+				od := request.PayOrderAndCtx{
+					Obj: v.Obj,
+					Ctx: v.Ctx,
+				}
+
+				marshal, err := json.Marshal(od)
 
 				//3. 匹配账号后，更新订单信息（账号信息，订单支付链接处理）
-				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 1*time.Minute)
-
-				global.GVA_LOG.Info("匹配到账号了，发一个准备查单的消息 : ", zap.Any("对应单号", v.OrderId))
+				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 30*time.Second)
 
 				if err != nil {
-					_ = msg.Reject(true)
+					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(err))
+
+					_ = msg.Reject(false)
 					continue
 				}
+
 				_ = msg.Ack(true)
+				global.GVA_LOG.Info("订单匹配完成，进入回调池等候付款", zap.Any("对应单号", v.Obj.OrderId))
+
 			}
 			wg.Done()
 		}(i + 1)
@@ -137,7 +242,7 @@ func OrderWaitingTask() {
 	wg.Wait()
 }
 
-// OrderConfirmTask 处理查单回调
+// OrderConfirmTask 处理查单（如果单子支付成功，发起回调通知的消息）
 func OrderConfirmTask() {
 	// 示例：发送消息
 	conn, err := mq.MQ.ConnPool.GetConnection()
@@ -184,31 +289,82 @@ func OrderConfirmTask() {
 
 			for msg := range deliveries {
 				//err = handler(msg.Body)
-				v := &vbox.PayOrder{}
-				err := json.Unmarshal(msg.Body, v)
+				v := request.PayOrderAndCtx{}
+				err := json.Unmarshal(msg.Body, &v)
+				nowTime := time.Now()
 				if err != nil {
 					global.GVA_LOG.Error("MqOrderConfirmTask...", zap.Error(err), zap.Any("错误消息体", msg.Body))
 					// 如果解析消息失败，则直接丢弃消息
 					_ = msg.Reject(false)
 					continue
 				}
-				global.GVA_LOG.Info("我收到延迟消息，consume msg :", zap.Any("orderId", v.OrderId))
+				global.GVA_LOG.Info("收到需要查询付款状态的订单消息", zap.Any("orderId", v.Obj.OrderId))
 
 				//1. 筛选匹配是哪个产品
+				chanID := v.Obj.ChannelCode
+				accID := v.Obj.AcId
+				var vca vbox.ChannelAccount
+				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", accID).First(&vca).Error
+				if err != nil {
 
-				//2. 查询订单（账号）的充值情况
-
-				//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
-				if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.ID).Update("order_status", 1).Error; err != nil {
-					global.GVA_LOG.Error("更新订单", zap.Error(err))
 				}
-				global.GVA_LOG.Info("订单支付了，我更新一下状态 ", zap.Any("orderId", v.OrderId))
+				//2. 查询订单（账号）的充值情况
+				expTime := v.Obj.ExpTime
+				duration := expTime.Sub(nowTime)
+				if duration > 0 {
+					global.GVA_LOG.Info("该订单还没过期，继续查")
+				} else {
+					global.GVA_LOG.Info("该订单已经过期")
+					//过期了， 更新成过期状态，消息丢掉
+					if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 3).Error; err != nil {
+						global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+						_ = msg.Reject(false)
+						continue
+					}
+					_ = msg.Reject(false)
+					return
+				}
+
+				if global.TxContains(chanID) {
+
+					records, err := product.QryQQRecordsBetween(vca, v.Obj.CreatedAt, expTime)
+					if err != nil {
+						// 查单有问题，直接订单要置为超时，消息置为处理完毕
+					}
+					rdMap := product.Classifier(records.WaterList)
+					if vm, ok := rdMap["Q币"]; !ok {
+						global.GVA_LOG.Info("还没有QB的充值记录")
+					} else {
+						if rd, ok2 := vm[strconv.FormatInt(int64(v.Obj.Money), 10)]; !ok2 {
+							global.GVA_LOG.Info("还没有QB的充值记录")
+
+						} else { // 证明这种金额的，充上了
+							if utils.Contains(rd, vca.AcAccount) {
+								//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
+								if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).Error; err != nil {
+									global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+									_ = msg.Reject(false)
+									continue
+								}
+								_ = msg.Ack(true)
+								global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("orderId", v.Obj.OrderId))
+
+								// 并且发起一个回调通知的消息
+
+								return
+							}
+						}
+					}
+				}
 
 				if err != nil {
-					_ = msg.Reject(true)
+					_ = msg.Reject(false)
 					continue
 				}
-				_ = msg.Ack(false)
+
+				// 重新丢回去 下一个30s再查一次
+				marshal, err := json.Marshal(v)
+				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 30*time.Second)
 			}
 			wg.Done()
 		}(i + 1)
@@ -219,4 +375,292 @@ func OrderConfirmTask() {
 	//time.Sleep(time.Minute)
 	global.GVA_LOG.Info("MqOrderConfirmTask 初始化搞定")
 
+}
+
+// OrderCallbackTask 订单回调
+func OrderCallbackTask() {
+
+	// 示例：发送消息
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		log.Fatalf("Failed to get connection from pool: %v", err)
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+	// ------------- 创建 订单初始化 消息处理 --------------------
+	ch, _ := conn.Channel()
+	if err := ch.ExchangeDeclare(OrderCallbackExchange, "direct"); err != nil {
+		global.GVA_LOG.Error("create exchange err 111:", zap.Any("err", err))
+	}
+	if err := ch.QueueDeclare(OrderCallbackQueue); err != nil {
+		global.GVA_LOG.Error("create queue err 111:", zap.Any("err", err))
+	}
+	if err := ch.QueueBind(OrderCallbackQueue, OrderCallbackKey, OrderCallbackExchange); err != nil {
+		global.GVA_LOG.Error("bind queue err 111:", zap.Any("err", err))
+	}
+
+	// 设置初始消费者数量
+	consumerCount := 20
+	// 使用 WaitGroup 来等待所有消费者完成处理
+	var wg sync.WaitGroup
+	wg.Add(consumerCount)
+
+	// 启动多个消费者
+	for i := 0; i < consumerCount; i++ {
+		go func(consumerID int) {
+			// 说明：执行账号匹配
+			deliveries, err := ch.Consume(OrderCallbackQueue, "", false, false, false, false, nil)
+			if err != nil {
+				global.GVA_LOG.Error("err", zap.Error(err), zap.Any("queue", OrderCallbackQueue))
+			}
+
+			for msg := range deliveries {
+				//v1 := &map[string]interface{}{}
+				//err := json.Unmarshal(msg.Body, v1)
+				//global.GVA_LOG.Info(fmt.Sprintf("%v", v1))
+
+				v := request.PayOrderAndCtx{}
+				err = json.Unmarshal(msg.Body, &v)
+				if err != nil {
+					global.GVA_LOG.Info("MqOrder Callback Task..." + err.Error())
+				}
+				global.GVA_LOG.Info("收到一条需要进行发起回调的订单消息", zap.Any("order ID", v.Obj.OrderId), zap.Any("order", v))
+
+				//1. 筛选匹配是哪个产品
+
+				//1.0 核查商户
+				var vpa vbox.PayAccount
+				count, err := global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
+				if count == 0 {
+					if err != nil {
+						global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+					}
+					global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
+
+					err = global.GVA_DB.Table("vbox_pay_account").
+						Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
+					jsonStr, _ := json.Marshal(vpa)
+					global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
+				} else {
+					jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
+					err = json.Unmarshal(jsonStr, &vpa)
+				}
+
+				//TODO 2. 发起回调
+
+				//marshal, err := json.Marshal(od)
+
+				if err != nil {
+					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(err))
+
+					_ = msg.Reject(false)
+					continue
+				}
+
+				_ = msg.Ack(true)
+				global.GVA_LOG.Info("订单完成，回调完成", zap.Any("对应单号", v.Obj.OrderId))
+
+			}
+			wg.Done()
+		}(i + 1)
+	}
+	global.GVA_LOG.Info("Vbox OrderCallbackTask 初始化搞定")
+	// 等待所有消费者完成处理
+	wg.Wait()
+}
+
+func HandleExpTime2Product(chanID string) (time.Duration, error) {
+	var key string
+
+	if global.TxContains(chanID) {
+		key = "1000"
+	} else if global.J3Contains(chanID) {
+		key = "2000"
+	} else if global.PcContains(chanID) {
+		key = "3000"
+	}
+
+	var expTimeStr string
+	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		}
+
+		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+
+		var proxy vbox.Proxy
+		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+		err = db.Where("status = ?", 1).Where("chan = ?", key).
+			First(&proxy).Error
+		if err != nil || proxy.Url == "" {
+			return 0, err
+		}
+		expTimeStr = proxy.Url
+		seconds, _ := strconv.Atoi(expTimeStr)
+		duration := time.Duration(seconds) * time.Second
+
+		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
+		return duration, nil
+	} else if err != nil {
+		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		return 0, err
+	} else {
+		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+		seconds, _ := strconv.Atoi(expTimeStr)
+
+		duration := time.Duration(seconds) * time.Second
+
+		global.GVA_LOG.Info("缓存池取出：", zap.Any("HandleExpTime2Product", chanID))
+		return duration, err
+	}
+}
+
+func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID string, err error) {
+	// 1-商铺关联
+	var vsList []vbox.ChannelShop
+
+	var zs []redis.Z
+	var key string
+	for _, orgID := range orgIDs {
+		key = fmt.Sprintf(global.ChanOrgShopZSet, orgID, chanID, money)
+		zs, err = global.GVA_REDIS.ZRangeArgsWithScores(context.Background(), redis.ZRangeArgs{
+			Key:   key,
+			Start: 0,
+			Stop:  -1,
+		}).Result()
+		if err != nil {
+			return "", err
+		}
+		if len(zs) <= 0 { // redis 没查到，查一下库
+			userIDs := utils2.GetUsersByOrgId(orgID)
+			err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("cid = ? and money = ? and status = 1", chanID, money).
+				Where("created_by in ?", userIDs).Find(&vsList).Error
+			if err != nil {
+				return "", err
+			}
+			if len(vsList) <= 0 {
+				continue
+			}
+
+			//如果查到库里有， 设置进 redis 中
+			for _, shop := range vsList {
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  float64(time.Now().Unix()),
+					Member: shop.ProductId + "_" + strconv.FormatUint(uint64(shop.ID), 10),
+				})
+			}
+		} else {
+			break
+		}
+	}
+
+	if len(zs) <= 0 {
+		return "", fmt.Errorf("该组织配置的资源不足，请核查")
+	}
+
+	z := zs[len(zs)-1] //取出最后一个，重新设置utc时间戳
+	orgShopID = z.Member.(string)
+	global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+		Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+		Member: orgShopID,
+	})
+
+	global.GVA_LOG.Info("获取引导商铺匹配信息", zap.Any("orgShopID", orgShopID))
+
+	return orgShopID, err
+}
+
+func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
+	//1. 如果是引导类的，获取引导地址 - channel shop
+	split := strings.Split(eventID, "_")
+	if len(split) <= 1 {
+		return "", fmt.Errorf("解析商铺prod异常，param: %s", eventID)
+	}
+	//格式 （prodID_ID）
+	ID := split[1]
+
+	var shop vbox.ChannelShop
+	db := global.GVA_DB.Model(&vbox.ChannelShop{}).Table("vbox_channel_shop")
+	err = db.Where("id = ?", ID).First(&shop).Error
+	if err != nil {
+		return "", err
+	}
+
+	return shop.Address, nil
+}
+
+func HandleResourceUrl2payCode(eventID string) (addr string, err error) {
+	//1. 付码类 - pay code
+	// 格式（mid）
+
+	var pc vbox.ChannelPayCode
+	err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("mid = ?", eventID).First(&pc).Error
+	if err != nil {
+		return "", err
+	}
+
+	return pc.ImgContent, nil
+}
+
+func HandleEventID2payCode(chanID string, money int, orgIDs []uint) (orgPayCodeID string, err error) {
+	// 2-付码关联
+	var pcList []vbox.ChannelPayCode
+
+	var zs []redis.Z
+	var key string
+	for _, orgID := range orgIDs {
+		key = fmt.Sprintf(global.ChanOrgPayCodeZSet, orgID, chanID, money)
+		zs, err = global.GVA_REDIS.ZRangeArgsWithScores(context.Background(), redis.ZRangeArgs{
+			Key:   key,
+			Start: 0,
+			Stop:  -1,
+		}).Result()
+		if err != nil {
+			return "", err
+		}
+		if len(zs) <= 0 { // redis 没查到，查一下库
+			userIDs := utils2.GetUsersByOrgId(orgID)
+			// 当前time
+			now := time.Now()
+
+			err = global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("cid = ? and money = ? and code_status = 2", chanID, money).
+				Where("created_by in ?", userIDs).Where("time_limit < ?", now).Find(&pcList).Error
+			if err != nil {
+				return "", err
+			}
+			if len(pcList) <= 0 {
+				continue
+			}
+
+			//如果查到库里有， 设置进 redis 中
+			for _, pc := range pcList {
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  0,
+					Member: pc.Operator + "_" + pc.Location + "_" + pc.Mid,
+				})
+			}
+		}
+		break
+	}
+
+	if len(zs) <= 0 {
+		return "", fmt.Errorf("该组织配置的资源不足，请核查")
+	}
+
+	return "", nil
+}
+
+func HandleEventType(chanID string) (int, error) {
+	// 1-商铺关联，2-付码关联
+
+	chanCode, _ := strconv.Atoi(chanID)
+	if chanCode >= 1000 && chanCode <= 1099 {
+		return 1, nil
+	} else if chanCode >= 2000 && chanCode <= 2099 {
+		return 1, nil
+	} else if chanCode >= 3000 && chanCode <= 3099 {
+		return 2, nil
+	}
+	return 0, fmt.Errorf("不存在的event类型")
 }

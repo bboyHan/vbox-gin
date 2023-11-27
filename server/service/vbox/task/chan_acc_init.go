@@ -9,6 +9,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/redis/go-redis/v9"
@@ -141,7 +142,7 @@ func ChanAccEnableCheckTask() {
 						global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
-					} else {                              // redis查出来了，直接比一下
+					} else { // redis查出来了，直接比一下
 						if dailyUsed > v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -195,7 +196,7 @@ func ChanAccEnableCheckTask() {
 						_ = msg.Reject(false)
 
 						continue
-					} else {                              // redis查出来了，直接比一下
+					} else { // redis查出来了，直接比一下
 						if totalUsed > v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -245,7 +246,7 @@ func ChanAccEnableCheckTask() {
 						global.GVA_LOG.Error("当前账号笔数消耗查redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
-					} else {                              // redis查出来了，直接比一下
+					} else { // redis查出来了，直接比一下
 						if countUsed > v.Obj.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
@@ -312,7 +313,19 @@ func ChanAccEnableCheckTask() {
 				//global.GVA_LOG.Info("消息 : ", zap.Any("msg", msg.Body))
 				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
 
-				//key := fmt.Sprintf(global.ChanOrgAccZSet, strconv.FormatUint(uint64(orgID), 10), chanID)
+				// 查一下当前账号对应产品，在规则内是否有单，每单可以正常用去拉单，有单的话，就暂时不能拉单
+				var poList []vbox.PayOrder
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("ac_id = ? and exp_time < ?", v.Obj.AcId, now).Scan(&poList).Error
+				if len(poList) <= 0 {
+					// 暂时该号还没有订单，则可以加一下 给用
+					orgIDs := utils2.GetSelfOrg(v.Obj.CreatedBy)
+					key := fmt.Sprintf(global.ChanOrgAccZSet, orgIDs[0], v.Obj.Cid)
+
+					global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+						Score:  0,
+						Member: v.Obj.AcId + "_" + v.Obj.AcAccount,
+					})
+				}
 
 				if err != nil {
 					_ = msg.Reject(false)
