@@ -83,7 +83,7 @@ func HandleEventID(chanID string, money int, orgIDs []uint) (string, error) {
 	for _, orgID := range orgIDs {
 		userIDs := utils2.GetUsersByOrgId(orgID)
 		err := global.GVA_DB.Model(&vbox.ChannelShop{}).Where("cid = ? and money = ? and status = 1", chanID, money).
-			Where("create_by in ?", userIDs).Find(&vsList).Error
+			Where("created_by in ?", userIDs).Find(&vsList).Error
 		if err != nil {
 			return "", err
 		}

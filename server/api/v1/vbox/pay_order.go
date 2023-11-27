@@ -35,7 +35,8 @@ func (vpoApi *PayOrderApi) CreateOrder2PayAcc(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if order, err := payOrderService.CreateOrder2PayAcc(&vpo); err != nil {
+	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
+	if order, err := payOrderService.CreateOrder2PayAcc(&vpo, c); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {

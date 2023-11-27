@@ -1,5 +1,7 @@
 package global
 
+// tx
+
 func TxContains(target string) bool {
 	set := map[string]bool{
 		"1000": true,
@@ -17,6 +19,8 @@ func TxContains(target string) bool {
 	return found
 }
 
+// 剑三
+
 func J3Contains(target string) bool {
 	set := map[string]bool{
 		"2000": true,
@@ -29,6 +33,25 @@ func J3Contains(target string) bool {
 		"2007": true,
 		"2008": true,
 		"2009": true,
+	}
+	_, found := set[target]
+	return found
+}
+
+// pay code
+
+func PcContains(target string) bool {
+	set := map[string]bool{
+		"3000": true,
+		"3001": true,
+		"3002": true,
+		"3003": true,
+		"3004": true,
+		"3005": true,
+		"3006": true,
+		"3007": true,
+		"3008": true,
+		"3009": true,
 	}
 	_, found := set[target]
 	return found

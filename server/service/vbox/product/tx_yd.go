@@ -33,6 +33,43 @@ var options = &vbHttp.RequestOptions{
 	MaxRedirects: 3,
 }
 
+func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) (*product.Records, error) {
+	var Url string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.TxContains(vca.Cid) { // tx系
+			channelCode = "qb_proxy"
+		}
+
+		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&Url).Error
+
+		if err != nil {
+			return nil, errors.New("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, Url, 10*time.Minute)
+
+	} else {
+		Url, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+	}
+
+	openID, openKey, err := Secret(vca.Token)
+	if err != nil {
+		return nil, err
+	}
+	records := RecordsBetween(Url, openID, openKey, start, end)
+	if records == nil || records.Ret != 0 {
+		return nil, errors.New("查询官方记录异常")
+	}
+	//classifier := Classifier(records.WaterList)
+	return records, nil
+}
+
+// 校验官方合法性用一下
+
 func QryQQRecords(vca vbox.ChannelAccount) error {
 	var Url string
 
@@ -75,6 +112,46 @@ func Secret(token string) (string, string, error) {
 		return openID, openKey, nil
 	}
 	return "", "", errors.New(fmt.Sprintf("tx secret值异常, token : %s", token))
+}
+
+// RecordsBetween 获取指定时间内记录（开始时间到结束时间）
+func RecordsBetween(rawURL string, openID string, openKey string, start time.Time, end time.Time) *product.Records {
+
+	u, _ := url.Parse(rawURL)
+	queryParams := u.Query()
+
+	// 当前时间秒数
+	startSeconds := start.Unix()
+
+	// 将半小时前的时间转换为秒数
+	endSeconds := end.Unix()
+
+	queryParams.Set("openid", openID)
+	queryParams.Set("openkey", openKey)
+	queryParams.Set("BeginUnixTime", strconv.FormatInt(startSeconds, 10))
+	queryParams.Set("EndUnixTime", strconv.FormatInt(endSeconds, 10))
+
+	u.RawQuery = queryParams.Encode()
+	newURL := u.String()
+	client := vbHttp.NewHTTPClient()
+
+	global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
+
+	resp, err := client.Get(newURL, options)
+	if err != nil {
+		global.GVA_LOG.Error("err:  ->", zap.Error(err))
+		return nil
+	}
+
+	var records product.Records
+	err = json.Unmarshal(resp.Body, &records)
+	if err != nil {
+		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		return nil
+	}
+	//fmt.Print(records)
+
+	return &records
 }
 
 // Records 获取指定时间内记录
@@ -121,7 +198,7 @@ func Records(rawURL string, openID string, openKey string, period time.Duration)
 	return &records
 }
 
-// 计算不同类型 - 不同金额 - 记录集合
+// Classifier 计算不同类型 - 不同金额 - 记录集合
 func Classifier(payments []product.Payment) map[string]map[string][]string {
 	// 使用map存储不同充值类型下的支付金额和充值账号ID集合（去重）
 	paymentsByTypeAndAmount := make(map[string]map[string][]string)
