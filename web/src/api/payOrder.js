@@ -96,6 +96,22 @@ export const getPayOrderList = (params) => {
   })
 }
 
+// @Tags PayOrder
+// @Summary 分页获取订单列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取订单列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderListBydt [get]
+export const getPayOrderListByDt = (params) => {
+  return service({
+    url: '/payOrder/getPayOrderListByDt',
+    method: 'get',
+    params
+  })
+}
+
 
 // @Tags PayOrder
 // @Summary 创建VboxPayOrder

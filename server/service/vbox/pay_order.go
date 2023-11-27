@@ -638,7 +638,7 @@ func (vpoService *PayOrderService) GetPayOrder(id uint) (payOrder vbox.PayOrder,
 
 // GetPayOrderInfoList 分页获取订单记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSearch) (list []vbox.PayOrder, total int64, err error) {
+func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSearch, ids []uint) (list []vbox.PayOrder, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
@@ -648,16 +648,37 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
+
+	if limit != 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+	err = db.Where("created_by in ?", ids).Order("id desc").Find(&payOrders).Error
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
 
-	if limit != 0 {
-		db = db.Limit(limit).Offset(offset)
-	}
+	return payOrders, total, err
+}
 
-	err = db.Find(&payOrders).Error
+func (vpoService *PayOrderService) GetPayOrderListByDt(info vboxReq.OrdersDtData, ids []uint) (list []vbox.PayOrder, total int64, err error) {
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.PayOrder{})
+	var payOrders []vbox.PayOrder
+	dt := info.Dt
+	if info.ChannelCode != "" {
+		db = db.Where("channel_code = ?", info.ChannelCode)
+	}
+	err = db.Where("created_by in ? and DATE_FORMAT(created_at, '%Y-%m-%d') = ?", ids, dt).
+		Order("id desc").
+		Find(&payOrders).Error
+	if err != nil {
+		return
+	}
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
 	return payOrders, total, err
 }
 
