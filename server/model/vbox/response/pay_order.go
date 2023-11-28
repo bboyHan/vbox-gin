@@ -34,3 +34,10 @@ type OrderSimpleRes struct {
 	ExpTime     time.Time `json:"expTime" form:"expTime" url:"expTime"`
 	Status      int       `json:"status" form:"status" url:"status"`
 }
+
+type OrderStatisRes struct {
+	StateTime   string `json:"state_time" form:"state_time" `
+	ChannelCode string `json:"channel_code" form:"channel_code"`
+	Money       int    `json:"money" form:"money" url:"money"`
+	CntNums     int    `json:"cnt_nums" form:"cnt_nums" `
+}

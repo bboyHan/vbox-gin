@@ -107,16 +107,6 @@ const orderView = async () => {
 }
 orderView()
 
-  // 判断同比数据的正负，并应用不同的样式
-
-
-function getCurrentDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');
-  const day = today.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function getDay(value) {
   const today = new Date();

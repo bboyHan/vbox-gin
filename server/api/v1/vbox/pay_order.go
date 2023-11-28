@@ -258,3 +258,33 @@ func (vpoApi *PayOrderApi) GetPayOrderListByDt(c *gin.Context) {
 		}, "获取成功", c)
 	}
 }
+
+// GetPayOrderListLatestHour 分页获取订单列表
+// @Tags PayOrder
+// @Summary 分页获取订单列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.PayOrderSearch true "分页获取订单列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderListLatestHour [get]
+func (vpoApi *PayOrderApi) GetPayOrderListLatestHour(c *gin.Context) {
+	var pageInfo vboxReq.OrdersDtData
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := payOrderService.GetPayOrderListLatestHour(pageInfo, ids); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
+}

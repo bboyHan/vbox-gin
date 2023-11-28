@@ -40,7 +40,7 @@
           <span class="gvaIcon-prompt" style="color: #999" />
         </template>
         <template #body>
-          <lineCharts />
+          <lineCharts :channel-code="searchInfo.cid"/>
         </template>
       </CenterCard>
     </div>
@@ -97,7 +97,10 @@ const channelCodeProps = {
 }
 
 const handleChange = (value) => {
-  console.log(value)
+  
+  console.log('cid:',value)
+  searchInfo.value.cid = value
+  // getTableData()
 }
 
 const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {

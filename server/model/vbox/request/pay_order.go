@@ -54,5 +54,6 @@ type CreateOrderTest struct {
 type OrdersDtData struct {
 	ChannelCode string `json:"channelCode" form:"channelCode"`
 	Dt          string `json:"dt" form:"dt"`
+	Interval    int    `json:"interval" form:"interval"`
 	request.PageInfo
 }
