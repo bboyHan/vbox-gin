@@ -11,6 +11,37 @@
 import * as echarts from 'echarts'
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { get5MinNearlyOneHour } from "@/utils/date";
+import {
+  getPayOrderListLatestHour
+} from "@/api/payOrder";
+
+
+const props = defineProps({
+  channelCode: String
+})
+
+
+let yData = []
+let xData = []
+
+
+const orderView = async () => {
+  let param = props.channelCode
+  console.log(param)
+  let res = await getPayOrderListLatestHour({channelCode: param, interval: 3})
+  console.log(res)
+  if (res.code === 0) {
+    let data = res.data
+    
+    for (let i = 0; i < data.length; i++) {
+      yData.push(data[i].cnt_nums)
+      xData.push(data[i].state_time)
+    }
+    
+}
+}
+orderView()
+
 
 const chart = ref(null)
 const echart = ref(null)
@@ -22,8 +53,10 @@ const initChart = () => {
   })
 }
 
-const xLabel = get5MinNearlyOneHour()
-const goOutSchool = [871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
+// const xLabel = get5MinNearlyOneHour()
+// const goOutSchool = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
+
+
 
 const setOptions = () => {
   chart.value.setOption({
@@ -46,7 +79,7 @@ const setOptions = () => {
       data: [
 
         {
-          name: '在线目标',
+          name: '成单数',
         },
       ],
     },
@@ -86,7 +119,7 @@ const setOptions = () => {
         axisTick: {
           show: false,
         },
-        data: xLabel,
+        data: xData,
       },
     ],
     yAxis: [
@@ -112,7 +145,7 @@ const setOptions = () => {
           },
           formatter: function(value) {
             if (value !== 0) {
-              return `${value / 1000}k`
+              return `${value / 1}`
             }
             return value
           },
@@ -124,7 +157,7 @@ const setOptions = () => {
     ],
     series: [
       {
-        name: '在线目标',
+        name: '成单数',
         type: 'line',
         showSymbol: false,
         smooth: true,
@@ -132,7 +165,7 @@ const setOptions = () => {
           symbol: 'none',
           data: [
             {
-              name: '在线目标',
+              name: '成单数',
               yAxis: 36000,
               lineStyle: { width: 1.656, color: '#8C9CDA', opacity: 0.8 },
               label: { show: false },
@@ -170,7 +203,7 @@ const setOptions = () => {
             shadowBlur: 3,
           },
         },
-        data: goOutSchool,
+        data: yData,
       },
     ],
   })
