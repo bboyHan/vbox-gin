@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
@@ -214,7 +215,38 @@ func (vpoApi *PayOrderApi) GetPayOrderList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, total, err := payOrderService.GetPayOrderInfoList(pageInfo); err != nil {
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := payOrderService.GetPayOrderInfoList(pageInfo, ids); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
+}
+
+// GetPayOrderListByDt 分页获取订单列表
+// @Tags PayOrder
+// @Summary 分页获取订单列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.PayOrderSearch true "分页获取订单列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderListByDt [get]
+func (vpoApi *PayOrderApi) GetPayOrderListByDt(c *gin.Context) {
+	var pageInfo vboxReq.OrdersDtData
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := payOrderService.GetPayOrderListByDt(pageInfo, ids); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

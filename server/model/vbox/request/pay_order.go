@@ -50,3 +50,9 @@ type CreateOrderTest struct {
 	UserId      uint   `json:"userId" form:"userId" url:"userId"`
 	NotifyUrl   string `json:"notify_url" form:"notify_url" url:"notify_url"`
 }
+
+type OrdersDtData struct {
+	ChannelCode string `json:"channelCode" form:"channelCode"`
+	Dt          string `json:"dt" form:"dt"`
+	request.PageInfo
+}

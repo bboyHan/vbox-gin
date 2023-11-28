@@ -9,17 +9,23 @@
     <div class="ReclaimMileage-box-data">
       <div class="ReclaimMileage-box-data-left">
         <div>今日成单</div>
-        <div class="number"><span style="color: #D3B379">￥</span> {{ orderFinishedTotalToday }} </div>
+        <div class="number"><span style="color: #D3B379">￥</span> {{ orderTotalFinshedMoneyToday }} </div>
         <div>单数:{{ orderFinishedTotalToday }}</div>
       </div>
       <div class="ReclaimMileage-box-data-center">
-        <div>今日总单</div>
-        <div class="number"><span>-62% ↓</span> 3,067 </div>
-        <div>单数:{{ orderTotalToday }}</div>
+        <div>今日总单:{{ orderTotalToday }}</div>
+        <div class="number">
+          <!-- <span>{orderTotalRatio}% ↓</span> {{ orderTotalToday }}  -->
+          <p :class="{ 'green-text': isPositive, 'red-text': isNegative }">
+            {{ orderTotalRatio }}% <span v-if="isPositive">▲</span><span v-if="isNegative">▼</span>
+          </p>
+        </div>
+
+        <div>昨日单数:{{ orderTotalYesterDay }}</div>
       </div>
       <div class="ReclaimMileage-box-data-right">
         <div>今日成率</div>
-        <div class="number">1,298 <span>%</span></div>
+        <div class="number">{{ orderOkTotalRatio }} <span>%</span></div>
         <div>{{ orderFinishedTotalToday }} / {{ orderTotalToday }}</div>
       </div>
     </div>
@@ -29,7 +35,10 @@
 <script setup>
 import * as echarts from 'echarts'
 import {nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import {getPayOrderList} from "@/api/payOrder";
+import {
+  getPayOrderList,
+  getPayOrderListByDt
+} from "@/api/payOrder";
 
 const props = defineProps({
   channelCode: String
@@ -37,19 +46,30 @@ const props = defineProps({
 
 const orderTotalToday = ref(0)
 const orderFinishedTotalToday = ref(0)
+const orderTotalFinshedMoneyToday = ref(0)
+const orderTotalYesterDay = ref(0)
+const orderTotalRatio = ref(0)
+const orderOkTotalRatio = ref(0)
+const isPositive = ref(false);
+const isNegative = ref(false);
 
 const orderView = async () => {
+  let dt =  getDay(0);
+  let yesterDt =  getDay(1);
   let param = props.channelCode
-  console.log(param)
-  let res = await getPayOrderList({channelCode: param})
+  console.log(param,dt)
+  let res = await getPayOrderListByDt({channelCode: param, dt: dt})
   console.log("----==")
   console.log(res)
   let total = 0
   let finished = 0
+  let totalOk = 0
+  let finishedYesterDay = 0
   if (res.code === 0) {
     let l = res.data.list
     for (let i = 0; i < l.length; i++) {
       if (l[i].orderStatus === 1) {
+        totalOk += l[i].money
         finished++
       }
     }
@@ -57,8 +77,60 @@ const orderView = async () => {
   }
   orderFinishedTotalToday.value = finished
   orderTotalToday.value = total
+  orderTotalFinshedMoneyToday.value = totalOk
+
+  let resYesterDay = await getPayOrderListByDt({channelCode: param, dt: yesterDt})
+  console.log('resLastDay-',JSON.stringify(resYesterDay))
+  if (resYesterDay.code === 0) {
+    finishedYesterDay = resYesterDay.data.total
+  }
+  orderTotalYesterDay.value = finishedYesterDay
+  
+  console.log('orderTotalYesterDay-',orderTotalYesterDay.value)
+  if (orderTotalYesterDay.value == 0){
+    orderTotalRatio.value = 100
+  }else {
+    let ratio = ( 1.0 * (orderTotalToday.value - orderTotalYesterDay.value) / orderTotalYesterDay.value * 100).toFixed(1)
+    orderTotalRatio.value = isNaN(ratio) ? 0 : ratio
+  }
+  if (orderTotalToday == 0){
+    orderOkTotalRatio.value = 100
+  }else {
+    let ratio = (1.0 * orderFinishedTotalToday.value / orderTotalToday.value * 100)
+    orderOkTotalRatio.value = isNaN(ratio) ? 0 : ratio
+  }
+
+  isPositive.value = orderTotalRatio.value >= 0 ? true : false
+  isNegative.value = orderTotalRatio.value < 0 ? true : false
+  console.log(isPositive.value,' - ',isNegative.value )
+
 }
 orderView()
+
+  // 判断同比数据的正负，并应用不同的样式
+
+
+function getCurrentDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const day = today.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getDay(value) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - value);
+
+  const year = yesterday.getFullYear();
+  const month = (yesterday.getMonth() + 1).toString().padStart(2, '0');
+  const day = yesterday.getDate().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+
 
 const chart = ref(null)
 const echart = ref(null)
@@ -221,7 +293,7 @@ onUnmounted(() => {
       align-items: flex-start;
       flex-direction: column;
       justify-content: center;
-      padding: 0 10px;
+      padding: 0 50px;
 
       div {
         color: #999;
@@ -266,5 +338,13 @@ onUnmounted(() => {
     font-weight: 400;
     transform: scale(0.8333);
   }
+}
+
+.green-text {
+  color: green;
+}
+
+.red-text {
+  color: red;
 }
 </style>
