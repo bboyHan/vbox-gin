@@ -31,14 +31,21 @@ const orderView = async () => {
   let res = await getPayOrderListLatestHour({channelCode: param, interval: 3})
   console.log(res)
   if (res.code === 0) {
-    let data = res.data
-    
-    for (let i = 0; i < data.length; i++) {
-      yData.push(data[i].cnt_nums)
-      xData.push(data[i].state_time)
+    let resdata = res.data.list
+    console.log('lineCharts res:', resdata)
+    console.log('list res:', resdata)
+    if(resdata == null){
+        yData.push(0)
+        xData.push('00:00')
+    }else{
+      for (let i = 0; i < resdata.length; i++) {
+        yData.push(resdata[i].cnt_nums)
+        xData.push(resdata[i].state_time)
+      }
     }
-    
-}
+  }
+  console.log('xData:', xData, 'yData', yData)
+  initChart()
 }
 orderView()
 
@@ -53,8 +60,8 @@ const initChart = () => {
   })
 }
 
-// const xLabel = get5MinNearlyOneHour()
-// const goOutSchool = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
+// const xData = get5MinNearlyOneHour()
+// const yData = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
 
 
 
@@ -88,7 +95,7 @@ const setOptions = () => {
       left: '4%',
       right: '2%',
       bottom: '8%',
-      // containLabel: true
+      containLabel: true
     },
     xAxis: [
       {
@@ -156,30 +163,34 @@ const setOptions = () => {
       },
     ],
     series: [
+      // {
+      //   name: '成单数',
+      //   type: 'line',
+      //   showSymbol: false,
+      //   smooth: true,
+      //   markLine: {
+      //     symbol: 'none',
+      //     data: [
+      //       {
+      //         name: '成单数',
+      //         yAxis: 36000,
+      //         lineStyle: { width: 1.656, color: '#8C9CDA', opacity: 0.8 },
+      //         label: { show: false },
+      //       },
+      //     ],
+      //   },
+      // },
       {
         name: '成单数',
-        type: 'line',
-        showSymbol: false,
-        smooth: true,
-        markLine: {
-          symbol: 'none',
-          data: [
-            {
-              name: '成单数',
-              yAxis: 36000,
-              lineStyle: { width: 1.656, color: '#8C9CDA', opacity: 0.8 },
-              label: { show: false },
-            },
-          ],
-        },
-      },
-      {
-        name: '设备数',
         type: 'line',
         symbol: 'circle', // 默认是空心圆（中间是白色的），改成实心圆
         showAllSymbol: true,
         symbolSize: 0,
         smooth: true,
+        label: {
+          show: true,
+          // position: 'top'  // 在折线图顶部显示数值
+        },
         lineStyle: {
           normal: {
             width: 2,
