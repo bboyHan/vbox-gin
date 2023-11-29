@@ -197,6 +197,9 @@ const queryOrder = async () => {
       if (result.data.status === 2) {
         payVisible.value = true;
       }
+      if (result.data.status === 3) {
+        timeoutVisible.value = true;
+      }
     }
   } catch (error) {
     console.log(error);
