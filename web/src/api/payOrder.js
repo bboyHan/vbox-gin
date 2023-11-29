@@ -114,6 +114,23 @@ export const getPayOrderListByDt = (params) => {
 
 
 // @Tags PayOrder
+// @Summary 分页获取订单列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取订单列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderListLatestHour [get]
+export const getPayOrderListLatestHour = (params) => {
+  return service({
+    url: '/payOrder/getPayOrderListLatestHour',
+    method: 'get',
+    params
+  })
+}
+
+
+// @Tags PayOrder
 // @Summary 创建VboxPayOrder
 // @Security ApiKeyAuth
 // @accept application/json
