@@ -74,14 +74,18 @@
         <el-table-column align="left" label="通道ID" prop="cid" width="80" />
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="100" />
         <el-table-column align="left" label="备注" prop="acRemark" width="100" />
-        <el-table-column align="left" label="过期时间" prop="timeLimit" width="160" />
-        <el-table-column align="left" label="剩余时间" prop="timeLimit" width="140">
+        <el-table-column align="left" label="过期时间" prop="expTime" width="160" />
+        <el-table-column align="left" label="剩余时间" prop="expTime" width="140">
           <template #default="scope">
             <span v-if="countdowns[scope.$index] > 0">{{ formatTime(countdowns[scope.$index]) }} </span>
             <span v-else>-1 （已过期）</span>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="运营商" prop="operator" width="80" />
+        <el-table-column align="left" label="运营商" prop="operator" width="80" >
+          <template #default="{ row }">
+          {{ getOperatorChinese(row.operator) }}
+        </template>
+        </el-table-column>
         <el-table-column align="center" label="地区" prop="location" width="180">
           <template #default="{ row }">
             {{ codeToText[row.location.slice(0, 2)] }} | {{ codeToText[row.location.slice(0, 4)] }} | {{ codeToText[row.location.slice(0, 6)] }}
@@ -130,7 +134,7 @@
         />
       </div>
     </div>
-    <el-dialog width="25%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+    <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-scrollbar height="450px" >
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="通道" prop="cid">
@@ -166,15 +170,24 @@
                         :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
               </el-input>
           </el-form-item>
-          <el-form-item label="过期时间"  prop="timeLimit" >
-            <el-date-picker
-                v-model="formData.timeLimit"
+          <el-form-item label="过期时间"  prop="expTime" >
+            <!-- <el-date-picker
+                v-model="formData.expTime"
                 type="datetime"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
                 align="center"
             >
-            </el-date-picker>
+            </el-date-picker> -->
+            <el-input-number v-model="numHours" size="small" controls-position="right" @change="handleChangeH" :min="0">
+            </el-input-number> 
+            <span> 小时</span>
+            <el-input-number v-model="numMinutes" size="small" controls-position="right" @change="handleChangeM" :min="0">
+            </el-input-number> 
+            <span> 分钟</span>
+            <el-input-number v-model="numSeconds" size="small" controls-position="right" @change="handleChangeS" :min="0">
+            </el-input-number>
+            <span> 秒</span>
           </el-form-item>
           <el-form-item label="运营商"  prop="operator" >
             <el-select
@@ -245,10 +258,13 @@
             {{ formData.acAccount }}
           </el-descriptions-item>
           <el-descriptions-item label="过期时间">
-            {{ formData.timeLimit }}
+            {{ formData.expTime }}
           </el-descriptions-item>
           <el-descriptions-item label="运营商">
-            {{ formData.operator }}
+            {{ getOperatorChinese(formData.operator) }}
+            <!-- <template #default="{ row }">
+            {{ getOperatorChinese(row.operator) }}
+            </template> -->
           </el-descriptions-item>
           <el-descriptions-item label="地区">
             {{ formData.location }}
@@ -298,10 +314,17 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, onMounted } from 'vue'
 import { codeToText, regionData } from 'element-china-area-data';
 import { InfoFilled, Plus } from '@element-plus/icons-vue';
+import dayjs from 'dayjs';
+import utcPlugin from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
 defineOptions({
     name: 'ChannelPayCode'
 })
+
+// 注册插件
+dayjs.extend(utcPlugin);
+dayjs.extend(timezone);
 
 // 缩略图
 const dialogImageShow = ref({})
@@ -316,7 +339,7 @@ const formData = ref({
   acId: '',
   acAccount: '',
   acRemark: '',
-  timeLimit: '',
+  expTime: '',
   operator: '',
   location: '',
   imgBaseStr: '',
@@ -360,15 +383,22 @@ const rule = reactive({
     trigger: ['input', 'blur'],
   }
   ],
-  timeLimit: [{
-    required: true,
-    message: '过期时刻要大于当前时间',
-    trigger: [ 'blur'],
-  },
-  { 
-      validator: checkExpirationTime, 
-      trigger: 'blur' 
-    }
+  // expTime: [{
+  //   required: true,
+  //   message: '过期时刻要大于当前时间',
+  //   trigger: [ 'blur'],
+  // },
+  // { 
+  //     validator: checkExpirationTime, 
+  //     trigger: 'blur' 
+  //   }
+  // ],
+  expTime: [
+    {
+      required: true,
+      validator: validateTimeLimit,
+      trigger: 'blur',
+    },
   ],
   operator: [{
     required: true,
@@ -405,6 +435,23 @@ function checkExpirationTime(rule, value, callback) {
   }
 }
 
+function validateTimeLimit(rule, value, callback) {
+  if (numHours.value === 0 && numMinutes.value === 0 && numSeconds.value === 0) {
+    callback(new Error('过期时间填写不能都为 0'));
+  } else {
+    callback();
+  }
+}
+
+
+function getOperatorChinese(operator) {
+  const operatorMap = {
+    liantong: '联通',
+    yidong: '移动',
+    dianxin: '电信'
+  };
+  return operatorMap[operator] || operator;
+}
 const searchRule = reactive({
   createdAt: [
     { validator: (rule, value, callback) => {
@@ -420,6 +467,40 @@ const searchRule = reactive({
     }, trigger: 'change' }
   ],
 })
+// --  获取过期时间
+
+
+const numHours = ref(0)
+const numMinutes = ref(10)
+const numSeconds = ref(0)
+
+const getIntervalTime = async() => {
+  const now = new Date()
+  let expirationTime = new Date(now.getTime() + numHours.value * 60 * 60 * 1000)
+  expirationTime = new Date(expirationTime.getTime() + numMinutes.value * 60 * 1000)
+  expirationTime = new Date(expirationTime.getTime() + numSeconds.value * 1000)
+  let intervalTime = dayjs(expirationTime).tz('Asia/Shanghai');
+  console.log('intervalTime', intervalTime)
+  formData.value.expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
+  console.log('expTime', intervalTime)
+  return expirationTime
+}
+
+
+const handleChangeH = (value) => {
+  console.log('h:',value)
+  numHours.value = value
+}
+
+const handleChangeM = (value) => {
+  console.log('m:',value)
+  numMinutes.value = value
+}
+
+const handleChangeS = (value) => {
+  console.log('s:',value)
+  numSeconds.value = value
+}
 
 
 // -----------上传图片--------------
@@ -785,7 +866,7 @@ const closeDetailShow = () => {
           acId: '',
           acAccount: '',
           acRemark: '',
-          timeLimit: '',
+          expTime: '',
           operator: '',
           location: '',
           imgBaseStr: '',
@@ -807,7 +888,7 @@ const openDialog = () => {
           acId: '',
           acAccount: '',
           acRemark: '',
-          timeLimit: '',
+          expTime: '',
           operator: '',
           location: '',
           imgBaseStr: '',
@@ -815,6 +896,9 @@ const openDialog = () => {
           codeStatus: 0,
           money: 0,
           }
+          numHours.value = 0
+          numMinutes.value = 10
+          numSeconds.value = 0
     
 }
 
@@ -826,7 +910,7 @@ const closeDialog = () => {
           acId: '',
           acAccount: '',
           acRemark: '',
-          timeLimit: '',
+          expTime: '',
           operator: '',
           location: '',
           imgBaseStr: '',
@@ -835,11 +919,14 @@ const closeDialog = () => {
           money: 0,
           }
     lists.value =[]
+    numHours.value = 0
+    numMinutes.value = 10
+    numSeconds.value = 0
 }
 // 弹窗确定
 const enterDialog = async () => {
   const accInfo = await getACCChannelAccountByAcid()
-
+  getIntervalTime()
   console.log('accInfo ' + JSON.stringify(accInfo.data.list))
   console.log('formData pre' + JSON.stringify(formData.value))
   
@@ -860,6 +947,7 @@ const enterDialog = async () => {
                 // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
                 res = await createChannelPayCode(formData.value)
               }
+              
               
             break
           case 'update':
@@ -889,8 +977,8 @@ const calculateCountdown = () => {
   setInterval(() => {
     const currentTime = new Date();
     tableData.value.forEach((item, index) => {
-      const timeLimit = new Date(item.timeLimit);
-      const timeDiffInSeconds = (timeLimit - currentTime) / 1000;
+      const expTime = new Date(item.expTime);
+      const timeDiffInSeconds = (expTime - currentTime) / 1000;
       countdowns.value[index] = timeDiffInSeconds > 0 ? Math.floor(timeDiffInSeconds) : -1;
     });
   }, 1000);
