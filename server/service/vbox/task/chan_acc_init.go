@@ -314,6 +314,7 @@ func ChanAccEnableCheckTask() {
 				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
 
 				// 查一下当前账号对应产品，在规则内是否有单，每单可以正常用去拉单，有单的话，就暂时不能拉单
+				//TODO
 				var poList []vbox.PayOrder
 				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("ac_id = ? and exp_time < ?", v.Obj.AcId, now).Scan(&poList).Error
 				if len(poList) <= 0 {

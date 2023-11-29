@@ -224,11 +224,11 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	vpo.Key = vpa.PKey
 
 	// 1.0 校验签名
-	signValid := utils.VerifySign(vpo)
-	if !signValid {
-		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
-	}
-	global.GVA_LOG.Info("签名校验通过", zap.Any("商户ID", vpo.Account))
+	//signValid := utils.VerifySign(vpo)
+	//if !signValid {
+	//	return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
+	//}
+	//global.GVA_LOG.Info("签名校验通过", zap.Any("商户ID", vpo.Account))
 
 	// 1.1 ----- 校验该组织是否有此产品 -----------
 	var channelCodeList []string
@@ -306,6 +306,30 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		return nil, fmt.Errorf("后台账号资源不足！ 请核查")
 	}
 
+	// 判断当前产品属于那种类型 1-商铺关联，2-付码关联
+	eventType, err := vpoService.HandleEventType(vpo.ChannelCode)
+	if err != nil {
+		return nil, err
+	}
+
+	var eventID string
+	var rsUrl string
+	if eventType == 1 {
+		eventID, err = vpoService.HandleEventID2chShop(vpo.ChannelCode, vpo.Money, orgIDs)
+		rsUrl, err = vpoService.HandleResourceUrl2chShop(eventID)
+	} else if eventType == 2 {
+		eventID, err = vpoService.HandleEventID2payCode(vpo.ChannelCode, vpo.Money, orgIDs)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取过期时间
+	expTime, err := vpoService.HandleExpTime2Product(vpo.ChannelCode)
+	if err != nil {
+		return nil, err
+	}
+
 	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
 	global.GVA_LOG.Info("匹配账号", zap.Any("acID", accID), zap.Any("acAccount", acAccount))
 
@@ -318,6 +342,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		//global.GVA_REDIS.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
 		rdConn.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
 		go func() {
+
 			order := vbox.PayOrder{
 				PlatformOid: utils.GenerateID("VB"),
 				ChannelCode: vpo.ChannelCode,
@@ -326,38 +351,41 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 				Money:       vpo.Money,
 				NotifyUrl:   vpo.NotifyUrl,
 				AcId:        accID,
+				EventId:     eventID,
+				EventType:   eventType,
+				ExpTime:     time.Now().Add(expTime),
+				ResourceUrl: rsUrl,
 			}
 
-			err = global.GVA_DB.Create(order).Error
-			go func() {
-				conn, err := mq.MQ.ConnPool.GetConnection()
-				if err != nil {
-					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-				}
-				defer mq.MQ.ConnPool.ReturnConnection(conn)
+			err = global.GVA_DB.Create(&order).Error
 
-				ch, err := conn.Channel()
-				if err != nil {
-					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-				}
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
 
-				body := http2.DoGinContextBody(ctx)
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
 
-				od := vboxReq.PayOrderAndCtx{
-					Obj: order,
-					Ctx: vboxReq.Context{
-						Body:      string(body),
-						ClientIP:  ctx.ClientIP(),
-						Method:    ctx.Request.Method,
-						UrlPath:   ctx.Request.URL.Path,
-						UserAgent: ctx.Request.UserAgent(),
-					},
-				}
+			body := http2.DoGinContextBody(ctx)
 
-				marshal, _ := json.Marshal(od)
-				err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
-				global.GVA_LOG.Info("发起一条资源匹配消息并入库初始化订单数据", zap.Any("order", order))
-			}()
+			od := vboxReq.PayOrderAndCtx{
+				Obj: order,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  ctx.ClientIP(),
+					Method:    ctx.Request.Method,
+					UrlPath:   ctx.Request.URL.Path,
+					UserAgent: ctx.Request.UserAgent(),
+				},
+			}
+
+			marshal, _ := json.Marshal(od)
+			err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
+			global.GVA_LOG.Info("发起一条资源匹配消息并入库初始化订单数据", zap.Any("od", od))
 		}()
 	} else {
 		global.GVA_LOG.Info("订单已存在，请勿重复创建")
@@ -393,7 +421,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	//获取当前组织
 	orgIDs := utils2.GetDeepOrg(vpo.UserId)
 	for _, orgID := range orgIDs {
-		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, chanID)
+		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, chanID, vpo.Money)
 
 		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
@@ -428,7 +456,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	}
 
 	if accID == "" || acAccount == "" {
-		return nil, fmt.Errorf("后台账号资源不足！ 请核查")
+		return nil, fmt.Errorf("后台库存资源不足！ 请核查")
 	}
 
 	fmt.Printf("拿到了账号： %s  id: %s", accID, acAccount)
@@ -457,7 +485,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		eventID, err = vpoService.HandleEventID2payCode(chanID, vpo.Money, orgIDs)
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("后台shop资源不足！ 请核查, 金额: [%d]", vpo.Money)
 	}
 
 	// 获取过期时间

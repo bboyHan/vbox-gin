@@ -45,9 +45,9 @@
             <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">{{ formatPayed(scope.row.orderStatus, scope.row.acId) }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="回调状态" prop="callbackStatus" width="120">
+        <el-table-column align="center" label="回调状态" prop="cbStatus" width="120">
           <template #default="scope">
-            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.callbackStatus)">{{ formatNotify(scope.row.callbackStatus) }}</el-button>
+            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">{{ formatNotify(scope.row.cbStatus) }}</el-button>
           </template>
         </el-table-column>
         <el-table-column align="center" label="创建时间" width="180">
@@ -120,19 +120,13 @@
             <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">{{ formatPayed(scope.row.orderStatus, scope.row.acId) }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="回调状态" prop="callbackStatus" width="120">
+        <el-table-column align="left" label="回调状态" prop="cbStatus" width="120">
           <template #default="scope">
-            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.callbackStatus)">{{ formatNotify(scope.row.callbackStatus) }}</el-button>
+            <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">{{ formatNotify(scope.row.cbStatus) }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="取码状态" prop="codeUseStatus" width="120">
-          <template #default="scope">{{ formatBoolean(scope.row.codeUseStatus) }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="异步执行时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.asyncTime) }}</template>
-        </el-table-column>
         <el-table-column align="left" label="回调时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.callTime) }}</template>
+          <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
         </el-table-column>
         <el-table-column align="left" label="操作">
           <template #default="scope">
@@ -174,10 +168,8 @@
           <el-descriptions-item label="支付链接">{{ formData.resourceUrl }}</el-descriptions-item>
           <el-descriptions-item label="回调地址">{{ formData.notifyUrl }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">{{ formatBoolean(formData.orderStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="回调状态">{{ formatBoolean(formData.callbackStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="取码状态">{{ formatBoolean(formData.codeUseStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="异步执行时间">{{ formatDate(formData.asyncTime) }}</el-descriptions-item>
-          <el-descriptions-item label="回调时间">{{ formatDate(formData.callTime) }}</el-descriptions-item>
+          <el-descriptions-item label="回调状态">{{ formatBoolean(formData.cbStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="回调时间">{{ formatDate(formData.cbTime) }}</el-descriptions-item>
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
@@ -287,7 +279,7 @@ const formData = ref({
   resourceUrl: '',
   notifyUrl: '',
   orderStatus: false,
-  callbackStatus: false,
+  cbStatus: false,
   codeUseStatus: false,
   asyncTime: new Date(),
   callTime: new Date(),
@@ -339,11 +331,8 @@ const onSubmit = () => {
     if (searchInfo.value.orderStatus === ""){
       searchInfo.value.orderStatus=null
     }
-    if (searchInfo.value.callbackStatus === ""){
-      searchInfo.value.callbackStatus=null
-    }
-    if (searchInfo.value.codeUseStatus === ""){
-      searchInfo.value.codeUseStatus=null
+    if (searchInfo.value.cbStatus === ""){
+      searchInfo.value.cbStatus=null
     }
     getTableData()
   })
@@ -495,10 +484,8 @@ const closeDetailShow = () => {
     payDevice: '',
     notifyUrl: '',
     orderStatus: false,
-    callbackStatus: false,
-    codeUseStatus: false,
-    asyncTime: new Date(),
-    callTime: new Date(),
+    cbStatus: false,
+    cbTime: new Date(),
   }
 }
 
@@ -538,10 +525,8 @@ const closeDialog = () => {
     payDevice: '',
     notifyUrl: '',
     orderStatus: false,
-    callbackStatus: false,
-    codeUseStatus: false,
-    asyncTime: new Date(),
-    callTime: new Date(),
+    cbStatus: false,
+    cbTime: new Date(),
   }
 }
 // 弹窗确定

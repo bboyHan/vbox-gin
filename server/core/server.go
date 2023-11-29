@@ -39,7 +39,7 @@ func RunWindowsServer() {
 		go task.ChanAccEnableCheckTask()
 	}
 	//TODO 任务入口
-	//initialize.Timer()
+	initialize.Timer()
 	// 从db加载jwt数据
 	if global.GVA_DB != nil {
 		system.LoadAll()
