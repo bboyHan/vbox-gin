@@ -103,6 +103,7 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.Id).
 			Update("status", channelShop.Status).
 			Update("updated_by", channelShop.UpdatedBy).Error
+
 	} else if channelShop.Type == 3 {
 		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
 			Update("status", channelShop.Status).

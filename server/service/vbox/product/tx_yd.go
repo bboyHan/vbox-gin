@@ -135,11 +135,11 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 	newURL := u.String()
 	client := vbHttp.NewHTTPClient()
 
-	global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
+	//global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
 
 	resp, err := client.Get(newURL, options)
 	if err != nil {
-		global.GVA_LOG.Error("err:  ->", zap.Error(err))
+		global.GVA_LOG.Error("err:  ->", zap.Error(err), zap.Any("resp", resp))
 		return nil
 	}
 

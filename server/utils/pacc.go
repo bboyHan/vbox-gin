@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"math/rand"
@@ -40,12 +42,13 @@ func VerifySign(data interface{}) bool {
 	}
 	signStr += "key=" + fmt.Sprintf("%v", values["key"])
 
-	fmt.Printf("计算前: %v", signStr)
+	//fmt.Printf("计算前: %v", signStr)
 	// 计算MD5签名
 	sign := SignMD5(signStr)
 
-	fmt.Printf("计算sign: %v", sign)
-	fmt.Printf("传入sign: %v", values["sign"])
+	global.GVA_LOG.Info("", zap.Any("计算前: %v", signStr), zap.Any("计算sign: %v", sign), zap.Any("传入sign", values["sign"]))
+
+	//fmt.Printf("传入sign: %v", values["sign"])
 
 	// 将计算得到的签名与请求参数中的签名进行比较
 	return sign == fmt.Sprintf("%v", values["sign"])

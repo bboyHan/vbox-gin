@@ -7,10 +7,12 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	response2 "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
@@ -79,6 +81,7 @@ func OrderWaitingTask() {
 			for msg := range deliveries {
 				//v1 := &map[string]interface{}{}
 				//err := json.Unmarshal(msg.Body, v1)
+				//global.GVA_LOG.Info(fmt.Sprintf("怎么会没有消息？？"))
 				//global.GVA_LOG.Info(fmt.Sprintf("%v", v1))
 
 				v := request.PayOrderAndCtx{}
@@ -209,7 +212,7 @@ func OrderWaitingTask() {
 				v.Obj.AcId = vca.AcId
 				v.Ctx.UserID = int(vca.CreatedBy)
 
-				if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Updates(v); err != nil {
+				if err := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Updates(v.Obj); err != nil {
 					global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(err.Error))
 				}
 
@@ -231,7 +234,7 @@ func OrderWaitingTask() {
 				}
 
 				_ = msg.Ack(true)
-				global.GVA_LOG.Info("订单匹配完成，进入回调池等候付款", zap.Any("对应单号", v.Obj.OrderId))
+				global.GVA_LOG.Info("订单匹配完成，进入查询池等候付款", zap.Any("对应单号", v.Obj.OrderId))
 
 			}
 			wg.Done()
@@ -316,13 +319,13 @@ func OrderConfirmTask() {
 				} else {
 					global.GVA_LOG.Info("该订单已经过期")
 					//过期了， 更新成过期状态，消息丢掉
-					if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 3).Error; err != nil {
+					if err := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 3).Error; err != nil {
 						global.GVA_LOG.Error("更新订单异常", zap.Error(err))
 						_ = msg.Reject(false)
 						continue
 					}
-					_ = msg.Reject(false)
-					return
+					_ = msg.Ack(true)
+					continue
 				}
 
 				if global.TxContains(chanID) {
@@ -447,8 +450,39 @@ func OrderCallbackTask() {
 				}
 
 				//TODO 2. 发起回调
+				notifyUrl := v.Obj.NotifyUrl
+				client := vbHttp.NewHTTPClient()
+				var headers = map[string]string{
+					"Content-Type":  "application/json",
+					"Authorization": "Bearer token",
+				}
+				var payUrl string
+				payUrl, err = HandlePayUrl2PAcc(v.Obj.OrderId)
 
-				//marshal, err := json.Marshal(od)
+				var options = &vbHttp.RequestOptions{
+					Headers:      headers,
+					MaxRedirects: 3,
+					PayloadType:  "json",
+					Payload: response2.Order2PayAccountRes{
+						OrderId:   v.Obj.OrderId,
+						Money:     v.Obj.Money,
+						Status:    1,
+						PayUrl:    payUrl,
+						NotifyUrl: notifyUrl,
+					},
+				}
+
+				response, err := client.Post(notifyUrl, options)
+				global.GVA_LOG.Info("回调响应消息", zap.Any("resp", response))
+
+				nowTime := time.Now()
+				//3. 更新回调成功的状态
+				if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
+					Update("cb_status", 1).Update("cb_time", nowTime).Error; err != nil {
+					global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+					_ = msg.Reject(false)
+					continue
+				}
 
 				if err != nil {
 					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(err))
@@ -569,6 +603,48 @@ func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID st
 	global.GVA_LOG.Info("获取引导商铺匹配信息", zap.Any("orgShopID", orgShopID))
 
 	return orgShopID, err
+}
+
+func HandlePayUrl2PAcc(orderId string) (string, error) {
+	conn := global.GVA_REDIS.Conn()
+	defer conn.Close()
+	key := global.PAccPay
+	var url string
+	//paccCreateUrl, err := global.GVA_REDIS.Ping(context.Background()).Result()
+	//paccCreateUrl, err := conn.Ping(context.Background()).Result()
+	//fmt.Printf(paccCreateUrl)
+	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		}
+
+		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+
+		var proxy vbox.Proxy
+		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+		err = db.Where("status = ?", 1).Where("chan = ?", key).
+			First(&proxy).Error
+		if err != nil || proxy.Url == "" {
+			return "", err
+		}
+		url = proxy.Url + orderId
+
+		//global.GVA_REDIS.Set(context.Background(), key, proxy.Url, 0)
+		conn.Set(context.Background(), key, proxy.Url, 0)
+		global.GVA_LOG.Info("查库获取", zap.Any("商户订单地址", url))
+
+		return url, nil
+	} else if err != nil {
+		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+	} else {
+		var preUrl string
+		//preUrl, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+		preUrl, err = conn.Get(context.Background(), key).Result()
+		url = preUrl + orderId
+		global.GVA_LOG.Info("缓存池取出", zap.Any("商户订单地址", url))
+	}
+	return url, err
 }
 
 func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
