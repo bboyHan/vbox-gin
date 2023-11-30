@@ -81,7 +81,7 @@
             <span v-else>-1 （已过期）</span>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="运营商" prop="operator" width="80" >
+        <el-table-column align="left" label="运营商" prop="operator" width="70" >
           <template #default="{ row }">
           {{ getOperatorChinese(row.operator) }}
         </template>
@@ -91,9 +91,9 @@
             {{ codeToText[row.location.slice(0, 2)] }} | {{ codeToText[row.location.slice(0, 4)] }} | {{ codeToText[row.location.slice(0, 6)] }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="状态" prop="codeStatus" width="120" >
+        <el-table-column align="left" label="状态" prop="codeStatus" width="90" >
           <template #default="scope">
-            <el-button style="width: 90px" :color="formatPayCodeColor(scope.row.codeStatus)">
+            <el-button style="width: 60px" :color="formatPayCodeColor(scope.row.codeStatus)">
               {{ formatPayCodeStatus(scope.row.codeStatus) }}
             </el-button>
           </template>
@@ -111,7 +111,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="操作">
+        <el-table-column align="left" label="操作" >
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
               <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
