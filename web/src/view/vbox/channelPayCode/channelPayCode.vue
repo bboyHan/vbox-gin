@@ -118,6 +118,7 @@
               详情
             </el-button>
             <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelPayCodeFunc(scope.row)">变更</el-button>
+            <el-button type="primary" link icon="edit" class="table-button" @click="createByChannelPayCodeFunc(scope.row)">传码</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -818,6 +819,34 @@ const updateChannelPayCodeFunc = async(row) => {
 }
 
 
+
+// 更新行
+const createByChannelPayCodeFunc = async(row) => {
+    const res = await findChannelPayCode({ ID: row.ID })
+    type.value = 'create'
+    if (res.code === 0) {
+        // formData.value = res.data.rechannelPayCode
+        selectedCity.value = [];
+        formData.value = {
+          cid: res.data.rechannelPayCode.cid,
+          acId: res.data.rechannelPayCode.acId,
+          acAccount: '',
+          acRemark: '',
+          expTime: '',
+          operator: '',
+          location: '',
+          imgBaseStr: '',
+          mid: '',
+          codeStatus: 0,
+          money: 0,
+          }
+          numHours.value = 0
+          numMinutes.value = 10
+          numSeconds.value = 0
+          dialogFormVisible.value = true
+    }
+}
+
 // 删除行
 const deleteChannelPayCodeFunc = async (row) => {
     const res = await deleteChannelPayCode({ ID: row.ID })
@@ -934,7 +963,7 @@ const enterDialog = async () => {
         // console.log('formData' + JSON.stringify(formData.value))
         if (!valid) return
 
-    formData.value.money = Number(formData.value.money)
+        formData.value.money = Number(formData.value.money)
 
         let res
         switch (type.value) {
@@ -947,8 +976,6 @@ const enterDialog = async () => {
                 // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
                 res = await createChannelPayCode(formData.value)
               }
-              
-              
             break
           case 'update':
             res = await updateChannelPayCode(formData.value)
