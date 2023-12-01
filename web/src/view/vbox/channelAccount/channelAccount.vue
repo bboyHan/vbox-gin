@@ -126,6 +126,7 @@
             <el-row>
               <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
+                <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">产码</el-button>
                 <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">详情</el-button>
                 <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)">变更</el-button>
                 <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
@@ -334,6 +335,100 @@
         </el-table>
       </el-scrollbar>
     </el-dialog>
+
+    <!-- 产码-->
+    <el-dialog width="30%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="450px" >
+        <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="rule" label-width="80px">
+          <el-form-item label="通道" prop="cid">
+            <el-input v-model="pcFormData.cid" :clearable="true" placeholder="请输入" disabled/>
+          </el-form-item>
+          <el-form-item label="通道账户ID"  prop="acId" >
+            <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
+          </el-form-item>
+          <el-form-item label="通道账户"  prop="acAccount" >
+            <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+          </el-form-item>
+          <el-form-item label="账户备注"  prop="acRemark" >
+            <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
+          </el-form-item>
+          <el-form-item label="金额"  prop="money" >
+            <el-input v-model.number="pcFormData.money"
+                      placeholder="输入金额"
+                      :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                      :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
+            </el-input>
+          </el-form-item>
+          <el-form-item label="过期时间"  prop="expTime" >
+            <el-input-number v-model="numHours" size="small" controls-position="right" @change="handleChangeH" :min="0">
+            </el-input-number>
+            <span> 小时</span>
+            <el-input-number v-model="numMinutes" size="small" controls-position="right" @change="handleChangeM" :min="0">
+            </el-input-number>
+            <span> 分钟</span>
+            <el-input-number v-model="numSeconds" size="small" controls-position="right" @change="handleChangeS" :min="0">
+            </el-input-number>
+            <span> 秒</span>
+          </el-form-item>
+          <el-form-item label="运营商"  prop="operator" >
+            <el-select
+                v-model="pcFormData.operator"
+                placeholder="请选择通信商"
+                filterable
+                style="width: 100%"
+            >
+              <el-option
+                  v-for="item in operators"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="地区"  prop="location" >
+            <el-cascader
+                :change-on-select="true"
+                style="width:100%"
+                :options="optionsRegion"
+                v-model="selectedCity"
+                @change="chge"
+                placeholder="省 / 市 / 区"
+                filterable
+                :props="{checkStrictly: true}"
+            >
+            </el-cascader>
+          </el-form-item>
+          <el-form-item label="图片上传" >
+            <el-upload
+                class="avatar-uploader"
+                action=""
+                :on-change="getFiles"
+                :on-remove="handlePicRemoves"
+                :on-preview="handlePicPreviews"
+                v-model="pcImgList"
+                :limit="8"
+                list-type="picture-card"
+                :file-list="pcFileList"
+                :auto-upload="false"
+                accept="image/png, image/gif, image/jpg, image/jpeg"
+            >
+              <!-- 图标 -->
+              <el-icon style="font-size: 25px;"><Plus /></el-icon>
+            </el-upload>
+            <el-dialog v-model="pcDialogImgVisible" title="预览" destroy-on-close>
+              <img :src="pcDialogImageUrls" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
+            </el-dialog>
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closePcDialog">取 消</el-button>
+          <el-button type="primary" @click="enterPcDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -353,6 +448,7 @@ import {
 import {
   getChannelProductSelf
 } from '@/api/channelProduct'
+import { codeToText, regionData } from 'element-china-area-data';
 
 // 全量引入格式化工具 请按需保留
 import {
@@ -362,12 +458,14 @@ import {
   filterDict,
   ReturnArrImg,
   onDownloadFile,
-  formatUtcTimestamp
+  formatUtcTimestamp, formatJoin
 } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, nextTick } from 'vue'
 import WarningBar from "@/components/warningBar/warningBar.vue";
-import {Loading} from "@element-plus/icons-vue";
+import {Loading, Plus} from "@element-plus/icons-vue";
+import {createChannelPayCode, findChannelPayCode} from "@/api/channelPayCode";
+import dayjs from "dayjs";
 
 defineOptions({
   name: 'ChannelAccount'
@@ -882,6 +980,207 @@ const openOrderHisShow = async (row) => {
   await queryAccOrderHisFunc(req)
 }
 
+//  产码 ---------------------
+const numHours = ref(0)
+const numMinutes = ref(10)
+const numSeconds = ref(0)
+const pcElFormRef = ref()
+
+const pcFormData = ref({
+  cid: '',
+  acId: '',
+  acAccount: '',
+  acRemark: '',
+  expTime: '',
+  operator: '',
+  location: '',
+  imgBaseStr: '',
+  mid: '',
+  codeStatus: 0,
+  money: 0,
+})
+const pcDialogFormVisible = ref(false)
+
+const createByChannelPayCodeFunc = async(row) => {
+  const res = await findChannelAccount({ ID: row.ID })
+  type.value = 'createPc'
+  typeTitle.value = '添加产码'
+  if (res.code === 0) {
+    pcFormData.value = {
+      cid: res.data.revca.cid,
+      acId: res.data.revca.acId,
+      acAccount: res.data.revca.acAccount,
+      acRemark: res.data.revca.acRemark,
+      expTime: '',
+      operator: '',
+      location: '',
+      imgBaseStr: '',
+      mid: '',
+      codeStatus: 0,
+      money: 0,
+    }
+    numHours.value = 0
+    numMinutes.value = 10
+    numSeconds.value = 0
+    pcDialogFormVisible.value = true
+  }
+}
+
+const getIntervalTime = async() => {
+  const now = new Date()
+  let expirationTime = new Date(now.getTime() + numHours.value * 60 * 60 * 1000)
+  expirationTime = new Date(expirationTime.getTime() + numMinutes.value * 60 * 1000)
+  expirationTime = new Date(expirationTime.getTime() + numSeconds.value * 1000)
+  let intervalTime = dayjs(expirationTime).tz('Asia/Shanghai');
+  console.log('intervalTime', intervalTime)
+  pcFormData.value.expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
+  console.log('expTime', intervalTime)
+  return expirationTime
+}
+const img_base_str = ref('')
+const pcFileList = ref([]);
+
+const pcImgList = ref([]);
+const pcDialogImgVisible = ref(false);
+const pcDialogImageUrls = ref("");
+
+const uploadImgToBase64 = (file) => {
+  // 核心方法，将图片转成base64字符串形式
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function () {
+      // 图片转base64完成后返回reader对象
+      resolve(reader);
+    };
+    reader.onerror = reject;
+  });
+}
+
+const getFiles = async (file ,fileList) => {
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (isLt2M) {
+    try {
+      const data = await uploadImgToBase64(file.raw);
+      // img_base_str.value = data.result;
+      pcImgList.value.push(data.result) ;
+
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    ElMessage({
+      type: 'error',
+      message: '上传图片大小不能超过 2MB!'
+    })
+  }
+
+
+  console.log("file-111", JSON.stringify(file));
+  console.log("fileList-111", JSON.stringify(fileList));
+  console.log("list-111", JSON.stringify(pcImgList));
+  // formData.value.imgBaseStr=img_base_str.value
+}
+const handlePicRemoves = (file, fileList) => {
+  let hideUploadEdit = fileList.length
+  if (hideUploadEdit >= 1){
+    img_base_str.value = "";
+  }
+};
+const handlePicPreviews = (file) => {
+  console.log('file=' + file.url);
+  pcDialogImageUrls.value = file.url;
+  pcDialogImgVisible.value = true;
+}
+// ------------获取省市 -------
+const selectedCity = ref([]);
+const optionsRegion = regionData;
+const chge = () => {
+  const lastElement = selectedCity.value[selectedCity.value.length - 1]
+  pcFormData.value.location = lastElement
+  console.log(selectedCity);
+};
+
+const handleChangeH = (value) => {
+  console.log('h:',value)
+  numHours.value = value
+}
+const operators = [
+  {
+    value: 'dianxin',
+    label: '电信',
+  },
+  {
+    value: 'yidong',
+    label: '移动',
+  },
+  {
+    value: 'liantong',
+    label: '联通',
+  }
+]
+const handleChangeM = (value) => {
+  console.log('m:',value)
+  numMinutes.value = value
+}
+
+const handleChangeS = (value) => {
+  console.log('s:',value)
+  numSeconds.value = value
+}
+const closePcDialog = () => {
+  pcDialogFormVisible.value = false
+  pcFormData.value = {
+    cid: '',
+    acId: '',
+    acAccount: '',
+    acRemark: '',
+    expTime: '',
+    operator: '',
+    location: '',
+    imgBaseStr: '',
+    mid: '',
+    codeStatus: 0,
+    money: 0,
+  }
+  pcImgList.value =[]
+  numHours.value = 0
+  numMinutes.value = 10
+  numSeconds.value = 0
+}
+// 弹窗确定
+const enterPcDialog = async () => {
+  await getIntervalTime()
+  pcElFormRef.value?.validate( async (valid) => {
+        // console.log('formData' + JSON.stringify(formData.value))
+        if (!valid) return
+        pcFormData.value.money = Number(pcFormData.value.money)
+        let res
+        switch (type.value) {
+          case 'createPc':
+            // console.log(">>>>>>" + lists.value.length)
+            for (let i = 0; i < pcImgList.value.length; i++) {
+              // console.log('formData lists.value[i] ' + i + '  ' + JSON.stringify(lists.value[i]))
+              pcFormData.value.imgBaseStr = pcImgList.value[i]
+              // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
+              res = await createChannelPayCode(pcFormData.value)
+            }
+            break
+          default:
+            break
+        }
+        if (res.code === 0) {
+          ElMessage({
+            type: 'success',
+            message: '创建/更改成功'
+          })
+          closePcDialog()
+          getTableData()
+        }
+      }
+  )
+}
+//  产码 ---------------------
 
 </script>
 
