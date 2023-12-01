@@ -118,7 +118,6 @@
               详情
             </el-button>
             <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelPayCodeFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="edit" class="table-button" @click="createByChannelPayCodeFunc(scope.row)">传码</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -576,7 +575,6 @@ const handlePicRemoves = (file, fileList) => {
   if (hideUploadEdit >= 1){
     img_base_str.value = "";
   } 
-  
 };
 
 const handlePicPreviews = (file) => {
