@@ -710,6 +710,88 @@ func (vpoService *PayOrderService) GetPayOrderListByDt(info vboxReq.OrdersDtData
 	return payOrders, total, err
 }
 
+func (vpoService *PayOrderService) GetPayOrderListLatestHour(info vboxReq.OrdersDtData, ids []uint) (list []vboxRep.OrderStatisRes, total int64, err error) {
+	queryA := `
+			SELECT 
+				concat(
+						if(HOUR(created_at)>=10,HOUR(created_at),concat('0',HOUR(created_at))) ,
+						':',
+						if(FLOOR(MINUTE(created_at) / 5) * 5>=10,FLOOR(MINUTE(created_at) / 5) * 5,CONCAT('0',FLOOR(MINUTE(created_at) / 5) * 5))
+					) as state_time,
+			    'all' as channel_code,
+				SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END) AS money,
+				SUM(CASE WHEN order_status = 1 THEN 1 ELSE 0 END) AS cnt_nums
+			FROM 
+				vbox_pay_order
+			WHERE 
+				created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) and created_by in ?
+			GROUP BY 
+				state_time
+			ORDER BY 
+				state_time
+;
+`
+	queryB := `
+			SELECT 
+				concat(
+						if(HOUR(created_at)>=10,HOUR(created_at),concat('0',HOUR(created_at))) ,
+						':',
+						if(FLOOR(MINUTE(created_at) / 5) * 5>=10,FLOOR(MINUTE(created_at) / 5) * 5,CONCAT('0',FLOOR(MINUTE(created_at) / 5) * 5))
+					) as state_time,
+			    'all' as channel_code,
+				SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END) AS money,
+				SUM(CASE WHEN order_status = 1 THEN 1 ELSE 0 END) AS cnt_nums
+			FROM 
+				vbox_pay_order
+			WHERE 
+				created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) and created_by in ? and channel_code = ?
+			GROUP BY 
+				state_time
+			ORDER BY 
+				state_time
+;
+`
+
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.PayOrder{})
+	//var results []vboxRep.OrderStatisRes
+	if info.ChannelCode == "" {
+		rows, err := db.Raw(queryA, info.Interval, ids).Rows()
+		if err != nil {
+			// 处理错误
+			fmt.Println(err.Error())
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxRep.OrderStatisRes
+			err := rows.Scan(&result.StateTime, &result.ChannelCode, &result.Money, &result.CntNums)
+			if err != nil {
+				// 处理错误
+				fmt.Println(err.Error())
+			}
+			list = append(list, result)
+		}
+	} else {
+		rows, err := db.Raw(queryB, info.Interval, ids, info.ChannelCode).Rows()
+		if err != nil {
+			// 处理错误
+			fmt.Println(err.Error())
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var result vboxRep.OrderStatisRes
+			err := rows.Scan(&result.StateTime, &result.ChannelCode, &result.Money, &result.CntNums)
+			if err != nil {
+				// 处理错误
+				fmt.Println(err.Error())
+			}
+			list = append(list, result)
+		}
+	}
+	total = int64(len(list))
+	return list, total, err
+}
+
 func (vpoService *PayOrderService) HandleNotifyUrl2Test() (string, error) {
 	var proxy vbox.Proxy
 	db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")

@@ -278,18 +278,14 @@ func (userService *UserService) SetUserAuthorities(id uint, authorityIds []uint)
 //@return: err error
 
 func (userService *UserService) DeleteUser(id int) (err error) {
-	return global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).Delete(&system.SysUser{}).Error; err != nil {
-			return err
-		}
-		if err := tx.Delete(&[]system.SysUserAuthority{}, "sys_user_id = ?", id).Error; err != nil {
-			return err
-		}
-		if err := tx.Delete(&[]model.OrgUser{}, "sys_user_id = ?", id).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+	var user system.SysUser
+	err = global.GVA_DB.Where("id = ?", id).Delete(&user).Error
+	if err != nil {
+		return err
+	}
+	err = global.GVA_DB.Delete(&[]system.SysUserAuthority{}, "sys_user_id = ?", id).Error
+	err = global.GVA_DB.Delete(&[]model.OrgUser{}, "sys_user_id = ?", id).Error
+	return err
 }
 
 //@author: [piexlmax](https://github.com/piexlmax)
