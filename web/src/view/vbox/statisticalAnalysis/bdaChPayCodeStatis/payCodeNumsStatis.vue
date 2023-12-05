@@ -2,10 +2,11 @@
 <template>
     <div>
         <div class="gva-btn-list">
-            <span>省市：</span>
+          <el-form-item label="省市：" >
+            <!-- <span></span> -->
             <el-cascader
                 :change-on-select="true"
-                style="width:15%"
+                style="width:100%"
                 :options="optionsRegion"
                 v-model="selectedCity"
                 @change="chge"
@@ -14,6 +15,21 @@
                 :props="{checkStrictly: true}"
             >
             </el-cascader>
+          </el-form-item>
+            <el-form-item label="状态" >
+          <el-select v-model="searchInfo.codeStatus" placeholder="选择状态" @change="changeCodeStatus" clearable>
+            <el-option label="已使用" value="1"/>
+            <el-option label="待使用" value="2"/>
+            <el-option label="已失效" value="3"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="运营商" >
+          <el-select v-model="searchInfo.operator" placeholder="选择ISP" @change="changeCodeOprater" clearable>
+            <el-option label="移动" value="yidong"/>
+            <el-option label="联通" value="liantong"/>
+            <el-option label="电信" value="dianxin"/>
+          </el-select>
+        </el-form-item>
         </div> 
         <div class="container">
             <div id="myecharts" ref="map" ></div>
@@ -67,7 +83,7 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(30)
 const tableData = ref([])
-
+const searchInfo = ref({})
 
 // 重置
 const onReset = () => {
@@ -99,7 +115,8 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, location: location.value })
+  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, 
+    location: location.value,operator:searchInfo.value.operator, codeStatus:searchInfo.value.codeStatus})
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
@@ -122,7 +139,8 @@ const provicesData = ref([
 
 ])
 const getProviceTableData = async() => {
-  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, location: location.value })
+  const table = await getChannelPayCodeStatisByLocation({ page: page.value, pageSize: pageSize.value, location: location.value,
+    operator:searchInfo.value.operator, codeStatus:searchInfo.value.codeStatus })
   if (table.code === 0) {
     provicesData.value = table.data.list
     // console.log(JSON.stringify(provicesData.value ))
@@ -312,7 +330,6 @@ getProviceTableData()
               },
               data: [
                 { name: '广东', value: [113.88308, 22.55329], weidu: 116.397128, jingdu: 112.98626, orderNum: 1, clientNum: 2 },
-               
                 ]
             },
           ],
@@ -343,6 +360,18 @@ const chge = () => {
   console.log('location:', location.value);
 //   showProvince('山西省')
     getTableData()
+};
+
+// ----- 获取状态
+
+const changeCodeStatus = () => {
+  console.log('changeCodeStatus');
+  getTableData()
+};
+
+const changeCodeOprater = () => {
+  console.log('changeCodeOprater');
+  getTableData()
 };
 
 // ---------   -----

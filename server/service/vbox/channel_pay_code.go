@@ -116,6 +116,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 *
  */
 func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocation(info vboxReq.ChannelPayCodeSearch, ids []uint) (list []vboxResp.ChannelPayCodeStatistics, total int64, err error) {
+
 	query := `
 		    SELECT
 			 code as location,count(mid) as codeNums
@@ -128,6 +129,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 					SELECT location, mid
 					from vbox_channel_pay_code
 					where  location !='' and created_by in ?
+					and operator in ? and code_status in ?
 				) t 
 				join geo_provinces a 
 				on a.code = SUBSTRING(t.location,1,?)
@@ -157,7 +159,9 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 					  FROM vbox_channel_pay_code 
 					  WHERE location != '' 
 						   AND created_by IN ? 
-						   AND SUBSTRING( location, 1,? ) = ? ) t
+						   AND SUBSTRING( location, 1,? ) = ?
+					  	and operator in ? and code_status in ?
+					  ) t
 					JOIN geo_cities a ON a.code = SUBSTRING( t.location, 1,? ) 
 					AND LENGTH( location ) >= ? 
 				) b 
@@ -167,7 +171,10 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 				'无具体省市区' AS location,
 				count( mid ) AS codeNums 
 			FROM
-				( SELECT location, mid FROM vbox_channel_pay_code WHERE location != '' AND created_by IN ? AND location = ? ) c 
+				( SELECT location, mid FROM vbox_channel_pay_code
+			   WHERE location != '' AND created_by IN ? AND location = ?
+			   and operator in ? and code_status in ?
+			   ) c 
 			) d 
 		where codeNums > 0
 		ORDER BY
@@ -198,6 +205,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 							AND created_by IN ? 
 							AND SUBSTRING( location, 1,? ) = ? 
 							AND LENGTH( location ) = ? 
+						and operator in ? and code_status in ?
 						) t
 						JOIN geo_areas a ON a.code = SUBSTRING( t.location, 1,? ) 
 					) b 
@@ -207,7 +215,10 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 					'无具体省市区' AS location,
 					count( mid ) AS codeNums 
 				FROM
-					( SELECT location, mid FROM vbox_channel_pay_code WHERE location != '' AND created_by IN ? AND location = ? ) c 
+					( SELECT location, mid FROM vbox_channel_pay_code
+				   WHERE location != '' AND created_by IN ? AND location = ? 
+				   and operator in ? and code_status in ?
+				   ) c 
 				) d 
 			where codeNums > 0
 			ORDER BY
@@ -229,12 +240,23 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 			WHERE location != '' 
 				AND created_by IN ? 
 				AND location = ?
+			 and operator in ? and code_status in ?
 			group by location
 			) t
 			JOIN geo_areas a
 			ON a.code =  t.location 
 ;
 		`
+
+	fmt.Println("CodeStatus=", info.CodeStatus, "operators", info.Operator)
+	codeStatus := []uint{1, 2, 3}
+	if info.CodeStatus != 0 {
+		codeStatus = []uint{info.CodeStatus}
+	}
+	operators := []string{"yidong", "liantong", "dianxin"}
+	if info.Operator != "" {
+		operators = []string{info.Operator}
+	}
 
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.ChannelPayCode{})
@@ -247,7 +269,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 	// 全国各省
 	if info.Location == "" {
 		//fmt.Println("0 >>>>>")
-		rows, err := db.Raw(query, ids, 2).Rows()
+		rows, err := db.Raw(query, ids, operators, codeStatus, 2).Rows()
 		if err != nil {
 			// 处理错误
 		}
@@ -267,7 +289,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 
 	if len(info.Location) == 2 {
 		//fmt.Println("2 >>>>>")
-		rows, err := db.Raw(querySubF, ids, 2, info.Location, 4, 4, ids, info.Location).Rows()
+		rows, err := db.Raw(querySubF, ids, 2, info.Location, operators, codeStatus, 4, 4, ids, info.Location, operators, codeStatus).Rows()
 		if err != nil {
 			// 处理错误
 		}
@@ -285,7 +307,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 
 	if len(info.Location) == 4 {
 		//fmt.Println("4 >>>>>")
-		rows, err := db.Raw(querySubS, ids, 4, info.Location, 6, 6, ids, info.Location).Rows()
+		rows, err := db.Raw(querySubS, ids, 4, info.Location, 6, operators, codeStatus, 6, ids, info.Location, operators, codeStatus).Rows()
 		if err != nil {
 			// 处理错误
 		}
@@ -303,7 +325,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 	}
 	if len(info.Location) == 6 {
 		//fmt.Println("6 >>>>>")
-		rows, err := db.Raw(querySubCity, ids, info.Location).Rows()
+		rows, err := db.Raw(querySubCity, ids, info.Location, operators, codeStatus).Rows()
 		if err != nil {
 			// 处理错误
 		}
