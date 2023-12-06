@@ -34,9 +34,9 @@
         </el-form-item>
         <el-form-item label="运营商" prop="status">
           <el-select v-model="searchInfo.operator" placeholder="选择ISP">
-            <el-option label="移动" value="移动"/>
-            <el-option label="联通" value="联通"/>
-            <el-option label="电信" value="电信"/>
+            <el-option label="移动" value="yidong"/>
+            <el-option label="联通" value="liantong"/>
+            <el-option label="电信" value="dianxin"/>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -137,6 +137,12 @@
     <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-scrollbar height="450px" >
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-form-item label="产码方式"  prop="type" >
+<!--            <el-radio-group v-model="formData.type" @change="handleOptChange">
+              <el-radio label="2" ><template #default><span>预产</span></template></el-radio>
+            </el-radio-group>-->
+            <el-button v-model="formData.type" type="primary">预产</el-button>
+          </el-form-item>
           <el-form-item label="通道" prop="cid">
             <el-cascader
                 v-model="formData.cid"
@@ -344,6 +350,7 @@ const formData = ref({
   location: '',
   imgBaseStr: '',
   mid: '',
+  type: 2,
   codeStatus: 0,
   money: 0,
 })
@@ -661,6 +668,17 @@ const handleChange = (value) => {
   getALlChannelAccount()
 }
 
+const handleOptChange = async (value) => {
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: formData.value.type})
+
+  if (vcpTable.code === 0) {
+    vcpTableData.value = vcpTable.data.list
+    setOptions()
+  }
+  console.log(value)
+}
+
+
 const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
   ChannelCodeData &&
   ChannelCodeData.forEach(item => {
@@ -729,7 +747,7 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async() => {
   const table = await getChannelPayCodeList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  const vcpTable = await getChannelProductSelf({ page: 1, pageSize: 999, ...searchInfo.value })
+  const vcpTable = await getChannelProductSelf({ page: 1, pageSize: 999, type: 2 })
   vcpTableData.value = vcpTable.data.list
   if (table.code === 0) {
     tableData.value = table.data.list
@@ -835,6 +853,7 @@ const createByChannelPayCodeFunc = async(row) => {
           location: '',
           imgBaseStr: '',
           mid: '',
+          type: 2,
           codeStatus: 0,
           money: 0,
           }
@@ -920,6 +939,7 @@ const openDialog = () => {
           location: '',
           imgBaseStr: '',
           mid: '',
+          type: 2,
           codeStatus: 0,
           money: 0,
           }
@@ -942,6 +962,7 @@ const closeDialog = () => {
           location: '',
           imgBaseStr: '',
           mid: '',
+          type: 2,
           codeStatus: 0,
           money: 0,
           }

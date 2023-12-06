@@ -557,7 +557,7 @@ func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID st
 	var zs []redis.Z
 	var key string
 	for _, orgID := range orgIDs {
-		key = fmt.Sprintf(global.ChanOrgShopZSet, orgID, chanID, money)
+		key = fmt.Sprintf(global.ChanOrgShopAddrZSet, orgID, chanID, money)
 		zs, err = global.GVA_REDIS.ZRangeArgsWithScores(context.Background(), redis.ZRangeArgs{
 			Key:   key,
 			Start: 0,

@@ -61,9 +61,9 @@
           </el-form-item>
           <el-form-item label="产码方式"  prop="type" >
             <el-radio-group v-model="form.type">
-              <el-radio label="0"><template #default><span>原生</span></template></el-radio>
               <el-radio label="1"><template #default><span>引导</span></template></el-radio>
               <el-radio label="2"><template #default><span>预产</span></template></el-radio>
+              <el-radio label="3"><template #default><span>原生</span></template></el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="支付方式"  prop="payType" >

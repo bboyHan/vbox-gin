@@ -62,8 +62,8 @@ func (vcpService *ChannelProductService) GetChannelProduct(id uint) (vcp vbox.Ch
 	return
 }
 
-// GetOrgProductList 获取ChannelProduct所有列表(当前用户组织下的)
-func (vcpService *ChannelProductService) GetOrgProductList(ids []uint) (list []vbox.ChannelProduct, err error) {
+// GetChannelProductSelf 获取ChannelProduct所有列表(当前用户组织下的)
+func (vcpService *ChannelProductService) GetChannelProductSelf(ids []uint, search vboxReq.ChannelProductSearch) (list []vbox.ChannelProduct, err error) {
 	// 创建db
 	var productIds []uint
 	db := global.GVA_DB.Model(&vbox.OrgProduct{})
@@ -73,6 +73,10 @@ func (vcpService *ChannelProductService) GetOrgProductList(ids []uint) (list []v
 
 	db = global.GVA_DB.Model(&vbox.ChannelProduct{})
 	var channelProducts []vbox.ChannelProduct
+
+	if search.Type != 0 {
+		db.Where("type = ?", search.Type)
+	}
 
 	err = db.Select("vbox_channel_product.*").
 		Where("id in ?", productIds).Find(&channelProducts).Error

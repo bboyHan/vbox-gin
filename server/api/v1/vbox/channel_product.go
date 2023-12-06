@@ -205,8 +205,14 @@ func (vcpApi *ChannelProductApi) GetChannelProductAll(c *gin.Context) {
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /vcp/getChannelProductList [get]
 func (vcpApi *ChannelProductApi) GetChannelProductSelf(c *gin.Context) {
+	var pageInfo vboxReq.ChannelProductSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
 	orgIds := utils2.GetOrgIDS(c)
-	if list, err := vcpService.GetOrgProductList(orgIds); err != nil {
+	if list, err := vcpService.GetChannelProductSelf(orgIds, pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

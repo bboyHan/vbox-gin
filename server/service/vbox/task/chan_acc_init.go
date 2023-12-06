@@ -78,6 +78,8 @@ func ChanAccEnableCheckTask() {
 					continue
 				}
 
+				global.GVA_LOG.Info(fmt.Sprintf("收到一条需要处理的账号开启, %v", v))
+
 				// 1. 查询该用户的余额是否充足
 				var balance int
 				err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge), 0) as balance").
@@ -306,7 +308,34 @@ func ChanAccEnableCheckTask() {
 					}
 
 				} else if global.J3Contains(v.Obj.Cid) { //剑三
+				} else if global.PcContains(v.Obj.Cid) { //QB直付
+					err := product.QryQQRecords(v.Obj)
+					if err != nil {
+						global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.AccQryRecordsEx, v.Obj.AcId, v.Obj.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
 
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							Update("sys_status", 0).Error
+						global.GVA_LOG.Info("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+						_ = msg.Reject(false)
+						continue
+
+					}
 				}
 
 				//2. 校验都没啥问题，开启sys_status = 1，即可以调度订单使用
@@ -319,6 +348,30 @@ func ChanAccEnableCheckTask() {
 				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("ac_id = ? and exp_time < ?", v.Obj.AcId, now).Scan(&poList).Error
 				if len(poList) <= 0 {
 					// 暂时该号还没有订单，则可以加一下 给用
+					if global.TxContains(v.Obj.Cid) { //腾讯引导
+						/*orgIDs := utils2.GetDeepOrg(v.Obj.CreatedBy)
+
+						for _, orgID := range orgIDs {
+							//查一下引导商铺开启的金额列表
+							userIDs := utils2.GetUsersByOrgId(orgID)
+							shopMoneyKey := fmt.Sprintf(global.ChanOrgShopMoneyZSet, orgID, v.Obj.Cid)
+							dailyUsed, err := global.GVA_REDIS.ZAdd(context.Background(), shopMoneyKey).Int()
+
+						}
+						if err == redis.Nil { // redis中无，查一下库
+						} else if err != nil {
+
+						} else {
+							err = global.GVA_DB.Debug().Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("status = ? and created_by in ?", 1, userIDs).Error
+						}*/
+
+					} else if global.J3Contains(v.Obj.Cid) { //剑三
+
+					} else if global.PcContains(v.Obj.Cid) { //直付
+
+					}
+
 					orgIDs := utils2.GetSelfOrg(v.Obj.CreatedBy)
 					key := fmt.Sprintf(global.ChanOrgAccZSet, orgIDs[0], v.Obj.Cid)
 
@@ -337,7 +390,7 @@ func ChanAccEnableCheckTask() {
 			wg.Done()
 		}(i + 1)
 	}
-	global.GVA_LOG.Info("Vbox OrderWaitingTask 初始化搞定")
+	global.GVA_LOG.Info("Vbox Acc init 初始化搞定")
 	// 等待所有消费者完成处理
 	wg.Wait()
 }

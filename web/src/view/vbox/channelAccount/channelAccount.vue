@@ -169,8 +169,19 @@
           </el-row>
           <el-row>
             <el-col :span="24">
+              <el-form-item label="产码方式"  prop="type" >
+                <el-radio-group v-model="formData.type" @change="handleChange">
+                  <el-radio label="1"><template #default><span>引导</span></template></el-radio>
+                  <el-radio label="2"><template #default><span>预产</span></template></el-radio>
+                  <el-radio label="3"><template #default><span>原生</span></template></el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="24">
               <el-form-item label="通道id" prop="cid">
-                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change="handleChange" style="width: 100%"/>
+                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change="" style="width: 100%"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -505,6 +516,7 @@ const channelCodeProps = {
 }
 
 const handleChange = (value) => {
+  getOptionData()
   console.log(value)
 }
 
@@ -543,6 +555,7 @@ const formData = ref({
   countLimit: 0,
   dailyLimit: 0,
   totalLimit: 0,
+  type: 0,
   status: 0,
   sysStatus: 0,
   uid: 0,
@@ -559,8 +572,7 @@ const rule = reactive({
     whitespace: true,
     message: '不能只输入空格',
     trigger: ['input', 'blur'],
-  }
-  ],
+  }],
   cid: [{
     required: true,
     message: '',
@@ -570,8 +582,17 @@ const rule = reactive({
     whitespace: true,
     message: '不能只输入空格',
     trigger: ['input', 'blur'],
-  }
-  ],
+  }],
+  type: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },
+  {
+    whitespace: true,
+    message: '不能只输入空格',
+    trigger: ['input', 'blur'],
+  }],
 })
 
 const searchRule = reactive({
@@ -640,6 +661,19 @@ const getTableData = async() => {
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
+    // setOptions()
+  }
+}
+
+// 根据不同的产品类型切换 Option
+const payType = ref(0)
+
+const getOptionData = async() => {
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: formData.value.type})
+  await countAccFunc()
+
+  if (vcpTable.code === 0) {
+    vcpTableData.value = vcpTable.data.list
     setOptions()
   }
 }
