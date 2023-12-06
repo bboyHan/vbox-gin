@@ -33,13 +33,16 @@ func RunWindowsServer() {
 			zap.L().Error(fmt.Sprintf("%+v", err))
 		}
 	}
+	//MQ任务入口
 	if global.GVA_CONFIG.System.UseMQTask {
 		go task.OrderWaitingTask()
 		go task.OrderConfirmTask()
 		go task.ChanAccEnableCheckTask()
 	}
-	//TODO 任务入口
-	initialize.Timer()
+	//定时任务入口
+	if global.GVA_CONFIG.System.TimerTask {
+		initialize.Timer()
+	}
 	// 从db加载jwt数据
 	if global.GVA_DB != nil {
 		system.LoadAll()

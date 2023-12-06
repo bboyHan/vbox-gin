@@ -110,7 +110,7 @@
     </el-dialog>
 
     <!--  对接信息复制  -->
-    <el-dialog v-model="dialogInfoVisible" :before-close="closeInfoDialog" :title="infoType==='show'?'对接信息':'非法操作'" destroy-on-close>
+    <el-dialog v-model="dialogInfoVisible" :before-close="closeInfoDialog" :title="infoTitle" destroy-on-close>
       <el-form :model="formData" label-position="left" ref="elFormRef" label-width="80px">
         <el-form-item label="商户ID"  prop="pAccount" >
           <el-input v-model="formData.pAccount" readonly />
@@ -118,8 +118,8 @@
         <el-form-item label="商户Key"  prop="pKey" >
           <el-input v-model="formData.pKey" readonly />
         </el-form-item>
-        <el-form-item label="通道编码"  prop="pKey" >
-          <el-input v-model="formData.pKey" readonly />
+        <el-form-item label="通道编码"  prop="cid" >
+          <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change="" style="width: 100%"/>
         </el-form-item>
         <el-form-item label="商户备注"  prop="pRemark" >
           <el-input v-model="formData.pRemark" readonly />
@@ -128,7 +128,19 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closeInfoDialog">取 消</el-button>
+          <el-button class="btn-copy" type="primary" @click="previewInfo">预 览</el-button>
           <el-button class="btn-copy" type="primary" @click="copyVPAInfo">复 制</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  预览  -->
+    <el-dialog v-model="previewFlag">
+      <PreviewCodeDialog v-if="previewFlag" ref="previewNode" :preview-code="preViewCode"/>
+      <template #footer>
+        <div class="dialog-footer" style="padding-top:14px;padding-right:14px">
+          <el-button type="primary" @click="copy">复 制</el-button>
+          <el-button type="primary" @click="previewFlag = false">确 定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -151,16 +163,26 @@ import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDow
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import ClipboardJS from "clipboard";
+import {getChannelProductSelf} from "@/api/channelProduct";
+import PreviewCodeDialog from "@/view/systemTools/autoCode/component/previewCodeDialg.vue";
 
 defineOptions({
     name: 'PayAccount'
 })
+
+const previewFlag = ref(false)
+const preViewCode = ref({})
+const previewNode = ref(null)
+const copy = () => {
+  previewNode.value.copy()
+}
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
         uid: 0,
         pAccount: '',
         pKey: '',
+        cid: '',
         pRemark: '',
         status: 0,
         })
@@ -195,7 +217,18 @@ const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
 const searchInfo = ref({})
+const channelCodeOptions = ref([])
+const vcpTableData = ref([])
 
+const channelCodeProps = {
+  expandTrigger: 'hover',
+  checkStrictly: false,
+  emitPath: false,
+}
+
+const handleChange = (value) => {
+  console.log(value)
+}
 // 重置
 const onReset = () => {
   searchInfo.value = {}
@@ -227,11 +260,16 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async() => {
   const table = await getPayAccountList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: formData.value.type})
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
+  }
+  if (vcpTable.code === 0) {
+    vcpTableData.value = vcpTable.data.list
+    setOptions()
   }
 }
 
@@ -240,12 +278,34 @@ getTableData()
 // ============== 表格控制部分结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
-const setOptions = async () =>{
+const setOptions = async() => {
+  channelCodeOptions.value = []
+  setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
 
-// 获取需要的字典 可能为空 按需保留
-setOptions()
-
+const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+        children: []
+      }
+      setChannelCodeOptions(
+          item.children,
+          option.children,
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+      }
+      optionsData.push(option)
+    }
+  })
+}
 
 // 多选数据
 const multipleSelection = ref([])
@@ -411,6 +471,7 @@ const enterDialog = async () => {
 // 对接信息
 const dialogInfoVisible = ref(false)
 const infoType = ref('')
+const infoTitle = ref('')
 
 // 关闭弹窗
 const closeInfoDialog = () => {
@@ -428,20 +489,38 @@ const closeInfoDialog = () => {
 const showVPAInfo = async(row) => {
   const res = await findPayAccount({ ID: row.ID })
   infoType.value = 'show'
+  infoTitle.value = '对接信息'
   if (res.code === 0) {
-    formData.value = res.data.revpa
+    formData.value = res.data.repacc
     dialogInfoVisible.value = true
   }
 }
 
 
 // 复制对接信息
+const previewInfo = () => {
+  let res = formData.value;
+  console.log(res)
+  let copyInfo = `
+    商户备注: ${res.pRemark}
+    商户ID: ${res.pAccount}
+    商户Key: ${res.pKey}
+    通道编码: ${res.cid}
+  `
+  preViewCode.value = {
+    '对接信息': "```shell" + copyInfo + "```"
+  }
+  previewFlag.value = true
+}
+// 复制对接信息
 const copyVPAInfo = () => {
   let res = formData.value;
   console.log(res)
   let copyInfo = `
+    商户备注: ${res.pRemark}
     商户ID: ${res.pAccount}
     商户Key: ${res.pKey}
+    通道编码: ${res.cid}
   `
   const clipboard = new ClipboardJS('.btn-copy', {
     text: () => copyInfo

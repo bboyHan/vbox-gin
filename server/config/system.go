@@ -13,4 +13,5 @@ type System struct {
 	UseMongo      bool   `mapstructure:"use-mongo" json:"use-mongo" yaml:"use-mongo"`                // 使用mongo
 	UseMQ         bool   `mapstructure:"use-mq" json:"use-mq" yaml:"use-mq"`                         // 使用mq
 	UseMQTask     bool   `mapstructure:"use-mq-task" json:"use-mq-task" yaml:"use-mq-task"`          // vbox mq task
+	TimerTask     bool   `mapstructure:"timer-task" json:"timer-task" yaml:"timer-task"`             // 定时任务开关
 }

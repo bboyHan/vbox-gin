@@ -9,7 +9,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
-	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/redis/go-redis/v9"
@@ -372,13 +371,13 @@ func ChanAccEnableCheckTask() {
 
 					}
 
-					orgIDs := utils2.GetSelfOrg(v.Obj.CreatedBy)
+					/*orgIDs := utils2.GetSelfOrg(v.Obj.CreatedBy)
 					key := fmt.Sprintf(global.ChanOrgAccZSet, orgIDs[0], v.Obj.Cid)
 
 					global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 						Score:  0,
 						Member: v.Obj.AcId + "_" + v.Obj.AcAccount,
-					})
+					})*/
 				}
 
 				if err != nil {

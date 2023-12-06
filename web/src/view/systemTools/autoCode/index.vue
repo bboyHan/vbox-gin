@@ -490,30 +490,17 @@
       <template #header>
         <div class="flex items-center py-1.5">
           <p>操作栏：</p>
-          <el-button
-            type="primary"
-            @click="selectText"
-          >全选</el-button>
-          <el-button
-            type="primary"
-            @click="copy"
-          >复制</el-button>
+          <el-button type="primary" @click="selectText">全 选</el-button>
+          <el-button type="primary" @click="copy">复 制</el-button>
         </div>
       </template>
-      <PreviewCodeDialog
-        v-if="previewFlag"
-        ref="previewNode"
-        :preview-code="preViewCode"
-      />
+      <PreviewCodeDialog v-if="previewFlag" ref="previewNode" :preview-code="preViewCode"/>
       <template #footer>
         <div
           class="dialog-footer"
           style="padding-top:14px;padding-right:14px"
         >
-          <el-button
-            type="primary"
-            @click="previewFlag = false"
-          >确 定</el-button>
+          <el-button type="primary" @click="previewFlag = false">确 定</el-button>
         </div>
       </template>
     </el-dialog>
