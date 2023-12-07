@@ -170,7 +170,7 @@ func (userWalletService *UserWalletService) GetUserWallet(id uint) (userWallet v
 
 // GetUserWalletSelf 获取当前用户钱包余额
 func (userWalletService *UserWalletService) GetUserWalletSelf(id uint) (balance int, err error) {
-	err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("sum(recharge) as balance").Where("uid = ?", id).First(&balance).Error
+	err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge),0) as balance").Where("uid = ?", id).First(&balance).Error
 	return
 }
 

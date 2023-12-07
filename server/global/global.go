@@ -34,13 +34,16 @@ const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
 
-	ChanOrgAccFilter     = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
-	ChanOrgAccZSet       = "vb_acc_set:org_%d:chan_%s:money_%d"       // 同组织通道下可用账号
-	ChanOrgShopAddrZSet  = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
-	ChanOrgShopMoneyZSet = "vb_shop_money:org_%d:chan_%s"             // 同组织通道下可用商铺金额
-	ChanOrgPayCodeZSet   = "vb_pay_code_set:org_%d:chan_%s:money_%d"  // 同组织通道下可用付款码
+	ChanOrgAccFilter    = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
+	ChanOrgAccZSet      = "vb_acc_set:org_%d:chan_%s:money_%d"       // 同组织通道下可用账号
+	ChanOrgShopAddrZSet = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
+	ChanOrgPayCodeZSet  = "vb_pay_code_set:org_%d:chan_%s:money_%d"  // 同组织通道下可用付款码
 
 	PayOrderKey = "vb_order:%s"
+
+	OrgChanSet      = "vb_cid_list:org_%d"           // 组织下拥有的产品id
+	OrgShopMoneySet = "vb_shop_money:org_%d:chan_%s" // 同组织通道下可用商铺金额
+
 )
 
 const (
@@ -48,16 +51,15 @@ const (
 )
 
 const (
-	UserOrgChannelCodePrefix = "user_org_channel_code_ids:" // 组织下拥有的产品id
-	PayAccPrefix             = "pacc_id:"                   // 商户信息
+	PayAccPrefix = "p_acc_id:" // 商户信息
 )
 
 // PAcc 相关
 
 const (
-	PAccPay    = "pacc_pay"
-	PAccCreate = "pacc_create"
-	PAccQuery  = "pacc_query"
+	PAccPay    = "p_acc_pay"
+	PAccCreate = "p_acc_create"
+	PAccQuery  = "p_acc_query"
 )
 
 // 用户充值消费相关
@@ -69,12 +71,12 @@ const (
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                // 充值
-	WalletEventTransferPrefix = "VBTS"                // 划转
-	WalletEventOrderPrefix    = "VBOD"                // 订单消费
-	WalletEventRecharge       = "充值积分[%d]"            // 充值
+	WalletEventRechargePrefix = "VBIN"                         // 充值
+	WalletEventTransferPrefix = "VBTS"                         // 划转
+	WalletEventOrderPrefix    = "VBOD"                         // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"                 // 充值
 	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 划转
-	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 划转
+	WalletEventIncome         = "积分增加[%d], 来自[%s]"       // 划转
 )
 
 var (

@@ -209,7 +209,7 @@ system:
     use-mongo: false
     use-mq: true
     use-mq-task: false
-    timer-task: false
+    timer-task: true
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

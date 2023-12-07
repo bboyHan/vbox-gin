@@ -121,12 +121,29 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="操作">
+        <el-table-column align="center" label="查询">
           <template #default="scope">
             <el-row>
               <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">产码速查</el-button>
+              </el-col>
+            </el-row>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="操作">
+          <template #default="scope">
+            <el-row>
+              <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">产码</el-button>
+              </el-col>
+            </el-row>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="操作">
+          <template #default="scope">
+            <el-row>
+              <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">详情</el-button>
                 <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)">变更</el-button>
                 <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>

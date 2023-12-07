@@ -232,7 +232,11 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 	// 1.1 ----- 校验该组织是否有此产品 -----------
 	var channelCodeList []string
-	c, err := rdConn.Exists(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10)).Result()
+	// 获取组织ID
+	orgIdTemp := utils2.GetSelfOrg(vpa.Uid)
+	key := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
+
+	c, err := rdConn.Exists(context.Background(), key).Result()
 	if c == 0 {
 		var productIds []uint
 		if err != nil {
@@ -249,9 +253,9 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		}
 
 		jsonStr, _ := json.Marshal(channelCodeList)
-		rdConn.Set(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10), jsonStr, 10*time.Minute)
+		rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
 	} else {
-		jsonStr, _ := rdConn.Get(context.Background(), global.UserOrgChannelCodePrefix+strconv.FormatUint(uint64(vpa.Uid), 10)).Bytes()
+		jsonStr, _ := rdConn.Get(context.Background(), key).Bytes()
 		err = json.Unmarshal(jsonStr, &channelCodeList)
 	}
 

@@ -500,12 +500,21 @@ const showVPAInfo = async(row) => {
 // 复制对接信息
 const previewInfo = () => {
   let res = formData.value;
+  if (!res.cid){
+    ElMessage({
+      showClose: true,
+      message: "未指定通道产品编码,请核实",
+      type: 'error'
+    })
+    return
+  }
   console.log(res)
   let copyInfo = `
     商户备注: ${res.pRemark}
     商户ID: ${res.pAccount}
     商户Key: ${res.pKey}
     通道编码: ${res.cid}
+    服务网关: ${res.cid}
   `
   preViewCode.value = {
     '对接信息': "```shell" + copyInfo + "```"
