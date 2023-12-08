@@ -67,14 +67,18 @@ func HandleShopMoneyAvailable() (err error) {
 				if err != nil {
 					global.GVA_LOG.Error("redis err", zap.Error(err))
 				}
-				if err = global.GVA_DB.Debug().Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+				if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
 					Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; err != nil {
 					global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
 					continue
 				}
 
-				jsonStr, _ := json.Marshal(moneyList)
-				rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+				if moneyList == nil || len(moneyList) == 0 {
+					continue
+				} else {
+					jsonStr, _ := json.Marshal(moneyList)
+					rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+				}
 			} else {
 				jsonStr, _ := rdConn.Get(context.Background(), moneyKey).Bytes()
 				err = json.Unmarshal(jsonStr, &moneyList)

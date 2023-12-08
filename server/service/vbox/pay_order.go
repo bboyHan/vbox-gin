@@ -271,7 +271,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 	orgIDs := utils2.GetDeepOrg(vpa.Uid)
 	for _, orgID := range orgIDs {
-		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, vpo.ChannelCode, money)
+		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, vpo.ChannelCode, strconv.FormatInt(int64(money), 10))
 
 		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
@@ -425,7 +425,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	//获取当前组织
 	orgIDs := utils2.GetDeepOrg(vpo.UserId)
 	for _, orgID := range orgIDs {
-		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, chanID, vpo.Money)
+		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, chanID, strconv.FormatInt(int64(vpo.Money), 10))
 
 		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{

@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
@@ -36,9 +35,10 @@ func HandleAccAvailable() (err error) {
 		orgIdTemp := utils2.GetSelfOrg(uid)
 
 		orgIds := utils2.GetDeepOrg(uid)
-		key := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
+		// 当前付方所拥有的产品列表
+		chanKey := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
 
-		c, err := rdConn.Exists(context.Background(), key).Result()
+		c, err := rdConn.Exists(context.Background(), chanKey).Result()
 		if c == 0 {
 			var productIds []uint
 			if err != nil {
@@ -53,15 +53,20 @@ func HandleAccAvailable() (err error) {
 				continue
 			}
 
-			jsonStr, _ := json.Marshal(channelCodeList)
-			rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
+			//jsonStr, _ := json.Marshal(channelCodeList)
+			for _, cid := range channelCodeList {
+				rdConn.SAdd(context.Background(), chanKey, cid)
+			}
 		} else {
-			jsonStr, _ := rdConn.Get(context.Background(), key).Bytes()
-			err = json.Unmarshal(jsonStr, &channelCodeList)
+			cidList, _ := rdConn.SMembers(context.Background(), chanKey).Result()
+			//err = json.Unmarshal(jsonStr, &channelCodeList)
+			channelCodeList = cidList
 		}
 
+		// 遍历每个归属产品下的通道账号情况，筛选出可用的账号 入等待池
 		for _, channelCode := range channelCodeList {
 			deepUIDs := utils2.GetDeepUserIDs(uid)
+			var moneyList []string
 			var vcas []vbox.ChannelAccount
 
 			err := global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").
@@ -84,12 +89,63 @@ func HandleAccAvailable() (err error) {
 				endTime := nowTime.Add(60 * time.Second)
 				//global.GVA_LOG.Info("查询时间范围", zap.Any("startTime", startTime), zap.Any("endTime", endTime))
 
-				var moneyList []int
-				err := global.GVA_DB.Model(&vbox.ChannelShop{}).Select("money").Where("cid = ? and status = ? and created_by in ?", channelCode, 1, deepUIDs).
-					Find(&moneyList).Error
-				if err != nil {
-					global.GVA_LOG.Error("查库ex", zap.Error(err))
+				moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgIdTemp[0], channelCode)
+				cm, err := rdConn.Exists(context.Background(), moneyKey).Result()
+				if cm == 0 {
+					if err != nil {
+						global.GVA_LOG.Error("redis err", zap.Error(err))
+					}
+
+					// 0 - 如果是引导的，金额从开启的商铺金额获取
+					// 1 - 如果是预产的，从未过期的预产金额获取
+
+					// 0 -
+					if global.TxContains(channelCode) { // 10xx tx引导
+						err := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+							Where("cid = ? and status = ? and created_by in ?", channelCode, 1, deepUIDs).
+							Find(&moneyList).Error
+						if err != nil {
+							global.GVA_LOG.Error("查库ex", zap.Error(err))
+						} else {
+							//jsonStr, _ := json.Marshal(moneyList)
+							for _, money := range moneyList {
+								rdConn.SAdd(context.Background(), moneyKey, money)
+							}
+							//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+						}
+					} else if global.J3Contains(channelCode) { // 10xx 剑三引导
+						err := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+							Where("cid = ? and status = ? and created_by in ?", channelCode, 1, deepUIDs).
+							Find(&moneyList).Error
+						if err != nil {
+							global.GVA_LOG.Error("查库ex", zap.Error(err))
+						} else {
+							for _, money := range moneyList {
+								rdConn.SAdd(context.Background(), moneyKey, money)
+							}
+							//jsonStr, _ := json.Marshal(moneyList)
+							//rdConn.SAdd(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+						}
+						//	1 -
+					} else if global.PcContains(channelCode) { // 30xx 付码
+						err := global.GVA_DB.Model(&vbox.ChannelPayCode{}).Distinct("money").Select("money").
+							Where("cid = ? and code_status = ? and created_by in ?", channelCode, 2, deepUIDs).
+							Find(&moneyList).Error
+						if err != nil {
+							global.GVA_LOG.Error("查库ex", zap.Error(err))
+						} else {
+							for _, money := range moneyList {
+								rdConn.SAdd(context.Background(), moneyKey, money)
+							}
+						}
+					}
+
+				} else {
+					moneyMembers, _ := rdConn.SMembers(context.Background(), moneyKey).Result()
+					moneyList = moneyMembers
 				}
+
+				global.GVA_LOG.Info("ddd - ", zap.Any("cid", channelCode), zap.Any("moneyList", moneyList))
 
 				for _, vca := range vcas {
 					vcaTmp := vca
@@ -101,7 +157,7 @@ func HandleAccAvailable() (err error) {
 							records, err := product.QryQQRecordsBetween(vcaTmp, startTime, endTime)
 							if err != nil {
 								// 查单有问题，直接订单要置为超时，消息置为处理完毕
-								global.GVA_LOG.Error("查单异常跳过")
+								global.GVA_LOG.Error("查单异常跳过", zap.Error(err))
 								return
 							}
 							rdMap := product.Classifier(records.WaterList)
@@ -115,7 +171,7 @@ func HandleAccAvailable() (err error) {
 									var count int64
 									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
 									if err != nil {
-										global.GVA_LOG.Error("查库异常")
+										global.GVA_LOG.Error("查库异常", zap.Error(err))
 									}
 									if count > 0 {
 										//global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
@@ -132,8 +188,8 @@ func HandleAccAvailable() (err error) {
 							} else { // 有qb 记录了，要查一下qb所充的金额有没有相对应的存在
 
 								for _, money := range moneyList {
-									if rd, ok2 := vm[strconv.FormatInt(int64(money), 10)]; !ok2 {
-										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%d]", rd, money))
+									if rd, ok2 := vm[money]; !ok2 {
+										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
 
 										// 再查一下库，这个时间段的有没有这个账号的订单
 										var count int64
@@ -164,6 +220,70 @@ func HandleAccAvailable() (err error) {
 							// 查j3 记录
 						} else if global.PcContains(channelCode) {
 							//	查付码记录
+
+							//	查tx 记录
+							records, err := product.QryQQRecordsBetween(vcaTmp, startTime, endTime)
+							if err != nil {
+								// 查单有问题，直接订单要置为超时，消息置为处理完毕
+								global.GVA_LOG.Error("查单异常跳过", zap.Error(err))
+								return
+							}
+							rdMap := product.Classifier(records.WaterList)
+
+							if vm, ok := rdMap["Q币"]; !ok {
+								//global.GVA_LOG.Info("还没有QB的充值记录")
+								for _, money := range moneyList {
+									key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
+									//global.GVA_LOG.Info("打印出来了", zap.Any("key", key))
+
+									// 再查一下库，这个时间段的有没有这个账号的订单
+									var count int64
+									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+									if err != nil {
+										global.GVA_LOG.Error("查库异常", zap.Error(err))
+									}
+									if count > 0 {
+										//global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
+
+									} else {
+
+										// 进入等待拿走的可用账号池子
+										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+											Score:  0,
+											Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+										})
+									}
+								}
+							} else { // 有qb 记录了，要查一下qb所充的金额有没有相对应的存在
+
+								for _, money := range moneyList {
+									if rd, ok2 := vm[money]; !ok2 {
+										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
+
+										// 再查一下库，这个时间段的有没有这个账号的订单
+										var count int64
+										err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+										if err != nil {
+											global.GVA_LOG.Error("查库异常")
+										}
+										if count > 0 {
+											global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
+
+										} else { // 查了库也没数据，就可以加到可用列表中待取用了
+											key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
+											// 进入等待拿走的可用账号池子
+											global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+												Score:  0,
+												Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+											})
+										}
+
+									} else { // 证明这种金额的，已经有记录了，代表这种金额对应的账号暂不可用
+
+									}
+								}
+
+							}
 						}
 					}()
 

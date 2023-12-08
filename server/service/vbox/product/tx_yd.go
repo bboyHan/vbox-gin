@@ -43,7 +43,8 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 			channelCode = "qb_proxy"
 		}
 
-		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+			Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
 			First(&Url).Error
 
 		if err != nil {

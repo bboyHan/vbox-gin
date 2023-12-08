@@ -121,7 +121,7 @@ func OrderWaitingTask() {
 					accID = v.Obj.AcId
 				} else {
 					for _, orgID := range orgIDs {
-						key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, v.Obj.ChannelCode, v.Obj.Money)
+						key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, v.Obj.ChannelCode, strconv.FormatInt(int64(v.Obj.Money), 10))
 
 						var resList []string
 						resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
