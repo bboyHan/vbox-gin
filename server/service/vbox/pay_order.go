@@ -252,11 +252,12 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			return nil, err
 		}
 
-		jsonStr, _ := json.Marshal(channelCodeList)
-		rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
+		for _, cid := range channelCodeList {
+			rdConn.SAdd(context.Background(), key, cid)
+		}
 	} else {
-		jsonStr, _ := rdConn.Get(context.Background(), key).Bytes()
-		err = json.Unmarshal(jsonStr, &channelCodeList)
+		members, _ := rdConn.SMembers(context.Background(), key).Result()
+		channelCodeList = members
 	}
 
 	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpa.Uid), zap.Any("商户", vpa.PRemark))
@@ -898,7 +899,7 @@ func (vpoService *PayOrderService) HandleEventID2payCode(chanID string, money in
 			now := time.Now()
 
 			err = global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("cid = ? and money = ? and code_status = 2", chanID, money).
-				Where("created_by in ?", userIDs).Where("time_limit < ?", now).Find(&pcList).Error
+				Where("created_by in ?", userIDs).Where("exp_time > ?", now).Find(&pcList).Error
 			if err != nil {
 				return "", err
 			}

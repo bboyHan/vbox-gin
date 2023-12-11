@@ -145,7 +145,7 @@ func HandleAccAvailable() (err error) {
 					moneyList = moneyMembers
 				}
 
-				global.GVA_LOG.Info("ddd - ", zap.Any("cid", channelCode), zap.Any("moneyList", moneyList))
+				//global.GVA_LOG.Info("ddd - ", zap.Any("cid", channelCode), zap.Any("moneyList", moneyList))
 
 				for _, vca := range vcas {
 					vcaTmp := vca

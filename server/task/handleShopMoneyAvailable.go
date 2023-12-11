@@ -2,13 +2,11 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"go.uber.org/zap"
-	"time"
 )
 
 func HandleShopMoneyAvailable() (err error) {
@@ -50,11 +48,14 @@ func HandleShopMoneyAvailable() (err error) {
 				continue
 			}
 
-			jsonStr, _ := json.Marshal(channelCodeList)
-			rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
+			for _, cid := range channelCodeList {
+				rdConn.SAdd(context.Background(), key, cid)
+			}
+			//jsonStr, _ := json.Marshal(channelCodeList)
+			//rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
 		} else {
-			jsonStr, _ := rdConn.Get(context.Background(), key).Bytes()
-			err = json.Unmarshal(jsonStr, &channelCodeList)
+			cidList, _ := rdConn.SMembers(context.Background(), key).Result()
+			channelCodeList = cidList
 		}
 
 		// 获取每个产品编码下拥有的money list
@@ -76,12 +77,15 @@ func HandleShopMoneyAvailable() (err error) {
 				if moneyList == nil || len(moneyList) == 0 {
 					continue
 				} else {
-					jsonStr, _ := json.Marshal(moneyList)
-					rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+					for _, m := range moneyList {
+						rdConn.SAdd(context.Background(), moneyKey, m)
+					}
+					//jsonStr, _ := json.Marshal(moneyList)
+					//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
 				}
 			} else {
-				jsonStr, _ := rdConn.Get(context.Background(), moneyKey).Bytes()
-				err = json.Unmarshal(jsonStr, &moneyList)
+				moneyMem, _ := rdConn.SMembers(context.Background(), moneyKey).Result()
+				moneyList = moneyMem
 			}
 		}
 

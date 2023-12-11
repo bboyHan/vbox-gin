@@ -701,7 +701,7 @@ func HandleEventID2payCode(chanID string, money int, orgIDs []uint) (orgPayCodeI
 			now := time.Now()
 
 			err = global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("cid = ? and money = ? and code_status = 2", chanID, money).
-				Where("created_by in ?", userIDs).Where("time_limit < ?", now).Find(&pcList).Error
+				Where("created_by in ?", userIDs).Where("exp_time > ?", now).Find(&pcList).Error
 			if err != nil {
 				return "", err
 			}
