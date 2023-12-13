@@ -88,7 +88,7 @@
         </el-table-column>
         <el-table-column align="center" label="地区" prop="location" width="180">
           <template #default="{ row }">
-            {{ codeToText[row.location.slice(0, 2)] }} | {{ codeToText[row.location.slice(0, 4)] }} | {{ codeToText[row.location.slice(0, 6)] }}
+            {{ regionCode2Text(row.location, 2) }} | {{ regionCode2Text(row.location, 4) }} | {{ regionCode2Text(row.location, 6) }}
           </template>
         </el-table-column>
         <el-table-column align="left" label="状态" prop="codeStatus" width="90" >
@@ -100,25 +100,23 @@
         </el-table-column>
         <el-table-column align="left" label="金额" prop="money" width="80" >
         </el-table-column>
-        <el-table-column align="left" label="付款码" prop="imgBaseStr" width="120" >
+        <el-table-column align="left" label="付款码" prop="imgContent" width="120" >
           <template #default="{ row }">
             <div v-if="!dialogImageShow[row.ID]">
-              <el-button link icon="search" @click="toggleDialog(row.ID)" >预览</el-button>
+              <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)" >预览</el-button>
             </div>
             <div v-else>
-              <el-button link icon="search" @click="toggleDialog(row.ID)">取消预览</el-button>
+              <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">取消预览</el-button>
               <el-image :src="row.imgBaseStr" fit="contain" class="thumbnail-image"/>
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="操作" >
+        <el-table-column align="left" label="操作" width="120">
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
               <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
-              详情
             </el-button>
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelPayCodeFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)"></el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -134,13 +132,10 @@
         />
       </div>
     </div>
-    <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+    <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px" >
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="产码方式"  prop="type" >
-<!--            <el-radio-group v-model="formData.type" @change="handleOptChange">
-              <el-radio label="2" ><template #default><span>预产</span></template></el-radio>
-            </el-radio-group>-->
             <el-button v-model="formData.type" type="primary">预产</el-button>
           </el-form-item>
           <el-form-item label="通道" prop="cid">
@@ -214,12 +209,12 @@
             <el-cascader
                 :change-on-select="true"
                 style="width:100%"
-                :options="optionsRegion"
+                :options="regionOptions"
                 v-model="selectedCity"
                 @change="chge"
                 placeholder="省 / 市 / 区"
                 filterable
-                :props="{checkStrictly: true}"
+                :props="{checkStrictly: false}"
             >
             </el-cascader>
           </el-form-item>
@@ -268,15 +263,15 @@
           </el-descriptions-item>
           <el-descriptions-item label="运营商">
             {{ getOperatorChinese(formData.operator) }}
-            <!-- <template #default="{ row }">
-            {{ getOperatorChinese(row.operator) }}
-            </template> -->
           </el-descriptions-item>
           <el-descriptions-item label="地区">
             {{ formData.location }}
           </el-descriptions-item>
           <el-descriptions-item label="状态">
             {{ formatPayCodeStatus(formData.codeStatus) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="预处理" >
+            <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
           </el-descriptions-item>
           <el-descriptions-item label="付款码" >
             <el-image :src="formData.imgBaseStr" fit="contain" class="thumbnail-image"/>
@@ -323,6 +318,8 @@ import { InfoFilled, Plus } from '@element-plus/icons-vue';
 import dayjs from 'dayjs';
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import provinces from '@/assets/json/provinces.json'
+import QRCode from "qrcode";
 
 defineOptions({
     name: 'ChannelPayCode'
@@ -334,7 +331,9 @@ dayjs.extend(timezone);
 
 // 缩略图
 const dialogImageShow = ref({})
-const toggleDialog = (id) => {
+const qrcodeUrl = ref('');
+
+const toggleDialog = (id, content) => {
   console.log(id)
   dialogImageShow.value[id] = !dialogImageShow.value[id];
 };
@@ -349,90 +348,32 @@ const formData = ref({
   operator: '',
   location: '',
   imgBaseStr: '',
+  imgContent: '',
+  imgShowContent: '',
   mid: '',
   type: 2,
   codeStatus: 0,
   money: 0,
 })
 
-const accFormData = ref({
-  acId: '',
-  acRemark: '',
-  acAccount: '',
-  acPwd: '',
-  token: '',
-  cid: '',
-  countLimit: 0,
-  dailyLimit: 0,
-  totalLimit: 0,
-  status: 0,
-  sysStatus: 0,
-  uid: 0,
-})
-
 // 验证规则
 const rule = reactive({
-  acAccount: [{
-    required: true,
-    message: '',
-    trigger: [ 'blur'],
-  }
-  ],
-  cid: [{
-    required: true,
-    message: '请选择',
-    trigger: [ 'blur'],
-  }
-  ],
-  acId: [{
-    required: true,
-    message: '请选择',
-    trigger: ['input', 'blur'],
-  }
-  ],
-  // expTime: [{
-  //   required: true,
-  //   message: '过期时刻要大于当前时间',
-  //   trigger: [ 'blur'],
-  // },
-  // { 
-  //     validator: checkExpirationTime, 
-  //     trigger: 'blur' 
-  //   }
-  // ],
-  expTime: [
-    {
-      required: true,
-      validator: validateTimeLimit,
-      trigger: 'blur',
-    },
-  ],
-  operator: [{
-    required: true,
-    message: '',
-    trigger: ['blur'],
-  }
-  ],
-  location: [{
-    required: true,
-    message: '请选择省或者省市',
-    trigger: ['input', 'blur'],
-  }
-  ],
-  // imgBaseStr: [{
-  //   required: true,
-  //   message: '',
-  //   trigger: ['input', 'blur'],
-  // }
-  // ],
-  money: [{
-    required: true,
-    message: '',
-    trigger: ['input', 'blur'],
-  }
-  ]
-  
+  acAccount: [{required: true, message: '', trigger: [ 'blur'],}],
+  cid: [{required: true, message: '请选择', trigger: [ 'blur'],}],
+  acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
+  expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
+  operator: [{required: true, message: '', trigger: ['blur'],}],
+  location: [{required: true, message: '请选择省或者省市', trigger: ['input', 'blur'],}],
+  money: [{ validator: checkMoney, trigger: 'blur' }]
 })
+
+function checkMoney(rule, value, callback) {
+  if (Number(value) <= 0) {
+    callback(new Error('请输入正确的金额'));
+  } else {
+    callback();
+  }
+}
 
 function checkExpirationTime(rule, value, callback) {
   if (new Date(value).getTime() <= new Date().getTime()) {
@@ -450,6 +391,14 @@ function validateTimeLimit(rule, value, callback) {
   }
 }
 
+
+function regionCode2Text(content, index) {
+  if (content.length < index) {
+    return ' - '
+  }else {
+    return codeToText[content.slice(0, index)]
+  }
+}
 
 function getOperatorChinese(operator) {
   const operatorMap = {
@@ -652,6 +601,8 @@ const getALlChannelAccount = async() => {
 
 // -------------- 同一通道产品的归集 ------------------------
 
+// region
+const regionOptions = ref([])
 
 //通道产品
 const channelCodeOptions = ref([])
@@ -703,7 +654,29 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
   })
 }
 
-
+const setRegionOptions = (ChannelCodeData, optionsData, disabled) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.code + '',
+        label: item.name,
+        children: []
+      }
+      setChannelCodeOptions(
+          item.children,
+          option.children,
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.code + '',
+        label: item.name,
+      }
+      optionsData.push(option)
+    }
+  })
+}
 
 const elFormRef = ref()
 const elSearchFormRef = ref()
@@ -767,6 +740,8 @@ getTableData()
 const setOptions = async () =>{
   channelCodeOptions.value = []
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
+  console.log(provinces)
+  setRegionOptions(provinces, regionOptions.value, false)
 }
 
 
@@ -823,6 +798,7 @@ const onDelete = async() => {
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
+const typeTitle = ref('')
 
 // 更新行
 const updateChannelPayCodeFunc = async(row) => {
@@ -899,6 +875,16 @@ const getDetails = async (row) => {
   const res = await findChannelPayCode({ ID: row.ID })
   if (res.code === 0) {
     formData.value = res.data.rechannelPayCode
+    const content = formData.value.imgContent
+    if (content){
+      QRCode.toDataURL(content)
+          .then((dataUrl) => {
+            qrcodeUrl.value = dataUrl
+          })
+          .catch((error) => {
+            console.error('Failed to generate QR code:', error);
+          });
+    }
     openDetailShow()
   }
 }
@@ -926,6 +912,7 @@ const closeDetailShow = () => {
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
+    typeTitle.value = '创建'
     selectedCity.value = [];
     dialogFormVisible.value = true
     // getALlChannelAccount()
@@ -979,25 +966,39 @@ const enterDialog = async () => {
   console.log('formData pre' + JSON.stringify(formData.value))
   
   elFormRef.value?.validate( async (valid) => {
-        // console.log('formData' + JSON.stringify(formData.value))
-        if (!valid) return
+    if (!valid) {
+      return
+    }
 
-        formData.value.money = Number(formData.value.money)
+    if (lists.value.length < 1){
+      ElMessage({
+        showClose: true,
+        message: "请上传至少一个资源",
+        type: 'error'
+      })
+      return
+    }
+    formData.value.money = Number(formData.value.money)
 
+    if (formData.value.money < 1){
+      ElMessage({
+        showClose: true,
+        message: "请输入正确的金额",
+        type: 'error'
+      })
+      return
+    }
         let res
         switch (type.value) {
           case 'create':
             // console.log(">>>>>>" + lists.value.length)
-              for (let i = 0; i < lists.value.length; i++) {
+            for (let i = 0; i < lists.value.length; i++) {
 
-                // console.log('formData lists.value[i] ' + i + '  ' + JSON.stringify(lists.value[i]))
-                formData.value.imgBaseStr = lists.value[i]
-                // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
-                res = await createChannelPayCode(formData.value)
-              }
-            break
-          case 'update':
-            res = await updateChannelPayCode(formData.value)
+              // console.log('formData lists.value[i] ' + i + '  ' + JSON.stringify(lists.value[i]))
+              formData.value.imgBaseStr = lists.value[i]
+              // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
+              res = await createChannelPayCode(formData.value)
+            }
             break
           default:
             res = await createChannelPayCode(formData.value)
@@ -1006,12 +1007,13 @@ const enterDialog = async () => {
         if (res.code === 0) {
           ElMessage({
             type: 'success',
-            message: '创建/更改成功'
+            message: '创建成功'
           })
           closeDialog()
           getTableData()
         }
       }
+
   )
 }
 

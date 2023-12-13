@@ -114,7 +114,7 @@ func OrderWaitingTask() {
 				//2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 
 				//2.0 查一下单，如果发起初始化的时候已经匹配过账号了，就不用再匹配一次了
-				var accID, acAccount string
+				var ID, accID, acAccount string
 				//获取当前组织
 				orgIDs := utils2.GetDeepOrg(vpa.Uid)
 				if v.Obj.AcId != "" {
@@ -146,8 +146,9 @@ func OrderWaitingTask() {
 
 							// 2.2 把可用的账号给出来继续往下执行建单步骤
 							split := strings.Split(accTmp, "_")
-							accID = split[0]
-							acAccount = split[1]
+							ID = split[0]
+							accID = split[1]
+							acAccount = split[2]
 							break
 						} else {
 							fmt.Printf("当前组织无账号可用, org : %d", orgID)
@@ -164,7 +165,7 @@ func OrderWaitingTask() {
 				}
 
 				var vca vbox.ChannelAccount
-				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", accID).First(&vca).Error
+				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 				if err != nil {
 					//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
 
@@ -173,7 +174,7 @@ func OrderWaitingTask() {
 					_ = msg.Ack(true)
 					return
 				}
-				global.GVA_LOG.Info("匹配账号", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
+				global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
 				// 2.1 判断当前产品属于那种类型 1-商铺关联，2-付码关联
 				eventType, _ := HandleEventType(v.Obj.ChannelCode)

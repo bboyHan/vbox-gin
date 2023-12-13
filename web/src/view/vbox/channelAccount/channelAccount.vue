@@ -92,7 +92,6 @@
       </div>
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="归属用户" prop="uid" width="80"/>
         <el-table-column align="left" label="通道id" prop="cid" width="80"/>
         <el-table-column align="left" label="账户备注" prop="acRemark" width="120" />
         <el-table-column align="left" label="通道账户" prop="acAccount" width="120"/>
@@ -121,32 +120,32 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查询">
+        <el-table-column align="center" label="查询" width="140">
           <template #default="scope">
             <el-row>
               <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">产码速查</el-button>
               </el-col>
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="操作">
+        <el-table-column align="center" label="操作" width="120">
           <template #default="scope">
             <el-row>
               <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">产码</el-button>
+                <el-button type="primary" link icon="info-filled" class="table-button" @click="openOrderHisShow(scope.row)"></el-button>
               </el-col>
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="操作">
+        <el-table-column align="center" label="操作" width="120">
           <template #default="scope">
             <el-row>
               <el-col :span="24">
-                <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">详情</el-button>
-                <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)">变更</el-button>
-                <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+                <el-button type="primary" link icon="info-filled" class="table-button" @click="getDetails(scope.row)"></el-button>
+                <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)"></el-button>
+                <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)"></el-button>
               </el-col>
             </el-row>
           </template>

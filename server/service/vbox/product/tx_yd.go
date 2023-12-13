@@ -41,6 +41,8 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 		var channelCode string
 		if global.TxContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
+		} else if global.PcContains(vca.Cid) {
+			channelCode = "qb_proxy"
 		}
 
 		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").

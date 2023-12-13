@@ -34,10 +34,11 @@ const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
 
-	ChanOrgAccFilter    = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
-	ChanOrgAccZSet      = "vb_acc_set:org_%d:chan_%s:money_%s"       // 同组织通道下可用账号
-	ChanOrgShopAddrZSet = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
-	ChanOrgPayCodeZSet  = "vb_pay_code_set:org_%d:chan_%s:money_%d"  // 同组织通道下可用付款码
+	ChanOrgAccFilter      = "vb_accFilter:org_%s:chan_%s"                                // 同组织通道下可用账号（过滤器）
+	ChanOrgAccZSet        = "vb_acc_set:org_%d:chan_%s:money_%s"                         // 同组织通道下可用账号
+	ChanOrgShopAddrZSet   = "vb_shop_addr_set:org_%d:chan_%s:money_%d"                   // 同组织通道下可用店铺地址
+	ChanOrgPayCodeZSet    = "vb_pay_code_set:org_%d:chan_%s:money_%d"                    // 同组织通道下可用付款码
+	ChanOrgPayCodeLocZSet = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码
 
 	PayOrderKey = "vb_order:%s"
 

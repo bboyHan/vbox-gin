@@ -9,6 +9,13 @@ import (
 
 func Timer() {
 	go func() {
+		defer func() { //保持程序运行态，而不是中断程序
+			if err := recover(); err != nil {
+				fmt.Println("Timer() 发生了 panic ex：", err)
+				// 可以在这里进行一些处理操作
+			}
+		}()
+
 		var option []cron.Option
 		option = append(option, cron.WithSeconds())
 		// 清理DB定时任务

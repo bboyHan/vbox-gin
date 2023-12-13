@@ -1,12 +1,15 @@
 package vbox
 
 import (
+	"context"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"gorm.io/gorm"
 	"math"
@@ -22,6 +25,22 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 	mid := time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	vboxChannelPayCode.Mid = mid
 	err = global.GVA_DB.Create(vboxChannelPayCode).Error
+
+	// 组织
+	orgTmp := utils2.GetSelfOrg(vboxChannelPayCode.CreatedBy)
+
+	// 区域 处理为同省匹配 （地市）
+
+	// 运营商
+
+	key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+		vboxChannelPayCode.Cid, vboxChannelPayCode.Money, vboxChannelPayCode.Operator, vboxChannelPayCode.Location)
+
+	global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+		Score:  0,
+		Member: vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent,
+	})
+
 	return err
 }
 
@@ -29,9 +48,28 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 // Author [piexlmax](https://github.com/piexlmax)
 func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCode(vboxChannelPayCode vbox.ChannelPayCode) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.ChannelPayCode{}).Where("id = ?", vboxChannelPayCode.ID).Update("deleted_by", vboxChannelPayCode.DeletedBy).Error; err != nil {
+
+		var pcDB vbox.ChannelPayCode
+		// 先查数据是否存在
+		err = tx.Model(&vbox.ChannelPayCode{}).Where("id = ?", vboxChannelPayCode.ID).First(&pcDB).Error
+		if err != nil {
+			return err
+		} else {
+			//	处理掉待用池子中的付款码
+			orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+
+			global.GVA_REDIS.ZRem(context.Background(), key, redis.Z{
+				Score:  0,
+				Member: pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent,
+			})
+		}
+
+		if err = tx.Model(&vbox.ChannelPayCode{}).Where("id = ?", vboxChannelPayCode.ID).Update("deleted_by", vboxChannelPayCode.DeletedBy).Error; err != nil {
 			return err
 		}
+
 		if err = tx.Delete(&vboxChannelPayCode).Error; err != nil {
 			return err
 		}

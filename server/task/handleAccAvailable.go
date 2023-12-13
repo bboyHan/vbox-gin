@@ -181,7 +181,7 @@ func HandleAccAvailable() (err error) {
 										// 进入等待拿走的可用账号池子
 										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 											Score:  0,
-											Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+											Member: strconv.FormatUint(uint64(vcaTmp.ID), 10) + "_" + vcaTmp.AcId + "_" + vcaTmp.AcAccount,
 										})
 									}
 								}

@@ -1,5 +1,6 @@
 import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
+import { codeToText } from 'element-china-area-data';
 
 // 付款码状态
 export const formatStatus2ETag = (status) => {
@@ -37,6 +38,18 @@ export const formatPayCodeStatus = (status) => {
     return '已失效'
   } else {
     return '-'
+  }
+}
+
+// 付款码状态
+export const formatRegionCode = (locationCode, isStrict) => {
+  if (!locationCode){
+    return '-'
+  }
+  if (isStrict){
+
+  }else {
+    return codeToText[locationCode.slice(0, 2)]
   }
 }
 
