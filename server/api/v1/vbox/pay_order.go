@@ -37,7 +37,7 @@ func (vpoApi *PayOrderApi) CreateOrder2PayAcc(c *gin.Context) {
 		return
 	}
 	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
-	if order, err := payOrderService.CreateOrder2PayAcc(&vpo, c); err != nil {
+	if order, err := payOrderService.CreateOrder2PayAcc(&vpo); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
@@ -142,7 +142,7 @@ func (vpoApi *PayOrderApi) QueryOrderSimple(c *gin.Context) {
 	vpo.PayRegion, _ = utils.SearchIp2Region(vpo.PayIp)
 	vpo.PayDevice = utils.GetDeviceSimpleInfo(vpo.UserAgent)
 
-	if order, err := payOrderService.QueryOrderSimple(&vpo); err != nil {
+	if order, err := payOrderService.QueryOrderSimple(&vpo, c); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {

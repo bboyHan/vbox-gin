@@ -2,15 +2,19 @@ package vbox
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"math"
 	"time"
@@ -40,6 +44,29 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		Score:  0,
 		Member: vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent,
 	})
+
+	//根据expTime 处理到期的消息校验，放到PayCodeDelayedRoutingKey
+	if vboxChannelPayCode.ExpTime.Unix() > 0 {
+		// 过期时间
+		expTime := vboxChannelPayCode.ExpTime
+		// 过期时间差
+		expTimeDiff := expTime.Sub(time.Now())
+		global.GVA_LOG.Info("过期时间差", zap.Any("expTimeDiff", expTimeDiff))
+		marshal, _ := json.Marshal(vboxChannelPayCode)
+
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+		err = ch.PublishWithDelay(task.PayCodeDelayedExchange, task.PayCodeDelayedRoutingKey, marshal, expTimeDiff)
+		global.GVA_LOG.Info("消息发完了", zap.Any("expTimeDiff", expTimeDiff))
+	}
 
 	return err
 }

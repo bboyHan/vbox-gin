@@ -30,7 +30,7 @@ type PayOrderService struct {
 //	p := &vboxReq.QueryOrderSimple{
 //			OrderId:        "123",
 //		}
-func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimple) (rep *vboxRep.OrderSimpleRes, err error) {
+func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimple, ctx *gin.Context) (rep *vboxRep.OrderSimpleRes, err error) {
 
 	// 1. 查单
 	var order vbox.PayOrder
@@ -47,12 +47,42 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 		if order.PayIp != "" {
 
 		} else {
+			// 算他第一次点开进行匹配
 
 			err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).
 				Update("pay_ip", vpo.PayIp).Update("pay_region", vpo.PayRegion).Update("pay_device", vpo.PayDevice).Error
 			if err != nil {
 				return nil, err
 			}
+
+			//
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			body := http2.DoGinContextBody(ctx)
+
+			od := vboxReq.PayOrderAndCtx{
+				Obj: order,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  ctx.ClientIP(),
+					Method:    ctx.Request.Method,
+					UrlPath:   ctx.Request.URL.Path,
+					UserAgent: ctx.Request.UserAgent(),
+				},
+			}
+
+			marshal, _ := json.Marshal(od)
+			err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
+			global.GVA_LOG.Info("发起一条资源匹配消息并入库初始化订单数据", zap.Any("od", od))
 
 			// 如果event type = 2 ，搞一下码的地区匹配
 			if order.EventType == 2 {
@@ -201,7 +231,7 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 //			NotifyUrl:   "http://1.1.1.1",
 //			OrderId:     "P1234",
 //		}
-func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount, ctx *gin.Context) (rep *vboxRep.Order2PayAccountRes, err error) {
+func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
 	var ID, accID, acAccount string
 	money := vpo.Money
 	cid := vpo.ChannelCode
@@ -283,12 +313,13 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	// ----- 校验该组织是否有此产品 -----------
 
 	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
-	// 分不同的类型来查库存 （1- 引导类 查账号库  2- 预产类 查预产库）
-	// 只查不匹配
+	// 分不同的类型来查库存 （1- 引导类 查账号库__!直接匹配了!  2- 预产类 查预产库__!只查不匹配!）
+	//
+	var resList []string
+
 	if global.TxContains(cid) { // tx 引导
 		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, strconv.FormatInt(int64(money), 10))
 
-		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
 			Min:    "0",
 			Max:    "0",
@@ -321,7 +352,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	} else if global.J3Contains(cid) {
 		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, strconv.FormatInt(int64(money), 10))
 
-		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
 			Min:    "0",
 			Max:    "0",
@@ -330,7 +360,8 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		}).Result()
 
 		if err != nil {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			return nil, err
 		}
 		if resList != nil && len(resList) > 0 {
 			accTmp := resList[0]
@@ -347,7 +378,8 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			accID = split[1]
 			acAccount = split[2]
 		} else {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			return nil, fmt.Errorf("后台资源不足！ 请核查")
 		}
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
@@ -355,7 +387,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 		pcKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgID, cid, money)
 
-		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), pcKey, &redis.ZRangeBy{
 			Min:    "0",
 			Max:    "0",
@@ -364,20 +395,20 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		}).Result()
 
 		if err != nil {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			return nil, err
 		}
-		if resList != nil && len(resList) > 0 {
-			// 二次处理，如果当前剩余的库存小于3个了，商户如果请求建单超过10次
+		if resList != nil && len(resList) < 2 {
+			// 二次处理，如果当前剩余的库存剩1个，商户如果请求建单超过3次
 			//TODO
 
 		} else {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			return nil, fmt.Errorf("后台资源不足！ 请核查")
 		}
-	}
-
-	if ID == "" || accID == "" || acAccount == "" {
-		global.GVA_LOG.Info("此次请求后台账号资源不足")
-		return nil, fmt.Errorf("后台账号资源不足！ 请核查")
+	} else {
+		global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("传入的通道产品", cid))
+		return nil, fmt.Errorf("该账户不支持传入的通道产品！请核查")
 	}
 
 	// 判断当前产品属于那种类型 1-商铺关联，2-付码关联
@@ -405,7 +436,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	}
 
 	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
-	global.GVA_LOG.Info("匹配账号", zap.Any("acID", accID), zap.Any("acAccount", acAccount))
+	global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", acAccount))
 
 	count, err = global.GVA_REDIS.Exists(context.Background(), vpo.OrderId).Result()
 	if count == 0 {
@@ -433,33 +464,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 			err = global.GVA_DB.Create(&order).Error
 
-			conn, err := mq.MQ.ConnPool.GetConnection()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-			}
-			defer mq.MQ.ConnPool.ReturnConnection(conn)
-
-			ch, err := conn.Channel()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-			}
-
-			body := http2.DoGinContextBody(ctx)
-
-			od := vboxReq.PayOrderAndCtx{
-				Obj: order,
-				Ctx: vboxReq.Context{
-					Body:      string(body),
-					ClientIP:  ctx.ClientIP(),
-					Method:    ctx.Request.Method,
-					UrlPath:   ctx.Request.URL.Path,
-					UserAgent: ctx.Request.UserAgent(),
-				},
-			}
-
-			marshal, _ := json.Marshal(od)
-			err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
-			global.GVA_LOG.Info("发起一条资源匹配消息并入库初始化订单数据", zap.Any("od", od))
 		}()
 	} else {
 		global.GVA_LOG.Info("订单已存在，请勿重复创建")

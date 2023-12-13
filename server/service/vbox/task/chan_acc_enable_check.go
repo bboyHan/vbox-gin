@@ -25,7 +25,7 @@ const (
 	ChanAccEnableCheckKey      = "vbox.order.acc_enable_check"
 )
 
-// ChanAccEnableCheckTask 订单入库匹配
+// ChanAccEnableCheckTask 通道账号开启状态核查
 func ChanAccEnableCheckTask() {
 	var operationRecordService system.OperationRecordService
 
@@ -268,7 +268,7 @@ func ChanAccEnableCheckTask() {
 							}
 							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
-							global.GVA_LOG.Info("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
 						}
@@ -300,7 +300,7 @@ func ChanAccEnableCheckTask() {
 
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 							Update("sys_status", 0).Error
-						global.GVA_LOG.Info("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+						global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 						_ = msg.Reject(false)
 						continue
 
@@ -330,7 +330,7 @@ func ChanAccEnableCheckTask() {
 
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 							Update("sys_status", 0).Error
-						global.GVA_LOG.Info("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+						global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 						_ = msg.Reject(false)
 						continue
 

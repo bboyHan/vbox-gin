@@ -438,9 +438,16 @@
                 :file-list="pcFileList"
                 :auto-upload="false"
                 accept="image/png, image/gif, image/jpg, image/jpeg"
+                drag
+                multiple
             >
               <!-- 图标 -->
               <el-icon style="font-size: 25px;"><Plus /></el-icon>
+              <template #tip>
+                <div class="el-upload__tip">
+                  拖拽或点击上传
+                </div>
+              </template>
             </el-upload>
             <el-dialog v-model="pcDialogImgVisible" title="预览" destroy-on-close>
               <img :src="pcDialogImageUrls" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
@@ -1144,6 +1151,7 @@ const handlePicPreviews = (file) => {
 }
 // ------------获取省市 -------
 const selectedCity = ref([]);
+const regionOptions = ref([])
 const optionsRegion = regionData;
 const chge = () => {
   const lastElement = selectedCity.value[selectedCity.value.length - 1]

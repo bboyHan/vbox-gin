@@ -74,11 +74,14 @@
         <el-table-column align="left" label="通道ID" prop="cid" width="80" />
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="100" />
         <el-table-column align="left" label="备注" prop="acRemark" width="100" />
-        <el-table-column align="left" label="过期时间" prop="expTime" width="160" />
+        <el-table-column align="left" label="过期时间" prop="expTime" width="160" >
+          <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
+        </el-table-column>
         <el-table-column align="left" label="剩余时间" prop="expTime" width="140">
           <template #default="scope">
             <span v-if="countdowns[scope.$index] > 0">{{ formatTime(countdowns[scope.$index]) }} </span>
-            <span v-else>-1 （已过期）</span>
+            <span v-else-if="countdowns[scope.$index] <= 0 && scope.row.codeStatus === 1"> 0 /（已使用）</span>
+            <span v-else> -1 /（已过期）</span>
           </template>
         </el-table-column>
         <el-table-column align="left" label="运营商" prop="operator" width="70" >
@@ -212,9 +215,9 @@
                 :options="regionOptions"
                 v-model="selectedCity"
                 @change="chge"
-                placeholder="省 / 市 / 区"
+                placeholder="选择地区"
                 filterable
-                :props="{checkStrictly: false}"
+                :props="{checkStrictly: true}"
             >
             </el-cascader>
           </el-form-item>
@@ -231,9 +234,16 @@
                 :file-list="fileList"
                 :auto-upload="false"
                 accept="image/png, image/gif, image/jpg, image/jpeg"
+                drag
+                multiple
             >
               <!-- 图标 -->
               <el-icon style="font-size: 25px;"><Plus /></el-icon>
+              <template #tip>
+                <div class="el-upload__tip">
+                  拖拽或点击上传
+                </div>
+              </template>
             </el-upload>
             <el-dialog v-model="dialogVisibles" title="预览" destroy-on-close>
               <img :src="dialogImageUrs" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
@@ -259,7 +269,7 @@
             {{ formData.acAccount }}
           </el-descriptions-item>
           <el-descriptions-item label="过期时间">
-            {{ formData.expTime }}
+            {{ formatDate(formData.expTime) }}
           </el-descriptions-item>
           <el-descriptions-item label="运营商">
             {{ getOperatorChinese(formData.operator) }}
@@ -437,8 +447,9 @@ const getIntervalTime = async() => {
   expirationTime = new Date(expirationTime.getTime() + numSeconds.value * 1000)
   let intervalTime = dayjs(expirationTime).tz('Asia/Shanghai');
   console.log('intervalTime', intervalTime)
-  formData.value.expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
-  console.log('expTime', intervalTime)
+  // let expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
+  formData.value.expTime = new Date(intervalTime)
+  // console.log('expTime', intervalTime)
   return expirationTime
 }
 
@@ -961,7 +972,7 @@ const closeDialog = () => {
 // 弹窗确定
 const enterDialog = async () => {
   const accInfo = await getACCChannelAccountByAcid()
-  getIntervalTime()
+  await getIntervalTime()
   console.log('accInfo ' + JSON.stringify(accInfo.data.list))
   console.log('formData pre' + JSON.stringify(formData.value))
   

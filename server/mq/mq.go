@@ -130,6 +130,7 @@ func (ch *Channel) Publish(exchange, key string, body []byte) (err error) {
 
 // PublishWithDelay 发布延迟消息.
 func (ch *Channel) PublishWithDelay(exchange, key string, body []byte, timer time.Duration) (err error) {
+	global.GVA_LOG.Debug(fmt.Sprintf("publish with delay + exp : %d", timer.Milliseconds()), zap.Any("exchange", exchange), zap.Any("key", key), zap.Any("timer", timer))
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(context.Background(), exchange, key, false, false,
 		amqp.Publishing{ContentType: "application/json", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
 	//amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
