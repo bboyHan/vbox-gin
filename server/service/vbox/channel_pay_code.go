@@ -35,14 +35,21 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 
 	// 区域 处理为同省匹配 （地市）
 
-	// 运营商
-
-	key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+	// 入取用池
+	pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 		vboxChannelPayCode.Cid, vboxChannelPayCode.Money, vboxChannelPayCode.Operator, vboxChannelPayCode.Location)
 
-	global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+	pcMem := vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
+	global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{
 		Score:  0,
-		Member: vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent,
+		Member: pcMem,
+	})
+
+	// 入数量池
+	avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], vboxChannelPayCode.Cid, vboxChannelPayCode.Money)
+	global.GVA_REDIS.ZAdd(context.Background(), avlKey, redis.Z{
+		Score:  0,
+		Member: pcMem,
 	})
 
 	//根据expTime 处理到期的消息校验，放到PayCodeDelayedRoutingKey
@@ -59,7 +66,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
 		}
 		defer mq.MQ.ConnPool.ReturnConnection(conn)
-
+		global.GVA_LOG.Info("消息发完了", zap.Any("expTimeDiff", expTimeDiff))
 		ch, err := conn.Channel()
 		if err != nil {
 			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
@@ -84,13 +91,16 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCode(vboxCha
 		} else {
 			//	处理掉待用池子中的付款码
 			orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+
+			// 删待取池中数据
 			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+			pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
 
-			global.GVA_REDIS.ZRem(context.Background(), key, redis.Z{
-				Score:  0,
-				Member: pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent,
-			})
+			// 删判断数量池中数据
+			avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], pcDB.Cid, pcDB.Money)
+			global.GVA_REDIS.ZRem(context.Background(), avlKey, pcMem)
 		}
 
 		if err = tx.Model(&vbox.ChannelPayCode{}).Where("id = ?", vboxChannelPayCode.ID).Update("deleted_by", vboxChannelPayCode.DeletedBy).Error; err != nil {
@@ -109,7 +119,26 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCode(vboxCha
 // Author [piexlmax](https://github.com/piexlmax)
 func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCodeByIds(ids request.IdsReq, deleted_by uint) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.ChannelPayCode{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
+		var pcDBList []vbox.ChannelPayCode
+		if err := tx.Model(&vbox.ChannelPayCode{}).Where("id in ?", ids.Ids).Find(&pcDBList).Error; err != nil {
+			return err
+		}
+		for _, pcDB := range pcDBList {
+			// 处理掉待用池子中的付款码
+			orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+
+			// 删待取池中数据
+			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+			pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
+
+			// 删判断数量池中数据
+			avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], pcDB.Cid, pcDB.Money)
+			global.GVA_REDIS.ZRem(context.Background(), avlKey, pcMem)
+		}
+
+		if err = tx.Model(&vbox.ChannelPayCode{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("id in ?", ids.Ids).Delete(&vbox.ChannelPayCode{}).Error; err != nil {

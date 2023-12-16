@@ -28,9 +28,12 @@ func HandleShopMoneyAvailable() (err error) {
 		// 获取组织ID
 		orgIdTemp := utils2.GetSelfOrg(uid)
 
-		orgIds := utils2.GetDeepOrg(uid)
 		userIDs := utils2.GetUsersByOrgIds(orgIdTemp)
 
+		if len(orgIdTemp) == 0 {
+			global.GVA_LOG.Error("当前用户没有任何组织", zap.Uint("uid", uid))
+			continue
+		}
 		// 获取当前组织所拥有的产品列表
 		key := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
 		c, err := rdConn.Exists(context.Background(), key).Result()
@@ -39,7 +42,7 @@ func HandleShopMoneyAvailable() (err error) {
 			if err != nil {
 				global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
 			}
-			if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", orgIds).Find(&productIds).Error; err != nil {
+			if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", orgIdTemp).Find(&productIds).Error; err != nil {
 				global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
 				continue
 			}

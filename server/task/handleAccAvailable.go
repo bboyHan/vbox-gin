@@ -32,11 +32,10 @@ func HandleAccAvailable() (err error) {
 		var channelCodeList []string
 
 		// 获取组织ID
-		orgIdTemp := utils2.GetSelfOrg(uid)
-
-		orgIds := utils2.GetDeepOrg(uid)
+		orgTmp := utils2.GetSelfOrg(uid)
+		orgID := orgTmp[0]
 		// 当前付方所拥有的产品列表
-		chanKey := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
+		chanKey := fmt.Sprintf(global.OrgChanSet, orgID)
 
 		c, err := rdConn.Exists(context.Background(), chanKey).Result()
 		if c == 0 {
@@ -44,7 +43,7 @@ func HandleAccAvailable() (err error) {
 			if err != nil {
 				global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
 			}
-			if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", orgIds).Find(&productIds).Error; err != nil {
+			if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id = ?", orgID).Find(&productIds).Error; err != nil {
 				global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
 				continue
 			}
@@ -65,7 +64,7 @@ func HandleAccAvailable() (err error) {
 
 		// 遍历每个归属产品下的通道账号情况，筛选出可用的账号 入等待池
 		for _, channelCode := range channelCodeList {
-			deepUIDs := utils2.GetDeepUserIDs(uid)
+			deepUIDs := utils2.GetSelfOrg(uid)
 			var moneyList []string
 			var vcas []vbox.ChannelAccount
 
@@ -89,7 +88,7 @@ func HandleAccAvailable() (err error) {
 				endTime := nowTime.Add(60 * time.Second)
 				//global.GVA_LOG.Info("查询时间范围", zap.Any("startTime", startTime), zap.Any("endTime", endTime))
 
-				moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgIdTemp[0], channelCode)
+				moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgID, channelCode)
 				cm, err := rdConn.Exists(context.Background(), moneyKey).Result()
 				if cm == 0 {
 					if err != nil {
@@ -151,6 +150,7 @@ func HandleAccAvailable() (err error) {
 					vcaTmp := vca
 					cid := channelCode
 					go func() {
+						accMem := strconv.FormatUint(uint64(vcaTmp.ID), 10) + "_" + vcaTmp.AcId + "_" + vcaTmp.AcAccount
 						if global.TxContains(channelCode) {
 
 							//	查tx 记录
@@ -165,52 +165,67 @@ func HandleAccAvailable() (err error) {
 							if vm, ok := rdMap["Q币"]; !ok {
 								//global.GVA_LOG.Info("还没有QB的充值记录")
 								for _, money := range moneyList {
-									key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
+									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
 
 									// 再查一下库，这个时间段的有没有这个账号的订单
 									var count int64
-									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).
+										Where("ac_id = ? and money = ?", vcaTmp.AcId, money).
+										Count(&count).Error
 									if err != nil {
 										global.GVA_LOG.Error("查库异常", zap.Error(err))
 									}
 									if count > 0 {
 										//global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
-
+										// 证明这种金额的，已经有记录了，代表这种金额对应的账号暂不可用
+										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+											Score:  1,
+											Member: accMem,
+										})
 									} else {
 
 										// 进入等待拿走的可用账号池子
 										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 											Score:  0,
-											Member: strconv.FormatUint(uint64(vcaTmp.ID), 10) + "_" + vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+											Member: accMem,
 										})
 									}
 								}
 							} else { // 有qb 记录了，要查一下qb所充的金额有没有相对应的存在
 
 								for _, money := range moneyList {
+									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
 									if rd, ok2 := vm[money]; !ok2 {
 										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
 
 										// 再查一下库，这个时间段的有没有这个账号的订单
 										var count int64
-										err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+										err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).
+											Where("ac_id = ? and money = ?", vcaTmp.AcId, money).
+											Count(&count).Error
 										if err != nil {
 											global.GVA_LOG.Error("查库异常")
 										}
 										if count > 0 {
 											global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
-
+											// 证明这种金额的，已经有记录了，代表这种金额对应的账号暂不可用
+											global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+												Score:  1,
+												Member: accMem,
+											})
 										} else { // 查了库也没数据，就可以加到可用列表中待取用了
-											key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
 											// 进入等待拿走的可用账号池子
 											global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 												Score:  0,
-												Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+												Member: accMem,
 											})
 										}
 
 									} else { // 证明这种金额的，已经有记录了，代表这种金额对应的账号暂不可用
-
+										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+											Score:  1,
+											Member: accMem,
+										})
 									}
 								}
 
@@ -233,53 +248,69 @@ func HandleAccAvailable() (err error) {
 							if vm, ok := rdMap["Q币"]; !ok {
 								//global.GVA_LOG.Info("还没有QB的充值记录")
 								for _, money := range moneyList {
-									key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
+									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
 									//global.GVA_LOG.Info("打印出来了", zap.Any("key", key))
 
 									// 再查一下库，这个时间段的有没有这个账号的订单
 									var count int64
-									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+									err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).
+										Where("ac_id = ? and money = ?", vcaTmp.AcId, money).
+										Count(&count).Error
 									if err != nil {
 										global.GVA_LOG.Error("查库异常", zap.Error(err))
 									}
 									if count > 0 {
-										//global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
+										// 大于0证明已经有充值数据了，置为score 1，代表不可用
+										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+											Score:  1,
+											Member: accMem,
+										})
 
 									} else {
 
 										// 进入等待拿走的可用账号池子
 										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 											Score:  0,
-											Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+											Member: accMem,
 										})
 									}
 								}
 							} else { // 有qb 记录了，要查一下qb所充的金额有没有相对应的存在
 
 								for _, money := range moneyList {
+									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
 									if rd, ok2 := vm[money]; !ok2 {
 										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
 
 										// 再查一下库，这个时间段的有没有这个账号的订单
 										var count int64
-										err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).Count(&count).Error
+										err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at between ? and ?", startTime, endTime).
+											Where("ac_id = ? and money = ?", vcaTmp.AcId, money).
+											Count(&count).Error
 										if err != nil {
 											global.GVA_LOG.Error("查库异常")
 										}
 										if count > 0 {
 											global.GVA_LOG.Info(fmt.Sprintf("库里有这个时间段的订单数据, count: [%d]", count))
+											// 大于0证明已经有充值数据了，置为score 1，代表不可用
+											global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+												Score:  1,
+												Member: accMem,
+											})
 
 										} else { // 查了库也没数据，就可以加到可用列表中待取用了
-											key := fmt.Sprintf(global.ChanOrgAccZSet, orgIdTemp[0], cid, money)
 											// 进入等待拿走的可用账号池子
 											global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
 												Score:  0,
-												Member: vcaTmp.AcId + "_" + vcaTmp.AcAccount,
+												Member: accMem,
 											})
 										}
 
 									} else { // 证明这种金额的，已经有记录了，代表这种金额对应的账号暂不可用
-
+										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+											Score:  1,
+											Member: accMem,
+										})
 									}
 								}
 

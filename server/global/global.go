@@ -28,17 +28,20 @@ const (
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+
+	ResourceNotEnough = "当前库存不足，请及时核查匹配资源剩余情况"
 )
 
 const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
 
-	ChanOrgAccFilter      = "vb_accFilter:org_%s:chan_%s"                                // 同组织通道下可用账号（过滤器）
-	ChanOrgAccZSet        = "vb_acc_set:org_%d:chan_%s:money_%s"                         // 同组织通道下可用账号
-	ChanOrgShopAddrZSet   = "vb_shop_addr_set:org_%d:chan_%s:money_%d"                   // 同组织通道下可用店铺地址
-	ChanOrgPayCodeZSet    = "vb_pay_code_set:org_%d:chan_%s:money_%d"                    // 同组织通道下可用付款码
-	ChanOrgPayCodeLocZSet = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码
+	ChanOrgAccFilter    = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
+	ChanOrgAccZSet      = "vb_acc_set:org_%d:chan_%s:money_%s"       // 同组织通道下可用账号
+	ChanOrgShopAddrZSet = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
+
+	ChanOrgPayCodeZSet    = "vb_pay_code_set:org_%d:chan_%s:money_%d"                    // 同组织通道下可用付款码（数量池）
+	ChanOrgPayCodeLocZSet = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
 
 	PayOrderKey = "vb_order:%s"
 

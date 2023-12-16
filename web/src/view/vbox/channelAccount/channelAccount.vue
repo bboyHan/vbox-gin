@@ -364,21 +364,32 @@
     </el-dialog>
 
     <!-- 产码-->
-    <el-dialog width="30%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" destroy-on-close>
+    <el-dialog width="40%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px" >
-        <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="rule" label-width="80px">
-          <el-form-item label="通道" prop="cid">
-            <el-input v-model="pcFormData.cid" :clearable="true" placeholder="请输入" disabled/>
-          </el-form-item>
-          <el-form-item label="通道账户ID"  prop="acId" >
-            <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
-          </el-form-item>
-          <el-form-item label="通道账户"  prop="acAccount" >
-            <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
-          </el-form-item>
-          <el-form-item label="账户备注"  prop="acRemark" >
-            <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
-          </el-form-item>
+        <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="通道" prop="cid">
+                <el-input v-model="pcFormData.cid" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道账户ID"  prop="acId" >
+                <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道账户"  prop="acAccount" >
+                <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="账户备注"  prop="acRemark" >
+                <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
           <el-form-item label="金额"  prop="money" >
             <el-input v-model.number="pcFormData.money"
                       placeholder="输入金额"
@@ -387,44 +398,59 @@
             </el-input>
           </el-form-item>
           <el-form-item label="过期时间"  prop="expTime" >
-            <el-input-number v-model="numHours" size="small" controls-position="right" @change="handleChangeH" :min="0">
-            </el-input-number>
-            <span> 小时</span>
-            <el-input-number v-model="numMinutes" size="small" controls-position="right" @change="handleChangeM" :min="0">
-            </el-input-number>
-            <span> 分钟</span>
-            <el-input-number v-model="numSeconds" size="small" controls-position="right" @change="handleChangeS" :min="0">
-            </el-input-number>
-            <span> 秒</span>
+            <el-row>
+              <el-col>
+                <el-input-number v-model="numHours" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeH" :min="0">
+                </el-input-number>
+                <span> 小 时 </span>
+                <el-input-number v-model="numMinutes" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeM" :min="0">
+                </el-input-number>
+                <span> 分 钟 </span>
+                <el-input-number v-model="numSeconds" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeS" :min="0">
+                </el-input-number>
+                <span> 秒 </span>
+              </el-col>
+              <el-col>
+                <el-button link type="primary" @click="default7Day">7天</el-button>
+                <el-button link type="primary" @click="default1Day">1天</el-button>
+                <el-button link type="primary" @click="default2Hour">2小时</el-button>
+                <el-button link type="primary" @click="default1Hour">1小时</el-button>
+                <el-button link type="primary" @click="default10Minute">10分钟</el-button>
+                <el-button link type="primary" @click="default0Second">重置</el-button>
+              </el-col>
+            </el-row>
           </el-form-item>
-          <el-form-item label="运营商"  prop="operator" >
-            <el-select
-                v-model="pcFormData.operator"
-                placeholder="请选择通信商"
-                filterable
-                style="width: 100%"
-            >
-              <el-option
-                  v-for="item in operators"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="地区"  prop="location" >
-            <el-cascader
-                :change-on-select="true"
-                style="width:100%"
-                :options="optionsRegion"
-                v-model="selectedCity"
-                @change="chge"
-                placeholder="省 / 市 / 区"
-                filterable
-                :props="{checkStrictly: true}"
-            >
-            </el-cascader>
-          </el-form-item>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="运营商"  prop="operator" >
+                <el-select v-model="pcFormData.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                  <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="地区"  prop="location" >
+                <el-cascader
+                    :change-on-select="true"
+                    style="width:100%"
+                    :options="regionOptions"
+                    v-model="selectedCity"
+                    @change="chge"
+                    placeholder="选择地区"
+                    filterable
+                    :props="{checkStrictly: false}"
+                >
+                </el-cascader>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
           <el-form-item label="图片上传" >
             <el-upload
                 class="avatar-uploader"
@@ -500,10 +526,17 @@ import WarningBar from "@/components/warningBar/warningBar.vue";
 import {Loading, Plus} from "@element-plus/icons-vue";
 import {createChannelPayCode, findChannelPayCode} from "@/api/channelPayCode";
 import dayjs from "dayjs";
+import utcPlugin from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import provinces from "@/assets/json/provinces.json";
 
 defineOptions({
   name: 'ChannelAccount'
 })
+
+// 注册插件
+dayjs.extend(utcPlugin);
+dayjs.extend(timezone);
 
 const countItem = ref([])
 const queryAccOrderHisFunc = async (row) => {
@@ -618,6 +651,33 @@ const rule = reactive({
   }],
 })
 
+// 验证规则
+const pcRule = reactive({
+  acAccount: [{required: true, message: '', trigger: [ 'blur'],}],
+  cid: [{required: true, message: '请选择', trigger: [ 'blur'],}],
+  acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
+  expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
+  operator: [{required: true, message: '', trigger: ['blur'],}],
+  location: [{required: true, message: '请选择省或者省市', trigger: ['input', 'blur'],}],
+  money: [{ validator: checkMoney, trigger: 'blur' }]
+})
+
+function validateTimeLimit(rule, value, callback) {
+  if (numHours.value === 0 && numMinutes.value === 0 && numSeconds.value === 0) {
+    callback(new Error('过期时间填写不能都为 0'));
+  } else {
+    callback();
+  }
+}
+
+function checkMoney(rule, value, callback) {
+  if (Number(value) <= 0) {
+    callback(new Error('请输入正确的金额'));
+  } else {
+    callback();
+  }
+}
+
 const searchRule = reactive({
   createdAt: [
     { validator: (rule, value, callback) => {
@@ -685,6 +745,8 @@ const getTableData = async() => {
     page.value = table.data.page
     pageSize.value = table.data.pageSize
     // setOptions()
+    console.log(provinces)
+    setRegionOptions(provinces, regionOptions.value, false)
   }
 }
 
@@ -711,6 +773,29 @@ const setOptions = async() => {
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
 
+const setRegionOptions = (ChannelCodeData, optionsData, disabled) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.code + '',
+        label: item.name,
+        children: []
+      }
+      setChannelCodeOptions(
+          item.children,
+          option.children,
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.code + '',
+        label: item.name,
+      }
+      optionsData.push(option)
+    }
+  })
+}
 // 获取需要的字典 可能为空 按需保留
 
 // 多选数据
@@ -1038,9 +1123,46 @@ const openOrderHisShow = async (row) => {
 }
 
 //  产码 ---------------------
+
 const numHours = ref(0)
-const numMinutes = ref(10)
+const numMinutes = ref(0)
 const numSeconds = ref(0)
+
+const default7Day = async () => {
+  numHours.value = 24*7
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default1Day = async () => {
+  numHours.value = 24
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default2Hour = async () => {
+  numHours.value = 2
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default1Hour = async () => {
+  numHours.value = 1
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default10Minute = async () => {
+  numHours.value = 0
+  numMinutes.value = 10
+  numSeconds.value = 0
+}
+
+const default0Second = async () => {
+  numHours.value = 0
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
 const pcElFormRef = ref()
 
 const pcFormData = ref({
@@ -1052,6 +1174,7 @@ const pcFormData = ref({
   operator: '',
   location: '',
   imgBaseStr: '',
+  imgContent: '',
   mid: '',
   codeStatus: 0,
   money: 0,
@@ -1060,14 +1183,22 @@ const pcDialogFormVisible = ref(false)
 
 const createByChannelPayCodeFunc = async(row) => {
   const res = await findChannelAccount({ ID: row.ID })
+  let vca = res.data.revca
+  if (vca.sysStatus !== 1) {
+    ElMessage({
+      type: 'error',
+      message: '该通道账号未经过系统审核开启，不允许创建产码，请核查账号情况'
+    })
+    return
+  }
   type.value = 'createPc'
   typeTitle.value = '添加产码'
   if (res.code === 0) {
     pcFormData.value = {
-      cid: res.data.revca.cid,
-      acId: res.data.revca.acId,
-      acAccount: res.data.revca.acAccount,
-      acRemark: res.data.revca.acRemark,
+      cid: vca.cid,
+      acId: vca.acId,
+      acAccount: vca.acAccount,
+      acRemark: vca.acRemark,
       expTime: '',
       operator: '',
       location: '',
@@ -1076,9 +1207,6 @@ const createByChannelPayCodeFunc = async(row) => {
       codeStatus: 0,
       money: 0,
     }
-    numHours.value = 0
-    numMinutes.value = 10
-    numSeconds.value = 0
     pcDialogFormVisible.value = true
   }
 }
@@ -1090,8 +1218,9 @@ const getIntervalTime = async() => {
   expirationTime = new Date(expirationTime.getTime() + numSeconds.value * 1000)
   let intervalTime = dayjs(expirationTime).tz('Asia/Shanghai');
   console.log('intervalTime', intervalTime)
-  pcFormData.value.expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
-  console.log('expTime', intervalTime)
+  // pcFormData.value.expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
+  pcFormData.value.expTime = new Date(intervalTime)
+  // console.log('expTime', intervalTime)
   return expirationTime
 }
 const img_base_str = ref('')
@@ -1202,9 +1331,6 @@ const closePcDialog = () => {
     money: 0,
   }
   pcImgList.value =[]
-  numHours.value = 0
-  numMinutes.value = 10
-  numSeconds.value = 0
 }
 // 弹窗确定
 const enterPcDialog = async () => {

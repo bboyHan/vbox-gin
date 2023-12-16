@@ -69,6 +69,11 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 
 			body := http2.DoGinContextBody(ctx)
 
+			err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).First(&order).Error
+			if err != nil {
+				return nil, err
+			}
+
 			od := vboxReq.PayOrderAndCtx{
 				Obj: order,
 				Ctx: vboxReq.Context{
@@ -77,6 +82,7 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 					Method:    ctx.Request.Method,
 					UrlPath:   ctx.Request.URL.Path,
 					UserAgent: ctx.Request.UserAgent(),
+					UserID:    int(order.CreatedBy),
 				},
 			}
 
@@ -137,12 +143,14 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			}
 		}
 
-		//查出来了，设置一下redis
-		jsonString, err = json.Marshal(order)
-		if err != nil {
-			return nil, err
+		if order.ResourceUrl != "" {
+			//查出来了，设置一下redis
+			jsonString, err = json.Marshal(order)
+			if err != nil {
+				return nil, err
+			}
+			global.GVA_REDIS.Set(context.Background(), key, jsonString, 2*time.Second)
 		}
-		global.GVA_REDIS.Set(context.Background(), key, jsonString, 300*time.Second)
 	} else if err != nil {
 		fmt.Println("error:", err)
 	} else {
@@ -257,7 +265,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	}
 
 	vpo.Key = vpa.PKey
-
+	uidTmp := vpa.Uid
 	// 1.0 校验签名
 	//signValid := utils.VerifySign(vpo)
 	//if !signValid {
@@ -460,6 +468,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 				EventType:   eventType,
 				ExpTime:     time.Now().Add(expTime),
 				ResourceUrl: rsUrl,
+				CreatedBy:   uidTmp,
 			}
 
 			err = global.GVA_DB.Create(&order).Error
@@ -622,6 +631,8 @@ func (vpoService *PayOrderService) HandleExpTime2Product(chanID string) (time.Du
 		key = "1000"
 	} else if global.J3Contains(chanID) {
 		key = "2000"
+	} else if global.PcContains(chanID) {
+		key = "3000"
 	}
 
 	var expTimeStr string

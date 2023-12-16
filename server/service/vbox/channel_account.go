@@ -204,9 +204,46 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.Ch
 
 // CreateChannelAccount 创建通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount) (err error) {
+func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount, c *gin.Context) (err error) {
 	vca.AcId = rand_string.RandomInt(8)
 	err = global.GVA_DB.Create(vca).Error
+	//vca传入的所有值 转化成 vcaDB vbox.ChannelAccount存放
+
+	if vca.Status == 1 {
+		go func() {
+			var vcaDB vbox.ChannelAccount
+			err = global.GVA_DB.Model(vbox.ChannelAccount{}).Where("id =?", vca.ID).First(&vcaDB).Error
+
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			body := http2.DoGinContextBody(c)
+
+			oc := vboxReq.ChanAccAndCtx{
+				Obj: vcaDB,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  c.ClientIP(),
+					Method:    c.Request.Method,
+					UrlPath:   c.Request.URL.Path,
+					UserAgent: c.Request.UserAgent(),
+					UserID:    int(vcaDB.CreatedBy),
+				},
+			}
+			marshal, err := json.Marshal(oc)
+
+			err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+		}()
+	}
+
 	return err
 }
 
@@ -300,18 +337,15 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
 				}
 				defer mq.MQ.ConnPool.ReturnConnection(conn)
+				var vcaDBList []vbox.ChannelAccount
+				err = global.GVA_DB.Model(vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Find(&vcaDBList).Error
 
-				for _, ID := range upd.Ids {
-					var vcaDB vbox.ChannelAccount
-					err = global.GVA_DB.Where("id = ?", ID).First(&vcaDB).Error
-					if err != nil {
-						fmt.Println("SwitchEnableChannelAccountByIds.不存在的账号，请核查, id:" + strconv.Itoa(int(ID)))
-						continue
-					}
+				for _, vcaDB := range vcaDBList {
 
 					ch, err := conn.Channel()
 					if err != nil {
 						global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+						continue
 					}
 
 					body := http2.DoGinContextBody(c)

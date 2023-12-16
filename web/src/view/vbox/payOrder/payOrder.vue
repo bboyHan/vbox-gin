@@ -33,6 +33,9 @@
                 <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
               </el-button>
             </div>
+            <div v-else-if="!isPendingAcc(scope.row) && scope.row.orderStatus === 0">
+              <el-button type="info" link class="table-button">库存不足</el-button>
+            </div>
             <div v-else>
               <el-button type="info" :loading-icon="Eleme" loading link class="table-button">匹配中</el-button>
             </div>
@@ -107,6 +110,9 @@
               <el-button type="primary" link class="table-button" @click="getAccDetails(scope.row)">
                 <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
               </el-button>
+            </div>
+            <div v-else-if="!isPendingAcc(scope.row) && scope.row.orderStatus === 0">
+              <el-button type="info" link class="table-button">库存不足</el-button>
             </div>
             <div v-else>
               <el-button type="info" :loading-icon="Eleme" loading>匹配中</el-button>

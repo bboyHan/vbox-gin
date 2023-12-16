@@ -76,6 +76,8 @@ export const formatPayedColor = (status, acId) => {
     return '#05811d'
   } else if(status === 3) {
     return '#3118dc'
+  } else if(status === 0) {
+    return '#dc1818'
   } else {
     return ''
   }
@@ -91,6 +93,8 @@ export const formatPayed = (status, acId) => {
     return '已支付'
   } else if(status === 3) {
     return '支付超时'
+  } else if(status === 0) {
+    return '匹配失败'
   } else {
     return '-'
   }

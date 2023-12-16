@@ -135,7 +135,7 @@
         />
       </div>
     </div>
-    <el-dialog width="30%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
+    <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px" >
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="产码方式"  prop="type" >
@@ -175,52 +175,58 @@
               </el-input>
           </el-form-item>
           <el-form-item label="过期时间"  prop="expTime" >
-            <!-- <el-date-picker
-                v-model="formData.expTime"
-                type="datetime"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
-                align="center"
-            >
-            </el-date-picker> -->
-            <el-input-number v-model="numHours" size="small" controls-position="right" @change="handleChangeH" :min="0">
-            </el-input-number> 
-            <span> 小时</span>
-            <el-input-number v-model="numMinutes" size="small" controls-position="right" @change="handleChangeM" :min="0">
-            </el-input-number> 
-            <span> 分钟</span>
-            <el-input-number v-model="numSeconds" size="small" controls-position="right" @change="handleChangeS" :min="0">
-            </el-input-number>
-            <span> 秒</span>
+            <el-row>
+              <el-col>
+                <el-input-number v-model="numHours" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeH" :min="0">
+                </el-input-number>
+                <span> 小 时 </span>
+                <el-input-number v-model="numMinutes" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeM" :min="0">
+                </el-input-number>
+                <span> 分 钟 </span>
+                <el-input-number v-model="numSeconds" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeS" :min="0">
+                </el-input-number>
+                <span> 秒 </span>
+              </el-col>
+              <el-col>
+                <el-button link type="primary" @click="default7Day">7天</el-button>
+                <el-button link type="primary" @click="default1Day">1天</el-button>
+                <el-button link type="primary" @click="default2Hour">2小时</el-button>
+                <el-button link type="primary" @click="default1Hour">1小时</el-button>
+                <el-button link type="primary" @click="default10Minute">10分钟</el-button>
+                <el-button link type="primary" @click="default0Second">重置</el-button>
+              </el-col>
+            </el-row>
           </el-form-item>
-          <el-form-item label="运营商"  prop="operator" >
-            <el-select
-                v-model="formData.operator"
-                placeholder="请选择通信商"
-                filterable
-                style="width: 100%"
-            >
-              <el-option
-                  v-for="item in operators"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="地区"  prop="location" >
-            <el-cascader
-                :change-on-select="true"
-                style="width:100%"
-                :options="regionOptions"
-                v-model="selectedCity"
-                @change="chge"
-                placeholder="选择地区"
-                filterable
-                :props="{checkStrictly: true}"
-            >
-            </el-cascader>
-          </el-form-item>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="运营商"  prop="operator" >
+                <el-select v-model="formData.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                  <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="地区"  prop="location" >
+                <el-cascader
+                    :change-on-select="true"
+                    style="width:100%"
+                    :options="regionOptions"
+                    v-model="selectedCity"
+                    @change="chge"
+                    placeholder="选择地区"
+                    filterable
+                    :props="{checkStrictly: false}"
+                >
+                </el-cascader>
+              </el-form-item>
+            </el-col>
+          </el-row>
           <el-form-item label="图片上传" >
             <el-upload
                 class="avatar-uploader"
@@ -330,6 +336,7 @@ import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import provinces from '@/assets/json/provinces.json'
 import QRCode from "qrcode";
+import WarningBar from "@/components/warningBar/warningBar.vue";
 
 defineOptions({
     name: 'ChannelPayCode'
@@ -437,8 +444,44 @@ const searchRule = reactive({
 
 
 const numHours = ref(0)
-const numMinutes = ref(10)
+const numMinutes = ref(0)
 const numSeconds = ref(0)
+
+const default7Day = async () => {
+  numHours.value = 24*7
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default1Day = async () => {
+  numHours.value = 24
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default2Hour = async () => {
+  numHours.value = 2
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default1Hour = async () => {
+  numHours.value = 1
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
+
+const default10Minute = async () => {
+  numHours.value = 0
+  numMinutes.value = 10
+  numSeconds.value = 0
+}
+
+const default0Second = async () => {
+  numHours.value = 0
+  numMinutes.value = 0
+  numSeconds.value = 0
+}
 
 const getIntervalTime = async() => {
   const now = new Date()
@@ -843,11 +886,8 @@ const createByChannelPayCodeFunc = async(row) => {
           type: 2,
           codeStatus: 0,
           money: 0,
-          }
-          numHours.value = 0
-          numMinutes.value = 10
-          numSeconds.value = 0
-          dialogFormVisible.value = true
+        }
+      dialogFormVisible.value = true
     }
 }
 
@@ -928,23 +968,19 @@ const openDialog = () => {
     dialogFormVisible.value = true
     // getALlChannelAccount()
     formData.value = {
-          cid: '',
-          acId: '',
-          acAccount: '',
-          acRemark: '',
-          expTime: '',
-          operator: '',
-          location: '',
-          imgBaseStr: '',
-          mid: '',
-          type: 2,
-          codeStatus: 0,
-          money: 0,
-          }
-          numHours.value = 0
-          numMinutes.value = 10
-          numSeconds.value = 0
-    
+      cid: '',
+      acId: '',
+      acAccount: '',
+      acRemark: '',
+      expTime: '',
+      operator: '',
+      location: '',
+      imgBaseStr: '',
+      mid: '',
+      type: 2,
+      codeStatus: 0,
+      money: 0,
+    }
 }
 
 // 关闭弹窗
@@ -965,9 +1001,6 @@ const closeDialog = () => {
           money: 0,
           }
     lists.value =[]
-    numHours.value = 0
-    numMinutes.value = 10
-    numSeconds.value = 0
 }
 // 弹窗确定
 const enterDialog = async () => {

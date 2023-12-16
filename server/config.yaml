@@ -174,8 +174,8 @@ rabbitmq:
     port: "8083"
     password: Vbox123qwe
     username: admin
-    poolSize: 5
-    retryReConnDelay: 3ns
+    poolSize: 20
+    retryReConnDelay: 3
 redis:
 #    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
     addr: 60.204.145.173:10818
@@ -208,8 +208,8 @@ system:
     use-redis: true
     use-mongo: false
     use-mq: true
-    use-mq-task: true
-    timer-task: true
+    use-mq-task: false
+    timer-task: false
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

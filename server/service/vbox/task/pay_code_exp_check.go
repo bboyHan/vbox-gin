@@ -1,10 +1,13 @@
 package task
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -27,7 +30,6 @@ func PayCodeExpCheck() {
 	// 示例：发送消息
 	conn, err := mq.MQ.ConnPool.GetConnection()
 	if err != nil {
-		//log.Fatalf("Failed to get connection from pool: %v", err)
 		global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(err))
 	}
 	defer mq.MQ.ConnPool.ReturnConnection(conn)
@@ -99,6 +101,14 @@ func PayCodeExpCheck() {
 				if pcDB.CodeStatus == 1 {
 					global.GVA_LOG.Info("预产码已经使用了，不需要处理", zap.Any("预产码MID", v.Mid))
 					_ = msg.Ack(true)
+
+					// 把redis预产池里的预产码也删除掉
+					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+					pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
+
 					continue
 				}
 
