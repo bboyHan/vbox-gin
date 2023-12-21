@@ -522,7 +522,7 @@ func OrderConfirmTask() {
 
 								// 并且发起一个回调通知的消息
 
-								return
+								continue
 							}
 						}
 					}

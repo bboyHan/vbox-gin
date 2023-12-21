@@ -20,7 +20,6 @@
             {{ orderTotalRatio }}% <span v-if="isPositive">▲</span><span v-if="isNegative">▼</span>
           </p>
         </div>
-
         <div>昨日单数:{{ orderTotalYesterDay }}</div>
       </div>
       <div class="ReclaimMileage-box-data-right">
@@ -80,7 +79,7 @@ const orderView = async () => {
   orderTotalFinshedMoneyToday.value = totalOk
 
   let resYesterDay = await getPayOrderListByDt({channelCode: param, dt: yesterDt})
-  console.log('resLastDay-',JSON.stringify(resYesterDay))
+  // console.log('resLastDay-',JSON.stringify(resYesterDay))
   if (resYesterDay.code === 0) {
     finishedYesterDay = resYesterDay.data.total
   }

@@ -34,7 +34,7 @@
 }
 
 .gvaIcon-prompt:before {
-    content: "\e67b";
+    content: "";
 }
 
 .gvaIcon-refresh:before {

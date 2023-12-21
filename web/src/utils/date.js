@@ -38,7 +38,7 @@ export function get5MinNearlyOneHour() {
   let currentMinute = now.getMinutes();
 
   // 计算最新的时间点
-  let latestMinute = Math.floor(currentMinute / 5) * 5;
+  let latestMinute = Math.ceil(currentMinute / 5) * 5;
 
   // 创建一个空数组来存储时间点
   let timePoints = [];
@@ -67,4 +67,36 @@ export function get5MinNearlyOneHour() {
 // 输出时间点数组
 //   console.log(timePoints);
   return timePoints
+}
+
+export function formatTimeStr2Date(dateString, format) {
+  // 将字符串日期转为 Date 对象
+  const date = new Date(dateString);
+
+  // 检查是否成功解析日期
+  if (isNaN(date.getTime())) {
+    console.error("Invalid date:", dateString);
+    return dateString; // 返回原始字符串
+  }
+
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  };
+
+  const formatted = new Intl.DateTimeFormat('en-US', options).format(date);
+
+  // 根据传入的格式进行定制
+  let result = format.replace(/yyyy/g, date.getFullYear());
+  result = result.replace(/MM/g, (date.getMonth() + 1).toString().padStart(2, '0'));
+  result = result.replace(/dd/g, date.getDate().toString().padStart(2, '0'));
+  result = result.replace(/HH/g, date.getHours().toString().padStart(2, '0'));
+  result = result.replace(/mm/g, date.getMinutes().toString().padStart(2, '0'));
+  result = result.replace(/ss/g, date.getSeconds().toString().padStart(2, '0'));
+
+  return result;
 }

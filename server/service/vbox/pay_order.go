@@ -762,7 +762,7 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	db := global.GVA_DB.Model(&vbox.PayOrder{})
 	var payOrders []vbox.PayOrder
 	// 如果有条件搜索 下方会自动创建搜索语句
-	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+	if !info.StartCreatedAt.IsZero() && !info.EndCreatedAt.IsZero() {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
 
@@ -776,6 +776,147 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	}
 
 	return payOrders, total, err
+}
+
+func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSearch, ids []uint) (list []vboxRep.DataOverView, err error) {
+	var overViews []vboxRep.DataOverView
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.PayOrder{})
+	var payOrders []vbox.PayOrder
+	// 如果有条件搜索 下方会自动创建搜索语句
+	//空值时，默认设置为5m
+	if info.Interval == "" {
+		info.Interval = "5m"
+	}
+	if info.StartTime > 0 && info.EndTime > 0 && info.StartTime < info.EndTime {
+		location, _ := time.LoadLocation("Asia/Shanghai")
+		start := time.Unix(info.StartTime, 0).In(location)
+		end := time.Unix(info.EndTime, 0).In(location)
+		db = db.Where("created_at BETWEEN ? AND ?", start, end)
+
+		if info.ChannelCode != "" {
+			db = db.Where("channel_code =?", info.ChannelCode)
+		}
+		if info.OrderStatus != 0 {
+			db = db.Where("order_status =?", info.OrderStatus)
+		}
+
+		err = db.Debug().Where("created_by in ?", ids).Find(&payOrders).Error
+		if err != nil {
+			return
+		}
+
+		// 解析参数为 time.Duration 类型
+		interval, errParse := time.ParseDuration(info.Interval)
+		if errParse != nil {
+			return nil, errParse
+		}
+
+		if info.Keyword == "sum" {
+			overViews = calculateTotalMoney(payOrders, start, end, interval)
+		} else if info.Keyword == "cnt" {
+			overViews = calculateTotalCount(payOrders, start, end, interval)
+		} else {
+			return nil, fmt.Errorf("未知的统计类型")
+		}
+
+		return overViews, err
+
+	} else {
+		return nil, fmt.Errorf("未传入合规时间参数")
+	}
+
+}
+
+func calculateTotalMoney(dataList []vbox.PayOrder, startTime time.Time, endTime time.Time, interval time.Duration) []vboxRep.DataOverView {
+	// 初始化结果映射
+	resultMap := make(map[string]int)
+	// 记录已经出现的 key，用于去重
+	seenKeys := make(map[string]struct{})
+	var sortedResult []vboxRep.DataOverView
+	// 遍历数据并按时间间隔累加 money
+	for _, item := range dataList {
+		if item.CreatedAt.After(startTime) && item.CreatedAt.Before(endTime) {
+			// 计算所属的时间间隔
+			location, _ := time.LoadLocation("Asia/Shanghai")
+			// 先将时间调整到当天的零时零分零秒
+			intervalEnd := item.CreatedAt.Truncate(interval)
+
+			// 再进行时区调整
+			intervalEnd = intervalEnd.Add(interval).In(location)
+
+			key := intervalEnd.Format("2006-01-02 15:04:05")
+			resultMap[key] += item.Money
+
+			// 检查是否已经出现过该 key，如果已经出现则跳过
+			if _, exists := seenKeys[key]; !exists {
+				seenKeys[key] = struct{}{}
+			}
+
+		}
+	}
+
+	//// 将 keys 提取到一个切片中，并排序
+	//var keys []string
+	//for key := range seenKeys {
+	//	keys = append(keys, key)
+	//}
+	//// 对 keys 进行排序
+	//sort.Strings(keys)
+	points := utils.GenerateTimePoints(startTime, endTime, interval)
+
+	for _, key := range points {
+		sortedResult = append(sortedResult, vboxRep.DataOverView{
+			Y: resultMap[key],
+			X: key,
+		})
+	}
+	return sortedResult
+}
+
+func calculateTotalCount(dataList []vbox.PayOrder, startTime time.Time, endTime time.Time, interval time.Duration) []vboxRep.DataOverView {
+	// 初始化结果映射
+	resultMap := make(map[string]int)
+	// 记录已经出现的 key，用于去重
+	seenKeys := make(map[string]struct{})
+	var sortedResult []vboxRep.DataOverView
+	// 遍历数据并按时间间隔累加 money
+	for _, item := range dataList {
+		if item.CreatedAt.After(startTime) && item.CreatedAt.Before(endTime) {
+			// 计算所属的时间间隔
+			location, _ := time.LoadLocation("Asia/Shanghai")
+			// 先将时间调整到当天的零时零分零秒
+			intervalEnd := item.CreatedAt.Truncate(interval)
+
+			// 再进行时区调整
+			intervalEnd = intervalEnd.Add(interval).In(location)
+			key := intervalEnd.Format("2006-01-02 15:04:05")
+			resultMap[key] += 1
+
+			// 检查是否已经出现过该 key，如果已经出现则跳过
+			if _, exists := seenKeys[key]; !exists {
+				seenKeys[key] = struct{}{}
+			}
+
+		}
+	}
+
+	//// 将 keys 提取到一个切片中，并排序
+	//var keys []string
+	//for key := range seenKeys {
+	//	keys = append(keys, key)
+	//}
+	//// 对 keys 进行排序
+	//sort.Strings(keys)
+	points := utils.GenerateTimePoints(startTime, endTime, interval)
+
+	for _, key := range points {
+		sortedResult = append(sortedResult, vboxRep.DataOverView{
+			Y: resultMap[key],
+			X: key,
+		})
+	}
+	return sortedResult
 }
 
 func (vpoService *PayOrderService) GetPayOrderListByDt(info vboxReq.OrdersDtData, ids []uint) (list []vbox.PayOrder, total int64, err error) {

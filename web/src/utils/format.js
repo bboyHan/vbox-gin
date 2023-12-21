@@ -180,3 +180,16 @@ export const ReturnArrImg = (arr) => {
 export const onDownloadFile = (url) => {
   window.open(path + url)
 }
+
+export function calculatePercentage(num, total) {
+  num = parseFloat(num);
+  total = parseFloat(total);
+
+  if (isNaN(num) || isNaN(total)) {
+    return 0;
+  }
+
+  const percentage = total <= 0 ? 0 : Math.round((num / total) * 10000) / 100.0;
+
+  return percentage;
+}

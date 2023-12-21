@@ -12,7 +12,7 @@
         <div class="number">1,240 <span>-52% ↓</span></div>
         <div>昨日:902</div>
       </div>
-      <div class="ReclaimMileage-box-data-right">
+      <div class="ReclaimMileage-box-data-center">
         <div>DI</div>
         <div class="number">2,240 <span style="color: #D3B379" >-24% ↓</span></div>
         <div>昨日:1098</div>
@@ -155,6 +155,7 @@ onUnmounted(() => {
     height: 100%;
   }
   &-data{
+    font-size: 18px;
     position: absolute;
     top: 0;
     left: 0;

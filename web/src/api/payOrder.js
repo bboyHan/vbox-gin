@@ -97,6 +97,22 @@ export const getPayOrderList = (params) => {
 }
 
 // @Tags PayOrder
+// @Summary getPayOrderOverview
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "getPayOrderOverview"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderOverview [get]
+export const getPayOrderOverview = (params) => {
+  return service({
+    url: '/payOrder/getPayOrderOverview',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags PayOrder
 // @Summary 分页获取订单列表
 // @Security ApiKeyAuth
 // @accept application/json

@@ -10,26 +10,51 @@
 <script setup>
 import * as echarts from 'echarts'
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { get5MinNearlyOneHour } from "@/utils/date";
+import {formatTimeStr2Date, get5MinNearlyOneHour} from "@/utils/date";
 import {
-  getPayOrderListLatestHour
+  getPayOrderList,
+  getPayOrderListLatestHour, getPayOrderOverview
 } from "@/api/payOrder";
 
 
 const props = defineProps({
-  channelCode: String
+  channelCode: String,
+  startTime: Date,
+  endTime: Date,
+  interval: String,
+  keyword: String,
+  format: String,
+  unit: String,
+  chartData: Object,
 })
 
 
 let yData = []
 let xData = []
 
+// let xData = get5MinNearlyOneHour()
+// let yData = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
 
 const orderView = async () => {
-  let param = props.channelCode
-  console.log(param)
-  let res = await getPayOrderListLatestHour({channelCode: param, interval: 3})
-  console.log(res)
+  // 时间格式化（如：yyyy-MM-dd HH:mm:ss）
+  yData = []
+  xData = []
+
+  // let cid = props.channelCode
+  // let startTime = Math.floor(props.startTime.getTime() / 1000);
+  // let endTime = Math.floor(props.endTime.getTime() / 1000);
+  // let interval = props.interval
+  // let keyword = props.keyword
+  let format = props.format
+  // if (!format) format = 'yyyy-MM-dd HH:mm:ss'
+  //
+  // console.log("startTime:",startTime)
+  // console.log("endTime:",endTime)
+  // console.log("interval:",interval)
+  // let res = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: cid, startTime: startTime, endTime: endTime, interval:  interval, keyword: keyword, format: format})
+  // console.log(res)
+  let res = props.chartData
+  console.log('lineCharts res:', res)
   if (res.code === 0) {
     let resdata = res.data.list
     console.log('lineCharts res:', resdata)
@@ -39,8 +64,8 @@ const orderView = async () => {
         xData.push('00:00')
     }else{
       for (let i = 0; i < resdata.length; i++) {
-        yData.push(resdata[i].cnt_nums)
-        xData.push(resdata[i].state_time)
+        yData.push(resdata[i].y)
+        xData.push(formatTimeStr2Date(resdata[i].x, format))
       }
     }
   }
@@ -59,9 +84,6 @@ const initChart = () => {
     chart.value?.resize()
   })
 }
-
-// const xData = get5MinNearlyOneHour()
-// const yData = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
 
 
 
@@ -84,7 +106,6 @@ const setOptions = () => {
       itemWidth: 20,
       icon: 'path://M0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z',
       data: [
-
         {
           name: '成单数',
         },
@@ -131,7 +152,7 @@ const setOptions = () => {
     ],
     yAxis: [
       {
-        name: '单位：笔',
+        name: '单位：' + props.unit,
         nameTextStyle: {
           color: '#777',
         },
@@ -226,6 +247,13 @@ onMounted(() => {
       initChart()
     }, 300)
   })
+
+  watch(props, (newVal, oldVal) => {
+    console.log("发生了。。", newVal, oldVal)
+    orderView()
+    chart.value.resize()
+    console.log("resize了")
+  })
 })
 
 onUnmounted(() => {
@@ -237,7 +265,6 @@ onUnmounted(() => {
 })
 </script>
 <style lang="scss" scoped>
-
 .lineCharts-box{
   height: 360px;
   overflow: hidden;
@@ -252,6 +279,7 @@ onUnmounted(() => {
     height: 100%;
   }
 }
+
 .in-line{
   --color : #5BC2A4;
 }

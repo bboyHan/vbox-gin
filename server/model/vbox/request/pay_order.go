@@ -8,8 +8,9 @@ import (
 
 type PayOrderSearch struct {
 	vbox.PayOrder
-	StartCreatedAt *time.Time `json:"startCreatedAt" form:"startCreatedAt"`
-	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
+	StartCreatedAt time.Time `json:"startCreatedAt" form:"startCreatedAt"`
+	EndCreatedAt   time.Time `json:"endCreatedAt" form:"endCreatedAt"`
+	Interval       string    `json:"interval" form:"interval"`
 	request.PageInfo
 }
 
