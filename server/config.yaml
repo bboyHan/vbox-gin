@@ -208,8 +208,8 @@ system:
     use-redis: true
     use-mongo: false
     use-mq: true
-    use-mq-task: false
-    timer-task: false
+    use-mq-task: true
+    timer-task: true
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

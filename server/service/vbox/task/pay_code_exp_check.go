@@ -89,16 +89,26 @@ func PayCodeExpCheck() {
 				if err != nil {
 					global.GVA_LOG.Error("查询预产码失败", zap.Error(err), zap.Any("预产码MID", v.Mid))
 				}
-				if pcDB.CodeStatus == 2 {
+				if pcDB.CodeStatus == 2 || pcDB.CodeStatus == 4 {
 					global.GVA_LOG.Info("预产码过期了并且状态为2，需要更新", zap.Any("预产码MID", v.Mid), zap.Any("过期时间", v.ExpTime), zap.Any("当前时间", nowTime))
 					v.CodeStatus = 3
 					err = global.GVA_DB.Save(&v).Error
 					if err != nil {
 						global.GVA_LOG.Error("更新预产码状态失败", zap.Error(err), zap.Any("预产码", v))
 					}
-				}
-				//如果 code_status = 1，则表示已经使用了，则直接跳过
-				if pcDB.CodeStatus == 1 {
+
+					// 把redis预产池里的预产码也删除掉
+					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
+
+					global.GVA_LOG.Info("预产码已经过期或失效了，处理掉", zap.Any("预产码MID", v.Mid))
+					_ = msg.Ack(true)
+					continue
+				} else if pcDB.CodeStatus == 1 {
+					//如果 code_status = 1，则表示已经使用了，则直接跳过
 					global.GVA_LOG.Info("预产码已经使用了，不需要处理", zap.Any("预产码MID", v.Mid))
 					_ = msg.Ack(true)
 
@@ -106,20 +116,32 @@ func PayCodeExpCheck() {
 					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
 					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-					pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
 					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 
 					continue
-				}
+				} else {
+					//	其它状态，删redis
+					// 把redis预产池里的预产码也删除掉
+					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
+					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
+						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
+					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 
-				if err != nil {
-					global.GVA_LOG.Error("Mq Pay Code Task...", zap.Error(err))
-					_ = msg.Reject(false)
+					global.GVA_LOG.Info("预产码已经过期或失效了，处理掉", zap.Any("预产码MID", v.Mid))
+					_ = msg.Ack(true)
 					continue
 				}
-
-				_ = msg.Ack(true)
-				global.GVA_LOG.Info("核验完成", zap.Any("对应预产MID", v.Mid))
+				//
+				//if err != nil {
+				//	global.GVA_LOG.Error("Mq Pay Code Task...", zap.Error(err))
+				//	_ = msg.Reject(false)
+				//	continue
+				//}
+				//
+				//_ = msg.Ack(true)
+				//global.GVA_LOG.Info("核验完成", zap.Any("对应预产MID", v.Mid))
 			}
 			wg.Done()
 		}(i + 1)

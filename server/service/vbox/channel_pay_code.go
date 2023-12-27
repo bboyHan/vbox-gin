@@ -17,40 +17,168 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 )
 
 type ChannelPayCodeService struct {
 }
 
-// CreateChannelPayCode 创建通道账户付款二维码记录
-// Author [piexlmax](https://github.com/piexlmax)
+// GetPayCodeOverview 获取预产统计情况
+func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vboxReq.ChannelPayCodeSearch) (ret interface{}, err error) {
+	var channelCodeList []string
+
+	// 获取组织ID
+	orgTmp := utils2.GetSelfOrg(info.CreatedBy)
+	orgID := orgTmp[0]
+	// 当前付方所拥有的产品列表
+	chanKey := fmt.Sprintf(global.OrgChanSet, orgID)
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), chanKey).Result()
+	if c == 0 {
+		var productIds []uint
+		if err != nil {
+			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
+		}
+		if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id = ?", orgID).Find(&productIds).Error; err != nil {
+			global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
+		}
+		if err = global.GVA_DB.Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
+			global.GVA_LOG.Error("ChannelProduct查channelCodeList 库数据异常", zap.Error(err))
+		}
+
+		//jsonStr, _ := json.Marshal(channelCodeList)
+		for _, cid := range channelCodeList {
+			global.GVA_REDIS.SAdd(context.Background(), chanKey, cid)
+		}
+	} else {
+		cidList, _ := global.GVA_REDIS.SMembers(context.Background(), chanKey).Result()
+		//err = json.Unmarshal(jsonStr, &channelCodeList)
+		channelCodeList = cidList
+	}
+
+	retMap := make(map[string]map[string]map[string]vboxResp.PCCnt)
+
+	for _, cid := range channelCodeList {
+
+		pattern := fmt.Sprintf(global.ChanOrgPayCodeMoneyPrefix, orgID, cid)
+		var keys []string
+		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+
+		for _, key := range keys {
+			waitingVal := global.GVA_REDIS.ZCount(context.Background(), key, "0", "0").Val()
+			pendingVal := global.GVA_REDIS.ZCount(context.Background(), key, "2", "2").Val()
+
+			//global.GVA_LOG.Info("key", zap.String("key", key))
+			//global.GVA_LOG.Info("waitingVal", zap.Any("waitingVal", waitingVal))
+			//global.GVA_LOG.Info("pendingVal", zap.Any("pendingVal", pendingVal))
+
+			keyParts := strings.Split(key, ":")
+			moneyPart := strings.Split(keyParts[3], "_")[1]
+			opPart := strings.Split(keyParts[4], "_")[1]
+			locPart := strings.Split(keyParts[5], "_")[1]
+			if _, ok := retMap[moneyPart]; !ok {
+				retMap[moneyPart] = make(map[string]map[string]vboxResp.PCCnt)
+			}
+
+			vm := retMap[moneyPart]
+			if _, ok := vm[opPart]; !ok {
+				vm[opPart] = make(map[string]vboxResp.PCCnt)
+			}
+
+			locMap := vm[opPart]
+			if _, ok := locMap[locPart]; !ok {
+				locMap[locPart] = vboxResp.PCCnt{
+					WaitCnt:    0,
+					PendingCnt: 0,
+				}
+			}
+			temp := locMap[locPart]
+			temp.WaitCnt += waitingVal
+			temp.PendingCnt += pendingVal
+			locMap[locPart] = temp
+		}
+	}
+	return retMap, nil
+}
+
 func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxChannelPayCode *vbox.ChannelPayCode) (err error) {
+
 	mid := time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	vboxChannelPayCode.Mid = mid
-	err = global.GVA_DB.Create(vboxChannelPayCode).Error
+	// 先查一下库中记录
+	// 查一下数据库中预产对应的acAccount、money一致，并且code_status=2(取用池已经有待取用的预产),则将当前记录放入等候池
 
 	// 组织
 	orgTmp := utils2.GetSelfOrg(vboxChannelPayCode.CreatedBy)
 
-	// 区域 处理为同省匹配 （地市）
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+	ch, err := conn.Channel()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
 
 	// 入取用池
 	pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 		vboxChannelPayCode.Cid, vboxChannelPayCode.Money, vboxChannelPayCode.Operator, vboxChannelPayCode.Location)
 
-	pcMem := vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
-	global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{
-		Score:  0,
-		Member: pcMem,
-	})
+	pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgTmp[0], vboxChannelPayCode.Cid, vboxChannelPayCode.Money)
+	keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
-	// 入数量池
-	avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], vboxChannelPayCode.Cid, vboxChannelPayCode.Money)
-	global.GVA_REDIS.ZAdd(context.Background(), avlKey, redis.Z{
-		Score:  0,
-		Member: pcMem,
-	})
+	var flag bool
+	for _, key := range keys {
+		waitCnt := global.GVA_REDIS.ZCount(context.Background(), key, "4", "4").Val()
+
+		if waitCnt > 0 {
+			flag = true
+			break
+		}
+	}
+	if flag {
+		global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）")
+		vboxChannelPayCode.CodeStatus = 4
+		err = global.GVA_DB.Create(vboxChannelPayCode).Error
+
+		waitAccPcKey := fmt.Sprintf(global.AccWaiting, vboxChannelPayCode.AcId)
+
+		// 设置一个冷却时间
+		var cdTime time.Duration
+		ttl := global.GVA_REDIS.TTL(context.Background(), waitAccPcKey).Val()
+		if ttl > 0 {
+			global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
+			cdTime = ttl
+		} else {
+			duration, _ := HandleExpTime2Product(vboxChannelPayCode.Cid)
+			cdTime = duration + 60*time.Second
+		}
+
+		// 把当前acAccount下所有的预产等待队列置为冷却状态
+		waitIDsTmp := strings.Join([]string{fmt.Sprintf("%d", vboxChannelPayCode.ID)}, ",")
+		global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
+
+		waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "_")
+		err = ch.PublishWithDelay(task.PayCodeCDCheckDelayedExchange, task.PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+
+		pcMem := fmt.Sprintf("%d", vboxChannelPayCode.ID) + "_" + vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
+		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 4, Member: pcMem})
+	} else {
+		global.GVA_LOG.Info("当前添加的账号没有冷却中（没有预产正在处理中）")
+		vboxChannelPayCode.CodeStatus = 2
+
+		err = global.GVA_DB.Create(vboxChannelPayCode).Error
+
+		pcMem := fmt.Sprintf("%d", vboxChannelPayCode.ID) + "_" + vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
+		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
+	}
 
 	//根据expTime 处理到期的消息校验，放到PayCodeDelayedRoutingKey
 	if vboxChannelPayCode.ExpTime.Unix() > 0 {
@@ -61,16 +189,6 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		global.GVA_LOG.Info("过期时间差", zap.Any("expTimeDiff", expTimeDiff))
 		marshal, _ := json.Marshal(vboxChannelPayCode)
 
-		conn, err := mq.MQ.ConnPool.GetConnection()
-		if err != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
-		global.GVA_LOG.Info("消息发完了", zap.Any("expTimeDiff", expTimeDiff))
-		ch, err := conn.Channel()
-		if err != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
 		err = ch.PublishWithDelay(task.PayCodeDelayedExchange, task.PayCodeDelayedRoutingKey, marshal, expTimeDiff)
 		global.GVA_LOG.Info("消息发完了", zap.Any("expTimeDiff", expTimeDiff))
 	}
@@ -95,12 +213,9 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCode(vboxCha
 			// 删待取池中数据
 			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-			pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
 			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
 
-			// 删判断数量池中数据
-			avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], pcDB.Cid, pcDB.Money)
-			global.GVA_REDIS.ZRem(context.Background(), avlKey, pcMem)
 		}
 
 		if err = tx.Model(&vbox.ChannelPayCode{}).Where("id = ?", vboxChannelPayCode.ID).Update("deleted_by", vboxChannelPayCode.DeletedBy).Error; err != nil {
@@ -130,12 +245,9 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCodeByIds(id
 			// 删待取池中数据
 			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-			pcMem := pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
 			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
 
-			// 删判断数量池中数据
-			avlKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgTmp[0], pcDB.Cid, pcDB.Money)
-			global.GVA_REDIS.ZRem(context.Background(), avlKey, pcMem)
 		}
 
 		if err = tx.Model(&vbox.ChannelPayCode{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
@@ -460,4 +572,53 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 	}
 	return list, total, err
 
+}
+
+func HandleExpTime2Product(chanID string) (time.Duration, error) {
+	var key string
+
+	if global.TxContains(chanID) {
+		key = "1000"
+	} else if global.J3Contains(chanID) {
+		key = "2000"
+	} else if global.PcContains(chanID) {
+		key = "3000"
+	}
+
+	var expTimeStr string
+	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+	if count == 0 {
+		if err != nil {
+			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		}
+
+		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+
+		var proxy vbox.Proxy
+		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+		err = db.Where("status = ?", 1).Where("chan = ?", key).
+			First(&proxy).Error
+		if err != nil || proxy.Url == "" {
+			return 0, err
+		}
+		expTimeStr = proxy.Url
+		seconds, _ := strconv.Atoi(expTimeStr)
+		duration := time.Duration(seconds) * time.Second
+
+		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
+		global.GVA_LOG.Info("数据库取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
+
+		return duration, nil
+	} else if err != nil {
+		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+		return 0, err
+	} else {
+		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+		seconds, _ := strconv.Atoi(expTimeStr)
+
+		duration := time.Duration(seconds) * time.Second
+
+		//global.GVA_LOG.Info("缓存池取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
+		return duration, err
+	}
 }

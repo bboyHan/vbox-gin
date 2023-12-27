@@ -19,6 +19,31 @@ type ChannelPayCodeApi struct {
 
 var channelPayCodeService = service.ServiceGroupApp.VboxServiceGroup.ChannelPayCodeService
 
+// GetPayCodeOverview 获取预产统计情况
+// @Tags ChannelPayCode
+// @Summary 获取预产统计情况
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.ChannelPayCode true "获取预产统计情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vboxChannelPayCode/getPayCodeOverview [post]
+func (channelPayCodeApi *ChannelPayCodeApi) GetPayCodeOverview(c *gin.Context) {
+	var pageInfo vboxReq.ChannelPayCodeSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	pageInfo.CreatedBy = utils.GetUserID(c)
+	if list, err := channelPayCodeService.GetPayCodeOverview(pageInfo); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
+	}
+}
+
 // CreateChannelPayCode 创建通道账户付款二维码
 // @Tags ChannelPayCode
 // @Summary 创建通道账户付款二维码

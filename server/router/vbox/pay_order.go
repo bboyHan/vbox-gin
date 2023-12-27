@@ -20,5 +20,7 @@ func (s *PayOrderRouter) InitPayOrderRouter(Router *gin.RouterGroup) {
 		payOrderRouterWithoutRecord.GET("getPayOrderListLatestHour", payOrderApi.GetPayOrderListLatestHour) // 获取最近一小时订单列表
 		payOrderRouterWithoutRecord.GET("queryIpRegion", payOrderApi.QueryIpRegion)                         // 查询IP区域
 		payOrderRouterWithoutRecord.POST("orderTest", payOrderApi.CreateOrderTest)                          // 测试订单
+
+		payOrderRouterWithoutRecord.POST("callback2Pa", payOrderApi.CallbackOrder2PayAcc) // 补单
 	}
 }

@@ -137,6 +137,64 @@
             </template>
           </CenterCard>
         </el-col>
+        <el-col :span="6" :xs="24"></el-col>
+
+        <el-col :span="6" :xs="24">
+          <CenterCard title="近1小时成单金额" :custom-style="order1CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">金额</div>
+                    <div class="value">{{ formatMoney(1000) }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <el-col :span="6" :xs="24">
+          <CenterCard title="昨日金额" :custom-style="order2CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">金额</div>
+                    <div class="value">{{ formatMoney(1000) }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <el-col :span="6" :xs="24">
+          <CenterCard title="今日金额" :custom-style="order3CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">金额</div>
+                    <div class="value">{{ formatMoney(accOn) }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
       </el-row>
 
 <!--   趋势图   -->
@@ -215,7 +273,7 @@ import {reactive, ref, nextTick, defineEmits, onMounted, watch, toRefs} from "vu
 import {getChannelProductSelf} from "@/api/channelProduct";
 import {getChannelAccountList} from "@/api/channelAccount";
 import {getPayOrderOverview} from "@/api/payOrder";
-import {calculatePercentage} from "../../../utils/format";
+import {calculatePercentage, formatMoney} from "../../../utils/format";
 
 
 const searchInfo = ref({})

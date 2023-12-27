@@ -195,7 +195,7 @@ func HandleAccAvailable() (err error) {
 
 								for _, money := range moneyList {
 									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
-									if rd, ok2 := vm[money]; !ok2 {
+									if rd, ok2 := vm[money+"00"]; !ok2 {
 										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
 
 										// 再查一下库，这个时间段的有没有这个账号的订单
@@ -279,7 +279,7 @@ func HandleAccAvailable() (err error) {
 
 								for _, money := range moneyList {
 									key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
-									if rd, ok2 := vm[money]; !ok2 {
+									if rd, ok2 := vm[money+"00"]; !ok2 {
 										global.GVA_LOG.Info(fmt.Sprintf("还没有QB的充值记录, ac account : [%s], 金额: [%s]", rd, money))
 
 										// 再查一下库，这个时间段的有没有这个账号的订单

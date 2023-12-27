@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
@@ -89,58 +90,6 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			marshal, _ := json.Marshal(od)
 			err = ch.Publish(task.OrderWaitExchange, task.OrderWaitKey, marshal)
 			global.GVA_LOG.Info("发起一条资源匹配消息并入库初始化订单数据", zap.Any("od", od))
-
-			// 如果event type = 2 ，搞一下码的地区匹配
-			if order.EventType == 2 {
-				//TODO ???
-				/*var zs []redis.Z
-
-				split := strings.Split(vpo.PayRegion, "|")
-				province := split[2]
-				ISP := split[4]
-
-				// 查下省
-				var geo model.Geo
-				err = global.GVA_DB.Model(&model.Geo{}).Table("geo_provinces").
-					Where("name LIKE ?", "%"+province+"%").First(&geo).Error
-				if err != nil {
-					return nil, err
-				}
-
-				ispPY := utils.ISP(ISP)
-				provinceCode := geo.Code
-
-				orgIDs := utils2.GetDeepOrg(order.CreatedBy)
-
-				for _, orgID := range orgIDs {
-					k := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgID, order.ChannelCode, order.Money, ispPY, provinceCode)
-					zs, err = global.GVA_REDIS.ZRangeArgsWithScores(context.Background(), redis.ZRangeArgs{
-						Key:   k,
-						Start: 0,
-						Stop:  -1,
-					}).Result()
-
-					for _, z := range zs {
-						member := z.Member.(string)
-						splitMem := strings.Split(member, "_")
-						if len(splitMem) != 3 {
-							global.GVA_LOG.Warn("存的值有问题，排查一下", zap.Any("member", member))
-							return
-						} else {
-							mid := splitMem[0]       // Mid
-							acAccount := splitMem[1] // Ac Account
-							codeUrl := splitMem[2]   // code url
-
-							if ispPY == operator && provinceCode == loc {
-								global.GVA_LOG.Warn("匹配到了对应地区和运营商")
-								//	把付款码ID拿出来存到event ID
-								order.EventId = mid
-							}
-						}
-					}
-				}*/
-
-			}
 		}
 
 		if order.ResourceUrl != "" {
@@ -169,7 +118,81 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 	}
 
 	return rep, err
+}
 
+// CallbackOrder2PayAcc 补单 2 PayAcc
+func (vpoService *PayOrderService) CallbackOrder2PayAcc(orderID string, ctx *gin.Context) (err error) {
+	var order vbox.PayOrder
+
+	//1.0 查单
+	odKey := fmt.Sprintf(global.PayOrderKey, orderID)
+	rdRes, err := global.GVA_REDIS.Get(context.Background(), odKey).Bytes()
+	if err == redis.Nil { // redis中还没有的情况，查一下库
+		//	查一下库
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id =?", orderID).First(&order).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			global.GVA_LOG.Warn("订单不存在", zap.Any("当前订单", orderID))
+			return errors.New("订单不存在")
+		} else if err != nil {
+			global.GVA_LOG.Error("订单不存在", zap.Any("当前订单", orderID), zap.Error(err))
+			return err
+		}
+
+	} else if err != nil {
+		global.GVA_LOG.Error("redis err", zap.Error(err))
+	} else {
+		//fmt.Println("从缓存里拿result:", rdRes)
+		err = json.Unmarshal(rdRes, &order)
+	}
+
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		//log.Fatalf("Failed to get connection from pool: %v", err)
+		global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+	// ------------- 订单查询（30s延迟，第一次查单） 消息处理 --------------------
+	ch, _ := conn.Channel()
+
+	//	看一下订单状态，如果是已支付（order_status=1）,则简单发起http再回调一次（callback mq任务）
+	if order.OrderStatus == 1 {
+		global.GVA_LOG.Info("【候补单】订单处于已支付状态", zap.Any("order ID", orderID))
+
+	} else if order.OrderStatus == 2 {
+		global.GVA_LOG.Info("【候补单】订单处于待支付状态", zap.Any("order ID", orderID))
+
+		//	更新状态为等待补单
+		order.HandStatus = 3
+
+	} else if order.OrderStatus == 3 {
+		global.GVA_LOG.Info("【候补单】订单处于超时失效状态", zap.Any("order ID", orderID))
+
+		//	更新状态为等待补单
+		order.HandStatus = 3
+
+	}
+
+	body := http2.DoGinContextBody(ctx)
+
+	v := vboxReq.PayOrderAndCtx{
+		Obj: order,
+		Ctx: vboxReq.Context{
+			Body:      string(body),
+			ClientIP:  ctx.ClientIP(),
+			Method:    ctx.Request.Method,
+			UrlPath:   ctx.Request.URL.Path,
+			UserAgent: ctx.Request.UserAgent(),
+			UserID:    int(order.CreatedBy),
+		},
+	}
+
+	// 并且发起一个回调通知的消息
+	marshal, _ := json.Marshal(v)
+	err = ch.Publish(task.OrderCallbackExchange, task.OrderCallbackKey, marshal)
+	global.GVA_LOG.Info("【候补单】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
+
+	return err
 }
 
 // QueryOrder2PayAcc 查询QueryOrder2PayAcc
@@ -205,12 +228,26 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 	}
 
 	// 2. 查单
+	key := fmt.Sprintf(global.PayOrderKey, vpo.OrderId)
+	rdRes, err := global.GVA_REDIS.Get(context.Background(), key).Bytes()
 	var order vbox.PayOrder
-	err = global.GVA_DB.Model(&vbox.PayOrder{}).
-		Where("order_id = ? and p_account = ?", vpo.OrderId, vpo.Account).
-		First(&order).Error
-	if err != nil {
-		return nil, err
+	var jsonString []byte
+	if err == redis.Nil { // redis中还没有的情况，查一下库，并且去匹配设备信息
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).First(&order).Error
+		if err != nil {
+			return nil, err
+		}
+		//查出来了，设置一下redis
+		jsonString, err = json.Marshal(order)
+		if err != nil {
+			return nil, err
+		}
+		global.GVA_REDIS.Set(context.Background(), key, jsonString, 2*time.Second)
+	} else if err != nil {
+		global.GVA_LOG.Error("error:", zap.Error(err))
+	} else {
+		//fmt.Println("从缓存里拿result:", rdRes)
+		err = json.Unmarshal(rdRes, &order)
 	}
 
 	var payUrl string
@@ -225,7 +262,6 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 	}
 
 	return rep, err
-
 }
 
 // CreateOrder2PayAcc 创建CreateOrder2PayAcc
@@ -310,8 +346,9 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		channelCodeList = members
 	}
 
-	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpa.Uid), zap.Any("商户", vpa.PRemark))
-	global.GVA_LOG.Info("此次请求产品code", zap.Any("code", vpo.ChannelCode))
+	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("此次请求产品", vpo.ChannelCode),
+		zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpa.Uid), zap.Any("商户", vpa.PRemark))
+
 	exist := utils.Contains(channelCodeList, vpo.ChannelCode)
 	if !exist {
 		global.GVA_LOG.Warn("该账户不存在此产品，请核查！", zap.Any("目前支持的通道", channelCodeList))
@@ -323,21 +360,19 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 	// 分不同的类型来查库存 （1- 引导类 查账号库__!直接匹配了!  2- 预产类 查预产库__!只查不匹配!）
 	//
-	var resList []string
 
 	if global.TxContains(cid) { // tx 引导
-		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, strconv.FormatInt(int64(money), 10))
-
+		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
+		var resList []string
 		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
 			Min:    "0",
 			Max:    "0",
 			Offset: 0,
 			Count:  1,
 		}).Result()
-
 		if err != nil {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			return nil, err
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
 		}
 		if resList != nil && len(resList) > 0 {
 			accTmp := resList[0]
@@ -354,65 +389,79 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			accID = split[1]
 			acAccount = split[2]
 		} else {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			return nil, fmt.Errorf("后台资源不足！ 请核查")
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
 		}
+		var accTmp string
+		accTmp, err = global.GVA_REDIS.SPop(context.Background(), accKey).Result()
+
+		if err != nil {
+			if err == redis.Nil {
+				// Set为空
+				global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			} else {
+				// 异常错误
+				global.GVA_LOG.Error("redis err", zap.Error(err))
+			}
+			return nil, err
+		}
+
+		// 2.2 把可用的账号给出来继续往下执行建单步骤
+		split := strings.Split(accTmp, "_")
+		ID = split[0]
+		accID = split[1]
+		acAccount = split[2]
+
 	} else if global.J3Contains(cid) {
-		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, strconv.FormatInt(int64(money), 10))
 
-		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
-			Min:    "0",
-			Max:    "0",
-			Offset: 0,
-			Count:  1,
-		}).Result()
-
-		if err != nil {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			return nil, err
-		}
-		if resList != nil && len(resList) > 0 {
-			accTmp := resList[0]
-
-			// 2.1 把账号设置为已用
-			global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
-				Score:  1,
-				Member: accTmp,
-			})
-
-			// 2.2 把可用的账号给出来继续往下执行建单步骤
-			split := strings.Split(accTmp, "_")
-			ID = split[0]
-			accID = split[1]
-			acAccount = split[2]
-		} else {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			return nil, fmt.Errorf("后台资源不足！ 请核查")
-		}
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
-		//TODO ???
-
-		pcKey := fmt.Sprintf(global.ChanOrgPayCodeZSet, orgID, cid, money)
-
-		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), pcKey, &redis.ZRangeBy{
-			Min:    "0",
-			Max:    "0",
-			Offset: 0,
-			Count:  1,
-		}).Result()
-
+		//TODO ??? 模糊查
+		// 使用 Keys 命令进行模糊匹配
+		pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, money)
+		var keys []string
+		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
 		if err != nil {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			fmt.Println("Error:", err)
 			return nil, err
 		}
-		if resList != nil && len(resList) < 2 {
-			// 二次处理，如果当前剩余的库存剩1个，商户如果请求建单超过3次
-			//TODO
 
+		if len(keys) == 0 {
+			fmt.Println("No keys found with the given prefix")
+			global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+			return nil, fmt.Errorf("当前组织无付款码可用")
 		} else {
-			global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			return nil, fmt.Errorf("后台资源不足！ 请核查")
+			var flag bool
+			for _, key := range keys {
+				var resList []string
+				resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+					Min:    "0",
+					Max:    "0",
+					Offset: 0,
+					Count:  1,
+				}).Result()
+
+				// 检查是否为 redis.Nil 错误
+				if err != nil {
+					// 检查是否为 redis.Nil 错误
+					if errors.Is(err, redis.Nil) {
+						global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+					} else {
+						global.GVA_LOG.Error("redis err", zap.Error(err))
+					}
+				} else if len(resList) == 0 {
+					global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+				} else {
+					// 匹配成功
+					flag = true
+					break
+				}
+			}
+
+			if !flag {
+				global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+				return nil, fmt.Errorf("当前组织无付款码可用")
+			}
 		}
 	} else {
 		global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("传入的通道产品", cid))
@@ -431,7 +480,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		eventID, err = vpoService.HandleEventID2chShop(vpo.ChannelCode, vpo.Money, orgTmp)
 		rsUrl, err = vpoService.HandleResourceUrl2chShop(eventID)
 	} else if eventType == 2 {
-		eventID, err = vpoService.HandleEventID2payCode(vpo.ChannelCode, vpo.Money, orgTmp)
+		//跳过， 不匹配
 	}
 	if err != nil {
 		return nil, err
@@ -446,14 +495,15 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
 	global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", acAccount))
 
-	count, err = global.GVA_REDIS.Exists(context.Background(), vpo.OrderId).Result()
+	jucKey := fmt.Sprintf(global.PayOrderJUCKey, vpo.OrderId)
+	count, err = global.GVA_REDIS.Exists(context.Background(), jucKey).Result()
 	if count == 0 {
 		if err != nil {
 			global.GVA_LOG.Error("redis ex：", zap.Error(err))
 		}
 		global.GVA_LOG.Info("当前缓存池无此订单，可继续。。。", zap.Any("orderId", vpo.OrderId))
 		//global.GVA_REDIS.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
-		global.GVA_REDIS.Set(context.Background(), vpo.OrderId, 1, 10*time.Minute)
+		global.GVA_REDIS.Set(context.Background(), jucKey, 1, 5*time.Minute)
 		go func() {
 
 			order := vbox.PayOrder{
@@ -502,55 +552,157 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest) (rep *vboxRep.Order2PayAccountRes, err error) {
 
 	// 1. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
-
-	chanID := vpo.ChannelCode
-	var accID, acAccount string
+	money := vpo.Money
+	cid := vpo.ChannelCode
+	var ID, accID, acAccount string
 	//获取当前组织
-	orgIDs := utils2.GetDeepOrg(vpo.UserId)
-	for _, orgID := range orgIDs {
-		key := fmt.Sprintf(global.ChanOrgAccZSet, orgID, chanID, strconv.FormatInt(int64(vpo.Money), 10))
+	orgTmp := utils2.GetSelfOrg(vpo.UserId)
+	orgID := orgTmp[0]
 
+	// 1.1 ----- 校验该组织是否有此产品 -----------
+
+	var channelCodeList []string
+	// 获取组织ID
+	cidKey := fmt.Sprintf(global.OrgChanSet, orgID)
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), cidKey).Result()
+	if c == 0 {
+		var productIds []uint
+		if err != nil {
+			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
+		}
+		global.GVA_LOG.Info("当前缓存池此用户对应的orgIds，查一下库。。。", zap.Any("账户", vpo.Username))
+		orgIds := utils2.GetDeepOrg(vpo.UserId)
+		db := global.GVA_DB.Model(&vbox.OrgProduct{})
+		if err = db.Debug().Distinct("channel_product_id").Select("channel_product_id").Where("organization_id in ?", orgIds).Find(&productIds).Error; err != nil {
+			return nil, err
+		}
+		if err = db.Debug().Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
+			return nil, err
+		}
+
+		for _, cid := range channelCodeList {
+			global.GVA_REDIS.SAdd(context.Background(), cidKey, cid)
+		}
+	} else {
+		members, _ := global.GVA_REDIS.SMembers(context.Background(), cidKey).Result()
+		channelCodeList = members
+	}
+
+	global.GVA_LOG.Info("当前所拥有的产品code", zap.Any("此次请求产品", vpo.ChannelCode),
+		zap.Any("通道编码", channelCodeList), zap.Any("vpa.Uid", vpo.UserId), zap.Any("账户", vpo.Username))
+
+	exist := utils.Contains(channelCodeList, vpo.ChannelCode)
+	if !exist {
+		global.GVA_LOG.Warn("该账户不存在此产品，请核查！", zap.Any("目前支持的通道", channelCodeList))
+		return nil, fmt.Errorf("该账户不存在此产品，请核查！ 目前支持的通道：%v", channelCodeList)
+	}
+
+	if global.TxContains(cid) { // tx 引导
+		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
 		var resList []string
-		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
 			Min:    "0",
 			Max:    "0",
 			Offset: 0,
 			Count:  1,
 		}).Result()
-
 		if err != nil {
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
-			continue
+			return nil, fmt.Errorf("当前组织无资源可用")
 		}
 		if resList != nil && len(resList) > 0 {
 			accTmp := resList[0]
 
 			// 2.1 把账号设置为已用
-			global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+			global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
 				Score:  1,
 				Member: accTmp,
 			})
 
 			// 2.2 把可用的账号给出来继续往下执行建单步骤
 			split := strings.Split(accTmp, "_")
-			accID = split[0]
-			acAccount = split[1]
-			break
+			ID = split[0]
+			accID = split[1]
+			acAccount = split[2]
 		} else {
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
-			continue
+			return nil, fmt.Errorf("当前组织无资源可用")
 		}
-	}
+		var accTmp string
+		accTmp, err = global.GVA_REDIS.SPop(context.Background(), accKey).Result()
 
-	if accID == "" || acAccount == "" {
-		return nil, fmt.Errorf("后台库存资源不足！ 请核查")
-	}
+		if err != nil {
+			if err == redis.Nil {
+				// Set为空
+				global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
+			} else {
+				// 异常错误
+				global.GVA_LOG.Error("redis err", zap.Error(err))
+			}
+			return nil, err
+		}
 
-	fmt.Printf("拿到了账号： %s  id: %s", accID, acAccount)
-	var vca vbox.ChannelAccount
-	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", accID).First(&vca).Error
-	if err != nil {
-		return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+		// 2.2 把可用的账号给出来继续往下执行建单步骤
+		split := strings.Split(accTmp, "_")
+		ID = split[0]
+		accID = split[1]
+		acAccount = split[2]
+
+	} else if global.J3Contains(cid) {
+
+	} else if global.PcContains(cid) {
+		// 预产类 查 预产库
+		//TODO ??? 模糊查
+		// 使用 Keys 命令进行模糊匹配
+		pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, money)
+		var keys []string
+		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+
+		if len(keys) == 0 {
+			fmt.Println("No keys found with the given prefix")
+			global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+			return nil, fmt.Errorf("当前组织无付款码可用")
+		} else {
+			var flag bool
+			for _, key := range keys {
+				var resList []string
+				resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+					Min:    "0",
+					Max:    "0",
+					Offset: 0,
+					Count:  1,
+				}).Result()
+
+				// 检查是否为 redis.Nil 错误
+				if err != nil {
+					// 检查是否为 redis.Nil 错误
+					if errors.Is(err, redis.Nil) {
+						global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+					} else {
+						global.GVA_LOG.Error("redis err", zap.Error(err))
+					}
+				} else if len(resList) == 0 {
+					global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+				} else {
+					// 匹配成功
+					flag = true
+					break
+				}
+			}
+
+			if !flag {
+				global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+				return nil, fmt.Errorf("当前组织无付款码可用")
+			}
+		}
+	} else {
+		global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("传入的通道产品", cid))
+		return nil, fmt.Errorf("该账户不支持传入的通道产品！请核查")
 	}
 
 	oid := "TEST" + strconv.FormatInt(time.Now().UnixMilli(), 10)
@@ -558,7 +710,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	vpo.NotifyUrl, _ = vpoService.HandleNotifyUrl2Test()
 
 	// 判断当前产品属于那种类型 1-商铺关联，2-付码关联
-	eventType, err := vpoService.HandleEventType(chanID)
+	eventType, err := vpoService.HandleEventType(cid)
 	if err != nil {
 		return nil, err
 	}
@@ -566,24 +718,27 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	var eventID string
 	var rsUrl string
 	if eventType == 1 {
-		eventID, err = vpoService.HandleEventID2chShop(chanID, vpo.Money, orgIDs)
+		eventID, err = vpoService.HandleEventID2chShop(cid, vpo.Money, orgTmp)
 		rsUrl, err = vpoService.HandleResourceUrl2chShop(eventID)
 	} else if eventType == 2 {
-		eventID, err = vpoService.HandleEventID2payCode(chanID, vpo.Money, orgIDs)
+		//跳过， 不匹配
 	}
 	if err != nil {
 		return nil, fmt.Errorf("后台shop资源不足！ 请核查, 金额: [%d]", vpo.Money)
 	}
 
 	// 获取过期时间
-	expTime, err := vpoService.HandleExpTime2Product(chanID)
+	expTime, err := vpoService.HandleExpTime2Product(cid)
 	if err != nil {
 		return nil, err
 	}
 
+	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
+	global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", acAccount))
+
 	order := &vbox.PayOrder{
-		PlatformOid: oid,
-		ChannelCode: chanID,
+		PlatformOid: utils.GenerateID("TEST"),
+		ChannelCode: cid,
 		PAccount:    "TEST_" + vpo.Username,
 		EventType:   eventType,
 		EventId:     eventID,
@@ -593,7 +748,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		NotifyUrl:   vpo.NotifyUrl,
 		ResourceUrl: rsUrl,
 		ExpTime:     time.Now().Add(expTime),
-		CreatedBy:   vca.CreatedBy,
+		CreatedBy:   vpo.UserId,
 	}
 
 	err = global.GVA_DB.Create(order).Error
@@ -1099,53 +1254,4 @@ func (vpoService *PayOrderService) HandleEventID2chShop(chanID string, money int
 	})
 
 	return orgShopID, err
-}
-
-// HandleEventID2payCode 获取付码关联ID （productId_ID）
-func (vpoService *PayOrderService) HandleEventID2payCode(chanID string, money int, orgIDs []uint) (orgPayCodeID string, err error) {
-	// 2-付码关联
-	var pcList []vbox.ChannelPayCode
-
-	var zs []redis.Z
-	var key string
-	for _, orgID := range orgIDs {
-		key = fmt.Sprintf(global.ChanOrgPayCodeZSet, orgID, chanID, money)
-		zs, err = global.GVA_REDIS.ZRangeArgsWithScores(context.Background(), redis.ZRangeArgs{
-			Key:   key,
-			Start: 0,
-			Stop:  -1,
-		}).Result()
-		if err != nil {
-			return "", err
-		}
-		if len(zs) <= 0 { // redis 没查到，查一下库
-			userIDs := utils2.GetUsersByOrgId(orgID)
-			// 当前time
-			now := time.Now()
-
-			err = global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("cid = ? and money = ? and code_status = 2", chanID, money).
-				Where("created_by in ?", userIDs).Where("exp_time > ?", now).Find(&pcList).Error
-			if err != nil {
-				return "", err
-			}
-			if len(pcList) <= 0 {
-				continue
-			}
-
-			//如果查到库里有， 设置进 redis 中
-			for _, pc := range pcList {
-				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-					Score:  0,
-					Member: pc.Operator + "_" + pc.Location + "_" + pc.Mid,
-				})
-			}
-		}
-		break
-	}
-
-	if len(zs) <= 0 {
-		return "", fmt.Errorf("该组织配置的资源不足，请核查")
-	}
-
-	return "", nil
 }

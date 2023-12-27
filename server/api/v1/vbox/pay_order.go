@@ -150,6 +150,52 @@ func (vpoApi *PayOrderApi) QueryOrderSimple(c *gin.Context) {
 	}
 }
 
+// CallbackOrder2PayAcc 补单
+// @Tags VboxPayOrder
+// @Summary 补单
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.VboxPayOrder true "补单"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /base/create [post]
+func (vpoApi *PayOrderApi) CallbackOrder2PayAcc(c *gin.Context) {
+	var vpo vboxReq.CallBackReq
+	err := c.ShouldBind(&vpo) // 可接收 from - json - xml
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	userID := utils.GetUserID(c)
+	var user system.SysUser
+
+	err = global.GVA_DB.Where("id = ?", userID).First(&user).Error
+	if err == nil {
+		if user.EnableAuth == 1 {
+			var secret string
+			secret, _ = captcha.GetSecret(user.AuthCaptcha)
+			if ok := captcha.ValidateCode(secret, vpo.AuthCaptcha); !ok {
+				err = errors.New("双因子认证码错误")
+				response.FailWithMessage(err.Error(), c)
+				return
+			}
+		} else {
+			err = errors.New("该账户未设置安全码，不允许补单操作，请至个人中心核查设置")
+			response.FailWithMessage(err.Error(), c)
+			return
+		}
+	}
+
+	orderID := vpo.OrderId
+	if err = payOrderService.CallbackOrder2PayAcc(orderID, c); err != nil {
+		global.GVA_LOG.Error("回调异常!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("回调成功", c)
+	}
+}
+
 // QueryIpRegion 查询IP区域分布情况
 // @Tags VboxPayOrder
 // @Summary 查询QueryIpRegion

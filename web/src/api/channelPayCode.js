@@ -80,6 +80,22 @@ export const findChannelPayCode = (params) => {
   })
 }
 
+// @Tags PayCodeVO
+// @Summary 获取预产统计情况
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取预产统计情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /channelPayCode/getPayCodeOverview [get]
+export const getPayCodeOverview = (params) => {
+  return service({
+    url: '/channelPayCode/getPayCodeOverview',
+    method: 'get',
+    params
+  })
+}
+
 // @Tags VboxChannelPayCode
 // @Summary 分页获取通道账户付款二维码列表
 // @Security ApiKeyAuth

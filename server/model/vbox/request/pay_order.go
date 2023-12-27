@@ -52,6 +52,12 @@ type CreateOrderTest struct {
 	NotifyUrl   string `json:"notify_url" form:"notify_url" url:"notify_url"`
 }
 
+// CallBackReq 结构体
+type CallBackReq struct {
+	AuthCaptcha string `json:"auth_captcha" form:"auth_captcha" url:"auth_captcha"`
+	OrderId     string `json:"order_id" form:"order_id" url:"order_id"`
+}
+
 type OrdersDtData struct {
 	ChannelCode string `json:"channelCode" form:"channelCode"`
 	Dt          string `json:"dt" form:"dt"`

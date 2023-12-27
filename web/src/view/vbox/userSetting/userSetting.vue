@@ -58,7 +58,7 @@
                   <p class="pb-2.5 text-xl text-gray-600">安全码设置</p>
                   <p class="pb-2.5 text-lg text-gray-400">
                     修改安全码
-                    <a href="javascript:void(0)" class="float-right text-blue-400" @click="getAuthCaptcha(userStore.userInfo)">
+                    <a href="javascript:void(0)" class="float-right text-blue-400" @click="getAuthCaptcha()">
                       <el-button type="primary" link icon="lock"> 设置安全码 </el-button>
                     </a>
                   </p>
@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { setSelfInfo, changePassword } from '@/api/user.js'
+import {setSelfInfo, changePassword, resetCaptcha, getUserInfo} from '@/api/user.js'
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
@@ -384,8 +384,9 @@ const showQRCode = ref(false);
 const isNotSetting = ref(false);
 
 // 查看防爆码
-const getAuthCaptcha = (row) => {
-  console.log(row)
+const getAuthCaptcha = () => {
+  userStore.GetUserInfo()
+  let row = userStore.userInfo;
   let authCaptcha = row.authCaptcha;
   capModify.value = JSON.parse(JSON.stringify(row))
   if (authCaptcha !== "") {

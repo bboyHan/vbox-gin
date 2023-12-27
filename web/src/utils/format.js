@@ -2,6 +2,26 @@ import { formatTimeToStr } from '@/utils/date'
 import { getDict } from '@/utils/dictionary'
 import { codeToText } from 'element-china-area-data';
 
+// 格式化运营商
+export const formatOPDesc = (operator) => {
+  let opMsg = '';
+  if(operator === 'yidong') {
+    opMsg = '运营商：移动'
+  } else if(operator === 'liantong') {
+    opMsg = '运营商：联通'
+  } else if(operator === 'dianxin') {
+    opMsg = '运营商：电信'
+  } else {
+    opMsg = '运营商：未知'
+  }
+  return opMsg
+}
+
+// 格式化金额
+export const formatMoneyDesc = (money) => {
+    return '金额：' + money + "元"
+}
+
 // 付款码状态
 export const formatStatus2ETag = (status) => {
   if(status >= 500) {
@@ -36,6 +56,8 @@ export const formatPayCodeStatus = (status) => {
     return '已使用'
   } else if(status === 3) {
     return '已失效'
+  } else if(status === 4) {
+    return '冷却中'
   } else {
     return '-'
   }
@@ -57,6 +79,8 @@ export const formatRegionCode = (locationCode, isStrict) => {
 export const formatPayCodeColor = (status) => {
   if (status === 3) {
     return '#606266'
+  } else if(status === 4) {
+    return '#2b7fff'
   } else if(status === 2) {
     return '#a64406'
   } else if(status === 1) {
@@ -192,4 +216,11 @@ export function calculatePercentage(num, total) {
   const percentage = total <= 0 ? 0 : Math.round((num / total) * 10000) / 100.0;
 
   return percentage;
+}
+
+export function formatMoney(num, prefix) {
+  if (!prefix) prefix = "￥";
+  let money = String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  return prefix + money;
 }

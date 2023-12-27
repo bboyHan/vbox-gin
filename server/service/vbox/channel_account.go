@@ -160,7 +160,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 	c, err := rdConn.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) { // tx系
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		}
 
@@ -179,6 +179,20 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 
 	if global.TxContains(vca.Cid) { // tx系
 
+		openID, openKey, err := product.Secret(vca.Token)
+		if err != nil {
+			return nil, err
+		}
+		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+
+		if records.Ret != 0 {
+			return nil, fmt.Errorf("该账号ck存在异常，请核查")
+		}
+		//classifier := product.Classifier(records.WaterList)
+		return records, nil
+	} else if global.J3Contains(vca.Cid) {
+
+	} else if global.PcContains(vca.Cid) {
 		openID, openKey, err := product.Secret(vca.Token)
 		if err != nil {
 			return nil, err

@@ -40,6 +40,7 @@ func RunWindowsServer() {
 		go task.OrderCallbackTask()
 		go task.ChanAccEnableCheckTask()
 		go task.PayCodeExpCheck()
+		go task.PayCodeCDCheckTask()
 	}
 	//定时任务入口
 	if global.GVA_CONFIG.System.TimerTask {

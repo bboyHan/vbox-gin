@@ -79,7 +79,7 @@ func QryQQRecords(vca vbox.ChannelAccount) error {
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) { // tx系
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		}
 

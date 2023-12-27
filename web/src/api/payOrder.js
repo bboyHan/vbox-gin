@@ -1,49 +1,17 @@
 import service from '@/utils/request'
 
 // @Tags PayOrder
-// @Summary 创建订单
+// @Summary 补单
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.PayOrder true "创建订单"
+// @Param data body model.PayOrder true "补单"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
-// @Router /payOrder/createPayOrder [post]
-export const createPayOrder = (data) => {
+// @Router /payOrder/callback2Pa [post]
+export const callback2Pa = (data) => {
   return service({
-    url: '/payOrder/createPayOrder',
+    url: '/payOrder/callback2Pa',
     method: 'post',
-    data
-  })
-}
-
-// @Tags PayOrder
-// @Summary 删除订单
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body model.PayOrder true "删除订单"
-// @Success 200 {string} string "{"success":true,"data":{},"msg":"删除成功"}"
-// @Router /payOrder/deletePayOrder [delete]
-export const deletePayOrder = (data) => {
-  return service({
-    url: '/payOrder/deletePayOrder',
-    method: 'delete',
-    data
-  })
-}
-
-// @Tags PayOrder
-// @Summary 批量删除订单
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body request.IdsReq true "批量删除订单"
-// @Success 200 {string} string "{"success":true,"data":{},"msg":"删除成功"}"
-// @Router /payOrder/deletePayOrder [delete]
-export const deletePayOrderByIds = (data) => {
-  return service({
-    url: '/payOrder/deletePayOrderByIds',
-    method: 'delete',
     data
   })
 }

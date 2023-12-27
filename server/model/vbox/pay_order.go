@@ -24,7 +24,8 @@ type PayOrder struct {
 	PAccount    string    `json:"pAccount" form:"pAccount" gorm:"column:p_account;comment:付方ID;size:64;"`                                           //付方ID
 	NotifyUrl   string    `json:"notifyUrl" form:"notifyUrl" gorm:"column:notify_url;comment:回调地址;size:200;"`                                       //回调地址
 	OrderStatus int       `json:"orderStatus" form:"orderStatus" gorm:"default:2;column:order_status;comment:订单状态,1-已支付,2-待支付,3-超时,0-匹配失败;size:2;"` //订单状态
-	CbStatus    int       `json:"cbStatus" form:"cbStatus" gorm:"default:2;column:cb_status;comment:回调状态;size:2;"`                                  //回调状态
+	CbStatus    int       `json:"cbStatus" form:"cbStatus" gorm:"default:2;column:cb_status;comment:回调状态,1-已回调,2-待回调;size:2;"`                      //回调状态
+	HandStatus  int       `json:"handStatus" form:"handStatus" gorm:"default:2;column:hand_status;comment:手动补单状态,1-已手动补单,2-默认,3-候补单;size:2;"`       //手动补单
 	ExpTime     time.Time `json:"expTime" form:"expTime" gorm:"column:exp_time;comment:订单过期时间;"`                                                    //异步执行时间
 	CbTime      time.Time `json:"cbTime" form:"cbTime" gorm:"column:cb_time;comment:回调时间;"`                                                         //回调时间
 	CreatedBy   uint      `gorm:"column:created_by;comment:创建者"`
