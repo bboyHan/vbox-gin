@@ -11,7 +11,7 @@
       <div class="gva-organization-box-right">
         <div class="toolbar">
           <div class="toolbar-search">
-            <el-input v-model="userSearch.userName" placeholder="请输入要搜索的用户名" />
+            <el-input v-model="userSearch.username" placeholder="请输入要搜索的用户名" />
             <el-button type="primary" @click="getUserTable">搜索</el-button>
             <el-button type="primary" @click="addUser()">新增成员</el-button>
           </div>
@@ -21,7 +21,7 @@
         <div class="table-body">
           <el-table :data="userTable" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" />
-            <el-table-column prop="sysUser.userName" label="用户名" width="120" />
+            <el-table-column prop="sysUser.username" label="用户名" width="120" />
             <el-table-column label="操作列" min-width="220">
               <template #default="{row}">
                 <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet" @click="showOperateRecharge(row)"> 充值 </el-button>
@@ -58,7 +58,7 @@
 
     <!--  新增成员  -->
     <el-dialog v-model="addUserDialog" title="新增成员" width="400px">
-      <el-form v-model="userForm" label-width="80px">
+      <el-form ref="userForm" v-model="userForm" label-width="80px" :rules="rules">
         <el-form-item label="用户名">
           <el-input v-model="userForm.username" prop="username"/>
         </el-form-item>
@@ -174,6 +174,7 @@ import {deleteUser, selfRegister, resetCaptcha, resetPassword} from '@/api/user'
 import {ElMessage, ElMessageBox} from "element-plus";
 import {transferUserWallet} from "@/api/userWallet";
 import { useBtnAuth } from '@/utils/btnAuth'
+import {reactive} from "vue";
 
 const btnAuth = useBtnAuth()
 const data = ref([])
@@ -197,6 +198,27 @@ const userForm = ref({
   newPassword: '',
   enable: '1',
   enableAuth: '1',
+})
+
+const rules = reactive({
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '最少6个字符', trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请输入确认密码', trigger: 'blur' },
+    { min: 6, message: '最少6个字符', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== userForm.value.newPassword) {
+          callback(new Error('两次密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
 })
 
 // 增加新用户
@@ -234,7 +256,7 @@ const getUserTable = async() => {
 
 // 组织用户搜索
 const userSearch = ref({
-  userName: '',
+  username: '',
 })
 
 const deleteUserFunc = async(row) => {
@@ -263,21 +285,27 @@ const addUserClear = () => {
 
 // 添加组织成员
 const addUserEnter = async() => {
-  userForm.value.enableAuth = Number(userForm.value.enableAuth)
-  userForm.value.enable = Number(userForm.value.enable)
-  const res = await selfRegister(userForm.value)
-  if (res.code === 0) {
-    ElMessage.success('添加成功')
-    await getUserTable()
-  }
-  userForm.value = {
-    username: '',
-    confirmPassword: '',
-    newPassword: '',
-    enable: '1',
-    enableAuth: '1',
-  }
-  addUserDialog.value = false
+  Form.value.validate((valid) => {
+    if (valid) {
+      userForm.value.enableAuth = Number(userForm.value.enableAuth)
+      userForm.value.enable = Number(userForm.value.enable)
+      const res = selfRegister(userForm.value)
+      if (res.code === 0) {
+        ElMessage.success('添加成功')
+        getUserTable()
+      }
+      userForm.value = {
+        username: '',
+        confirmPassword: '',
+        newPassword: '',
+        enable: '1',
+        enableAuth: '1',
+      }
+      addUserDialog.value = false
+    } else {
+      return false
+    }
+  })
 }
 
 // 初始化方法

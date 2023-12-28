@@ -95,7 +95,7 @@
                               <span
                                 v-show="!isMobile"
                                 style="margin-left: 5px"
-                              >{{ userStore.userInfo.nickName }}</span>
+                              >{{ userStore.userInfo.nickname }}</span>
                               <el-icon>
                                 <arrow-down />
                               </el-icon>

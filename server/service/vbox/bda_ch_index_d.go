@@ -173,7 +173,7 @@ func (bdaChIndexDService *BdaChIndexDService) CronVboxBdaChIndexD() (err error) 
 
 			entity := vbox.BdaChIndexD{
 				Uid:             &uid,
-				UserName:        userInfo.Username,
+				Username:        userInfo.Username,
 				ChannelCode:     chCode,
 				ProductId:       chId,
 				ProductName:     vcp.ProductName,

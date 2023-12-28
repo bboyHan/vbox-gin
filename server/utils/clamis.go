@@ -21,13 +21,13 @@ func GetRoleID(id uint) (uint, error) {
 
 func GetSubRoleID(id uint) (uint, error) {
 	var userAuthority system.SysUserAuthority
-	err := global.GVA_DB.Model(&system.SysUserAuthority{}).Find(&userAuthority, "sys_user_id = ?", id).Error
+	err := global.GVA_DB.Debug().Model(&system.SysUserAuthority{}).Find(&userAuthority, "sys_user_id = ?", id).Error
 	if err != nil {
 		global.GVA_LOG.Error(fmt.Sprintf("%v", err))
 		return 0, err
 	}
 	var subAuthority system.SysAuthority
-	err = global.GVA_DB.Model(&system.SysAuthority{}).Find(&subAuthority, "parent_id = ?", userAuthority.SysAuthorityAuthorityId).Error
+	err = global.GVA_DB.Debug().Model(&system.SysAuthority{}).Find(&subAuthority, "parent_id = ?", userAuthority.SysAuthorityAuthorityId).Error
 	if err != nil {
 		global.GVA_LOG.Error(fmt.Sprintf("%v", err))
 		return 0, err

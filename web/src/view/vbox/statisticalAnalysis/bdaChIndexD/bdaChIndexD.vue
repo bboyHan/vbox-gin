@@ -53,7 +53,7 @@
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="用户id" prop="uid" width="120" />
-        <el-table-column align="left" label="用户名" prop="userName" width="120" />
+        <el-table-column align="left" label="用户名" prop="username" width="120" />
         <el-table-column align="left" label="通道code" prop="channelCode" width="120" />
         <el-table-column align="left" label="产品ID" prop="productId" width="120" />
         <el-table-column align="left" label="产品名称" prop="productName" width="120" />
@@ -91,8 +91,8 @@
             <el-form-item label="用户id:"  prop="uid" >
               <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入用户id" />
             </el-form-item>
-            <el-form-item label="用户名:"  prop="userName" >
-              <el-input v-model="formData.userName" :clearable="true"  placeholder="请输入用户名" />
+            <el-form-item label="用户名:"  prop="username" >
+              <el-input v-model="formData.username" :clearable="true"  placeholder="请输入用户名" />
             </el-form-item>
             <el-form-item label="通道code:"  prop="channelCode" >
               <el-input v-model="formData.channelCode" :clearable="true"  placeholder="请输入通道code" />
@@ -135,7 +135,7 @@
                         {{ formData.uid }}
                 </el-descriptions-item>
                 <el-descriptions-item label="用户名">
-                        {{ formData.userName }}
+                        {{ formData.username }}
                 </el-descriptions-item>
                 <el-descriptions-item label="通道code">
                         {{ formData.channelCode }}
@@ -189,7 +189,7 @@ defineOptions({
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
         uid: 0,
-        userName: '',
+        username: '',
         channelCode: '',
         productId: '',
         productName: '',
@@ -391,7 +391,7 @@ const closeDetailShow = () => {
   detailShow.value = false
   formData.value = {
           uid: 0,
-          userName: '',
+          username: '',
           channelCode: '',
           productId: '',
           productName: '',
@@ -415,7 +415,7 @@ const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
         uid: 0,
-        userName: '',
+        username: '',
         channelCode: '',
         productId: '',
         productName: '',

@@ -72,7 +72,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vbox
 
 		for _, key := range keys {
 			waitingVal := global.GVA_REDIS.ZCount(context.Background(), key, "0", "0").Val()
-			pendingVal := global.GVA_REDIS.ZCount(context.Background(), key, "2", "2").Val()
+			pendingVal := global.GVA_REDIS.ZCount(context.Background(), key, "4", "4").Val()
 
 			//global.GVA_LOG.Info("key", zap.String("key", key))
 			//global.GVA_LOG.Info("waitingVal", zap.Any("waitingVal", waitingVal))

@@ -85,7 +85,7 @@
           width="140"
         >
           <template #default="scope">
-            <div>{{ scope.row.user.userName }}({{ scope.row.user.nickName }})</div>
+            <div>{{ scope.row.user.username }}({{ scope.row.user.nickname }})</div>
           </template>
         </el-table-column>
         <el-table-column

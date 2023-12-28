@@ -8,7 +8,7 @@ import (
 type BdaChShopIndexD struct {
 	global.GVA_MODEL
 	Uid             *int    `json:"uid" form:"uid" gorm:"column:uid;comment:用户id;size:10;"`                                //用户id
-	UserName        string  `json:"userName" form:"userName" gorm:"column:user_name;comment:用户名;size:64;"`                 //用户名
+	Username        string  `json:"username" form:"username" gorm:"column:username;comment:用户名;size:64;"`                  //用户名
 	Cid             string  `json:"cid" form:"cid" gorm:"column:cid;comment:通道ID;size:32;"`                                //通道ID
 	ShopRemark      string  `json:"shopRemark" form:"shopRemark" gorm:"column:shop_remark;comment:店铺备注;size:128;"`         //店铺备注
 	ChannelCode     string  `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;size:20;"`     //通道code

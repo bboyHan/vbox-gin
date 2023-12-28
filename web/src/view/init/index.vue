@@ -105,10 +105,10 @@
           </el-form-item>
           <el-form-item
             v-if="form.dbType !== 'sqlite'"
-            label="userName"
+            label="username"
           >
             <el-input
-              v-model="form.userName"
+              v-model="form.username"
               placeholder="请输入数据库用户名"
             />
           </el-form-item>
@@ -191,7 +191,7 @@ const form = reactive({
   dbType: 'mysql',
   host: '127.0.0.1',
   port: '3306',
-  userName: 'root',
+  username: 'root',
   password: '',
   dbName: 'gva',
   dbPath: ''
@@ -204,7 +204,7 @@ const changeDB = (val) => {
         dbType: 'mysql',
         host: '127.0.0.1',
         port: '3306',
-        userName: 'root',
+        username: 'root',
         password: '',
         dbName: 'gva',
         dbPath: ''
@@ -215,7 +215,7 @@ const changeDB = (val) => {
         dbType: 'pgsql',
         host: '127.0.0.1',
         port: '5432',
-        userName: 'postgres',
+        username: 'postgres',
         password: '',
         dbName: 'gva',
         dbPath: ''
@@ -226,7 +226,7 @@ const changeDB = (val) => {
         dbType: 'oracle',
         host: '127.0.0.1',
         port: '1521',
-        userName: 'oracle',
+        username: 'oracle',
         password: '',
         dbName: 'gva',
         dbPath: ''
@@ -237,7 +237,7 @@ const changeDB = (val) => {
         dbType: 'mssql',
         host: '127.0.0.1',
         port: '1433',
-        userName: 'mssql',
+        username: 'mssql',
         password: '',
         dbName: 'gva',
         dbPath: ''
@@ -248,7 +248,7 @@ const changeDB = (val) => {
         dbType: 'sqlite',
         host: '',
         port: '',
-        userName: '',
+        username: '',
         password: '',
         dbName: 'gva',
         dbPath: ''
@@ -259,7 +259,7 @@ const changeDB = (val) => {
         dbType: 'mysql',
         host: '127.0.0.1',
         port: '3306',
-        userName: 'root',
+        username: 'root',
         password: '',
         dbName: 'gva',
         dbPath: ''

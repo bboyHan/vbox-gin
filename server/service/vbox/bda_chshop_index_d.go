@@ -185,7 +185,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() 
 
 				entity := vbox.BdaChShopIndexD{
 					Uid:             &uid,
-					UserName:        userInfo.Username,
+					Username:        userInfo.Username,
 					Cid:             chId,
 					ShopRemark:      vcs.ShopRemark,
 					ChannelCode:     chCode,

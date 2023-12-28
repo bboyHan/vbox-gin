@@ -18,7 +18,7 @@
         </el-table-column>
         <el-table-column align="left" label="操作人" width="140">
           <template #default="scope">
-            <div>{{ scope.row.user.userName }}</div>
+            <div>{{ scope.row.user.username }}</div>
           </template>
         </el-table-column>
         <el-table-column align="left" label="状态码" prop="status" width="120">

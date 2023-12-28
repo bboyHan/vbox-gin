@@ -838,7 +838,7 @@ definitions:
       port:
         description: 数据库连接端口
         type: string
-      userName:
+      username:
         description: 数据库用户名
         type: string
     required:
@@ -897,7 +897,7 @@ definitions:
       phone:
         example: 电话号码
         type: string
-      userName:
+      username:
         example: 用户名
         type: string
     type: object
@@ -1599,7 +1599,7 @@ definitions:
       updatedAt:
         description: 更新时间
         type: string
-      userName:
+      username:
         description: 用户登录名
         type: string
       uuid:

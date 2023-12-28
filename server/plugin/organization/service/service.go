@@ -121,8 +121,8 @@ func (orgService *OrganizationService) GetOrgUserList(info organizationReq.OrgUs
 	var orgs []organization.OrgUser
 	// 如果有条件搜索 下方会自动创建搜索语句
 	db = db.Where("organization_id = ?", info.OrganizationID)
-	if info.UserName != "" {
-		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.UserName+"%")
+	if info.Username != "" {
+		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.Username+"%")
 	}
 	err = db.Count(&total).Error
 	if err != nil {
@@ -141,8 +141,8 @@ func (orgService *OrganizationService) GetOrgUserListSelf(info organizationReq.O
 	var orgs []organization.OrgUser
 	// 如果有条件搜索 下方会自动创建搜索语句
 	db = db.Where("organization_id in ?", info.OrgIds)
-	if info.UserName != "" {
-		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.UserName+"%")
+	if info.Username != "" {
+		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.Username+"%")
 	}
 	err = db.Count(&total).Error
 	if err != nil {

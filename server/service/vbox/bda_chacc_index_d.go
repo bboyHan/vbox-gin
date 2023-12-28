@@ -81,8 +81,8 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoList(in
 	if info.Uid != nil {
 		db = db.Where("uid = ?", info.Uid)
 	}
-	if info.UserName != "" {
-		db = db.Where("user_name = ?", info.UserName)
+	if info.Username != "" {
+		db = db.Where("user_name = ?", info.Username)
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
@@ -199,7 +199,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexD() (er
 
 				entity := vbox.BdaChaccIndexD{
 					Uid:             &uid,
-					UserName:        userInfo.Username,
+					Username:        userInfo.Username,
 					AcId:            accId,
 					AcAccount:       vca.AcAccount,
 					AcRemark:        vca.AcRemark,

@@ -31,13 +31,13 @@
           align="left"
           label="用户名"
           min-width="150"
-          prop="userName"
+          prop="username"
         />
         <el-table-column
           align="left"
           label="昵称"
           min-width="150"
-          prop="nickName"
+          prop="nickname"
         />
         <el-table-column
           align="left"
@@ -161,9 +161,9 @@
           <el-form-item
             v-if="dialogFlag === 'add'"
             label="用户名"
-            prop="userName"
+            prop="username"
           >
-            <el-input v-model="userInfo.userName" />
+            <el-input v-model="userInfo.username" />
           </el-form-item>
           <el-form-item
             v-if="dialogFlag === 'add'"
@@ -174,9 +174,9 @@
           </el-form-item>
           <el-form-item
             label="昵称"
-            prop="nickName"
+            prop="nickname"
           >
-            <el-input v-model="userInfo.nickName" />
+            <el-input v-model="userInfo.nickname" />
           </el-form-item>
           <el-form-item
             label="手机号"
@@ -399,7 +399,7 @@ const deleteUserFunc = async(row) => {
 const userInfo = ref({
   username: '',
   password: '',
-  nickName: '',
+  nickname: '',
   headerImg: '',
   authorityId: '',
   authorityIds: [],
@@ -407,7 +407,7 @@ const userInfo = ref({
 })
 
 const rules = ref({
-  userName: [
+  username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 5, message: '最低5位字符', trigger: 'blur' }
   ],
@@ -415,7 +415,7 @@ const rules = ref({
     { required: true, message: '请输入用户密码', trigger: 'blur' },
     { min: 6, message: '最低6位字符', trigger: 'blur' }
   ],
-  nickName: [
+  nickname: [
     { required: true, message: '请输入用户昵称', trigger: 'blur' }
   ],
   phone: [

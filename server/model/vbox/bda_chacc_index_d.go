@@ -8,7 +8,7 @@ import (
 type BdaChaccIndexD struct {
 	global.GVA_MODEL
 	Uid             *int    `json:"uid" form:"uid" gorm:"column:uid;comment:用户id;size:10;"`                                //用户id
-	UserName        string  `json:"userName" form:"userName" gorm:"column:user_name;comment:用户名;size:64;"`                 //用户名
+	Username        string  `json:"username" form:"username" gorm:"column:username;comment:用户名;size:64;"`                  //用户名
 	AcId            string  `json:"acId" form:"acId" gorm:"column:ac_id;comment:账号ID;size:32;"`                            //账号ID
 	AcAccount       string  `json:"acAccount" form:"acAccount" gorm:"column:ac_account;comment:通道账户名;size:128;"`           //通道账户名
 	AcRemark        string  `json:"acRemark" form:"acRemark" gorm:"column:ac_remark;comment:账户备注;size:128;"`               //账户备注

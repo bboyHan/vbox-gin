@@ -15,7 +15,7 @@
                 v-if="!editFlag"
                 class="text-3xl flex justify-center items-center gap-4"
               >
-                {{ userStore.userInfo.nickName }}
+                {{ userStore.userInfo.nickname }}
               </p>
               <p class="text-gray-500 mt-2 text-md">有需求带上米，联系管理员</p>
             </div>
@@ -202,7 +202,7 @@ const modifyPwdForm = ref(null)
 const showPassword = ref(false)
 const genPassword = ref(false)
 const pwdModify = ref({})
-const nickName = ref('')
+const nickname = ref('')
 const editFlag = ref(false)
 const savePassword = async() => {
   modifyPwdForm.value.validate((valid) => {
@@ -247,27 +247,27 @@ watch(() => userStore.userInfo.headerImg, async(val) => {
 })
 
 const openEdit = () => {
-  nickName.value = userStore.userInfo.nickName
+  nickname.value = userStore.userInfo.nickname
   editFlag.value = true
 }
 
 const closeEdit = () => {
-  nickName.value = ''
+  nickname.value = ''
   editFlag.value = false
 }
 
 const enterEdit = async() => {
   const res = await setSelfInfo({
-    nickName: nickName.value
+    nickName: nickname.value
   })
   if (res.code === 0) {
-    userStore.ResetUserInfo({ nickName: nickName.value })
+    userStore.ResetUserInfo({ nickName: nickname.value })
     ElMessage({
       type: 'success',
       message: '设置成功',
     })
   }
-  nickName.value = ''
+  nickname.value = ''
   editFlag.value = false
 }
 

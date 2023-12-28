@@ -60,7 +60,7 @@
       <div class="gva-organization-box-right">
         <div class="toolbar">
           <div class="toolbar-search">
-            <el-input v-model="userSearch.userName" placeholder="请输入要搜索的用户名" />
+            <el-input v-model="userSearch.username" placeholder="请输入要搜索的用户名" />
             <el-button type="primary" @click="getUserTable">搜索</el-button>
           </div>
           <div>
@@ -73,7 +73,7 @@
         <div class="table-body">
           <el-table :data="userTable" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" />
-            <el-table-column prop="sysUser.nickName" label="姓名" width="120" />
+            <el-table-column prop="sysUser.nickname" label="姓名" width="120" />
             <el-table-column prop="sysUser.authority.authorityName" label="用户角色" width="120" />
             <el-table-column prop="isAdmin" label="是否管理员" width="120">
               <template #default="{row}">
@@ -164,7 +164,7 @@
               v-for="item in userList"
               :key="item.ID"
               :disabled="disabledUserMap[item.ID]"
-              :label="item.nickName"
+              :label="item.nickname"
               :value="item.ID"
             />
           </el-select>
@@ -461,7 +461,7 @@ const userList = ref([])
 
 // 组织用户搜索
 const userSearch = ref({
-  userName: '',
+  username: '',
 })
 
 // 踢出组织

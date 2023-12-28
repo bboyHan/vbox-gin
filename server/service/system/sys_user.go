@@ -31,13 +31,17 @@ func (userService *UserService) SelfRegister(u systemReq.SelfRegister) (userInte
 		return userInter, errors.New("用户名已注册")
 	}
 
+	if u.NewPassword != u.ConfirmPassword {
+		return userInter, errors.New("两次输入密码不一致")
+	}
+
 	// 只允许建 当前角色的子角色账户(目前只支持 子角色为单一角色，多角色不支持)
 	roleID, err := utils.GetSubRoleID(u.CreateBy)
 	if err != nil || roleID == 0 {
 		return userInter, errors.New("当前用户无权创建成员用户，请联系管理员")
 	}
 
-	u.Password = utils.BcryptHash(u.Password)
+	u.Password = utils.BcryptHash(u.NewPassword)
 
 	authorities := []system.SysAuthority{
 		{
@@ -124,7 +128,7 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 	}
 
 	var user system.SysUser
-	err = global.GVA_DB.Where("username = ?", u.Username).Preload("Authorities").Preload("Authority").First(&user).Error
+	err = global.GVA_DB.Debug().Where("username = ?", u.Username).Preload("Authorities").Preload("Authority").First(&user).Error
 	if err == nil {
 		if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
 			return nil, errors.New("密码错误")
@@ -330,7 +334,7 @@ func (userService *UserService) SetSelfInfo(req system.SysUser) error {
 
 func (userService *UserService) GetUserInfo(uuid uuid.UUID) (user system.SysUser, err error) {
 	var reqUser system.SysUser
-	err = global.GVA_DB.Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
+	err = global.GVA_DB.Debug().Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
 	if err != nil {
 		return reqUser, err
 	}

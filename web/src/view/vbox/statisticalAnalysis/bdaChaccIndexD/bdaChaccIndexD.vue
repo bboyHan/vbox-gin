@@ -20,8 +20,8 @@
              <el-input v-model.number="searchInfo.uid" placeholder="搜索条件" />
 
         </el-form-item>
-        <el-form-item label="用户名" prop="userName">
-         <el-input v-model="searchInfo.userName" placeholder="搜索条件" />
+        <el-form-item label="用户名" prop="username">
+         <el-input v-model="searchInfo.username" placeholder="搜索条件" />
 
         </el-form-item>
         <el-form-item label="账号ID" prop="acId">
@@ -81,7 +81,7 @@
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="用户id" prop="uid" width="120" />
-        <el-table-column align="left" label="用户名" prop="userName" width="120" />
+        <el-table-column align="left" label="用户名" prop="username" width="120" />
         <el-table-column align="left" label="账号ID" prop="acId" width="120" />
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="120" />
         <el-table-column align="left" label="账户备注" prop="acRemark" width="120" />
@@ -122,8 +122,8 @@
             <el-form-item label="用户id:"  prop="uid" >
               <el-input v-model.number="formData.uid" :clearable="true" placeholder="请输入用户id" />
             </el-form-item>
-            <el-form-item label="用户名:"  prop="userName" >
-              <el-input v-model="formData.userName" :clearable="true"  placeholder="请输入用户名" />
+            <el-form-item label="用户名:"  prop="username" >
+              <el-input v-model="formData.username" :clearable="true"  placeholder="请输入用户名" />
             </el-form-item>
             <el-form-item label="账号ID:"  prop="acId" >
               <el-input v-model="formData.acId" :clearable="true"  placeholder="请输入账号ID" />
@@ -175,7 +175,7 @@
                         {{ formData.uid }}
                 </el-descriptions-item>
                 <el-descriptions-item label="用户名">
-                        {{ formData.userName }}
+                        {{ formData.username }}
                 </el-descriptions-item>
                 <el-descriptions-item label="账号ID">
                         {{ formData.acId }}
@@ -238,7 +238,7 @@ defineOptions({
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
         uid: 0,
-        userName: '',
+        username: '',
         acId: '',
         acAccount: '',
         acRemark: '',
@@ -443,7 +443,7 @@ const closeDetailShow = () => {
   detailShow.value = false
   formData.value = {
           uid: 0,
-          userName: '',
+          username: '',
           acId: '',
           acAccount: '',
           acRemark: '',
@@ -470,7 +470,7 @@ const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
         uid: 0,
-        userName: '',
+        username: '',
         acId: '',
         acAccount: '',
         acRemark: '',

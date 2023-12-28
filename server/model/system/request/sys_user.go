@@ -6,17 +6,19 @@ import (
 
 // SelfRegister Vbox注册子账号
 type SelfRegister struct {
-	Username   string `json:"userName" example:"用户名"`
-	Password   string `json:"passWord" example:"密码"`
-	Enable     int    `json:"enable" example:"int 是否启用"`
-	EnableAuth int    `json:"enableAuth" example:"int 是否启用防爆验证码"`
-	CreateBy   uint   `json:"createBy" example:"创建者"`
+	Username        string `json:"username" example:"用户名"`
+	Password        string `json:"password" example:"密码"`
+	NewPassword     string `json:"newPassword" example:"新密码"`
+	ConfirmPassword string `json:"confirmPassword" example:"确认密码"`
+	Enable          int    `json:"enable" example:"int 是否启用"`
+	EnableAuth      int    `json:"enableAuth" example:"int 是否启用防爆验证码"`
+	CreateBy        uint   `json:"createBy" example:"创建者"`
 }
 
 // Register User register structure
 type Register struct {
-	Username     string `json:"userName" example:"用户名"`
-	Password     string `json:"passWord" example:"密码"`
+	Username     string `json:"username" example:"用户名"`
+	Password     string `json:"password" example:"密码"`
 	NickName     string `json:"nickName" example:"昵称"`
 	HeaderImg    string `json:"headerImg" example:"头像链接"`
 	AuthorityId  uint   `json:"authorityId" swaggertype:"string" example:"int 角色id"`
