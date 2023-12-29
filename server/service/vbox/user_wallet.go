@@ -176,7 +176,7 @@ func (userWalletService *UserWalletService) GetUserWalletSelf(id uint) (balance 
 
 // GetUserWalletInfoList 分页获取用户钱包记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.UserWalletSearch) (list []vbox.UserWallet, total int64, err error) {
+func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.UserWalletSearch, ids []uint) (list []vbox.UserWallet, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
@@ -204,6 +204,6 @@ func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.U
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Debug().Find(&userWallets).Error
+	err = db.Debug().Where("created_by in ?", ids).Find(&userWallets).Error
 	return userWallets, total, err
 }

@@ -53,7 +53,7 @@ func (userService *UserService) SelfRegister(u systemReq.SelfRegister) (userInte
 		UUID:        uuid.Must(uuid.NewV4()),
 		Username:    u.Username,
 		Password:    u.Password,
-		NickName:    u.Username,
+		Nickname:    u.Username,
 		Enable:      u.Enable,
 		EnableAuth:  u.EnableAuth,
 		Authorities: authorities,
@@ -128,7 +128,9 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 	}
 
 	var user system.SysUser
-	err = global.GVA_DB.Debug().Where("username = ?", u.Username).Preload("Authorities").Preload("Authority").First(&user).Error
+	err = global.GVA_DB.Debug().Table("sys_users AS u").Joins("join sys_user_authority as ua on u.id = ua.sys_user_id").
+		Select("u.*,a.authority_id").Preload("Authorities").Preload("Authority").
+		Joins("join sys_authorities as a on a.authority_id = ua.sys_authority_authority_id").First(&user, "username = ?", u.Username).Error
 	if err == nil {
 		if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
 			return nil, errors.New("密码错误")
@@ -304,7 +306,7 @@ func (userService *UserService) SetUserInfo(req system.SysUser) error {
 		Where("id=?", req.ID).
 		Updates(map[string]interface{}{
 			"updated_at": time.Now(),
-			"nick_name":  req.NickName,
+			"nick_name":  req.Nickname,
 			"header_img": req.HeaderImg,
 			"phone":      req.Phone,
 			"email":      req.Email,

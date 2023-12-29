@@ -13,7 +13,7 @@
           <div class="toolbar-search">
             <el-input v-model="userSearch.username" placeholder="请输入要搜索的用户名" />
             <el-button type="primary" @click="getUserTable">搜索</el-button>
-            <el-button type="primary" @click="addUser()">新增成员</el-button>
+            <el-button type="primary" @click="addUser">新增成员</el-button>
           </div>
           <div>
           </div>
@@ -58,7 +58,7 @@
 
     <!--  新增成员  -->
     <el-dialog v-model="addUserDialog" title="新增成员" width="400px">
-      <el-form ref="userForm" v-model="userForm" label-width="80px" :rules="rules">
+      <el-form ref="elFormRef" :model="userForm" label-width="80px" :rules="rules">
         <el-form-item label="用户名">
           <el-input v-model="userForm.username" prop="username"/>
         </el-form-item>
@@ -78,8 +78,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addUserClear">取消</el-button>
-        <el-button type="primary" @click="addUserEnter">确定</el-button>
+        <el-button @click="addUserClear">取 消</el-button>
+        <el-button type="primary" @click="addUserEnter">确 定</el-button>
       </template>
     </el-dialog>
 
@@ -202,14 +202,13 @@ const userForm = ref({
 
 const rules = reactive({
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '最少6个字符', trigger: 'blur' },
+    { min: 6, message: '最少6个字符', trigger: ['input','blur'] },
   ],
   confirmPassword: [
-    { required: true, message: '请输入确认密码', trigger: 'blur' },
     { min: 6, message: '最少6个字符', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
+        console.log('value', value)
         if (value !== userForm.value.newPassword) {
           callback(new Error('两次密码不一致'))
         } else {
@@ -282,17 +281,17 @@ const addUserClear = () => {
   addUserDialog.value = false
 }
 
-
+const elFormRef = ref(null)
 // 添加组织成员
 const addUserEnter = async() => {
-  Form.value.validate((valid) => {
+  elFormRef.value?.validate(async (valid) => {
     if (valid) {
       userForm.value.enableAuth = Number(userForm.value.enableAuth)
       userForm.value.enable = Number(userForm.value.enable)
-      const res = selfRegister(userForm.value)
+      let res = await selfRegister(userForm.value)
       if (res.code === 0) {
         ElMessage.success('添加成功')
-        getUserTable()
+        await getUserTable()
       }
       userForm.value = {
         username: '',
