@@ -21,7 +21,8 @@ func (s *BdaChIndexDRouter) InitBdaChIndexDRouter(Router *gin.RouterGroup) {
 		bdaChIndexDRouter.PUT("updateBdaChIndexD", bdaChIndexDApi.UpdateBdaChIndexD)              // 更新用户通道粒度成率统计-天更新
 	}
 	{
-		bdaChIndexDRouterWithoutRecord.GET("findBdaChIndexD", bdaChIndexDApi.FindBdaChIndexD)       // 根据ID获取用户通道粒度成率统计-天更新
-		bdaChIndexDRouterWithoutRecord.GET("getBdaChIndexDList", bdaChIndexDApi.GetBdaChIndexDList) // 获取用户通道粒度成率统计-天更新列表
+		bdaChIndexDRouterWithoutRecord.GET("findBdaChIndexD", bdaChIndexDApi.FindBdaChIndexD)                     // 根据ID获取用户通道粒度成率统计-天更新
+		bdaChIndexDRouterWithoutRecord.GET("getBdaChIndexDList", bdaChIndexDApi.GetBdaChIndexDList)               // 获取用户通道粒度成率统计-天更新列表
+		bdaChIndexDRouterWithoutRecord.GET("cronVboxBdaChIndexDByHand", bdaChIndexDApi.CronVboxBdaChIndexDByHand) // 获取用户通道粒度成率统计-天更新列表
 	}
 }

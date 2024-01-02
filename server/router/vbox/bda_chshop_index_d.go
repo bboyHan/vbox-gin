@@ -21,7 +21,8 @@ func (s *BdaChShopIndexDRouter) InitBdaChShopIndexDRouter(Router *gin.RouterGrou
 		bdaChshopIndexDRouter.PUT("updateBdaChShopIndexD", bdaChshopIndexDApi.UpdateBdaChShopIndexD)              // 更新用户通道店铺成率统计-天更新
 	}
 	{
-		bdaChshopIndexDRouterWithoutRecord.GET("findBdaChShopIndexD", bdaChshopIndexDApi.FindBdaChShopIndexD)       // 根据ID获取用户通道店铺成率统计-天更新
-		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDList", bdaChshopIndexDApi.GetBdaChShopIndexDList) // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("findBdaChShopIndexD", bdaChshopIndexDApi.FindBdaChShopIndexD)                     // 根据ID获取用户通道店铺成率统计-天更新
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDList", bdaChshopIndexDApi.GetBdaChShopIndexDList)               // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("cronVboxBdaChShopIndexDByHand", bdaChshopIndexDApi.CronVboxBdaChShopIndexDByHand) // 获取用户通道店铺成率统计-天更新列表
 	}
 }

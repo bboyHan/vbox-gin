@@ -169,3 +169,27 @@ func (bdaChIndexDApi *BdaChIndexDApi) GetBdaChIndexDList(c *gin.Context) {
 		}, "获取成功", c)
 	}
 }
+
+// CronVboxBdaChIndexDByHand 分页获取用户通道粒度成率统计-天更新列表
+// @Tags BdaChIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.BdaChIndexDSearch true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChIndexD/cronVboxBdaChIndexDByHand [get]
+func (bdaChIndexDApi *BdaChIndexDApi) CronVboxBdaChIndexDByHand(c *gin.Context) {
+	var pageInfo vboxReq.BdaChIndexDSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := bdaChIndexDService.CronVboxBdaChIndexDByHand(pageInfo.Dt); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithMessage("调度成功", c)
+	}
+}

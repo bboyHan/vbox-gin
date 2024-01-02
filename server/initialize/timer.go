@@ -58,6 +58,16 @@ func Timer() {
 		if err != nil {
 			fmt.Println("add timer error:", err)
 		}
+
+		_, err = global.GVA_Timer.AddTaskByFunc("handleChannelStatisTask", "55 0 * * *", func() {
+			err = task.HandleChannelStatisTask()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+		})
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
 	}()
 
 }
