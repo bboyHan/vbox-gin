@@ -65,6 +65,22 @@ export const getPayOrderList = (params) => {
 }
 
 // @Tags PayOrder
+// @Summary getPayOrderRate
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "getPayOrderRate"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderRate [get]
+export const getPayOrderRate = (params) => {
+  return service({
+    url: '/payOrder/getPayOrderRate',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags PayOrder
 // @Summary getPayOrderOverview
 // @Security ApiKeyAuth
 // @accept application/json

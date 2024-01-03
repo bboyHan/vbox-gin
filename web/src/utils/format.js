@@ -206,12 +206,12 @@ export const onDownloadFile = (url) => {
 }
 
 export function calculatePercentage(num, total) {
-  num = parseFloat(num);
-  total = parseFloat(total);
-
   if (isNaN(num) || isNaN(total)) {
     return 0;
   }
+
+  num = parseFloat(num);
+  total = parseFloat(total);
 
   const percentage = total <= 0 ? 0 : Math.round((num / total) * 10000) / 100.0;
 
@@ -219,6 +219,9 @@ export function calculatePercentage(num, total) {
 }
 
 export function formatMoney(num, prefix) {
+  if (isNaN(num)) {
+    num = 0
+  }
   if (!prefix) prefix = "￥";
   let money = String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 

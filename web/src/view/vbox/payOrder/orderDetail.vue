@@ -291,6 +291,10 @@ const queryOrder = async () => {
     const orderId = route.query.orderId;
     console.log(orderId)
     const result = await queryOrderSimple({order_id: orderId}); // 发送 HTTP 请求
+    let nowTime = new Date().getTime();
+    let resExp = new Date(result.data?.expTime).getTime();
+    console.log(nowTime)
+    console.log(resExp)
     payData.value = result.data
     const content = result.data.resource_url;
     if(content){
@@ -336,6 +340,11 @@ const queryOrder = async () => {
       dialogCountVisible.value = false;
       clearInterval(timerId);
       exVisible.value = true;
+    }else if (result.data?.status === 2 && resExp < nowTime) {
+      dialogCountVisible.value = false;
+      clearInterval(timerId);
+      exVisible.value = true;
+      console.log('超时')
     }else if (reqCnt.value < 10){
       reqCnt.value++
     }else {

@@ -952,6 +952,58 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	return payOrders, total, err
 }
 
+// GetPayOrderRate 计算成率数据（成功/总数）
+func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, ids []uint) (ov []vboxRep.DataRateOverView, err error) {
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.PayOrder{})
+	if info.StartTime > 0 && info.EndTime > 0 && info.StartTime < info.EndTime {
+		location, _ := time.LoadLocation("Asia/Shanghai")
+		start := time.Unix(info.StartTime, 0).In(location)
+		end := time.Unix(info.EndTime, 0).In(location)
+		db = db.Where("created_at BETWEEN ? AND ?", start, end)
+
+		if info.ChannelCode != "" {
+			db = db.Where("channel_code =?", info.ChannelCode)
+		}
+
+		db.Debug().Where("created_by in ?", ids)
+
+		if info.Keyword == "cas" {
+			err = db.Debug().Select(
+				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1," +
+					"IFNULL(COUNT(*), 0) AS x2," +
+					"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3," +
+					"IFNULL(SUM(money), 0) AS x4").Find(&ov).Error
+			if err != nil {
+				return
+			}
+		} else if info.Keyword == "sum" {
+			err = db.Select(
+				"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3," +
+					"IFNULL(SUM(money), 0) AS x4").Find(&ov).Error
+			if err != nil {
+				return
+			}
+		} else if info.Keyword == "cnt" {
+			err = db.Select(
+				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1," +
+					"IFNULL(COUNT(*) AS, 0) x2").Find(&ov).Error
+			if err != nil {
+				return
+			}
+		} else {
+			return nil, fmt.Errorf("未知的统计类型")
+		}
+
+		return ov, err
+
+	} else {
+		return nil, fmt.Errorf("未传入合规时间参数")
+	}
+
+}
+
+// GetPayOrderOverview 计算趋势图概览数据
 func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSearch, ids []uint) (list []vboxRep.DataOverView, err error) {
 	var overViews []vboxRep.DataOverView
 	// 创建db
@@ -975,7 +1027,7 @@ func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSear
 			db = db.Where("order_status =?", info.OrderStatus)
 		}
 
-		err = db.Debug().Where("created_by in ?", ids).Find(&payOrders).Error
+		err = db.Where("created_by in ?", ids).Find(&payOrders).Error
 		if err != nil {
 			return
 		}

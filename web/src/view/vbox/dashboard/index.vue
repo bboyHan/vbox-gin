@@ -68,15 +68,15 @@
                 <div class="indicator">
                     <span>
                       <div class="label">总笔数</div>
-                      <div class="value">{{ accOn }}</div>
+                      <div class="value">{{ nearOneHourRate.x2 }}</div>
                     </span>
                   <span>
                       <div class="label">成单数</div>
-                      <div class="value">{{ accTotal }}</div>
+                      <div class="value">{{ nearOneHourRate.x1 }}</div>
                     </span>
                   <span>
                       <div class="label">成率</div>
-                      <div class="value">{{ calculatePercentage(accOn, accTotal) }} % </div>
+                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }} % </div>
                     </span>
                 </div>
               </div>
@@ -95,15 +95,15 @@
                 <div class="indicator">
                   <span>
                     <div class="label">总笔数</div>
-                    <div class="value">{{ accOn }}</div>
+                    <div class="value">{{ nearYesterdayRate.x2 }}</div>
                   </span>
                   <span>
                     <div class="label">成单数</div>
-                    <div class="value">{{ accTotal }}</div>
+                    <div class="value">{{ nearYesterdayRate.x1 }}</div>
                   </span>
                   <span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(accOn, accTotal) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }} % </div>
                   </span>
                 </div>
               </div>
@@ -122,15 +122,15 @@
                 <div class="indicator">
                   <span>
                     <div class="label">总笔数</div>
-                    <div class="value">{{ accOn }}</div>
+                    <div class="value">{{ nearTodayRate.x2 }}</div>
                   </span>
                   <span>
                     <div class="label">成单数</div>
-                    <div class="value">{{ accTotal }}</div>
+                    <div class="value">{{ nearTodayRate.x1 }}</div>
                   </span>
                   <span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(accOn, accTotal) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }} % </div>
                   </span>
                 </div>
               </div>
@@ -150,8 +150,12 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(1000) }}</div>
+                    <div class="value">{{ formatMoney(nearOneHourRate.x3) }}</div>
                   </span>
+<!--                  <span>
+                    <div class="label">待付金额</div>
+                    <div class="value">{{ formatMoney(nearOneHourRate.x4) }}</div>
+                  </span>-->
                 </div>
               </div>
             </template>
@@ -169,7 +173,7 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(1000) }}</div>
+                    <div class="value">{{ formatMoney(nearYesterdayRate.x3) }}</div>
                   </span>
                 </div>
               </div>
@@ -188,7 +192,26 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(accOn) }}</div>
+                    <div class="value">{{ formatMoney(nearTodayRate.x3) }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <el-col :span="6" :xs="24">
+          <CenterCard title="今日待金额（含失效单）" :custom-style="order4CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">待付金额</div>
+                    <div class="value">{{ formatMoney(nearTodayRate.x4-nearTodayRate.x3) }}</div>
                   </span>
                 </div>
               </div>
@@ -272,7 +295,7 @@ import part from './dataCenterComponents/part.vue'
 import {reactive, ref, nextTick, defineEmits, onMounted, watch, toRefs} from "vue";
 import {getChannelProductSelf} from "@/api/channelProduct";
 import {getChannelAccountList} from "@/api/channelAccount";
-import {getPayOrderOverview} from "@/api/payOrder";
+import {getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
 import {calculatePercentage, formatMoney} from "../../../utils/format";
 
 
@@ -295,7 +318,7 @@ let adjustedMinute = Math.ceil(currentMinute / 5) * 5;
 // 设置分钟数为分组的结束值，秒和毫秒都设置为0
 localTime.setMinutes(adjustedMinute, 0, 0);
 // 前一个小时
-const startTimeOneHour = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000  - 60 * 60 * 1000);
+const startTimeOneHour = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000 - 60 * 60 * 1000);
 const endTimeOneHour = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000);
 
 // 设置时间为0点
@@ -305,6 +328,10 @@ let zero24Time = new Date();
 zero24Time.setHours(24, 0, 0, 0);
 const startTimeToday = new Date(zeroTime.getTime() + (easternOffset + offset) * 60 * 1000);
 const endTimeToday = new Date(zero24Time.getTime() + (easternOffset + offset) * 60 * 1000);
+
+//昨天
+const startTimeYesterday = new Date(zeroTime.getTime() + (easternOffset + offset) * 60 * 1000 - 24 * 60 * 60 * 1000);
+const endTimeYesterday = new Date(zero24Time.getTime() + (easternOffset + offset) * 60 * 1000 - 24 * 60 * 60 * 1000);
 
 const elSearchFormRef = ref()
 
@@ -338,6 +365,11 @@ const order2CustomStyle = ref({
 })
 const order3CustomStyle = ref({
   background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  color: '#FFF',
+  height: '150px',
+})
+const order4CustomStyle = ref({
+  background: 'linear-gradient(to right, #22111a, #606266)',
   color: '#FFF',
   height: '150px',
 })
@@ -419,6 +451,9 @@ const setAccSwitchView = async () => {
 
 }
 
+const nearOneHourRate = ref({})
+const nearYesterdayRate = ref({})
+const nearTodayRate = ref({})
 const nearOneHourCnt = ref()
 const nearOneHourSum = ref()
 const nearTodayCnt = ref()
@@ -436,14 +471,22 @@ const getTableData = async() => {
     vcpTableData.value = vcpTable.data.list
     setOptions()
   }
-  let nearOneHourCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword: 'cnt', format: 'HH:mm'})
-  let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
-  let nearTodayCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword: 'cnt', format: 'HH:mm'})
-  let nearTodaySumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword:'sum', format: 'HH:mm'})
+  let nearOneHourRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), keyword: 'cas'})
+  let nearYesterdayRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeYesterday.getTime() / 1000), endTime: Math.floor(endTimeYesterday.getTime() / 1000), keyword: 'cas'})
+  let nearTodayRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), keyword: 'cas'})
+  let nearOneHourCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword: 'cnt', format: 'HH:mm'})
+  let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
+  let nearTodayCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword: 'cnt', format: 'HH:mm'})
+  let nearTodaySumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword:'sum', format: 'HH:mm'})
   nearOneHourCnt.value = nearOneHourCntResult
   nearOneHourSum.value = nearOneHourSumResult
   nearTodayCnt.value = nearTodayCntResult
   nearTodaySum.value = nearTodaySumResult
+  nearOneHourRate.value = (nearOneHourRateResult.data)[0]
+  nearTodayRate.value = (nearTodayRateResult.data)[0];
+  nearYesterdayRate.value = (nearYesterdayRateResult.data)[0];
+  console.log(nearOneHourRate.value)
+  console.log(nearTodayRate.value)
 }
 
 getTableData()
