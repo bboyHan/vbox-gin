@@ -300,6 +300,10 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		err = json.Unmarshal(jsonStr, &vpa)
 	}
 
+	// 0.1 核验商户是否开启
+	if vpa.Status != 1 {
+		return nil, fmt.Errorf("商户未启用，请核查！")
+	}
 	vpo.Key = vpa.PKey
 	uidTmp := vpa.Uid
 	// 1.0 校验签名
@@ -705,7 +709,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		return nil, fmt.Errorf("该账户不支持传入的通道产品！请核查")
 	}
 
-	oid := "TEST" + strconv.FormatInt(time.Now().UnixMilli(), 10)
+	oid := utils.GenerateID(global.WalletEventOrderPrefix)
 
 	vpo.NotifyUrl, _ = vpoService.HandleNotifyUrl2Test()
 
@@ -743,7 +747,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		EventType:   eventType,
 		EventId:     eventID,
 		AcId:        accID,
-		OrderId:     oid,
+		OrderId:     utils.GenerateID(global.WalletEventOrderPrefix),
 		Money:       vpo.Money,
 		NotifyUrl:   vpo.NotifyUrl,
 		ResourceUrl: rsUrl,
@@ -919,6 +923,21 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if !info.StartCreatedAt.IsZero() && !info.EndCreatedAt.IsZero() {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
+	}
+	if info.OrderId != "" {
+		db = db.Where("order_id =?", info.OrderId)
+	}
+	if info.ChannelCode != "" {
+		db = db.Where("channel_code =?", info.ChannelCode)
+	}
+	if info.OrderStatus != 0 {
+		db = db.Where("order_status =?", info.OrderStatus)
+	}
+	if info.CbStatus != 0 {
+		db = db.Where("cb_status =?", info.CbStatus)
+	}
+	if info.AcId != "" {
+		db = db.Where("ac_id =?", info.AcId)
 	}
 
 	if limit != 0 {

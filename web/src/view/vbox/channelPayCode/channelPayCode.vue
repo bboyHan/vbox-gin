@@ -1,75 +1,21 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <div class="region-card-container">
-        <div v-for="moneyPart in Object.entries(pcData)">
-          <el-collapse v-model="activeNames" @change="">
-            <el-collapse-item :title="formatMoneyDesc(moneyPart[0])" name="1">
-              <div v-for="opPart in Object.entries(moneyPart[1])">
-                <el-collapse v-model="activeNames" @change="">
-                  <el-collapse-item :title="formatOPDesc(opPart[0])" name="1">
-                    <div v-for="locPart in Object.entries(opPart[1])">
-                      <div
-                          class="region-card"
-                          :style="{ backgroundColor: cardBackgroundColor(locPart[1].waitCnt) }"
-                      >
-                        <div  class="region-tag">
-                          <p class="region-code">地区编码：{{ locPart[0] }}</p>
-                        </div>
-                        <div class="region-title">
-                          <h2>{{ codeToText[locPart[0]] }}</h2>
-                        </div>
-                        <div class="region-business-data">
-                          <div class="region-data-item">
-                            <div class="region-label">待使用数</div>
-                            <div class="region-value">{{ locPart[1].waitCnt }}</div>
-                          </div>
-                          <div class="region-data-item">
-                            <div class="region-label">冷却中</div>
-                            <div class="region-value">{{ locPart[1].pendingCnt }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </el-collapse-item>
-                </el-collapse>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </div>
-<!--      <el-collapse v-model="activeNames" @change="">
-        <el-collapse-item title="预产统计视图（点击可收缩）" name="1">
-          <div class="region-card-container">
-            <div
-                v-for="province in allProvinces"
-                :key="province.code"
-                class="region-card"
-                :style="{ backgroundColor: cardBackgroundColor(province.remaining) }"
-            >
-              <div @click="openDialog">
-                <div class="region-tag">
-                  <p class="region-code">地区编码：{{ province.code }}</p>
-                </div>
-                <div class="region-title">
-                  <h2>{{ province.name }}</h2>
-                </div>
-                <div class="region-business-data">
-                  <div class="region-data-item">
-                    <div class="region-label">待使用数</div>
-                    <div class="region-value">{{ province.total }}</div>
-                  </div>
-                  <div class="region-data-item">
-                    <div class="region-label">冷却中</div>
-                    <div class="region-value">{{ province.used }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div class="gva-btn-list">
+        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
+          <p>确定要删除吗？</p>
+          <div style="text-align: right; margin-top: 8px;">
+            <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
+            <el-button type="primary" @click="onDelete">确定</el-button>
           </div>
-        </el-collapse-item>
-      </el-collapse>-->
-
+          <template #reference>
+            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
+                       @click="deleteVisible = true">删除
+            </el-button>
+          </template>
+        </el-popover>
+      </div>
     </div>
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
@@ -118,21 +64,6 @@
       </el-form>
     </div>
     <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-        <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
-          <p>确定要删除吗？</p>
-          <div style="text-align: right; margin-top: 8px;">
-            <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-            <el-button type="primary" @click="onDelete">确定</el-button>
-          </div>
-          <template #reference>
-            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
-                       @click="deleteVisible = true">删除
-            </el-button>
-          </template>
-        </el-popover>
-      </div>
       <el-table
           ref="multipleTable"
           style="width: 100%"
@@ -211,6 +142,79 @@
             @size-change="handleSizeChange"
         />
       </div>
+    </div>
+
+    <div class="gva-search-box">
+
+      <div class="region-card-container">
+        <div v-for="moneyPart in Object.entries(pcData)">
+          <el-collapse v-model="activeNames" @change="">
+            <el-collapse-item :title="formatMoneyDesc(moneyPart[0])" name="1">
+              <div v-for="opPart in Object.entries(moneyPart[1])">
+                <el-collapse v-model="activeNames" @change="">
+                  <el-collapse-item :title="formatOPDesc(opPart[0])" name="1">
+                    <div v-for="locPart in Object.entries(opPart[1])">
+                      <div
+                          class="region-card"
+                          :style="{ backgroundColor: cardBackgroundColor(locPart[1].waitCnt) }"
+                      >
+                        <div  class="region-tag">
+                          <p class="region-code">地区编码：{{ locPart[0] }}</p>
+                        </div>
+                        <div class="region-title">
+                          <h2>{{ codeToText[locPart[0]] }}</h2>
+                        </div>
+                        <div class="region-business-data">
+                          <div class="region-data-item">
+                            <div class="region-label">待使用数</div>
+                            <div class="region-value">{{ locPart[1].waitCnt }}</div>
+                          </div>
+                          <div class="region-data-item">
+                            <div class="region-label">冷却中</div>
+                            <div class="region-value">{{ locPart[1].pendingCnt }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </div>
+      <!--      <el-collapse v-model="activeNames" @change="">
+              <el-collapse-item title="预产统计视图（点击可收缩）" name="1">
+                <div class="region-card-container">
+                  <div
+                      v-for="province in allProvinces"
+                      :key="province.code"
+                      class="region-card"
+                      :style="{ backgroundColor: cardBackgroundColor(province.remaining) }"
+                  >
+                    <div @click="openDialog">
+                      <div class="region-tag">
+                        <p class="region-code">地区编码：{{ province.code }}</p>
+                      </div>
+                      <div class="region-title">
+                        <h2>{{ province.name }}</h2>
+                      </div>
+                      <div class="region-business-data">
+                        <div class="region-data-item">
+                          <div class="region-label">待使用数</div>
+                          <div class="region-value">{{ province.total }}</div>
+                        </div>
+                        <div class="region-data-item">
+                          <div class="region-label">冷却中</div>
+                          <div class="region-value">{{ province.used }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </el-collapse-item>
+            </el-collapse>-->
+
     </div>
     <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px">

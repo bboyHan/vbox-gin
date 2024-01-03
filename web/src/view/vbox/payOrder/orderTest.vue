@@ -93,7 +93,7 @@ const channelCodeOptions = ref([])
 
 const channelCodeProps = {
   expandTrigger: 'hover',
-  checkStrictly: true,
+  checkStrictly: false,
   emitPath: false,
 }
 

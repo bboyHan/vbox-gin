@@ -120,6 +120,13 @@ func (vpoApi *PayOrderApi) QueryOrder2PayAcc(c *gin.Context) {
 	}
 }
 
+// CallbackTestSimple 回调测试接口
+func (vpoApi *PayOrderApi) CallbackTestSimple(c *gin.Context) {
+	// 获取所有参数
+	global.GVA_LOG.Info("接收参数", zap.Any("param", c.Request))
+	response.OkWithMessage("回调成功", c)
+}
+
 // QueryOrderSimple 查询QueryOrderSimple
 // @Tags VboxPayOrder
 // @Summary 查询QueryOrderSimple

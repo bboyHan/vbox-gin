@@ -15,6 +15,7 @@ func (s *OrderRouter) InitPubAccessRouter(Router *gin.RouterGroup) {
 		orderRouter.POST("create", orderApi.CreateOrder2PayAcc)
 		orderRouter.POST("query", orderApi.QueryOrder2PayAcc)
 		orderRouter.GET("detail", orderApi.QueryOrderSimple)
+		orderRouter.POST("cb", orderApi.CallbackTestSimple)
 	}
 
 	vcaRouter := Router.Group("vca")

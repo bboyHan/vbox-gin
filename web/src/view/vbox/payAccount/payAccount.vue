@@ -161,7 +161,7 @@ import {
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import ClipboardJS from "clipboard";
 import {getChannelProductSelf} from "@/api/channelProduct";
 import PreviewCodeDialog from "@/view/systemTools/autoCode/component/previewCodeDialg.vue";

@@ -96,7 +96,7 @@ func PayCodeCDCheckTask() {
 						global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 1, Member: pcMem})
 					} else if pcDB.CodeStatus == 4 {
 						global.GVA_LOG.Info("冷却结束，开始处理恢复", zap.Any("pcID", pcDB.ID))
-						if pcDB.ExpTime.Before(time.Now()) {
+						if pcDB.ExpTime.After(time.Now()) { // 设置的过期时间比当前时间晚，表示还可使用
 							global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
 							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id =?", pcDB.ID).Update("code_status", 2)
 						} else { // 过期了，直接删除redis，并且状态置为失效 3

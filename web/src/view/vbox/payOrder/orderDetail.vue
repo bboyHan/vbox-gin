@@ -182,7 +182,10 @@
       <h1>订单已超时</h1>
     </div>
   </div>
-
+  <div v-show="exVisible">
+    <!-- 显示新的 div 的代码... -->
+    <h1>订单异常，请重新下单</h1>
+  </div>
 </template>
 <script>
 export default {
@@ -205,6 +208,7 @@ const payVisible = ref(false)
 const payTypeVisible = ref(0)
 const finishedVisible = ref(false)
 const timeoutVisible = ref(false)
+const exVisible = ref(false)
 const notFoundVisible = ref(false)
 const route = useRoute()
 
@@ -262,7 +266,7 @@ onMounted(() => {
   // 启动倒计时
   fireCD();
   // 启动定时器，每秒钟请求一次 HTTP 接口
-  timerId = setInterval(queryOrder, 1500);
+  timerId = setInterval(queryOrder, 1000);
   calculateCountdown();
 });
 
@@ -279,6 +283,8 @@ const payData = ref({
   resource_url: '',
   status: 0,
 })
+
+const reqCnt = ref(0)
 
 const queryOrder = async () => {
   try {
@@ -326,7 +332,16 @@ const queryOrder = async () => {
           timeoutVisible.value = true;
         }
       }
+    }else if (result.data?.status === 0) {
+      dialogCountVisible.value = false;
+      clearInterval(timerId);
+      exVisible.value = true;
+    }else if (reqCnt.value < 10){
+      reqCnt.value++
     }else {
+      dialogCountVisible.value = false;
+      clearInterval(timerId);
+      exVisible.value = true;
     }
     // if (result) {
     //   clearInterval(timerId); // 如果状态发生变化，则停止定时器

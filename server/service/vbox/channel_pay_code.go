@@ -25,6 +25,105 @@ import (
 type ChannelPayCodeService struct {
 }
 
+/*// GetPayCodeOverview 获取指定通道账号的预产统计情况
+func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverviewByChanAcc(info vboxReq.ChannelPayCodeSearch) (ret interface{}, err error) {
+	var channelCodeList []string
+
+	// 获取组织ID
+	orgTmp := utils2.GetSelfOrg(info.CreatedBy)
+	orgID := orgTmp[0]
+	// 当前付方所拥有的产品列表
+	chanKey := fmt.Sprintf(global.OrgChanSet, orgID)
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), chanKey).Result()
+	if c == 0 {
+		var productIds []uint
+		if err != nil {
+			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
+		}
+		if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id = ?", orgID).Find(&productIds).Error; err != nil {
+			global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
+		}
+		if err = global.GVA_DB.Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
+			global.GVA_LOG.Error("ChannelProduct查channelCodeList 库数据异常", zap.Error(err))
+		}
+
+		//jsonStr, _ := json.Marshal(channelCodeList)
+		for _, cid := range channelCodeList {
+			global.GVA_REDIS.SAdd(context.Background(), chanKey, cid)
+		}
+	} else {
+		cidList, _ := global.GVA_REDIS.SMembers(context.Background(), chanKey).Result()
+		//err = json.Unmarshal(jsonStr, &channelCodeList)
+		channelCodeList = cidList
+	}
+
+	retMap := make(map[string]map[string]map[string]vboxResp.PCCnt)
+
+	if info.Cid != "" {
+		channelCodeList = []string{info.Cid}
+	}
+
+	for _, cid := range channelCodeList {
+
+		pattern := fmt.Sprintf(global.ChanOrgPayCodeMoneyPrefix, orgID, cid)
+		var keys []string
+		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+
+		for _, key := range keys {
+			waitingVals := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+				Min:    "0",
+				Max:    "0",
+				Offset: 0,
+				Count:  -1,
+			}).Val()
+			pendingVals := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+				Min:    "0",
+				Max:    "0",
+				Offset: 0,
+				Count:  -1,
+			}).Val()
+
+			for _, waitingVal := range waitingVals {
+
+			}
+			//global.GVA_LOG.Info("key", zap.String("key", key))
+			//global.GVA_LOG.Info("waitingVal", zap.Any("waitingVal", waitingVal))
+			//global.GVA_LOG.Info("pendingVal", zap.Any("pendingVal", pendingVal))
+
+			keyParts := strings.Split(key, ":")
+			moneyPart := strings.Split(keyParts[3], "_")[1]
+			opPart := strings.Split(keyParts[4], "_")[1]
+			locPart := strings.Split(keyParts[5], "_")[1]
+			if _, ok := retMap[moneyPart]; !ok {
+				retMap[moneyPart] = make(map[string]map[string]vboxResp.PCCnt)
+			}
+
+			vm := retMap[moneyPart]
+			if _, ok := vm[opPart]; !ok {
+				vm[opPart] = make(map[string]vboxResp.PCCnt)
+			}
+
+			locMap := vm[opPart]
+			if _, ok := locMap[locPart]; !ok {
+				locMap[locPart] = vboxResp.PCCnt{
+					WaitCnt:    0,
+					PendingCnt: 0,
+				}
+			}
+			temp := locMap[locPart]
+			temp.WaitCnt += waitingVal
+			temp.PendingCnt += pendingVal
+			locMap[locPart] = temp
+		}
+	}
+	return retMap, nil
+}*/
+
 // GetPayCodeOverview 获取预产统计情况
 func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vboxReq.ChannelPayCodeSearch) (ret interface{}, err error) {
 	var channelCodeList []string
@@ -59,6 +158,10 @@ func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vbox
 	}
 
 	retMap := make(map[string]map[string]map[string]vboxResp.PCCnt)
+
+	if info.Cid != "" {
+		channelCodeList = []string{info.Cid}
+	}
 
 	for _, cid := range channelCodeList {
 
@@ -111,6 +214,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 
 	mid := time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	vboxChannelPayCode.Mid = mid
+
 	// 先查一下库中记录
 	// 查一下数据库中预产对应的acAccount、money一致，并且code_status=2(取用池已经有待取用的预产),则将当前记录放入等候池
 
@@ -136,15 +240,17 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 
 	var flag bool
 	for _, key := range keys {
-		waitCnt := global.GVA_REDIS.ZCount(context.Background(), key, "4", "4").Val()
+		waitMembers := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{Min: "4", Max: "4", Offset: 0, Count: -1}).Val()
 
-		if waitCnt > 0 {
-			flag = true
-			break
+		for _, member := range waitMembers {
+			if strings.Contains(member, vboxChannelPayCode.AcAccount) {
+				flag = true
+				break
+			}
 		}
 	}
 	if flag {
-		global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）")
+		global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("acc", vboxChannelPayCode.AcAccount))
 		vboxChannelPayCode.CodeStatus = 4
 		err = global.GVA_DB.Create(vboxChannelPayCode).Error
 
@@ -291,13 +397,13 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 		db = db.Where("cid = ?", info.Cid)
 	}
 	if info.AcAccount != "" {
-		db = db.Where("ac_account = ?", info.AcAccount)
+		db = db.Where("ac_account like ?", "%"+info.AcAccount+"%")
 	}
 	if info.Location != "" {
 		db = db.Where("location = ?", info.Location)
 	}
 	if info.Operator != "" {
-		db = db.Where("operator = ?", info.Location)
+		db = db.Where("operator = ?", info.Operator)
 	}
 	if info.Mid != "" {
 		db = db.Where("mid = ?", info.Mid)
