@@ -209,7 +209,14 @@ system:
     use-mongo: false
     use-mq: true
     use-mq-task: true
-    timer-task: true
+    timer-task: false
+mq-task:
+    order-wait: false
+    order-confirm: false
+    order-callback: false
+    acc-enable-check: false
+    pay-code-cd-check: false
+    pay-code-exp-check: false
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

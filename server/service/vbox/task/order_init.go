@@ -341,8 +341,8 @@ func OrderWaitingTask() {
 							}
 
 							// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
-							global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
-							global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in ? ", pcDB.AcId).
+							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
+							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id in ? ", pcDB.AcId).
 								Update("status", 4).Update("sys_status", 4)
 
 							// 把当前acAccount下所有的预产等待队列置为冷却状态

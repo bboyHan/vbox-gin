@@ -196,8 +196,8 @@ const userForm = ref({
   username: '',
   confirmPassword: '',
   newPassword: '',
-  enable: '1',
-  enableAuth: '1',
+  enable: 1,
+  enableAuth: 1,
 })
 
 const rules = reactive({
@@ -297,8 +297,6 @@ const addUserEnter = async() => {
         username: '',
         confirmPassword: '',
         newPassword: '',
-        enable: '1',
-        enableAuth: '1',
       }
       addUserDialog.value = false
     } else {

@@ -8,6 +8,7 @@ type Server struct {
 	Mongo    Mongo    `json:"mongo" yaml:"mongo" mapstructure:"mongo"`
 	Email    Email    `mapstructure:"email" json:"email" yaml:"email"`
 	System   System   `mapstructure:"system" json:"system" yaml:"system"`
+	MQTask   MQTask   `mapstructure:"mq-task" json:"mq-task" yaml:"mq-task"`
 	Captcha  Captcha  `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
 	// auto
 	AutoCode Autocode `mapstructure:"autocode" json:"autocode" yaml:"autocode"`

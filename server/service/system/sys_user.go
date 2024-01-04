@@ -202,10 +202,12 @@ func (userService *UserService) ResetAuthCaptcha(req systemReq.ChangeAuthCaptcha
 			return nil, err
 		}
 		otherUser.AuthCaptcha, err = captcha.AuthQrCode(otherUser.Username)
+		otherUser.EnableAuth = 1
 		err = global.GVA_DB.Save(&otherUser).Error
 		return &otherUser, err
 	} else { // 重置自己账户的防爆
 		user.AuthCaptcha, err = captcha.AuthQrCode(user.Username)
+		user.EnableAuth = 1
 		err = global.GVA_DB.Save(&user).Error
 	}
 
@@ -336,7 +338,10 @@ func (userService *UserService) SetSelfInfo(req system.SysUser) error {
 
 func (userService *UserService) GetUserInfo(uuid uuid.UUID) (user system.SysUser, err error) {
 	var reqUser system.SysUser
-	err = global.GVA_DB.Debug().Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
+	//err = global.GVA_DB.Debug().Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
+	err = global.GVA_DB.Table("sys_users AS u").Joins("join sys_user_authority as ua on u.id = ua.sys_user_id").
+		Select("u.*,a.authority_id").Preload("Authorities").Preload("Authority").
+		Joins("join sys_authorities as a on a.authority_id = ua.sys_authority_authority_id").First(&reqUser, "uuid = ?", uuid).Error
 	if err != nil {
 		return reqUser, err
 	}

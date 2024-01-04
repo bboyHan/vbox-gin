@@ -1216,7 +1216,6 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-//justify-content: center;
   width: 100%;
 }
 
@@ -1267,7 +1266,6 @@ onMounted(() => {
 
 .region-title p {
   font-size: 14px;
-//color: #ccc; color: white;
 }
 
 .region-business-data {

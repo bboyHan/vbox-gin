@@ -54,8 +54,8 @@ type CreateOrderTest struct {
 
 // CallBackReq 结构体
 type CallBackReq struct {
-	AuthCaptcha string `json:"auth_captcha" form:"auth_captcha" url:"auth_captcha"`
-	OrderId     string `json:"order_id" form:"order_id" url:"order_id"`
+	AuthCaptcha string `json:"authCaptcha" form:"authCaptcha" url:"authCaptcha"`
+	OrderId     string `json:"orderId" form:"orderId" url:"orderId"`
 }
 
 type OrdersDtData struct {

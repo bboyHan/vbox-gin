@@ -35,13 +35,26 @@ func RunWindowsServer() {
 	}
 	//MQ任务入口
 	if global.GVA_CONFIG.System.UseMQTask {
-		go task.OrderWaitingTask()
-		go task.OrderConfirmTask()
-		go task.OrderCallbackTask()
-		go task.ChanAccEnableCheckTask()
-		go task.PayCodeExpCheck()
-		go task.PayCodeCDCheckTask()
+		if global.GVA_CONFIG.MQTask.OrderWait {
+			go task.OrderWaitingTask()
+		}
+		if global.GVA_CONFIG.MQTask.OrderConfirm {
+			go task.OrderConfirmTask()
+		}
+		if global.GVA_CONFIG.MQTask.OrderCallback {
+			go task.OrderCallbackTask()
+		}
+		if global.GVA_CONFIG.MQTask.AccEnableCheck {
+			go task.ChanAccEnableCheckTask()
+		}
+		if global.GVA_CONFIG.MQTask.PayCodeExpCheck {
+			go task.PayCodeExpCheck()
+		}
+		if global.GVA_CONFIG.MQTask.PayCodeCdCheck {
+			go task.PayCodeCDCheckTask()
+		}
 	}
+
 	//定时任务入口
 	if global.GVA_CONFIG.System.TimerTask {
 		initialize.Timer()
