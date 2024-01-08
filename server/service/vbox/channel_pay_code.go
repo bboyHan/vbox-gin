@@ -25,189 +25,85 @@ import (
 type ChannelPayCodeService struct {
 }
 
-/*// GetPayCodeOverview 获取指定通道账号的预产统计情况
-func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverviewByChanAcc(info vboxReq.ChannelPayCodeSearch) (ret interface{}, err error) {
-	var channelCodeList []string
+// GetPayCodeOverviewByChanAcc 获取指定通道账号的预产统计情况(根据acc)
+func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverviewByChanAcc(info vboxReq.ChannelPayCodeSearch, ids []uint) (ret []vboxResp.DataSExtOverView, err error) {
 
-	// 获取组织ID
-	orgTmp := utils2.GetSelfOrg(info.CreatedBy)
-	orgID := orgTmp[0]
-	// 当前付方所拥有的产品列表
-	chanKey := fmt.Sprintf(global.OrgChanSet, orgID)
-
-	c, err := global.GVA_REDIS.Exists(context.Background(), chanKey).Result()
-	if c == 0 {
-		var productIds []uint
-		if err != nil {
-			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
-		}
-		if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id = ?", orgID).Find(&productIds).Error; err != nil {
-			global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
-		}
-		if err = global.GVA_DB.Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
-			global.GVA_LOG.Error("ChannelProduct查channelCodeList 库数据异常", zap.Error(err))
-		}
-
-		//jsonStr, _ := json.Marshal(channelCodeList)
-		for _, cid := range channelCodeList {
-			global.GVA_REDIS.SAdd(context.Background(), chanKey, cid)
-		}
-	} else {
-		cidList, _ := global.GVA_REDIS.SMembers(context.Background(), chanKey).Result()
-		//err = json.Unmarshal(jsonStr, &channelCodeList)
-		channelCodeList = cidList
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.ChannelPayCode{}).Table("vbox_channel_pay_code")
+	db.Where("created_by in ?", ids)
+	// 如果有条件搜索 下方会自动创建搜索语句
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
-
-	retMap := make(map[string]map[string]map[string]vboxResp.PCCnt)
-
 	if info.Cid != "" {
-		channelCodeList = []string{info.Cid}
+		db = db.Where("cid = ?", info.Cid)
+	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account like ?", "%"+info.AcAccount+"%")
+	}
+	if info.AcId != "" {
+		db = db.Where("ac_id = ?", info.AcId)
+	}
+	if info.Location != "" {
+		db = db.Where("location = ?", info.Location)
+	}
+	if info.Money != 0 {
+		db = db.Where("money = ?", info.Money)
+	}
+	if info.Operator != "" {
+		db = db.Where("operator = ?", info.Operator)
+	}
+	if info.Mid != "" {
+		db = db.Where("mid = ?", info.Mid)
+	}
+	if info.CodeStatus != 0 {
+		db = db.Where("code_status = ?", info.CodeStatus)
 	}
 
-	for _, cid := range channelCodeList {
+	// x1 money x2 operator x3 location x4 count
+	err = db.Debug().Select("money as x1,operator as x2,location as x3, count(1) as x4").Group("x1,x2,x3").Find(&ret).Error
 
-		pattern := fmt.Sprintf(global.ChanOrgPayCodeMoneyPrefix, orgID, cid)
-		var keys []string
-		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
-		if err != nil {
-			fmt.Println("Error:", err)
-			return nil, err
-		}
-
-		for _, key := range keys {
-			waitingVals := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
-				Min:    "0",
-				Max:    "0",
-				Offset: 0,
-				Count:  -1,
-			}).Val()
-			pendingVals := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
-				Min:    "0",
-				Max:    "0",
-				Offset: 0,
-				Count:  -1,
-			}).Val()
-
-			for _, waitingVal := range waitingVals {
-
-			}
-			//global.GVA_LOG.Info("key", zap.String("key", key))
-			//global.GVA_LOG.Info("waitingVal", zap.Any("waitingVal", waitingVal))
-			//global.GVA_LOG.Info("pendingVal", zap.Any("pendingVal", pendingVal))
-
-			keyParts := strings.Split(key, ":")
-			moneyPart := strings.Split(keyParts[3], "_")[1]
-			opPart := strings.Split(keyParts[4], "_")[1]
-			locPart := strings.Split(keyParts[5], "_")[1]
-			if _, ok := retMap[moneyPart]; !ok {
-				retMap[moneyPart] = make(map[string]map[string]vboxResp.PCCnt)
-			}
-
-			vm := retMap[moneyPart]
-			if _, ok := vm[opPart]; !ok {
-				vm[opPart] = make(map[string]vboxResp.PCCnt)
-			}
-
-			locMap := vm[opPart]
-			if _, ok := locMap[locPart]; !ok {
-				locMap[locPart] = vboxResp.PCCnt{
-					WaitCnt:    0,
-					PendingCnt: 0,
-				}
-			}
-			temp := locMap[locPart]
-			temp.WaitCnt += waitingVal
-			temp.PendingCnt += pendingVal
-			locMap[locPart] = temp
-		}
-	}
-	return retMap, nil
-}*/
+	return ret, err
+}
 
 // GetPayCodeOverview 获取预产统计情况
-func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vboxReq.ChannelPayCodeSearch) (ret interface{}, err error) {
-	var channelCodeList []string
-
-	// 获取组织ID
-	orgTmp := utils2.GetSelfOrg(info.CreatedBy)
-	orgID := orgTmp[0]
-	// 当前付方所拥有的产品列表
-	chanKey := fmt.Sprintf(global.OrgChanSet, orgID)
-
-	c, err := global.GVA_REDIS.Exists(context.Background(), chanKey).Result()
-	if c == 0 {
-		var productIds []uint
-		if err != nil {
-			global.GVA_LOG.Error("当前缓存池无此用户对应的orgIds，redis err", zap.Error(err))
-		}
-		if err = global.GVA_DB.Model(&vbox.OrgProduct{}).Distinct("channel_product_id").Select("channel_product_id").Where("organization_id = ?", orgID).Find(&productIds).Error; err != nil {
-			global.GVA_LOG.Error("OrgProduct查该组织下数据channel code异常", zap.Error(err))
-		}
-		if err = global.GVA_DB.Model(&vbox.ChannelProduct{}).Select("channel_code").Where("id in ?", productIds).Find(&channelCodeList).Error; err != nil {
-			global.GVA_LOG.Error("ChannelProduct查channelCodeList 库数据异常", zap.Error(err))
-		}
-
-		//jsonStr, _ := json.Marshal(channelCodeList)
-		for _, cid := range channelCodeList {
-			global.GVA_REDIS.SAdd(context.Background(), chanKey, cid)
-		}
-	} else {
-		cidList, _ := global.GVA_REDIS.SMembers(context.Background(), chanKey).Result()
-		//err = json.Unmarshal(jsonStr, &channelCodeList)
-		channelCodeList = cidList
+func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vboxReq.ChannelPayCodeSearch, ids []uint) (ret []vboxResp.DataSExtOverView, err error) {
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.ChannelPayCode{}).Table("vbox_channel_pay_code")
+	db.Where("created_by in ?", ids)
+	// 如果有条件搜索 下方会自动创建搜索语句
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
-
-	retMap := make(map[string]map[string]map[string]vboxResp.PCCnt)
-
 	if info.Cid != "" {
-		channelCodeList = []string{info.Cid}
+		db = db.Where("cid = ?", info.Cid)
+	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account like ?", "%"+info.AcAccount+"%")
+	}
+	if info.AcId != "" {
+		db = db.Where("ac_id = ?", info.AcId)
+	}
+	if info.Location != "" {
+		db = db.Where("location = ?", info.Location)
+	}
+	if info.Money != 0 {
+		db = db.Where("money = ?", info.Money)
+	}
+	if info.Operator != "" {
+		db = db.Where("operator = ?", info.Operator)
+	}
+	if info.Mid != "" {
+		db = db.Where("mid = ?", info.Mid)
+	}
+	if info.CodeStatus != 0 {
+		db = db.Where("code_status = ?", info.CodeStatus)
 	}
 
-	for _, cid := range channelCodeList {
+	// x1 money x2 operator x3 location x4 count
+	err = db.Debug().Select("money as x1,operator as x2,location as x3, count(1) as x4").Group("x1,x2,x3").Find(&ret).Error
 
-		pattern := fmt.Sprintf(global.ChanOrgPayCodeMoneyPrefix, orgID, cid)
-		var keys []string
-		keys, err = global.GVA_REDIS.Keys(context.Background(), pattern).Result()
-		if err != nil {
-			fmt.Println("Error:", err)
-			return nil, err
-		}
-
-		for _, key := range keys {
-			waitingVal := global.GVA_REDIS.ZCount(context.Background(), key, "0", "0").Val()
-			pendingVal := global.GVA_REDIS.ZCount(context.Background(), key, "4", "4").Val()
-
-			//global.GVA_LOG.Info("key", zap.String("key", key))
-			//global.GVA_LOG.Info("waitingVal", zap.Any("waitingVal", waitingVal))
-			//global.GVA_LOG.Info("pendingVal", zap.Any("pendingVal", pendingVal))
-
-			keyParts := strings.Split(key, ":")
-			moneyPart := strings.Split(keyParts[3], "_")[1]
-			opPart := strings.Split(keyParts[4], "_")[1]
-			locPart := strings.Split(keyParts[5], "_")[1]
-			if _, ok := retMap[moneyPart]; !ok {
-				retMap[moneyPart] = make(map[string]map[string]vboxResp.PCCnt)
-			}
-
-			vm := retMap[moneyPart]
-			if _, ok := vm[opPart]; !ok {
-				vm[opPart] = make(map[string]vboxResp.PCCnt)
-			}
-
-			locMap := vm[opPart]
-			if _, ok := locMap[locPart]; !ok {
-				locMap[locPart] = vboxResp.PCCnt{
-					WaitCnt:    0,
-					PendingCnt: 0,
-				}
-			}
-			temp := locMap[locPart]
-			temp.WaitCnt += waitingVal
-			temp.PendingCnt += pendingVal
-			locMap[locPart] = temp
-		}
-	}
-	return retMap, nil
+	return ret, nil
 }
 
 func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxChannelPayCode *vbox.ChannelPayCode) (err error) {
@@ -411,16 +307,16 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 	if info.CodeStatus != 0 {
 		db = db.Where("code_status = ?", info.CodeStatus)
 	}
-	err = db.Count(&total).Error
-	if err != nil {
-		return
-	}
 
 	if limit != 0 {
 		db = db.Limit(limit).Offset(offset)
 	}
 
 	err = db.Where("created_by in ?", ids).Order("id desc").Find(&vboxChannelPayCodes).Error
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
 	return vboxChannelPayCodes, total, err
 }
 

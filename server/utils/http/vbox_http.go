@@ -49,7 +49,7 @@ func ParseCookie(cookieStr string, targetKey string) string {
 	pairs := strings.Split(cookieStr, ";")
 	for _, pair := range pairs {
 		kv := strings.SplitN(pair, "=", 2)
-		if len(kv) == 2 && strings.ToLower(strings.TrimSpace(kv[0])) == strings.ToLower(targetKey) {
+		if len(kv) == 2 && strings.Contains(strings.ToLower(strings.TrimSpace(kv[0])), strings.ToLower(targetKey)) {
 			return strings.TrimSpace(kv[1])
 		}
 		if len(kv) == 1 && strings.ToLower(strings.TrimSpace(kv[0])) == strings.ToLower(targetKey) {

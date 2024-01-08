@@ -134,7 +134,7 @@
             <el-row>
               <el-col :span="24">
                 <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">产码</el-button>
-                <el-button type="primary" link icon="info-filled" class="table-button" @click="openOrderHisShow(scope.row)"></el-button>
+                <el-button type="primary" link icon="info-filled" class="table-button" @click="openPayCodeOverviewShow(scope.row)"></el-button>
               </el-col>
             </el-row>
           </template>
@@ -363,6 +363,24 @@
       </el-scrollbar>
     </el-dialog>
 
+    <!-- 查看产码详情 -->
+    <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <div class="region-card-container">
+          <div v-for="pcData in Object.entries(payCodeMap)" style="width: 100%">
+<!--            <div>￥{{ pcData[0].x1 }}，{{ formatOPSimple(pcData.x2) }}, {{ codeToText[pcData.x3] }}({{ pcData.x4 }})</div>-->
+            <div>{{ formatOPSimple(pcData[0]) }}</div>
+            <el-divider></el-divider>
+            <span v-for="pcDetail in pcData[1]" style="padding: 10px">
+              <el-badge :value="pcDetail.x4">
+                <el-button>{{ codeToText[pcDetail.x3] }} | {{ pcDetail.x1 }}元</el-button>
+              </el-badge>
+            </span>
+          </div>
+        </div>
+      </el-scrollbar>
+    </el-dialog>
+
     <!-- 产码-->
     <el-dialog width="40%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px" >
@@ -518,13 +536,13 @@ import {
   filterDict,
   ReturnArrImg,
   onDownloadFile,
-  formatUtcTimestamp, formatJoin
+  formatUtcTimestamp, formatJoin, formatMoneyDesc, formatOPDesc, formatOPSimple
 } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, nextTick } from 'vue'
 import WarningBar from "@/components/warningBar/warningBar.vue";
 import {Loading, Plus} from "@element-plus/icons-vue";
-import {createChannelPayCode, findChannelPayCode} from "@/api/channelPayCode";
+import {createChannelPayCode, findChannelPayCode, getPayCodeOverviewByChanAcc} from "@/api/channelPayCode";
 import dayjs from "dayjs";
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -547,6 +565,23 @@ const queryAccOrderHisFunc = async (row) => {
   console.log(res.data)
   if (res.code === 0) {
     orderHisTableData.value = res.data.list.WaterList
+  }
+}
+const getPayCodeOverviewByChanAccFunc = async (row) => {
+  const req = {...row}
+  console.log(req)
+
+  let res = await getPayCodeOverviewByChanAcc(req)
+  console.log(res.data)
+  if (res.code === 0) {
+    payCodeTableData.value = res.data.list
+    let result = payCodeTableData.value.reduce((acc, cur) => {
+      const { x2, ...rest } = cur;
+      acc[x2] = acc[x2] || [];
+      acc[x2].push(rest);
+      return acc;
+    }, {});
+    payCodeMap.value = result
   }
 }
 // queryAccOrderHisFunc()
@@ -745,7 +780,7 @@ const getTableData = async() => {
     page.value = table.data.page
     pageSize.value = table.data.pageSize
     // setOptions()
-    console.log(provinces)
+    // console.log(provinces)
     setRegionOptions(provinces, regionOptions.value, false)
   }
 }
@@ -1109,11 +1144,19 @@ const updateTokenInfoFunc = async (row) => {
 
 // 充值记录查询
 const orderHisVisible = ref(false)
+// 产码统计查询
+const payCodeOverviewVisible = ref(false)
 const channelCode = ref("")
 const orderHisTableData = ref([])
+const payCodeTableData = ref([])
+const payCodeMap = ref({})
 const closeOrderHisShow = () => {
   orderHisVisible.value = false
   orderHisTableData.value = []
+}
+const closePayCodeOverviewShow = () => {
+  payCodeOverviewVisible.value = false
+  payCodeTableData.value = []
 }
 const openOrderHisShow = async (row) => {
   orderHisVisible.value = true
@@ -1121,13 +1164,26 @@ const openOrderHisShow = async (row) => {
   console.log(req)
   await queryAccOrderHisFunc(req)
 }
+const openPayCodeOverviewShow = async (row) => {
+  payCodeOverviewVisible.value = true
+  let req = {...row}
+  console.log(req)
+  await getPayCodeOverviewByChanAccFunc(req)
+}
 
 //  产码 ---------------------
 
 const numHours = ref(0)
 const numMinutes = ref(0)
 const numSeconds = ref(0)
-
+const activeNames = ref(['1'])
+const cardBackgroundColor = (remaining) => {
+  // if (remaining === 0) return '#d30404'; // 红色
+  if (remaining === 0) return '#909399'; // 红色
+  else if (remaining >= 1 && remaining <= 3) return '#d30404'; // 橙色
+  else if (remaining >= 4 && remaining <= 10) return '#ec7b0b'; // 黄色
+  else return '#4a9b22'; // 绿色
+};
 const default7Day = async () => {
   numHours.value = 24*7
   numMinutes.value = 0
@@ -1368,6 +1424,80 @@ const enterPcDialog = async () => {
 
 </script>
 
-<style>
+<style scoped>
+.region-card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+}
 
+.region-card {
+  margin: 10px;
+  width: 250px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: white;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.region-card:hover {
+  transform: translateY(-5px);
+}
+
+.region-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.region-name {
+  margin: 0;
+  font-size: 14px;
+}
+
+.region-code {
+  margin: 0;
+  font-size: 12px;
+}
+
+
+.region-title {
+  margin-bottom: 10px;
+}
+
+.region-title h2 {
+  font-size: 20px;
+  color: white;
+}
+
+.region-title p {
+  font-size: 14px;
+}
+
+.region-business-data {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+
+.region-data-item {
+  flex: 1;
+}
+
+.region-label {
+  font-size: 14px;
+}
+
+.region-value {
+  padding-top: 5px;
+  font-size: 18px;
+  font-weight: bold;
+}
 </style>

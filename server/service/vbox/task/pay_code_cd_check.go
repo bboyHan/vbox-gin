@@ -83,6 +83,9 @@ func PayCodeCDCheckTask() {
 
 				global.GVA_LOG.Info("开始处理查询冷却状态的账号", zap.Any("acID", acID), zap.Any("pcIDs", pcIDs))
 
+				var accDB vbox.ChannelAccount
+				global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", acID).First(&accDB)
+
 				var pcDBList []vbox.ChannelPayCode
 				global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", pcIDs).Find(&pcDBList)
 
@@ -96,7 +99,106 @@ func PayCodeCDCheckTask() {
 						global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 1, Member: pcMem})
 					} else if pcDB.CodeStatus == 4 {
 						global.GVA_LOG.Info("冷却结束，开始处理恢复", zap.Any("pcID", pcDB.ID))
-						if pcDB.ExpTime.After(time.Now()) { // 设置的过期时间比当前时间晚，表示还可使用
+
+						//查一下订单是否超出账户限制
+						var flag bool
+						// 1. 查询该用户的余额是否充足
+						var balance int
+						err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge), 0) as balance").
+							Where("uid = ?", pcDB.CreatedBy).Scan(&balance).Error
+
+						if balance <= 0 { //余额不足，则 log 一条
+							//入库操作记录
+							flag = true
+
+							msgX := fmt.Sprintf(global.BalanceNotEnough, pcDB.AcId, pcDB.AcAccount)
+
+							global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+								Update("sys_status", 0).Error
+						}
+
+						// 2. 查询账号是否有超 金额限制，或者笔数限制
+
+						// 2.1 日限制
+						if accDB.DailyLimit > 0 {
+							var dailySum int
+							// 获取今天的时间范围
+							startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+							endOfDay := startOfDay.Add(24 * time.Hour)
+
+							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
+								Where("ac_id = ?", accDB.AcId).
+								Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+
+							if err != nil {
+								global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
+								_ = msg.Reject(false)
+								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+									Update("sys_status", 0).Error
+								continue
+							}
+
+							if dailySum > accDB.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
+								flag = true
+
+								msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDB.AcId, accDB.AcAccount)
+								global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
+								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+									Update("sys_status", 0).Error
+
+							}
+						}
+						// 2.2 总限制
+						if accDB.TotalLimit > 0 {
+
+							var totalSum int
+
+							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", accDB.AcId).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if err != nil {
+								global.GVA_LOG.Error("当前账号计算总消耗查mysql错误，直接丢了..." + err.Error())
+							}
+
+							if totalSum > accDB.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
+								flag = true
+
+								//入库操作记录
+								msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDB.AcId, accDB.AcAccount)
+								global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
+
+								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+									Update("sys_status", 0).Error
+
+								global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDB))
+							}
+						}
+						// 2.3 笔数限制
+						if accDB.CountLimit > 0 {
+
+							var count int64
+
+							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", accDB.AcId).Count(&count).Error
+
+							if err != nil {
+								global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
+							}
+
+							if int(count) >= accDB.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+
+								flag = true
+								msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDB.AcId, accDB.AcAccount)
+
+								global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
+								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+									Update("sys_status", 0).Error
+								global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDB))
+							}
+						}
+
+						if pcDB.ExpTime.After(time.Now()) && !flag { // 设置的过期时间比当前时间晚，表示还可使用
 							global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
 							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id =?", pcDB.ID).Update("code_status", 2)
 						} else { // 过期了，直接删除redis，并且状态置为失效 3

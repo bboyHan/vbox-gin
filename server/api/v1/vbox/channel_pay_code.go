@@ -19,6 +19,31 @@ type ChannelPayCodeApi struct {
 
 var channelPayCodeService = service.ServiceGroupApp.VboxServiceGroup.ChannelPayCodeService
 
+// GetPayCodeOverviewByChanAcc 获取预产统计情况
+// @Tags ChannelPayCode
+// @Summary 获取预产统计情况
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.ChannelPayCode true "获取预产统计情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vboxChannelPayCode/getPayCodeOverview [post]
+func (channelPayCodeApi *ChannelPayCodeApi) GetPayCodeOverviewByChanAcc(c *gin.Context) {
+	var pageInfo vboxReq.ChannelPayCodeSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if list, err := channelPayCodeService.GetPayCodeOverviewByChanAcc(pageInfo, ids); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
+	}
+}
+
 // GetPayCodeOverview 获取预产统计情况
 // @Tags ChannelPayCode
 // @Summary 获取预产统计情况
@@ -35,8 +60,8 @@ func (channelPayCodeApi *ChannelPayCodeApi) GetPayCodeOverview(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	pageInfo.CreatedBy = utils.GetUserID(c)
-	if list, err := channelPayCodeService.GetPayCodeOverview(pageInfo); err != nil {
+	ids := utils2.GetUserIDS(c)
+	if list, err := channelPayCodeService.GetPayCodeOverview(pageInfo, ids); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

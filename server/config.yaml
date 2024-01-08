@@ -125,8 +125,7 @@ mysql:
     db-name: vbox_system
     username: vbox_admin
     password: Vbox123qwe
-#    path: rm-cn-pe33bubix0001wko.rwlb.rds.aliyuncs.com
-    path: vboxsql.rwlb.rds.aliyuncs.com
+    path: rm-cn-lbj3k08et0006bto.rwlb.rds.aliyuncs.com
     engine: ""
     log-mode: error
     max-idle-conns: 10
@@ -209,7 +208,7 @@ system:
     use-mongo: false
     use-mq: true
     use-mq-task: true
-    timer-task: false
+    timer-task: true
 mq-task:
     order-wait: false
     order-confirm: false

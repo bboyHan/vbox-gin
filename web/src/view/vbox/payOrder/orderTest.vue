@@ -250,7 +250,6 @@ h1 {
   padding: 12px 24px;
   font-size: 22px;
   color: #e7dfdf;
-//background-color: #1660f3;
   background: linear-gradient(to right, #064954, #125280, #1247c9);
   margin-top: 6px;
   width: 80%;

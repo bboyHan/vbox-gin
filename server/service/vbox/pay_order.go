@@ -113,7 +113,7 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 		Money:       order.Money,
 		ResourceUrl: order.ResourceUrl,
 		Status:      order.OrderStatus,
-		ExpTime:     order.ExpTime,
+		ExpTime:     *order.ExpTime,
 		ChannelCode: order.ChannelCode,
 	}
 
@@ -307,11 +307,11 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	vpo.Key = vpa.PKey
 	uidTmp := vpa.Uid
 	// 1.0 校验签名
-	//signValid := utils.VerifySign(vpo)
-	//if !signValid {
-	//	return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
-	//}
-	//global.GVA_LOG.Info("签名校验通过", zap.Any("商户ID", vpo.Account))
+	signValid := utils.VerifySign(vpo)
+	if !signValid {
+		return nil, errors.New("请求参数或签名值不正确，请联系管理员核对")
+	}
+	global.GVA_LOG.Info("签名校验通过", zap.Any("商户ID", vpo.Account))
 
 	orgTmp := utils2.GetSelfOrg(vpa.Uid)
 	if len(orgTmp) < 1 {
@@ -490,6 +490,11 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		return nil, err
 	}
 
+	//TODO 积分规则设置
+	//var unit_price string
+	//var unit_id string
+	//unit_price, unit_id = vpoService.HandleUnit(vpo.ChannelCode, vpo.Money, orgTmp)
+
 	// 获取过期时间
 	expTime, err := vpoService.HandleExpTime2Product(vpo.ChannelCode)
 	if err != nil {
@@ -510,6 +515,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		global.GVA_REDIS.Set(context.Background(), jucKey, 1, 5*time.Minute)
 		go func() {
 
+			add := time.Now().Add(expTime)
 			order := vbox.PayOrder{
 				PlatformOid: utils.GenerateID("VB"),
 				ChannelCode: vpo.ChannelCode,
@@ -520,7 +526,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 				AcId:        accID,
 				EventId:     eventID,
 				EventType:   eventType,
-				ExpTime:     time.Now().Add(expTime),
+				ExpTime:     &add,
 				ResourceUrl: rsUrl,
 				CreatedBy:   uidTmp,
 			}
@@ -740,6 +746,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
 	global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", acAccount))
 
+	add := time.Now().Add(expTime)
 	order := &vbox.PayOrder{
 		PlatformOid: utils.GenerateID("TEST"),
 		ChannelCode: cid,
@@ -751,7 +758,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		Money:       vpo.Money,
 		NotifyUrl:   vpo.NotifyUrl,
 		ResourceUrl: rsUrl,
-		ExpTime:     time.Now().Add(expTime),
+		ExpTime:     &add,
 		CreatedBy:   vpo.UserId,
 	}
 
@@ -966,28 +973,26 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 			db = db.Where("channel_code =?", info.ChannelCode)
 		}
 
-		db.Debug().Where("created_by in ?", ids)
-
 		if info.Keyword == "cas" {
 			err = db.Debug().Select(
-				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1," +
-					"IFNULL(COUNT(*), 0) AS x2," +
-					"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3," +
-					"IFNULL(SUM(money), 0) AS x4").Find(&ov).Error
+				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1,"+
+					"IFNULL(COUNT(*), 0) AS x2,"+
+					"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3,"+
+					"IFNULL(SUM(money), 0) AS x4").Where("created_by in ?", ids).Find(&ov).Error
 			if err != nil {
 				return
 			}
 		} else if info.Keyword == "sum" {
 			err = db.Select(
-				"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3," +
-					"IFNULL(SUM(money), 0) AS x4").Find(&ov).Error
+				"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3,"+
+					"IFNULL(SUM(money), 0) AS x4").Where("created_by in ?", ids).Find(&ov).Error
 			if err != nil {
 				return
 			}
 		} else if info.Keyword == "cnt" {
 			err = db.Select(
-				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1," +
-					"IFNULL(COUNT(*) AS, 0) x2").Find(&ov).Error
+				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1,"+
+					"IFNULL(COUNT(*) AS, 0) x2").Where("created_by in ?", ids).Find(&ov).Error
 			if err != nil {
 				return
 			}

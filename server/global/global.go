@@ -20,9 +20,13 @@ import (
 // acc 相关
 
 const (
-	ChanAccDailyUsed       = "chan_acc_daily_used:ac_id:%s"
-	ChanAccTotalUsed       = "chan_acc_total_used:ac_id:%s"
-	ChanAccCountUsed       = "chan_acc_count_used:ac_id:%s"
+	ChanAccDailyUsed  = "chan_acc_daily_used:ac_id:%s"
+	ChanAccDailyLimit = "chan_acc_daily_limit:ac_id:%s"
+	ChanAccTotalUsed  = "chan_acc_total_used:ac_id:%s"
+	ChanAccTotalLimit = "chan_acc_total_limit:ac_id:%s"
+	ChanAccCountUsed  = "chan_acc_count_used:ac_id:%s"
+	ChanAccCountLimit = "chan_acc_count_limit:ac_id:%s"
+
 	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
 	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
@@ -89,6 +93,7 @@ const (
 	WalletEventRecharge       = "充值积分[%d]"            // 充值
 	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 划转
 	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 划转
+	WalletEventOrderCost      = "积分消费[%d], 来自订单[%s]"  // 消费
 )
 
 var (

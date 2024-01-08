@@ -56,6 +56,7 @@ func (userService *UserService) SelfRegister(u systemReq.SelfRegister) (userInte
 		Nickname:    u.Username,
 		Enable:      u.Enable,
 		EnableAuth:  u.EnableAuth,
+		AuthorityId: roleID,
 		Authorities: authorities,
 	}
 

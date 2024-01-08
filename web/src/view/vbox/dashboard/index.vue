@@ -557,7 +557,6 @@ export default {
   font-size: 30px;
   font-weight: bold;
   margin-top: 5px; // 调整间距
-  //background: linear-gradient(to right, #be2eba, #5b2ecc),
 
 }
 

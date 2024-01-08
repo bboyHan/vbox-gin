@@ -2,11 +2,11 @@ package main
 
 /*
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -17,6 +17,21 @@ func hash33(t string) int64 {
 	}
 	return e & 2147483647
 }
+
+func ParseCookie(cookieStr string, targetKey string) string {
+	pairs := strings.Split(cookieStr, ";")
+	for _, pair := range pairs {
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) == 2 && strings.Contains(strings.ToLower(strings.TrimSpace(kv[0])), strings.ToLower(targetKey)) {
+			return strings.TrimSpace(kv[1])
+		}
+		if len(kv) == 1 && strings.ToLower(strings.TrimSpace(kv[0])) == strings.ToLower(targetKey) {
+			return ""
+		}
+	}
+	return ""
+}
+
 
 func main() {
 	// 测试hash33函数

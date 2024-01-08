@@ -2,22 +2,9 @@ package middleware
 
 import (
 	"bytes"
-	"encoding/json"
-	"io"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-
-	"github.com/flipped-aurora/gin-vue-admin/server/utils"
-
-	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"sync"
 )
 
 var operationRecordService = service.ServiceGroupApp.SystemServiceGroup.OperationRecordService
@@ -33,7 +20,7 @@ func init() {
 
 func OperationRecord() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var body []byte
+		/*var body []byte
 		var userId int
 		if c.Request.Method != http.MethodGet {
 			var err error
@@ -121,7 +108,7 @@ func OperationRecord() gin.HandlerFunc {
 
 		if err := operationRecordService.CreateSysOperationRecord(record); err != nil {
 			global.GVA_LOG.Error("create operation record error:", zap.Error(err))
-		}
+		}*/
 	}
 }
 

@@ -17,6 +17,21 @@ export const formatOPDesc = (operator) => {
   return opMsg
 }
 
+// 格式化运营商（简化）
+export const formatOPSimple = (operator) => {
+  let opMsg = '';
+  if(operator === 'yidong') {
+    opMsg = '移动'
+  } else if(operator === 'liantong') {
+    opMsg = '联通'
+  } else if(operator === 'dianxin') {
+    opMsg = '电信'
+  } else {
+    opMsg = '未知'
+  }
+  return opMsg
+}
+
 // 格式化金额
 export const formatMoneyDesc = (money) => {
     return '金额：' + money + "元"

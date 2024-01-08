@@ -21,15 +21,17 @@ func (s *OrganizationRouter) InitOrganizationRouter(Router *gin.RouterGroup) {
 		orgRouter.PUT("setOrgUserAdmin", orgApi.SetOrgUserAdmin)                    // 管理员设置
 		orgRouter.PUT("setDataAuthority", orgApi.SetOrgAuthority)                   // 设置资源权限
 		orgRouter.POST("syncAuthority", orgApi.SyncAuthority)                       // 同步角色
-		orgRouter.GET("getAuthority", orgApi.GetAuthority)                          // 获取资源权限
 	}
 	{
+		orgRouterWithoutRecord.GET("getAuthority", orgApi.GetAuthority)               // 获取资源权限
 		orgRouterWithoutRecord.GET("findOrganization", orgApi.FindOrganization)       // 根据ID获取Organization
 		orgRouterWithoutRecord.GET("getOrganizationList", orgApi.GetOrganizationList) // 获取Organization列表
 		orgRouterWithoutRecord.GET("findOrgUserAll", orgApi.FindOrgUserAll)           // 获取当前组织下所有用户ID
-		orgRouterWithoutRecord.GET("findOrgUserList", orgApi.FindOrgUserList)         // 获取当前组织下所有用户(分页)
-		orgRouterWithoutRecord.GET("findOrgUserListSelf", orgApi.FindOrgUserListSelf) // 获取当前用户组织下所有用户(分页)
 		orgRouterWithoutRecord.DELETE("deleteOrgUser", orgApi.DeleteOrgUser)          // 删除当前组织下选中用户
 		orgRouterWithoutRecord.PUT("transferOrgUser", orgApi.TransferOrgUser)         // 用户转移组织
+	}
+	{
+		orgRouterWithoutRecord.GET("findOrgUserList", orgApi.FindOrgUserList)         // 获取当前组织下所有用户(分页)
+		orgRouterWithoutRecord.GET("findOrgUserListSelf", orgApi.FindOrgUserListSelf) // 获取当前用户组织下所有用户(分页)
 	}
 }

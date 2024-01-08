@@ -1,23 +1,6 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-        <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
-          <p>确定要删除吗？</p>
-          <div style="text-align: right; margin-top: 8px;">
-            <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-            <el-button type="primary" @click="onDelete">确定</el-button>
-          </div>
-          <template #reference>
-            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
-                       @click="deleteVisible = true">删除
-            </el-button>
-          </template>
-        </el-popover>
-      </div>
-    </div>
-    <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
                @keyup.enter="onSubmit">
         <el-form-item label="通道id" prop="cid">
@@ -36,10 +19,10 @@
         <el-form-item label="地区" prop="location">
           <el-cascader
               style="width:100%"
-              :options="optionsRegion"
+              :options="regionOptions"
               v-model="searchInfo.location"
               @change="chge"
-              placeholder="省 / 市 / 区"
+              placeholder="地区"
           >
           </el-cascader>
         </el-form-item>
@@ -58,10 +41,28 @@
           </el-select>
         </el-form-item>
         <el-form-item>
+          <el-button icon="refresh" @click="onReset"></el-button>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" icon="info-filled" class="table-button" @click="openPayCodeOverviewShow">概览</el-button>
         </el-form-item>
       </el-form>
+    </div>
+    <div class="gva-search-box">
+      <div class="gva-btn-list">
+        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
+          <p>确定要删除吗？</p>
+          <div style="text-align: right; margin-top: 8px;">
+            <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
+            <el-button type="primary" @click="onDelete">确定</el-button>
+          </div>
+          <template #reference>
+            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
+                       @click="deleteVisible = true">删除
+            </el-button>
+          </template>
+        </el-popover>
+      </div>
     </div>
     <div class="gva-table-box">
       <el-table
@@ -147,7 +148,73 @@
     <div class="gva-search-box">
 
       <div class="region-card-container">
-        <div v-for="moneyPart in Object.entries(pcData)">
+        <!-- 查看产码详情 -->
+        <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
+          <el-scrollbar height="550px">
+            <div class="gva-search-box">
+              <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
+                       @keyup.enter="onSubmit">
+                <el-form-item label="通道id" prop="cid">
+                  <el-cascader
+                      v-model="searchInfo.cid"
+                      :options="channelCodeOptions"
+                      :props="channelCodeProps"
+                      @change="handleChange"
+                      style="width: 100%"
+                      placeholder="选择通道"
+                  />
+                </el-form-item>
+                <el-form-item label="通道账户名" prop="acAccount">
+                  <el-input v-model="searchInfo.acAccount" placeholder="搜索条件"/>
+                </el-form-item>
+                <el-form-item label="金额" prop="acAccount">
+                  <el-input v-model="searchInfo.money" placeholder="搜索条件"/>
+                </el-form-item>
+                <el-form-item label="地区" prop="location">
+                  <el-cascader
+                      style="width:100%"
+                      :options="regionOptions"
+                      v-model="searchInfo.location"
+                      @change="chge"
+                      placeholder="地区"
+                  >
+                  </el-cascader>
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                  <el-select v-model="searchInfo.codeStatus" placeholder="选择状态">
+                    <el-option label="已使用" value="1"/>
+                    <el-option label="待使用" value="2"/>
+                    <el-option label="已失效" value="3"/>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="运营商" prop="status">
+                  <el-select v-model="searchInfo.operator" placeholder="选择ISP">
+                    <el-option label="移动" value="yidong"/>
+                    <el-option label="联通" value="liantong"/>
+                    <el-option label="电信" value="dianxin"/>
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button icon="refresh" @click="onReset"></el-button>
+                  <el-button type="primary" class="table-button" @click="openPayCodeOverviewShow">查看</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="region-card-container">
+              <div v-for="pcData in Object.entries(payCodeMap)" style="width: 100%">
+                <!--            <div>￥{{ pcData[0].x1 }}，{{ formatOPSimple(pcData.x2) }}, {{ codeToText[pcData.x3] }}({{ pcData.x4 }})</div>-->
+                <div>{{ formatOPSimple(pcData[0]) }}</div>
+                <el-divider></el-divider>
+                <span v-for="pcDetail in pcData[1]" style="padding: 10px">
+              <el-badge :value="pcDetail.x4">
+                <el-button>{{ codeToText[pcDetail.x3] }} | {{ pcDetail.x1 }}元</el-button>
+              </el-badge>
+            </span>
+              </div>
+            </div>
+          </el-scrollbar>
+        </el-dialog>
+<!--        <div v-for="moneyPart in Object.entries(pcData)">
           <el-collapse v-model="activeNames" @change="">
             <el-collapse-item :title="formatMoneyDesc(moneyPart[0])" name="1">
               <div v-for="opPart in Object.entries(moneyPart[1])">
@@ -181,7 +248,7 @@
               </div>
             </el-collapse-item>
           </el-collapse>
-        </div>
+        </div>-->
       </div>
       <!--      <el-collapse v-model="activeNames" @change="">
               <el-collapse-item title="预产统计视图（点击可收缩）" name="1">
@@ -389,7 +456,7 @@ import {
   deleteChannelPayCodeByIds,
   updateChannelPayCode,
   findChannelPayCode,
-  getChannelPayCodeList, getPayCodeOverview
+  getChannelPayCodeList, getPayCodeOverview, getPayCodeOverviewByChanAcc
 } from '@/api/channelPayCode'
 import {
   getChannelProductSelf
@@ -409,7 +476,7 @@ import {
   formatPayCodeStatus,
   formatJoin,
   formatPayCodeColor,
-  formatTime, formatMoneyDesc, formatOPDesc,
+  formatTime, formatMoneyDesc, formatOPDesc, formatOPSimple,
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, onMounted} from 'vue'
@@ -430,23 +497,38 @@ defineOptions({
 dayjs.extend(utcPlugin);
 dayjs.extend(timezone);
 
-const pcData = ref({});
-const pcOverview = async () => {
-  let res = await getPayCodeOverview()
-  console.log(res)
-  pcData.value = res.data.list
-  // 渲染数据
-  for (const moneyPart in pcData.value) {
-    for (const opPart in pcData.value[moneyPart]) {
-      for (const locPart in pcData.value[moneyPart][opPart]) {
-        const waitCnt = pcData.value[moneyPart][opPart][locPart].waitCnt;
-        const pendingCnt = pcData.value[moneyPart][opPart][locPart].pendingCnt;
-        console.log(`Money Part: ${moneyPart}, Operator Part: ${opPart}, Location Part: ${locPart}, Wait Count: ${waitCnt}, Pending Count: ${pendingCnt}`);
-        // 这里可以根据需要将数据渲染到页面上
-      }
-    }
+const payCodeTableData = ref([])
+const payCodeOverviewVisible = ref(false)
+const closePayCodeOverviewShow = () => {
+  payCodeOverviewVisible.value = false
+  payCodeTableData.value = []
+}
+const openPayCodeOverviewShow = async () => {
+  payCodeOverviewVisible.value = true
+  let req = {...searchInfo.value}
+  console.log(req)
+  await getPayCodeOverviewByChanAccFunc(req)
+}
+const getPayCodeOverviewByChanAccFunc = async (row) => {
+  const req = {...row}
+  console.log(req)
+
+  let res = await getPayCodeOverview(req)
+  console.log(res.data)
+  if (res.code === 0) {
+    payCodeTableData.value = res.data.list
+    let result = payCodeTableData.value.reduce((acc, cur) => {
+      const { x2, ...rest } = cur;
+      acc[x2] = acc[x2] || [];
+      acc[x2].push(rest);
+      return acc;
+    }, {});
+    payCodeMap.value = result
   }
 }
+
+const pcData = ref([]);
+const payCodeMap = ref({});
 
 // 缩略图
 const dialogImageShow = ref({})
@@ -888,7 +970,8 @@ const getTableData = async () => {
   }
   setOptions()
   // getALlChannelAccount()
-  pcOverview()
+  setRegionOptions(provinces, regionOptions.value, false)
+
 }
 
 getTableData()

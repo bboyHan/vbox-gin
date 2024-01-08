@@ -201,11 +201,14 @@ const userForm = ref({
 })
 
 const rules = reactive({
+  username: [
+    { min: 6, message: '最少6个字符', trigger: ['input','blur'] },
+  ],
   newPassword: [
     { min: 6, message: '最少6个字符', trigger: ['input','blur'] },
   ],
   confirmPassword: [
-    { min: 6, message: '最少6个字符', trigger: 'blur' },
+    { min: 6, message: '最少6个字符', trigger: ['input','blur'] },
     {
       validator: (rule, value, callback) => {
         console.log('value', value)
@@ -468,7 +471,7 @@ const operateRechargeVisible = ref(false)
 const showOperateRecharge = async(row) => {
   operateRechargeVisible.value = true
   rechargeForm.value.toUid = row.sysUser.ID
-  rechargeForm.value.toUsername = row.sysUser.userName
+  rechargeForm.value.toUsername = row.sysUser.username
   rechargeForm.value.type = 1
 }
 const clearOperateRecharge = () => {

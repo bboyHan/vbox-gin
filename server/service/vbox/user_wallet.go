@@ -61,7 +61,7 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 				Type:      global.WalletRechargeType,
 				EventId:   eventId,
 				Remark:    fmt.Sprintf(global.WalletEventRecharge, recharge),
-				CreatedBy: uid,
+				CreatedBy: toUid,
 			}
 			if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
 				return err

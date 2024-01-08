@@ -488,7 +488,6 @@ h1 {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  //background: linear-gradient(to right, #f9c492, #fb6a65);
   background: linear-gradient(to right, #d71010, #064954);
   color: white;
   font-size: 14px;

@@ -96,14 +96,13 @@
         <el-table-column align="left" label="日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="付方ID" prop="pAccount" width="120">
+        <el-table-column align="left" label="付方ID" prop="pAccount" width="160">
           <template #default="scope">
             {{ scope.row.pAccount }}
             <el-button type="primary" link class="table-button" @click="getPADetails(scope.row.pAccount)">
               <el-icon style="margin-right: 5px">
                 <InfoFilled/>
               </el-icon>
-              详情
             </el-button>
           </template>
         </el-table-column>
@@ -111,11 +110,9 @@
         <el-table-column align="left" label="用户ID" prop="uid" width="120"/>
         <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
         <el-table-column align="left" label="平台id" prop="platformOid" width="220"/>
-        <el-table-column align="left" label="客户ip" prop="payIp" width="120"/>
-        <el-table-column align="left" label="区域" prop="payRegion" width="120"/>
+        <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
+        <el-table-column align="left" label="区域" prop="payRegion" width="180"/>
         <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
-        <el-table-column align="left" label="支付链接" prop="resourceUrl" width="200"/>
-        <el-table-column align="left" label="回调地址" prop="notifyUrl" width="120"/>
         <el-table-column align="left" label="账号ID" prop="acId" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
@@ -193,8 +190,6 @@
           <el-descriptions-item label="客户ip">{{ formData.payIp }}</el-descriptions-item>
           <el-descriptions-item label="区域">{{ formData.payRegion }}</el-descriptions-item>
           <el-descriptions-item label="客户端设备">{{ formData.payDevice }}</el-descriptions-item>
-          <el-descriptions-item label="支付链接">{{ formData.resourceUrl }}</el-descriptions-item>
-          <el-descriptions-item label="回调地址">{{ formData.notifyUrl }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">{{ formatBoolean(formData.orderStatus) }}</el-descriptions-item>
           <el-descriptions-item label="回调状态">{{ formatBoolean(formData.cbStatus) }}</el-descriptions-item>
           <el-descriptions-item label="回调时间">{{ formatDate(formData.cbTime) }}</el-descriptions-item>

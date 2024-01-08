@@ -88,6 +88,22 @@ export const findChannelPayCode = (params) => {
 // @Param data query request.PageInfo true "获取预产统计情况"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /channelPayCode/getPayCodeOverview [get]
+export const getPayCodeOverviewByChanAcc = (params) => {
+  return service({
+    url: '/channelPayCode/getPayCodeOverviewByChanAcc',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags PayCodeVO
+// @Summary 获取预产统计情况
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取预产统计情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /channelPayCode/getPayCodeOverview [get]
 export const getPayCodeOverview = (params) => {
   return service({
     url: '/channelPayCode/getPayCodeOverview',

@@ -107,28 +107,33 @@ func OrderWaitingTask() {
 
 				//1.0 核查商户
 				var vpa vbox.PayAccount
-				var count int64
-				count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
-				if count == 0 {
-					if err != nil {
-						global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
-					}
-					global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
-
-					err = global.GVA_DB.Table("vbox_pay_account").
-						Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
-					jsonStr, _ := json.Marshal(vpa)
-					global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
+				if strings.Contains(v.Obj.PAccount, "TEST") {
+					global.GVA_LOG.Info("测试单，商户检测跳过", zap.Any("入参商户", v.Obj.PAccount))
 				} else {
-					jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
-					err = json.Unmarshal(jsonStr, &vpa)
+					var count int64
+					count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
+					if count == 0 {
+						if err != nil {
+							global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+						}
+						global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
+
+						err = global.GVA_DB.Table("vbox_pay_account").
+							Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
+						jsonStr, _ := json.Marshal(vpa)
+						global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
+					} else {
+						jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
+						err = json.Unmarshal(jsonStr, &vpa)
+					}
+					if err != nil {
+						global.GVA_LOG.Error("订单匹配消息处理失败，MqOrderWaitingTask...", zap.Any("err", err.Error()))
+						// 如果解析消息失败，则直接丢弃消息
+						_ = msg.Reject(false)
+						continue
+					}
 				}
-				if err != nil {
-					global.GVA_LOG.Error("订单匹配消息处理失败，MqOrderWaitingTask...", zap.Any("err", err.Error()))
-					// 如果解析消息失败，则直接丢弃消息
-					_ = msg.Reject(false)
-					continue
-				}
+
 				//2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
 
 				//2.0 查一下单，如果发起初始化的时候已经匹配过账号了，就不用再匹配一次了
@@ -245,6 +250,8 @@ func OrderWaitingTask() {
 						provinceCode := geo.Code
 
 						pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgID, cid, v.Obj.Money, ispPY, provinceCode)
+
+						global.GVA_LOG.Info("pcKey", zap.Any("pcKey", pcKey))
 
 						var resList []string
 						resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), pcKey, &redis.ZRangeBy{
@@ -705,7 +712,8 @@ func OrderConfirmTask() {
 
 				if global.TxContains(chanID) {
 
-					records, errQ := product.QryQQRecordsBetween(vca, v.Obj.CreatedAt, expTime)
+					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
+					records, errQ := product.QryQQRecordsBetween(vca, *odDB.CreatedAt, *expTime)
 					if errQ != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 					}
@@ -744,8 +752,9 @@ func OrderConfirmTask() {
 					}
 				} else if global.J3Contains(chanID) {
 				} else if global.PcContains(chanID) {
+					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
 
-					records, errQ := product.QryQQRecordsBetween(vca, v.Obj.CreatedAt, expTime)
+					records, errQ := product.QryQQRecordsBetween(vca, *odDB.CreatedAt, *expTime)
 					if errQ != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 					}
@@ -764,6 +773,24 @@ func OrderConfirmTask() {
 									_ = msg.Reject(false)
 									continue
 								}
+
+								// 4.入库wallet
+								var count int64
+								global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&count)
+
+								if count == 0 {
+									wallet := vbox.UserWallet{
+										Uid:       v.Obj.CreatedBy,
+										CreatedBy: v.Obj.CreatedBy,
+										Type:      global.WalletOrderType,
+										EventId:   v.Obj.EventId,
+										Recharge:  -v.Obj.Money,
+										Remark:    fmt.Sprintf(global.WalletEventIncome, v.Obj.Money, v.Obj.OrderId),
+									}
+
+									global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
+								}
+
 								_ = msg.Ack(true)
 								global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("orderId", v.Obj.OrderId))
 
@@ -929,7 +956,7 @@ func OrderCallbackTask() {
 				if v.Obj.HandStatus == 3 {
 					//3. 更新回调成功的状态
 					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
-						Update("cb_status", 1).Update("hand_status", 1).Update("cb_time", nowTime).Error; errD != nil {
+						Update("order_status", 1).Update("cb_status", 1).Update("hand_status", 1).Update("cb_time", nowTime).Error; errD != nil {
 						global.GVA_LOG.Error("更新订单异常", zap.Error(errD))
 						_ = msg.Reject(false)
 						continue
@@ -965,6 +992,23 @@ func OrderCallbackTask() {
 
 					_ = msg.Reject(false)
 					continue
+				}
+
+				// 4.入库wallet
+				var c int64
+				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&c)
+
+				if c == 0 {
+					wallet := vbox.UserWallet{
+						Uid:       v.Obj.CreatedBy,
+						CreatedBy: v.Obj.CreatedBy,
+						Type:      global.WalletOrderType,
+						EventId:   v.Obj.EventId,
+						Recharge:  -v.Obj.Money,
+						Remark:    fmt.Sprintf(global.WalletEventIncome, v.Obj.Money, v.Obj.OrderId),
+					}
+
+					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
 				}
 
 				_ = msg.Ack(true)
