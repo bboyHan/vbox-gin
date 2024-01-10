@@ -78,8 +78,8 @@
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
-        <el-table-column align="left" label="通道账户名" prop="acAccount" width="100"/>
-        <el-table-column align="left" label="备注" prop="acRemark" width="100"/>
+        <el-table-column align="left" label="通道账户名" prop="acAccount" width="140"/>
+        <el-table-column align="left" label="备注" prop="acRemark" width="160"/>
         <el-table-column align="left" label="过期时间" prop="expTime" width="160">
           <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
         </el-table-column>
@@ -322,6 +322,9 @@
                       :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
             </el-input>
           </el-form-item>
+          <el-form-item label="平台ID" prop="platId">
+            <el-input v-model="formData.platId" placeholder="输入平台ID"></el-input>
+          </el-form-item>
           <el-form-item label="过期时间" prop="expTime">
             <el-row>
               <el-col>
@@ -561,6 +564,7 @@ const formData = ref({
 const rule = reactive({
   acAccount: [{required: true, message: '', trigger: ['blur'],}],
   cid: [{required: true, message: '请选择', trigger: ['blur'],}],
+  platId: [{required: true, message: '请选择', trigger: ['blur'],}],
   acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
   expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
   operator: [{required: true, message: '', trigger: ['blur'],}],
@@ -823,7 +827,6 @@ const handleAccChange = (value) => {
 const getACCChannelAccountByAcid = async () => {
   const res = await getChannelAccountList({acId: formData.value.acId, page: 1, pageSize: 999})
   acIdList.value = res.data.list
-  total.value = res.data.total
   // console.log(JSON.stringify(accList))
   formData.value.acAccount = acIdList.value[0].acAccount
   formData.value.acRemark = acIdList.value[0].acRemark
@@ -836,7 +839,6 @@ const getACCChannelAccountByAcid = async () => {
 const getALlChannelAccount = async () => {
   const res = await getChannelAccountList({cid: formData.value.cid, page: 1, pageSize: 999})
   accList.value = res.data.list
-  total.value = res.data.total
 }
 
 // -------------- 同一通道产品的归集 ------------------------
@@ -954,6 +956,7 @@ const handleSizeChange = (val) => {
 // 修改页面容量
 const handleCurrentChange = (val) => {
   page.value = val
+  console.log(page.value)
   getTableData()
 }
 
@@ -982,7 +985,7 @@ getTableData()
 const setOptions = async () => {
   channelCodeOptions.value = []
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
-  console.log(provinces)
+  // console.log(provinces)
   setRegionOptions(provinces, regionOptions.value, false)
 }
 
@@ -1135,6 +1138,7 @@ const openRegionDialog = (province) => {
     operator: '',
     location: '',
     imgBaseStr: '',
+    platId: '',
     mid: '',
     type: 2,
     codeStatus: 0,
@@ -1281,10 +1285,10 @@ onMounted(() => {
   const provincesData = provinces;
   allProvinces.value = provincesData.map((obj) => {
     const backendProvince = provincesD.value.find((province) => {
-      console.log('json code:' + obj.code + ' 后端数据:' + province.code)
+      // console.log('json code:' + obj.code + ' 后端数据:' + province.code)
       let pc = String(province.code).slice(0, 2);
       let bc = String(obj.code).slice(0, 2);
-      console.log('转换后- json code:' + pc + ' 后端数据:' + bc)
+      // console.log('转换后- json code:' + pc + ' 后端数据:' + bc)
       return pc === bc;
     });
     return backendProvince || {code: obj.code, name: obj.name, total: 0, used: 0, remaining: 0};

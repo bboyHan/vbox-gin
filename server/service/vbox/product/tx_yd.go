@@ -33,6 +33,92 @@ var options = &vbHttp.RequestOptions{
 	MaxRedirects: 3,
 }
 
+func QryQQRecordsByID(vca vbox.ChannelAccount, orderID string) (*product.Records, error) {
+	var Url string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.TxContains(vca.Cid) { // tx系
+			channelCode = "qb_proxy"
+		} else if global.PcContains(vca.Cid) {
+			channelCode = "qb_proxy"
+		}
+
+		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+			Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&Url).Error
+
+		if err != nil {
+			return nil, errors.New("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, Url, 10*time.Minute)
+
+	} else {
+		Url, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+	}
+
+	openID, openKey, err := Secret(vca.Token)
+	if err != nil {
+		return nil, err
+	}
+	records := RecordsByID(Url, openID, openKey, orderID, 24*time.Hour)
+	if records == nil || records.Ret != 0 {
+		return nil, errors.New("查询官方记录异常")
+	}
+	//classifier := Classifier(records.WaterList)
+	return records, nil
+}
+
+// RecordsByID 获取指定时间内记录（开始时间到结束时间）
+func RecordsByID(rawURL string, openID string, openKey string, orderID string, period time.Duration) *product.Records {
+
+	// Records 获取指定时间内记录
+
+	u, _ := url.Parse(rawURL)
+	queryParams := u.Query()
+
+	// 获取当前时间
+	currentTime := time.Now()
+	// 计算半小时前的时间
+	//halfHourAgo := currentTime.Add(-30 * time.Minute)
+	halfHourAgo := currentTime.Add(-period)
+
+	// 当前时间秒数
+	currentSeconds := currentTime.Unix()
+
+	// 将半小时前的时间转换为秒数
+	halfHourAgoSeconds := halfHourAgo.Unix()
+
+	queryParams.Set("openid", openID)
+	queryParams.Set("openkey", openKey)
+	queryParams.Set("BeginUnixTime", strconv.FormatInt(halfHourAgoSeconds, 10))
+	queryParams.Set("EndUnixTime", strconv.FormatInt(currentSeconds, 10))
+	queryParams.Set("SerialNo", orderID)
+
+	u.RawQuery = queryParams.Encode()
+	newURL := u.String()
+	client := vbHttp.NewHTTPClient()
+
+	global.GVA_LOG.Info("RecordsByID newURL:  ->", zap.String("newURL", newURL))
+	resp, err := client.Get(newURL, options)
+	if err != nil {
+		global.GVA_LOG.Error("err:  ->", zap.Error(err))
+		return nil
+	}
+
+	var records product.Records
+	err = json.Unmarshal(resp.Body, &records)
+	if err != nil {
+		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		return nil
+	}
+	//fmt.Print(records)
+
+	return &records
+}
+
 func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) (*product.Records, error) {
 	var Url string
 

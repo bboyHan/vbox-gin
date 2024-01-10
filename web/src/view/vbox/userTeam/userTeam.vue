@@ -419,7 +419,7 @@ const rechargeForm = ref({
 const showRecharge = async(row) => {
   showRechargeVisible.value = true
   rechargeForm.value.toUid = row.sysUser.ID
-  rechargeForm.value.toUsername = row.sysUser.userName
+  rechargeForm.value.toUsername = row.sysUser.username
   rechargeForm.value.type = 2
   console.log(rechargeForm.value)
 }

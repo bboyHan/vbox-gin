@@ -2,14 +2,23 @@
   <div>
     <div class="gva-search-box">
       <el-row :gutter="12">
-        <el-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6">
-          <div class="card"> 钱包余额： {{ userBalance }} </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6">
-          <div class="card"> Always </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6">
-          <div class="card"> Always </div>
+        <el-col :xs="24" :span="6">
+            <CenterCard title="我的积分" :custom-style="walletCustomStyle">
+              <template #action>
+                <span class="gvaIcon-prompt" style="color: #999" />
+              </template>
+              <template #body>
+                <!--              <Order :channel-code="searchInfo.cid"/>-->
+                <div class="acc-container">
+                  <div class="indicator">
+                  <span>
+                    <div class="label"></div>
+                    <div class="value">{{ userBalance }}</div>
+                  </span>
+                  </div>
+                </div>
+              </template>
+            </CenterCard>
         </el-col>
       </el-row>
     </div>
@@ -117,12 +126,26 @@ import {
 } from '@/api/userWallet'
 
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
+import {
+  getDictFunc,
+  formatDate,
+  formatBoolean,
+  filterDict,
+  ReturnArrImg,
+  onDownloadFile,
+  formatMoney
+} from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
 
 defineOptions({
     name: 'UserWallet'
+})
+const walletCustomStyle = ref({
+  background: 'linear-gradient(to right, #22111a, #606266)',
+  color: '#FFF',
+  height: '140px',
 })
 
 const userBalance = ref(0)
@@ -282,7 +305,7 @@ const closeDialog = () => {
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
 .card {
   width: 100%;/* 设置卡片宽度 */
   height: 50px; /* 设置卡片高度 */
@@ -296,4 +319,37 @@ const closeDialog = () => {
   font-size: 20px;
 }
 
+.acc-container{
+  color: #FFFFFF;
+}
+
+.indicator {
+  display: flex;
+  justify-content: space-around; // 使子元素水平居中展开
+  padding: 15px;
+  border-radius: 8px; // 添加圆角
+}
+
+.indicator span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  &:not(:last-child) {
+    border-right: 2px solid #fff; // 白色边框
+    margin-right: 15px; // 调整间距
+  }
+}
+
+.label {
+  color: #F5F5F5;
+  font-size: 14px;
+}
+
+.value {
+  color: #FFFFFF;
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 5px; // 调整间距
+}
 </style>

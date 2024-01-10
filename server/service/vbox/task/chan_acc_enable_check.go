@@ -137,14 +137,14 @@ func ChanAccEnableCheckTask() {
 						}
 
 						// 查完算一下并且给redis赋值设置一下
-						global.GVA_REDIS.Set(context.Background(), dailyKey, dailySum, 0)
+						global.GVA_REDIS.Set(context.Background(), dailyKey, dailySum, 1*time.Minute)
 
 					} else if err != nil {
 						global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
 					} else { // redis查出来了，直接比一下
-						if dailyUsed > v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
+						if dailyUsed >= v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
 							record := sysModel.SysOperationRecord{
@@ -190,7 +190,7 @@ func ChanAccEnableCheckTask() {
 						}
 
 						// 查完算一下并且给redis赋值设置一下
-						global.GVA_REDIS.Set(context.Background(), totalKey, totalSum, 0)
+						global.GVA_REDIS.Set(context.Background(), totalKey, totalSum, 1*time.Minute)
 
 					} else if err != nil {
 						global.GVA_LOG.Error("当前账号计算总消耗差redis错误，直接丢了..." + err.Error())
@@ -198,7 +198,7 @@ func ChanAccEnableCheckTask() {
 
 						continue
 					} else { // redis查出来了，直接比一下
-						if totalUsed > v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
+						if totalUsed >= v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
 							//入库操作记录
 							record := sysModel.SysOperationRecord{
@@ -227,51 +227,40 @@ func ChanAccEnableCheckTask() {
 				}
 				// 2.3 笔数限制
 				if v.Obj.CountLimit > 0 {
-					countKey := fmt.Sprintf(global.ChanAccCountUsed, v.Obj.AcId)
-					countUsed, err := global.GVA_REDIS.Get(context.Background(), countKey).Int()
-					if err == redis.Nil { // redis中无，查一下库
-						var count int64
 
-						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", v.Obj.AcId).Count(&count).Error
+					var count int64
 
-						if err != nil {
-							global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
-							_ = msg.Reject(false)
-							continue
-						}
+					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", v.Obj.AcId).Count(&count).Error
 
-						// 查完算一下并且给redis赋值设置一下
-						global.GVA_REDIS.Set(context.Background(), countKey, count, 0)
-
-					} else if err != nil {
-						global.GVA_LOG.Error("当前账号笔数消耗查redis错误，直接丢了..." + err.Error())
+					if err != nil {
+						global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
 						continue
-					} else { // redis查出来了，直接比一下
-						if countUsed > v.Obj.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+					}
 
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccCountLimitNotEnough, v.Obj.AcId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
-							}
+					if int(count) >= v.Obj.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
-							err = operationRecordService.CreateSysOperationRecord(record)
-							if err != nil {
-								global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
-							}
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0).Error
-							global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.AccCountLimitNotEnough, v.Obj.AcId, v.Obj.AcAccount),
+							UserID:  v.Ctx.UserID,
 						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
+						}
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							Update("sys_status", 0).Error
+						global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+						_ = msg.Reject(false)
+						continue
 					}
 				}
 

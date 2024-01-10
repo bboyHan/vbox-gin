@@ -99,7 +99,7 @@ func (channelPayCodeApi *ChannelPayCodeApi) CreateChannelPayCode(c *gin.Context)
 	channelPayCode.CreatedBy = utils.GetUserID(c)
 	if err = channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
-		response.FailWithMessage("创建失败", c)
+		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithMessage("创建成功", c)
 	}

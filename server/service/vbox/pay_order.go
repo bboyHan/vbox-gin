@@ -517,7 +517,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 			add := time.Now().Add(expTime)
 			order := vbox.PayOrder{
-				PlatformOid: utils.GenerateID("VB"),
 				ChannelCode: vpo.ChannelCode,
 				PAccount:    vpo.Account,
 				OrderId:     vpo.OrderId,
@@ -748,7 +747,6 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 
 	add := time.Now().Add(expTime)
 	order := &vbox.PayOrder{
-		PlatformOid: utils.GenerateID("TEST"),
 		ChannelCode: cid,
 		PAccount:    "TEST_" + vpo.Username,
 		EventType:   eventType,
@@ -974,7 +972,7 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 		}
 
 		if info.Keyword == "cas" {
-			err = db.Debug().Select(
+			err = db.Select(
 				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1,"+
 					"IFNULL(COUNT(*), 0) AS x2,"+
 					"IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x3,"+

@@ -204,6 +204,6 @@ func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.U
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Debug().Where("created_by in ?", ids).Find(&userWallets).Error
+	err = db.Debug().Where("uid in ?", ids).Find(&userWallets).Error
 	return userWallets, total, err
 }

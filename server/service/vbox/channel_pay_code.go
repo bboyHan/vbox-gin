@@ -112,7 +112,11 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 	vboxChannelPayCode.Mid = mid
 
 	// 先查一下库中记录
-	// 查一下数据库中预产对应的acAccount、money一致，并且code_status=2(取用池已经有待取用的预产),则将当前记录放入等候池
+	if global.PcContains(vboxChannelPayCode.Cid) {
+		if vboxChannelPayCode.PlatId == "" {
+			return fmt.Errorf("请传入正确的平台订单ID")
+		}
+	}
 
 	// 组织
 	orgTmp := utils2.GetSelfOrg(vboxChannelPayCode.CreatedBy)

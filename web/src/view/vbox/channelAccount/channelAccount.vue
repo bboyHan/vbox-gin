@@ -415,6 +415,9 @@
                       :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
             </el-input>
           </el-form-item>
+          <el-form-item label="平台ID" prop="platId">
+            <el-input v-model="pcFormData.platId" placeholder="输入平台ID"></el-input>
+          </el-form-item>
           <el-form-item label="过期时间"  prop="expTime" >
             <el-row>
               <el-col>
@@ -689,6 +692,7 @@ const rule = reactive({
 // 验证规则
 const pcRule = reactive({
   acAccount: [{required: true, message: '', trigger: [ 'blur'],}],
+  platId: [{required: true, message: '请选择', trigger: ['blur'],}],
   cid: [{required: true, message: '请选择', trigger: [ 'blur'],}],
   acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
   expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
@@ -1234,6 +1238,7 @@ const pcFormData = ref({
   mid: '',
   codeStatus: 0,
   money: 0,
+  platId: '',
 })
 const pcDialogFormVisible = ref(false)
 

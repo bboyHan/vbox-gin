@@ -3,6 +3,7 @@ package global
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -71,11 +72,23 @@ func ISPContains(target string) bool {
 	return false
 }
 
+func ISPTranslate(target string) string {
+	//写一个函数判断是否包含 yidong|liantong|dianxin,包含返回true，反之false
+	if strings.Contains(target, "移动") {
+		return "yidong"
+	} else if strings.Contains(target, "联通") {
+		return "liantong"
+	} else if strings.Contains(target, "电信") {
+		return "dianxin"
+	}
+	return RandISP()
+}
+
 func ProvinceContains(target string) bool {
-	if target == "北京市" || target == "天津市" || target == "河北省" || target == "山西省" || target == "内蒙古自治区" || target == "辽宁省" || target == "吉林省" || target == "黑龙江省" ||
-		target == "上海市" || target == "江苏省" || target == "浙江省" || target == "安徽省" || target == "福建省" || target == "江西省" || target == "山东省" || target == "河南省" || target == "湖北省" ||
-		target == "湖南省" || target == "广东省" || target == "广西壮族自治区" || target == "海南省" || target == "重庆市" || target == "四川省" || target == "贵州省" || target == "云南省" || target == "西藏自治区" ||
-		target == "陕西省" || target == "甘肃省" || target == "青海省" || target == "宁夏回族自治区" || target == "新疆维吾尔自治区" {
+	if strings.Contains(target, "北京") || strings.Contains(target, "天津") || strings.Contains(target, "上海") || strings.Contains(target, "河北省") || strings.Contains(target, "山西省") || strings.Contains(target, "内蒙古自治区") || strings.Contains(target, "辽宁省") || strings.Contains(target, "吉林省") || strings.Contains(target, "黑龙江省") ||
+		strings.Contains(target, "上海市") || strings.Contains(target, "江苏省") || strings.Contains(target, "浙江省") || strings.Contains(target, "安徽省") || strings.Contains(target, "福建省") || strings.Contains(target, "江西省") || strings.Contains(target, "山东省") || strings.Contains(target, "河南省") || strings.Contains(target, "湖北省") ||
+		strings.Contains(target, "湖南省") || strings.Contains(target, "广东省") || strings.Contains(target, "广西壮族自治区") || strings.Contains(target, "海南省") || strings.Contains(target, "重庆市") || strings.Contains(target, "四川省") || strings.Contains(target, "贵州省") || strings.Contains(target, "云南省") || strings.Contains(target, "西藏自治区") ||
+		strings.Contains(target, "陕西省") || strings.Contains(target, "甘肃省") || strings.Contains(target, "青海省") || strings.Contains(target, "宁夏回族自治区") || strings.Contains(target, "新疆维吾尔自治区") {
 		return true
 	}
 	return false
@@ -103,6 +116,6 @@ func RandProvince() string {
 		"上海市", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省",
 		"湖南省", "广东省", "广西壮族自治区", "海南省", "重庆市", "四川省", "贵州省", "云南省",
 		"西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", "新疆维吾尔自治区",
-	}                                        // 可选的省份列表
+	} // 可选的省份列表
 	return provinces[r.Intn(len(provinces))] // 随机选择一个省份并返回
 }

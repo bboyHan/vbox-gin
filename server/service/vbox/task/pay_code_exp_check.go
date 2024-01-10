@@ -85,7 +85,7 @@ func PayCodeExpCheck() {
 				//如果 v.expTime 比当前时间早，则表示已经过期了，先查一下数据库记录，如果记录的code_status仍为2，并把该记录在数据中更新为过期状态，code_status置为3
 				// 先查一下数据库记录
 				var pcDB vbox.ChannelPayCode
-				err = global.GVA_DB.Where("mid =?", v.Mid).First(&pcDB).Error
+				err = global.GVA_DB.Unscoped().Where("mid =?", v.Mid).First(&pcDB).Error
 				if err != nil {
 					global.GVA_LOG.Error("查询预产码失败", zap.Error(err), zap.Any("预产码MID", v.Mid))
 				}

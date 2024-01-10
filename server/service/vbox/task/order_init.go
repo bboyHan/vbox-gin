@@ -224,7 +224,7 @@ func OrderWaitingTask() {
 						} else {
 							splitLoc := strings.Split(v.Obj.PayRegion, "|")
 							province = splitLoc[2]
-							ISP = splitLoc[4]
+							ISP = global.ISPTranslate(splitLoc[4])
 						}
 						if !global.ISPContains(ISP) {
 							//	随机把ISP赋值为 yidong|liantong|dianxin 其中一个
@@ -313,9 +313,11 @@ func OrderWaitingTask() {
 							}
 							v.Obj.CreatedBy = pcDB.CreatedBy
 							v.Obj.AcId = pcDB.AcId
+							v.Obj.PlatId = pcDB.PlatId
 							v.Ctx.UserID = int(pcDB.CreatedBy)
 
-							err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).Update("code_status", 1).Error
+							err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).
+								Update("code_status", 1).Error
 
 							global.GVA_LOG.Info("匹配预产", zap.Any("MID", MID), zap.Any("acAccount", acAccount), zap.Any("imgContent", imgContent))
 
@@ -472,6 +474,7 @@ func OrderWaitingTask() {
 										}
 										v.Obj.CreatedBy = pcDB.CreatedBy
 										v.Obj.AcId = pcDB.AcId
+										v.Obj.PlatId = pcDB.PlatId
 										v.Ctx.UserID = int(pcDB.CreatedBy)
 
 										err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).Update("code_status", 1).Error
@@ -505,7 +508,7 @@ func OrderWaitingTask() {
 
 										// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
 										global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
-										global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in ? ", pcDB.AcId).
+										global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in (?) ", pcDB.AcId).
 											Update("status", 4).Update("sys_status", 4)
 
 										// 把当前acAccount下所有的预产等待队列置为冷却状态
@@ -754,7 +757,7 @@ func OrderConfirmTask() {
 				} else if global.PcContains(chanID) {
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
 
-					records, errQ := product.QryQQRecordsBetween(vca, *odDB.CreatedAt, *expTime)
+					records, errQ := product.QryQQRecordsByID(vca, odDB.PlatId)
 					if errQ != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 					}
@@ -785,7 +788,7 @@ func OrderConfirmTask() {
 										Type:      global.WalletOrderType,
 										EventId:   v.Obj.EventId,
 										Recharge:  -v.Obj.Money,
-										Remark:    fmt.Sprintf(global.WalletEventIncome, v.Obj.Money, v.Obj.OrderId),
+										Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.OrderId),
 									}
 
 									global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
