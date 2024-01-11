@@ -12,6 +12,8 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
@@ -108,6 +110,36 @@ func (channelPayCodeService *ChannelPayCodeService) GetPayCodeOverview(info vbox
 
 func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxChannelPayCode *vbox.ChannelPayCode) (err error) {
 
+	if vboxChannelPayCode.AcAccount == "" {
+		var acDB vbox.ChannelAccount
+		global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id =?", vboxChannelPayCode.AcId).First(&acDB)
+		vboxChannelPayCode.AcAccount = acDB.AcAccount
+		vboxChannelPayCode.AcRemark = acDB.AcRemark
+	}
+	// 验证图片二维码合法性 type=1 ,传图, type=2,传码（内容）
+	if vboxChannelPayCode.Type == 1 {
+		var content string
+		imgB64 := vboxChannelPayCode.ImgBaseStr
+		content, err = captcha.ParseQrCodeImageFromBase64(imgB64)
+		if err != nil {
+			return err
+		}
+		global.GVA_LOG.Info("图片解析内容 ----", zap.Any("content", content))
+		vboxChannelPayCode.ImgContent = content
+	} else if vboxChannelPayCode.Type == 2 {
+		var wxSign, portalSerialNo string
+		wxSign, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "wx_sign")
+		portalSerialNo, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "portal_serial_no")
+		if err != nil {
+			return err
+		}
+		vboxChannelPayCode.ImgContent = wxSign
+		vboxChannelPayCode.PlatId = portalSerialNo
+		global.GVA_LOG.Info("图片解析内容 ----", zap.Any("ImgContent", vboxChannelPayCode.ImgContent), zap.Any("PlatId", vboxChannelPayCode.PlatId))
+	} else {
+		return fmt.Errorf("请传入正确的类型")
+	}
+
 	mid := time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	vboxChannelPayCode.Mid = mid
 
@@ -197,6 +229,42 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 
 		err = ch.PublishWithDelay(task.PayCodeDelayedExchange, task.PayCodeDelayedRoutingKey, marshal, expTimeDiff)
 		global.GVA_LOG.Info("消息发完了", zap.Any("expTimeDiff", expTimeDiff))
+	}
+
+	return err
+}
+
+func (channelPayCodeService *ChannelPayCodeService) BatchCreateChannelPayCode(batch *vboxReq.BatchPayCode) (err error) {
+
+	if batch.AcAccount == "" {
+		var acDB vbox.ChannelAccount
+		global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id =?", batch.AcId).First(&acDB)
+		batch.AcAccount = acDB.AcAccount
+		batch.AcRemark = acDB.AcRemark
+	}
+
+	if batch.List == nil || len(batch.List) == 0 {
+		return fmt.Errorf("请传入正确的预产信息")
+	}
+	for _, v := range batch.List {
+		var pcCreate vbox.ChannelPayCode
+
+		pcCreate.CreatedBy = batch.CreatedBy
+		pcCreate.AcId = batch.AcId
+		pcCreate.AcRemark = batch.AcRemark
+		pcCreate.Cid = batch.Cid
+		pcCreate.Money = v.Money
+		pcCreate.Operator = v.Operator
+		pcCreate.Location = v.Location
+		pcCreate.Type = batch.Type
+		pcCreate.ImgBaseStr = v.ImgBaseStr
+		pcCreate.ImgContent = v.ImgContent
+		pcCreate.PlatId = v.PlatId
+		pcCreate.ExpTime = batch.ExpTime
+
+		if err = channelPayCodeService.CreateChannelPayCode(&pcCreate); err != nil {
+			global.GVA_LOG.Error("批量创建付款码失败", zap.Error(err), zap.Any("pcCreate", pcCreate))
+		}
 	}
 
 	return err

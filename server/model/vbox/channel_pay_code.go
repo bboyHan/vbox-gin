@@ -20,6 +20,7 @@ type ChannelPayCode struct {
 	ImgContent string     `json:"imgContent" form:"imgContent" gorm:"column:img_content;comment:图片解析内容;type:longtext;"`                        //图片base64编码
 	Mid        string     `json:"mid" form:"mid" gorm:"column:mid;comment:标识id;size:20;"`                                                      //标识id
 	PlatId     string     `json:"platId" form:"platId" gorm:"column:plat_id;comment:平台id;size:256;"`                                           //平台id
+	Type       uint       `json:"type" form:"type" gorm:"default:1;column:type;comment:类型,1-传图，2-传码;size:2;"`                                  //上传方式
 	CodeStatus uint       `json:"codeStatus" form:"codeStatus" gorm:"default:2;column:code_status;comment:状态,1-已使用,2-待使用,3-已失效，4-等候中;size:2;"` //产码状态
 	CreatedBy  uint       `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy  uint       `gorm:"column:updated_by;comment:更新者"`

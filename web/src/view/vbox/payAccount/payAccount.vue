@@ -514,8 +514,8 @@ const previewInfo = () => {
     商户ID: ${res.pAccount}
     商户Key: ${res.pKey}
     通道编码: ${res.cid}
-    服务网关: ${res.cid}
-  `
+    服务网关:
+    `
   preViewCode.value = {
     '对接信息': "```shell" + copyInfo + "```"
   }

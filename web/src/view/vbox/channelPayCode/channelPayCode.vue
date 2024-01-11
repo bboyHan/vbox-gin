@@ -43,13 +43,15 @@
         <el-form-item>
           <el-button icon="refresh" @click="onReset"></el-button>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button type="primary" icon="info-filled" class="table-button" @click="openPayCodeOverviewShow">概览</el-button>
+          <el-button type="primary" icon="info-filled" class="table-button" @click="openPayCodeOverviewShow">概览
+          </el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-search-box">
       <div class="gva-btn-list">
         <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <el-button type="primary" icon="plus" @click="openBatchDialog">批量新增</el-button>
         <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
           <p>确定要删除吗？</p>
           <div style="text-align: right; margin-top: 8px;">
@@ -149,10 +151,12 @@
 
       <div class="region-card-container">
         <!-- 查看产码详情 -->
-        <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
+        <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll
+                   :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
           <el-scrollbar height="550px">
             <div class="gva-search-box">
-              <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
+              <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline"
+                       :rules="searchRule"
                        @keyup.enter="onSubmit">
                 <el-form-item label="通道id" prop="cid">
                   <el-cascader
@@ -214,41 +218,7 @@
             </div>
           </el-scrollbar>
         </el-dialog>
-<!--        <div v-for="moneyPart in Object.entries(pcData)">
-          <el-collapse v-model="activeNames" @change="">
-            <el-collapse-item :title="formatMoneyDesc(moneyPart[0])" name="1">
-              <div v-for="opPart in Object.entries(moneyPart[1])">
-                <el-collapse v-model="activeNames" @change="">
-                  <el-collapse-item :title="formatOPDesc(opPart[0])" name="1">
-                    <div v-for="locPart in Object.entries(opPart[1])">
-                      <div
-                          class="region-card"
-                          :style="{ backgroundColor: cardBackgroundColor(locPart[1].waitCnt) }"
-                      >
-                        <div  class="region-tag">
-                          <p class="region-code">地区编码：{{ locPart[0] }}</p>
-                        </div>
-                        <div class="region-title">
-                          <h2>{{ codeToText[locPart[0]] }}</h2>
-                        </div>
-                        <div class="region-business-data">
-                          <div class="region-data-item">
-                            <div class="region-label">待使用数</div>
-                            <div class="region-value">{{ locPart[1].waitCnt }}</div>
-                          </div>
-                          <div class="region-data-item">
-                            <div class="region-label">冷却中</div>
-                            <div class="region-value">{{ locPart[1].pendingCnt }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </el-collapse-item>
-                </el-collapse>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
-        </div>-->
+
       </div>
       <!--      <el-collapse v-model="activeNames" @change="">
               <el-collapse-item title="预产统计视图（点击可收缩）" name="1">
@@ -283,6 +253,162 @@
             </el-collapse>-->
 
     </div>
+
+    <!--  批量创建  -->
+    <el-dialog width="60%" v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" :title="typeTitle"
+               destroy-on-close>
+      <el-scrollbar height="500px">
+        <el-form :model="batchFormData" label-position="right" ref="elBatchFormRef" :rules="batchRule"
+                 label-width="80px">
+          <el-form-item label="产码方式" prop="type">
+            <el-button v-model="batchFormData.type" type="primary">预产</el-button>
+          </el-form-item>
+          <el-form-item label="通道" prop="cid">
+            <el-cascader
+                v-model="batchFormData.cid"
+                :options="channelCodeOptions"
+                :props="channelCodeProps"
+                @change="handleChange"
+                style="width: 100%"
+            />
+          </el-form-item>
+          <el-form-item label="通道账户" prop="acId">
+            <el-select
+                v-model="batchFormData.acId"
+                placeholder="请选择通道账号"
+                filterable
+                clearable
+                style="width: 100%"
+                @change="handleAccChange"
+            >
+              <el-option
+                  v-for="item in accList"
+                  :key="item.acAccount"
+                  :label="formatJoin(' -- 备注： ', item.acAccount, item.acRemark)"
+                  :value="item.acId"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="过期时间" prop="expTime">
+            <el-row>
+              <el-col>
+                <el-input-number v-model="numHours" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeH" :min="0">
+                </el-input-number>
+                <span> 小 时 </span>
+                <el-input-number v-model="numMinutes" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeM" :min="0">
+                </el-input-number>
+                <span> 分 钟 </span>
+                <el-input-number v-model="numSeconds" size="small"
+                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                 controls-position="right" @change="handleChangeS" :min="0">
+                </el-input-number>
+                <span> 秒 </span>
+              </el-col>
+              <el-col>
+                <el-button link type="primary" @click="default7Day">7天</el-button>
+                <el-button link type="primary" @click="default1Day">1天</el-button>
+                <el-button link type="primary" @click="default2Hour">2小时</el-button>
+                <el-button link type="primary" @click="default1Hour">1小时</el-button>
+                <el-button link type="primary" @click="default10Minute">10分钟</el-button>
+                <el-button link type="primary" @click="default0Second">重置</el-button>
+              </el-col>
+            </el-row>
+          </el-form-item>
+
+          <el-card style="{width: 100% !important}" shadow="never">
+            <template #header>
+              <div class="card-header">
+                <span>明细</span>
+              </div>
+            </template>
+            <div>
+              <el-table :data="batchFormData.list" style="width: 100%">
+                <el-table-column label="报文" prop="imgBaseStr" style="width: 100%">
+                  <template #default="scope">
+                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
+                              v-model="scope.row.imgBaseStr"></el-input>
+                    <el-input :rows="2" type="textarea" disabled v-model="scope.row.imgBaseStr" readonly
+                              v-else></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column label="金额（元）" prop="money" width="120px">
+                  <template #default="scope">
+                    <el-input v-if="activeUpdIndex === scope.$index"
+                              v-model.number="scope.row.money"
+                              placeholder="输入金额"
+                              :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                              :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
+                    </el-input>
+                    <span v-else>￥{{ scope.row.money }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="运营商" prop="operator" width="120px">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                    </el-select>
+                  </template>
+                </el-table-column>
+                <el-table-column label="地区" prop="locList" width="120px">
+                  <template #default="scope">
+                    <el-cascader
+                        :change-on-select="true"
+                        style="width:100%"
+                        :options="regionOptions"
+                        v-model="scope.row.locList"
+                        @change="chge"
+                        placeholder="选择地区"
+                        filterable
+                        :props="{checkStrictly: false}"
+                    >
+                    </el-cascader>
+                  </template>
+                </el-table-column>
+                <el-table-column align="right" width="200">
+                  <template #header>
+                    <el-button type="primary" @click="handleAdd2Upd">
+                      <Plus style="width:1em; height:1em;"/>
+                    </el-button>
+                  </template>
+                  <template #default="scope">
+                    <div v-if="activeUpdIndex === scope.$index">
+                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
+                      </el-button>
+                    </div>
+                    <div v-else>
+                      <el-button type="success" @click="handleEdit2Upd(scope.$index)">
+                        <Edit style="width:1em; height:1em;"/>
+                      </el-button>
+                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
+                                     cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
+                                     title="确定要删除该商品吗？">
+                        <template #reference>
+                          <el-button type="danger">
+                            <Delete style="width:1em; height:1em;"/>
+                          </el-button>
+                        </template>
+                      </el-popconfirm>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-card>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeBatchDialog">取 消</el-button>
+          <el-button type="primary" @click="enterBatchDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  传码  -->
     <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
@@ -459,7 +585,7 @@ import {
   deleteChannelPayCodeByIds,
   updateChannelPayCode,
   findChannelPayCode,
-  getChannelPayCodeList, getPayCodeOverview, getPayCodeOverviewByChanAcc
+  getChannelPayCodeList, getPayCodeOverview, getPayCodeOverviewByChanAcc, batchCreateChannelPayCode
 } from '@/api/channelPayCode'
 import {
   getChannelProductSelf
@@ -484,7 +610,7 @@ import {
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, onMounted} from 'vue'
 import {codeToText, regionData} from 'element-china-area-data';
-import {InfoFilled, Plus} from '@element-plus/icons-vue';
+import {Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';
 import dayjs from 'dayjs';
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -495,6 +621,50 @@ import WarningBar from "@/components/warningBar/warningBar.vue";
 defineOptions({
   name: 'ChannelPayCode'
 })
+
+// 批量 ------------------
+let activeUpdIndex = ref(-1);
+// 新增行
+const handleAdd2Upd = function () {
+  let item = {
+    operator: '',
+    location: '',
+    imgBaseStr: '',
+    money: 0,
+  };
+  batchFormData.value.list.push(item);
+  activeUpdIndex.value = batchFormData.value.list.length - 1;
+};
+// 编辑行
+const handleEdit2Upd = (index) => {
+  activeUpdIndex.value = index;
+};
+// 保存行
+const handleSave2Upd = () => {
+  let create = {...batchFormData.value}
+  let newList = []
+  let ele = batchFormData.value.list[activeUpdIndex.value];
+  ele.location = ele.locList[0]
+  batchFormData.value.list[activeUpdIndex.value] = ele
+  newList.push(ele)
+  create.list = newList
+  console.log(batchFormData.value.list)
+  activeUpdIndex.value = -1;
+};
+
+// 删除行
+const handleDelete2Upd = function (index) {
+  let ele = batchFormData.value.list[index];
+  console.log(ele)
+  let id = ele.id;
+  if (id) {
+    console.log("有id，要删库 -> id: " + id)
+  } else {
+    console.log("没id的临时数据，随便删")
+  }
+  batchFormData.value.list.splice(index, 1);
+};
+// 批量 ------------------
 
 // 注册插件
 dayjs.extend(utcPlugin);
@@ -521,7 +691,7 @@ const getPayCodeOverviewByChanAccFunc = async (row) => {
   if (res.code === 0) {
     payCodeTableData.value = res.data.list
     let result = payCodeTableData.value.reduce((acc, cur) => {
-      const { x2, ...rest } = cur;
+      const {x2, ...rest} = cur;
       acc[x2] = acc[x2] || [];
       acc[x2].push(rest);
       return acc;
@@ -542,6 +712,28 @@ const toggleDialog = (id, content) => {
   dialogImageShow.value[id] = !dialogImageShow.value[id];
 };
 
+const batchFormData = ref({
+  cid: '',
+  acId: '',
+  acAccount: '',
+  acRemark: '',
+  type: 2,
+  codeStatus: 0,
+  expTime: '',
+  list: [
+    {
+      operator: '',
+      location: '',
+      locList: '',
+      imgBaseStr: '',
+      imgContent: '',
+      address: '',
+      money: 0,
+      status: 0
+    }
+  ]
+})
+
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
   cid: '',
@@ -560,6 +752,13 @@ const formData = ref({
   money: 0,
 })
 
+// 验证规则
+const batchRule = reactive({
+  acAccount: [{required: true, message: '', trigger: ['blur'],}],
+  cid: [{required: true, message: '请选择', trigger: ['blur'],}],
+  acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
+  expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
+})
 // 验证规则
 const rule = reactive({
   acAccount: [{required: true, message: '', trigger: ['blur'],}],
@@ -683,6 +882,7 @@ const getIntervalTime = async () => {
   console.log('intervalTime', intervalTime)
   // let expTime = intervalTime.format('YYYY-MM-DD HH:mm:ss')
   formData.value.expTime = new Date(intervalTime)
+  batchFormData.value.expTime = new Date(intervalTime)
   // console.log('expTime', intervalTime)
   return expirationTime
 }
@@ -743,10 +943,6 @@ const getFiles = async (file, fileList) => {
     })
   }
 
-
-  console.log("file-111", JSON.stringify(file));
-  console.log("fileList-111", JSON.stringify(fileList));
-  console.log("list-111", JSON.stringify(lists));
   // formData.value.imgBaseStr=img_base_str.value
 }
 // const getFiles = async (file, fileList) => {
@@ -779,7 +975,6 @@ const handlePicRemoves = (file, fileList) => {
 };
 
 const handlePicPreviews = (file) => {
-  console.log('file=' + file.url);
   dialogImageUrs.value = file.url;
   dialogVisibles.value = true;
 }
@@ -921,6 +1116,7 @@ const setRegionOptions = (ChannelCodeData, optionsData, disabled) => {
 }
 
 const elFormRef = ref()
+const elBatchFormRef = ref()
 const elSearchFormRef = ref()
 
 
@@ -1071,7 +1267,7 @@ const deleteChannelPayCodeFunc = async (row) => {
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
-
+const dialogBatchFormVisible = ref(false)
 
 // 查看详情控制标记
 const detailShow = ref(false)
@@ -1147,6 +1343,35 @@ const openRegionDialog = (province) => {
 }
 
 // 打开弹窗
+const openBatchDialog = () => {
+  type.value = 'create'
+  typeTitle.value = '批量创建'
+  selectedCity.value = [];
+  dialogBatchFormVisible.value = true
+  // getALlChannelAccount()
+  batchFormData.value = {
+    cid: '',
+    acId: '',
+    acAccount: '',
+    acRemark: '',
+    type: 2,
+    codeStatus: 0,
+    expTime: '',
+    list: [
+      {
+        operator: '',
+        location: '',
+        locList: '',
+        imgBaseStr: '',
+        imgContent: '',
+        address: '',
+        money: 0,
+        status: 0
+      }
+    ]
+  }
+}
+// 打开弹窗
 const openDialog = () => {
   type.value = 'create'
   typeTitle.value = '创建'
@@ -1170,6 +1395,32 @@ const openDialog = () => {
 }
 
 // 关闭弹窗
+const closeBatchDialog = () => {
+  dialogBatchFormVisible.value = false
+  batchFormData.value = {
+    cid: '',
+    acId: '',
+    acAccount: '',
+    acRemark: '',
+    type: 2,
+    codeStatus: 0,
+    expTime: '',
+    list: [
+      {
+        operator: '',
+        location: '',
+        locList: '',
+        imgBaseStr: '',
+        imgContent: '',
+        address: '',
+        money: 0,
+        status: 0
+      }
+    ]
+  }
+  lists.value = []
+}
+// 关闭弹窗
 const closeDialog = () => {
   dialogFormVisible.value = false
   formData.value = {
@@ -1189,6 +1440,35 @@ const closeDialog = () => {
   lists.value = []
 }
 // 弹窗确定
+const enterBatchDialog = async () => {
+  await getIntervalTime()
+  elBatchFormRef.value?.validate(async (valid) => {
+        if (!valid) {
+          return
+        }
+        console.log(batchFormData.value)
+        let res
+        switch (type.value) {
+          case 'batchCreate':
+            batchFormData.value.type = 2
+            res = await batchCreateChannelPayCode(batchFormData.value)
+            break
+          default:
+            res = await batchCreateChannelPayCode(batchFormData.value)
+            break
+        }
+        if (res.code === 0) {
+          ElMessage({
+            type: 'success',
+            message: '创建成功'
+          })
+          closeBatchDialog()
+          getTableData()
+        }
+      }
+  )
+}
+
 const enterDialog = async () => {
   const accInfo = await getACCChannelAccountByAcid()
   await getIntervalTime()

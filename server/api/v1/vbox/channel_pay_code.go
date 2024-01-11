@@ -9,7 +9,6 @@ import (
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
-	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -86,18 +85,34 @@ func (channelPayCodeApi *ChannelPayCodeApi) CreateChannelPayCode(c *gin.Context)
 		return
 	}
 
-	// 验证图片二维码合法性
-	imgB64 := channelPayCode.ImgBaseStr
-	content, err := captcha.ParseQrCodeImageFromBase64(imgB64)
+	channelPayCode.CreatedBy = utils.GetUserID(c)
+	if err = channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("创建成功", c)
+	}
+}
+
+// BatchCreateChannelPayCode 创建通道账户付款二维码
+// @Tags ChannelPayCode
+// @Summary 创建通道账户付款二维码
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.ChannelPayCode true "创建通道账户付款二维码"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
+// @Router /vboxChannelPayCode/createVboxChannelPayCode [post]
+func (channelPayCodeApi *ChannelPayCodeApi) BatchCreateChannelPayCode(c *gin.Context) {
+	var channelPayCode vboxReq.BatchPayCode
+	err := c.ShouldBindJSON(&channelPayCode)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	global.GVA_LOG.Info("图片解析内容 ----", zap.Any("content", content))
 
-	channelPayCode.ImgContent = content
 	channelPayCode.CreatedBy = utils.GetUserID(c)
-	if err = channelPayCodeService.CreateChannelPayCode(&channelPayCode); err != nil {
+	if err = channelPayCodeService.BatchCreateChannelPayCode(&channelPayCode); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {

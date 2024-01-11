@@ -1,6 +1,22 @@
 import service from '@/utils/request'
 
 // @Tags VboxChannelPayCode
+// @Summary 批量创建通道账户付款二维码
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.VboxChannelPayCode true "创建通道账户付款二维码"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
+// @Router /channelPayCode/createVboxChannelPayCode [post]
+export const batchCreateChannelPayCode = (data) => {
+  return service({
+    url: '/channelPayCode/batchCreateChannelPayCode',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags VboxChannelPayCode
 // @Summary 创建通道账户付款二维码
 // @Security ApiKeyAuth
 // @accept application/json

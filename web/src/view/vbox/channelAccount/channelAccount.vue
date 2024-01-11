@@ -2,17 +2,17 @@
   <div>
     <div class="gva-table-box">
       <el-row :gutter="16">
-      <div v-for="item in countItem">
+        <div v-for="item in countItem">
           <el-col :span="16">
             通道ID： {{ item.cid }}
             <el-button color="#05411d">
               <el-icon class="is-loading">
-                <Loading />
+                <Loading/>
               </el-icon>
               已开启数量： {{ item.total }}
             </el-button>
           </el-col>
-      </div>
+        </div>
       </el-row>
     </div>
     <el-divider/>
@@ -90,15 +90,16 @@
           </template>
         </el-popover>
       </div>
-      <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true" @selection-change="handleSelectionChange">
+      <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
+                @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
         <el-table-column align="left" label="通道id" prop="cid" width="80"/>
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="120" />
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="120"/>
         <el-table-column align="left" label="通道账户" prop="acAccount" width="120"/>
         <el-table-column align="left" label="账户密钥" prop="acPwd" width="120"/>
         <el-table-column align="left" label="CK" prop="token" width="260">
           <template #default="scope">
-            <el-input v-model="scope.row.token" :rows="3" readonly="readonly" >
+            <el-input v-model="scope.row.token" :rows="3" readonly="readonly">
               <template #append>
                 <el-button type="primary" link icon="edit" @click="updateCaTokenFunc(scope.row)"></el-button>
               </template>
@@ -112,10 +113,13 @@
           <template #default="scope">
             <el-row :gutter="12">
               <el-col :span="12">
-                <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启" :inactive-value="0" inactive-text="关闭" size="large" @change="()=>{switchEnable(scope.row)}"/>
+                <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启"
+                           :inactive-value="0" inactive-text="关闭" size="large"
+                           @change="()=>{switchEnable(scope.row)}"/>
               </el-col>
               <el-col :span="12">
-                <el-switch v-model="scope.row.sysStatus" inline-prompt :active-value="1" active-text="开启" :inactive-value="0" inactive-text="关闭" size="large" disabled/>
+                <el-switch v-model="scope.row.sysStatus" inline-prompt :active-value="1" active-text="开启"
+                           :inactive-value="0" inactive-text="关闭" size="large" disabled/>
               </el-col>
             </el-row>
           </template>
@@ -124,7 +128,8 @@
           <template #default="scope">
             <el-row>
               <el-col :span="24">
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录
+                </el-button>
               </el-col>
             </el-row>
           </template>
@@ -133,8 +138,11 @@
           <template #default="scope">
             <el-row>
               <el-col :span="24">
-                <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">产码</el-button>
-                <el-button type="primary" link icon="info-filled" class="table-button" @click="openPayCodeOverviewShow(scope.row)"></el-button>
+                <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">
+                  产码
+                </el-button>
+                <el-button type="primary" link icon="info-filled" class="table-button"
+                           @click="openPayCodeOverviewShow(scope.row)"></el-button>
               </el-col>
             </el-row>
           </template>
@@ -143,8 +151,10 @@
           <template #default="scope">
             <el-row>
               <el-col :span="24">
-                <el-button type="primary" link icon="info-filled" class="table-button" @click="getDetails(scope.row)"></el-button>
-                <el-button type="primary" link icon="edit" class="table-button" @click="updateChannelAccountFunc(scope.row)"></el-button>
+                <el-button type="primary" link icon="info-filled" class="table-button"
+                           @click="getDetails(scope.row)"></el-button>
+                <el-button type="primary" link icon="edit" class="table-button"
+                           @click="updateChannelAccountFunc(scope.row)"></el-button>
                 <el-button type="warning" link icon="delete" @click="deleteRow(scope.row)"></el-button>
               </el-col>
             </el-row>
@@ -153,13 +163,13 @@
       </el-table>
       <div class="gva-pagination">
         <el-pagination
-          layout="total, sizes, prev, pager, next, jumper"
-          :current-page="page"
-          :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]"
-          :total="total"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
+            layout="total, sizes, prev, pager, next, jumper"
+            :current-page="page"
+            :page-size="pageSize"
+            :page-sizes="[10, 30, 50, 100]"
+            :total="total"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -185,11 +195,17 @@
           </el-row>
           <el-row>
             <el-col :span="24">
-              <el-form-item label="产码方式"  prop="type" >
+              <el-form-item label="产码方式" prop="type">
                 <el-radio-group v-model="formData.type" @change="handleChange">
-                  <el-radio label="1"><template #default><span>引导</span></template></el-radio>
-                  <el-radio label="2"><template #default><span>预产</span></template></el-radio>
-                  <el-radio label="3"><template #default><span>原生</span></template></el-radio>
+                  <el-radio label="1">
+                    <template #default><span>引导</span></template>
+                  </el-radio>
+                  <el-radio label="2">
+                    <template #default><span>预产</span></template>
+                  </el-radio>
+                  <el-radio label="3">
+                    <template #default><span>原生</span></template>
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>
@@ -197,7 +213,8 @@
           <el-row>
             <el-col :span="24">
               <el-form-item label="通道id" prop="cid">
-                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change="" style="width: 100%"/>
+                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
+                             style="width: 100%"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -207,7 +224,7 @@
           <el-row>
             <el-col :span="6"></el-col>
             <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制" />
+              <warning-bar title="注：默认0，则无限额控制"/>
             </el-col>
             <el-col :span="6"></el-col>
             <el-col :span="8">
@@ -272,7 +289,7 @@
           <el-row>
             <el-col :span="6"></el-col>
             <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制" />
+              <warning-bar title="注：默认0，则无限额控制"/>
             </el-col>
             <el-col :span="6"></el-col>
             <el-col :span="8">
@@ -322,7 +339,8 @@
     </el-dialog>
 
     <!-- 查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+               destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="6" border>
           <el-descriptions-item label="用户id" :span="6">{{ formData.uid }}</el-descriptions-item>
@@ -335,14 +353,21 @@
           <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
           <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
           <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
-          <el-descriptions-item label="状态开关" :span="3">{{ formData.status===0?'关闭':'开启' }}</el-descriptions-item>
-          <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus===0?'关闭':'开启' }}</el-descriptions-item>
+          <el-descriptions-item label="状态开关" :span="3">{{
+              formData.status === 0 ? '关闭' : '开启'
+            }}
+          </el-descriptions-item>
+          <el-descriptions-item label="系统开关" :span="3">{{
+              formData.sysStatus === 0 ? '关闭' : '开启'
+            }}
+          </el-descriptions-item>
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
 
     <!-- 查看充值详情 -->
-    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow" title="查看充值详情" destroy-on-close>
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow"
+               title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
           <el-table-column align="left" label="充值类型" prop="ShowName" width="180"/>
@@ -355,20 +380,21 @@
             </template>
           </el-table-column>
           <el-table-column align="left" label="充值时间" prop="PayTime" width="160">
-          <template #default="scope">
-            {{ formatUtcTimestamp(scope.row.PayTime) }}
-          </template>
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.PayTime) }}
+            </template>
           </el-table-column>
         </el-table>
       </el-scrollbar>
     </el-dialog>
 
     <!-- 查看产码详情 -->
-    <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
+    <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll
+               :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
       <el-scrollbar height="550px">
         <div class="region-card-container">
           <div v-for="pcData in Object.entries(payCodeMap)" style="width: 100%">
-<!--            <div>￥{{ pcData[0].x1 }}，{{ formatOPSimple(pcData.x2) }}, {{ codeToText[pcData.x3] }}({{ pcData.x4 }})</div>-->
+            <!--            <div>￥{{ pcData[0].x1 }}，{{ formatOPSimple(pcData.x2) }}, {{ codeToText[pcData.x3] }}({{ pcData.x4 }})</div>-->
             <div>{{ formatOPSimple(pcData[0]) }}</div>
             <el-divider></el-divider>
             <span v-for="pcDetail in pcData[1]" style="padding: 10px">
@@ -382,8 +408,9 @@
     </el-dialog>
 
     <!-- 产码-->
-    <el-dialog width="40%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="450px" >
+    <el-dialog width="40%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle"
+               destroy-on-close>
+      <el-scrollbar height="450px">
         <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
           <el-row>
             <el-col :span="12">
@@ -392,33 +419,22 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="通道账户ID"  prop="acId" >
+              <el-form-item label="通道账户ID" prop="acId">
                 <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="通道账户"  prop="acAccount" >
+              <el-form-item label="通道账户" prop="acAccount">
                 <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="账户备注"  prop="acRemark" >
+              <el-form-item label="账户备注" prop="acRemark">
                 <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
               </el-form-item>
             </el-col>
           </el-row>
-
-          <el-form-item label="金额"  prop="money" >
-            <el-input v-model.number="pcFormData.money"
-                      placeholder="输入金额"
-                      :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                      :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
-            </el-input>
-          </el-form-item>
-          <el-form-item label="平台ID" prop="platId">
-            <el-input v-model="pcFormData.platId" placeholder="输入平台ID"></el-input>
-          </el-form-item>
-          <el-form-item label="过期时间"  prop="expTime" >
+          <el-form-item label="过期时间" prop="expTime">
             <el-row>
               <el-col>
                 <el-input-number v-model="numHours" size="small"
@@ -447,59 +463,86 @@
               </el-col>
             </el-row>
           </el-form-item>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="运营商"  prop="operator" >
-                <el-select v-model="pcFormData.operator" placeholder="请选择通信商" filterable style="width: 100%">
-                  <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="地区"  prop="location" >
-                <el-cascader
-                    :change-on-select="true"
-                    style="width:100%"
-                    :options="regionOptions"
-                    v-model="selectedCity"
-                    @change="chge"
-                    placeholder="选择地区"
-                    filterable
-                    :props="{checkStrictly: false}"
-                >
-                </el-cascader>
-              </el-form-item>
-            </el-col>
-          </el-row>
 
-          <el-form-item label="图片上传" >
-            <el-upload
-                class="avatar-uploader"
-                action=""
-                :on-change="getFiles"
-                :on-remove="handlePicRemoves"
-                :on-preview="handlePicPreviews"
-                v-model="pcImgList"
-                :limit="8"
-                list-type="picture-card"
-                :file-list="pcFileList"
-                :auto-upload="false"
-                accept="image/png, image/gif, image/jpg, image/jpeg"
-                drag
-                multiple
-            >
-              <!-- 图标 -->
-              <el-icon style="font-size: 25px;"><Plus /></el-icon>
-              <template #tip>
-                <div class="el-upload__tip">
-                  拖拽或点击上传
-                </div>
-              </template>
-            </el-upload>
-            <el-dialog v-model="pcDialogImgVisible" title="预览" destroy-on-close>
-              <img :src="pcDialogImageUrls" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
-            </el-dialog>
-          </el-form-item>
+          <el-card style="{width: 100% !important}" shadow="never">
+            <template #header>
+              <div class="card-header">
+                <span>明细</span>
+              </div>
+            </template>
+            <div>
+              <el-table :data="pcFormData.list" style="width: 100%">
+                <el-table-column label="报文" prop="imgBaseStr" style="width: 100%">
+                  <template #default="scope">
+                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
+                              v-model="scope.row.imgBaseStr" :required="true"></el-input>
+                    <el-input :rows="2" type="textarea" disabled v-model="scope.row.imgBaseStr" readonly
+                              v-else></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column label="金额（元）" prop="money" width="120px">
+                  <template #default="scope">
+                    <el-input v-if="activeUpdIndex === scope.$index"
+                              v-model.number="scope.row.money"
+                              placeholder="输入金额"
+                              :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                              :parser="(value) => value.replace(/￥\s?|(,*)/g, '')" :required="true">
+                    </el-input>
+                    <span v-else>￥{{ scope.row.money }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="运营商" prop="operator" width="120px">
+                  <template #default="scope">
+                    <el-select :required="true" v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                    </el-select>
+                  </template>
+                </el-table-column>
+                <el-table-column label="地区" prop="locList" width="120px">
+                  <template #default="scope">
+                    <el-cascader
+                        :change-on-select="true"
+                        style="width:100%"
+                        :options="regionOptions"
+                        v-model="scope.row.locList"
+                        @change="chge"
+                        placeholder="选择地区"
+                        filterable
+                        :props="{checkStrictly: false}" :rules="cascaderRules"
+                    >
+                    </el-cascader>
+                  </template>
+                </el-table-column>
+                <el-table-column align="right" width="200">
+                  <template #header>
+                    <el-button type="primary" @click="handleAdd2Upd">
+                      <Plus style="width:1em; height:1em;"/>
+                    </el-button>
+                  </template>
+                  <template #default="scope">
+                    <div v-if="activeUpdIndex === scope.$index">
+                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
+                      </el-button>
+                    </div>
+                    <div v-else>
+                      <el-button type="success" @click="handleEdit2Upd(scope.$index)">
+                        <Edit style="width:1em; height:1em;"/>
+                      </el-button>
+                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
+                                     cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
+                                     title="确定要删除该商品吗？">
+                        <template #reference>
+                          <el-button type="danger">
+                            <Delete style="width:1em; height:1em;"/>
+                          </el-button>
+                        </template>
+                      </el-popconfirm>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-card>
         </el-form>
       </el-scrollbar>
       <template #footer>
@@ -509,6 +552,7 @@
         </div>
       </template>
     </el-dialog>
+
 
   </div>
 </template>
@@ -529,7 +573,7 @@ import {
 import {
   getChannelProductSelf
 } from '@/api/channelProduct'
-import { codeToText, regionData } from 'element-china-area-data';
+import {codeToText, regionData} from 'element-china-area-data';
 
 // 全量引入格式化工具 请按需保留
 import {
@@ -541,11 +585,16 @@ import {
   onDownloadFile,
   formatUtcTimestamp, formatJoin, formatMoneyDesc, formatOPDesc, formatOPSimple
 } from '@/utils/format'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive, nextTick } from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {ref, reactive, nextTick} from 'vue'
 import WarningBar from "@/components/warningBar/warningBar.vue";
-import {Loading, Plus} from "@element-plus/icons-vue";
-import {createChannelPayCode, findChannelPayCode, getPayCodeOverviewByChanAcc} from "@/api/channelPayCode";
+import {Delete, Edit, InfoFilled, Loading, Plus, Select} from "@element-plus/icons-vue";
+import {
+  batchCreateChannelPayCode,
+  createChannelPayCode,
+  findChannelPayCode,
+  getPayCodeOverviewByChanAcc
+} from "@/api/channelPayCode";
 import dayjs from "dayjs";
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -579,7 +628,7 @@ const getPayCodeOverviewByChanAccFunc = async (row) => {
   if (res.code === 0) {
     payCodeTableData.value = res.data.list
     let result = payCodeTableData.value.reduce((acc, cur) => {
-      const { x2, ...rest } = cur;
+      const {x2, ...rest} = cur;
       acc[x2] = acc[x2] || [];
       acc[x2].push(rest);
       return acc;
@@ -662,43 +711,48 @@ const rule = reactive({
     message: '',
     trigger: ['input', 'blur'],
   },
-  {
-    whitespace: true,
-    message: '不能只输入空格',
-    trigger: ['input', 'blur'],
-  }],
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
   cid: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
   },
-  {
-    whitespace: true,
-    message: '不能只输入空格',
-    trigger: ['input', 'blur'],
-  }],
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
   type: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
   },
-  {
-    whitespace: true,
-    message: '不能只输入空格',
-    trigger: ['input', 'blur'],
-  }],
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
 })
 
 // 验证规则
 const pcRule = reactive({
-  acAccount: [{required: true, message: '', trigger: [ 'blur'],}],
+  acAccount: [{required: true, message: '', trigger: ['blur'],}],
   platId: [{required: true, message: '请选择', trigger: ['blur'],}],
-  cid: [{required: true, message: '请选择', trigger: [ 'blur'],}],
+  cid: [{required: true, message: '请选择', trigger: ['blur'],}],
   acId: [{required: true, message: '请选择', trigger: ['input', 'blur'],}],
   expTime: [{required: true, validator: validateTimeLimit, trigger: 'blur',},],
   operator: [{required: true, message: '', trigger: ['blur'],}],
   location: [{required: true, message: '请选择省或者省市', trigger: ['input', 'blur'],}],
-  money: [{ validator: checkMoney, trigger: 'blur' }]
+  money: [{validator: checkMoney, trigger: 'blur'}]
+})
+const cascaderRules = reactive({
+  acAccount: [
+    { required: true, message: '请选择', trigger: ['input', 'blur', 'change'], }
+  ],
 })
 
 function validateTimeLimit(rule, value, callback) {
@@ -719,17 +773,19 @@ function checkMoney(rule, value, callback) {
 
 const searchRule = reactive({
   createdAt: [
-    { validator: (rule, value, callback) => {
-      if (searchInfo.value.startCreatedAt && !searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写结束日期'))
-      } else if (!searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt) {
-        callback(new Error('请填写开始日期'))
-      } else if (searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt && (searchInfo.value.startCreatedAt.getTime() === searchInfo.value.endCreatedAt.getTime() || searchInfo.value.startCreatedAt.getTime() > searchInfo.value.endCreatedAt.getTime())) {
-        callback(new Error('开始日期应当早于结束日期'))
-      } else {
-        callback()
-      }
-    }, trigger: 'change' }
+    {
+      validator: (rule, value, callback) => {
+        if (searchInfo.value.startCreatedAt && !searchInfo.value.endCreatedAt) {
+          callback(new Error('请填写结束日期'))
+        } else if (!searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt) {
+          callback(new Error('请填写开始日期'))
+        } else if (searchInfo.value.startCreatedAt && searchInfo.value.endCreatedAt && (searchInfo.value.startCreatedAt.getTime() === searchInfo.value.endCreatedAt.getTime() || searchInfo.value.startCreatedAt.getTime() > searchInfo.value.endCreatedAt.getTime())) {
+          callback(new Error('开始日期应当早于结束日期'))
+        } else {
+          callback()
+        }
+      }, trigger: 'change'
+    }
   ],
 })
 
@@ -751,7 +807,7 @@ const onReset = () => {
 
 // 搜索
 const onSubmit = () => {
-  elSearchFormRef.value?.validate(async(valid) => {
+  elSearchFormRef.value?.validate(async (valid) => {
     if (!valid) return
     page.value = 1
     pageSize.value = 10
@@ -772,8 +828,8 @@ const handleCurrentChange = (val) => {
 }
 
 // 查询
-const getTableData = async() => {
-  const table = await getChannelAccountList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+const getTableData = async () => {
+  const table = await getChannelAccountList({page: page.value, pageSize: pageSize.value, ...searchInfo.value})
   const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value})
   await countAccFunc()
 
@@ -792,7 +848,7 @@ const getTableData = async() => {
 // 根据不同的产品类型切换 Option
 const payType = ref(0)
 
-const getOptionData = async() => {
+const getOptionData = async () => {
   const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: formData.value.type})
   await countAccFunc()
 
@@ -807,7 +863,7 @@ getTableData()
 // ============== 表格控制部分结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
-const setOptions = async() => {
+const setOptions = async () => {
   channelCodeOptions.value = []
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
@@ -859,7 +915,7 @@ const deleteRow = (row) => {
 const deleteVisible = ref(false)
 
 // 多选删除
-const onDelete = async() => {
+const onDelete = async () => {
   const ids = []
   if (multipleSelection.value.length === 0) {
     ElMessage({
@@ -869,10 +925,10 @@ const onDelete = async() => {
     return
   }
   multipleSelection.value &&
-        multipleSelection.value.map(item => {
-          ids.push(item.ID)
-        })
-  const res = await deleteChannelAccountByIds({ ids })
+  multipleSelection.value.map(item => {
+    ids.push(item.ID)
+  })
+  const res = await deleteChannelAccountByIds({ids})
   if (res.code === 0) {
     ElMessage({
       type: 'success',
@@ -893,8 +949,8 @@ const typeTitle = ref('')
 // 更新行
 // ca 更新
 const dialogUpdFormVisible = ref(false)
-const updateChannelAccountFunc = async(row) => {
-  const res = await findChannelAccount({ ID: row.ID })
+const updateChannelAccountFunc = async (row) => {
+  const res = await findChannelAccount({ID: row.ID})
   type.value = 'update'
   typeTitle.value = '修改'
   if (res.code === 0) {
@@ -904,8 +960,8 @@ const updateChannelAccountFunc = async(row) => {
 }
 
 // 删除行
-const deleteChannelAccountFunc = async(row) => {
-  const res = await deleteChannelAccount({ ID: row.ID })
+const deleteChannelAccountFunc = async (row) => {
+  const res = await deleteChannelAccount({ID: row.ID})
   if (res.code === 0) {
     ElMessage({
       type: 'success',
@@ -930,9 +986,9 @@ const openDetailShow = () => {
 }
 
 // 打开详情
-const getDetails = async(row) => {
+const getDetails = async (row) => {
   // 打开弹窗
-  const res = await findChannelAccount({ ID: row.ID })
+  const res = await findChannelAccount({ID: row.ID})
   if (res.code === 0) {
     formData.value = res.data.revca
     openDetailShow()
@@ -984,8 +1040,8 @@ const closeDialog = () => {
   }
 }
 // 弹窗确定
-const enterDialog = async() => {
-  elFormRef.value?.validate(async(valid) => {
+const enterDialog = async () => {
+  elFormRef.value?.validate(async (valid) => {
     if (!valid) return
     formData.value.status = Number(formData.value.status)
     let res
@@ -1040,7 +1096,7 @@ const switchEnable = async (row) => {
 }
 
 // 批量开启
-const onSwitchEnable = async() => {
+const onSwitchEnable = async () => {
   const ids = []
   if (multipleSelection.value.length === 0) {
     ElMessage({
@@ -1073,7 +1129,7 @@ const onSwitchEnable = async() => {
 }
 
 //批量关闭
-const onSwitchDisable = async() => {
+const onSwitchDisable = async () => {
   const ids = []
   if (multipleSelection.value.length === 0) {
     ElMessage({
@@ -1113,8 +1169,8 @@ const caTokenInfo = ref({
   id: '',
 })
 
-const updateCaTokenFunc = async(row) => {
-  const res = await findChannelAccount({ ID: row.ID })
+const updateCaTokenFunc = async (row) => {
+  const res = await findChannelAccount({ID: row.ID})
   type.value = 'update'
   typeTitle.value = '修改'
   if (res.code === 0) {
@@ -1189,7 +1245,7 @@ const cardBackgroundColor = (remaining) => {
   else return '#4a9b22'; // 绿色
 };
 const default7Day = async () => {
-  numHours.value = 24*7
+  numHours.value = 24 * 7
   numMinutes.value = 0
   numSeconds.value = 0
 }
@@ -1230,20 +1286,26 @@ const pcFormData = ref({
   acId: '',
   acAccount: '',
   acRemark: '',
-  expTime: '',
-  operator: '',
-  location: '',
-  imgBaseStr: '',
-  imgContent: '',
-  mid: '',
+  type: 2,
   codeStatus: 0,
-  money: 0,
-  platId: '',
+  expTime: '',
+  list: [
+    {
+      operator: '',
+      location: '',
+      locList: '',
+      imgBaseStr: '',
+      imgContent: '',
+      address: '',
+      money: 0,
+      status: 0
+    }
+  ]
 })
 const pcDialogFormVisible = ref(false)
 
-const createByChannelPayCodeFunc = async(row) => {
-  const res = await findChannelAccount({ ID: row.ID })
+const createByChannelPayCodeFunc = async (row) => {
+  const res = await findChannelAccount({ID: row.ID})
   let vca = res.data.revca
   if (vca.sysStatus !== 1) {
     ElMessage({
@@ -1260,19 +1322,66 @@ const createByChannelPayCodeFunc = async(row) => {
       acId: vca.acId,
       acAccount: vca.acAccount,
       acRemark: vca.acRemark,
+      type: 2,
       expTime: '',
-      operator: '',
-      location: '',
-      imgBaseStr: '',
-      mid: '',
-      codeStatus: 0,
-      money: 0,
+      list: [
+        {
+          operator: '',
+          location: '',
+          locList: '',
+          imgBaseStr: '',
+          imgContent: '',
+          address: '',
+          money: 0,
+          status: 0
+        }
+      ]
     }
     pcDialogFormVisible.value = true
   }
 }
+let activeUpdIndex = ref(-1);
+// 新增行
+const handleAdd2Upd = function () {
+  let item = {
+    operator: '',
+    location: '',
+    imgBaseStr: '',
+    money: 0,
+  };
+  pcFormData.value.list.push(item);
+  activeUpdIndex.value = pcFormData.value.list.length - 1;
+};
+// 编辑行
+const handleEdit2Upd = (index) => {
+  activeUpdIndex.value = index;
+};
+// 保存行
+const handleSave2Upd = () => {
+  let create = {...pcFormData.value}
+  let newList = []
+  let ele = pcFormData.value.list[activeUpdIndex.value];
+  ele.location = ele.locList[0]
+  pcFormData.value.list[activeUpdIndex.value] = ele
+  newList.push(ele)
+  create.list = newList
+  console.log(pcFormData.value.list)
+  activeUpdIndex.value = -1;
+};
 
-const getIntervalTime = async() => {
+// 删除行
+const handleDelete2Upd = function (index) {
+  let ele = pcFormData.value.list[index];
+  console.log(ele)
+  let id = ele.id;
+  if (id) {
+    console.log("有id，要删库 -> id: " + id)
+  } else {
+    console.log("没id的临时数据，随便删")
+  }
+  pcFormData.value.list.splice(index, 1);
+};
+const getIntervalTime = async () => {
   const now = new Date()
   let expirationTime = new Date(now.getTime() + numHours.value * 60 * 60 * 1000)
   expirationTime = new Date(expirationTime.getTime() + numMinutes.value * 60 * 1000)
@@ -1304,13 +1413,13 @@ const uploadImgToBase64 = (file) => {
   });
 }
 
-const getFiles = async (file ,fileList) => {
+const getFiles = async (file, fileList) => {
   const isLt2M = file.size / 1024 / 1024 < 2;
   if (isLt2M) {
     try {
       const data = await uploadImgToBase64(file.raw);
       // img_base_str.value = data.result;
-      pcImgList.value.push(data.result) ;
+      pcImgList.value.push(data.result);
 
     } catch (error) {
       console.error(error);
@@ -1330,7 +1439,7 @@ const getFiles = async (file ,fileList) => {
 }
 const handlePicRemoves = (file, fileList) => {
   let hideUploadEdit = fileList.length
-  if (hideUploadEdit >= 1){
+  if (hideUploadEdit >= 1) {
     img_base_str.value = "";
   }
 };
@@ -1350,7 +1459,7 @@ const chge = () => {
 };
 
 const handleChangeH = (value) => {
-  console.log('h:',value)
+  console.log('h:', value)
   numHours.value = value
 }
 const operators = [
@@ -1368,12 +1477,12 @@ const operators = [
   }
 ]
 const handleChangeM = (value) => {
-  console.log('m:',value)
+  console.log('m:', value)
   numMinutes.value = value
 }
 
 const handleChangeS = (value) => {
-  console.log('s:',value)
+  console.log('s:', value)
   numSeconds.value = value
 }
 const closePcDialog = () => {
@@ -1383,32 +1492,85 @@ const closePcDialog = () => {
     acId: '',
     acAccount: '',
     acRemark: '',
-    expTime: '',
-    operator: '',
-    location: '',
-    imgBaseStr: '',
-    mid: '',
+    type: 2,
     codeStatus: 0,
-    money: 0,
+    expTime: '',
+    list: [
+      {
+        operator: '',
+        location: '',
+        locList: '',
+        imgBaseStr: '',
+        imgContent: '',
+        address: '',
+        money: 0,
+        status: 0
+      }
+    ]
   }
-  pcImgList.value =[]
+  pcImgList.value = []
 }
 // 弹窗确定
 const enterPcDialog = async () => {
   await getIntervalTime()
-  pcElFormRef.value?.validate( async (valid) => {
+  pcElFormRef.value?.validate(async (valid) => {
         // console.log('formData' + JSON.stringify(formData.value))
         if (!valid) return
-        pcFormData.value.money = Number(pcFormData.value.money)
         let res
         switch (type.value) {
           case 'createPc':
-            // console.log(">>>>>>" + lists.value.length)
-            for (let i = 0; i < pcImgList.value.length; i++) {
-              // console.log('formData lists.value[i] ' + i + '  ' + JSON.stringify(lists.value[i]))
-              pcFormData.value.imgBaseStr = pcImgList.value[i]
-              // console.log('formData after ' + i + '  ' + JSON.stringify(formData.value))
-              res = await createChannelPayCode(pcFormData.value)
+            let flag = false;
+            let td = pcFormData.value;
+            if (!td.list || td.list.length === 0) {
+              ElMessage({
+                type: 'error',
+                message: '至少上传一个码'
+              })
+              flag = true;
+              break
+            }else {
+              for (let i = 0; i < pcFormData.value.list.length; i++) {
+                let item = pcFormData.value.list[i]
+                if(item.money <= 0) {
+                  ElMessage({
+                    type: 'error',
+                    message: '金额需大于0'
+                  })
+                  flag = true;
+                  break
+                }
+                if (!item.imgBaseStr){
+                  ElMessage({
+                    type: 'error',
+                    message: '传入正确报文'
+                  })
+                  flag = true;
+                  break
+                }
+                if(!item.location){
+                  ElMessage({
+                    type: 'error',
+                    message: '传入正确地区'
+                  })
+                  flag = true;
+                  break
+                }
+                if (!item.operator) {
+                  ElMessage({
+                    type: 'error',
+                    message: '传入正确运营商'
+                  })
+                  flag = true;
+                  break
+                }
+              }
+            }
+            if (flag) {
+              return
+            }else {
+              pcFormData.value.type = 2
+              console.log(pcFormData.value)
+              res = await batchCreateChannelPayCode(pcFormData.value)
             }
             break
           default:

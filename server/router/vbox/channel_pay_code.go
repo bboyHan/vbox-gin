@@ -16,12 +16,13 @@ func (s *VboxChannelPayCodeRouter) InitChannelPayCodeRouter(Router *gin.RouterGr
 	var vboxChannelPayCodeApi = v1.ApiGroupApp.VboxApiGroup.ChannelPayCodeApi
 	{
 		vboxChannelPayCodeRouter.POST("createChannelPayCode", vboxChannelPayCodeApi.CreateChannelPayCode)             // 新建通道账户付款二维码
+		vboxChannelPayCodeRouter.POST("batchCreateChannelPayCode", vboxChannelPayCodeApi.BatchCreateChannelPayCode)   // 批量新建通道账户付款二维码
 		vboxChannelPayCodeRouter.DELETE("deleteChannelPayCode", vboxChannelPayCodeApi.DeleteChannelPayCode)           // 删除通道账户付款二维码
 		vboxChannelPayCodeRouter.DELETE("deleteChannelPayCodeByIds", vboxChannelPayCodeApi.DeleteChannelPayCodeByIds) // 批量删除通道账户付款二维码
 		vboxChannelPayCodeRouter.PUT("updateChannelPayCode", vboxChannelPayCodeApi.UpdateVboxChannelPayCode)          // 更新通道账户付款二维码
 	}
 	{
-		vboxChannelPayCodeRouterWithoutRecord.GET("getPayCodeOverview", vboxChannelPayCodeApi.GetPayCodeOverview)                               // 
+		vboxChannelPayCodeRouterWithoutRecord.GET("getPayCodeOverview", vboxChannelPayCodeApi.GetPayCodeOverview)                               //
 		vboxChannelPayCodeRouterWithoutRecord.GET("getPayCodeOverviewByChanAcc", vboxChannelPayCodeApi.GetPayCodeOverviewByChanAcc)             //
 		vboxChannelPayCodeRouterWithoutRecord.GET("findChannelPayCode", vboxChannelPayCodeApi.FindChannelPayCode)                               // 根据ID获取通道账户付款二维码
 		vboxChannelPayCodeRouterWithoutRecord.GET("getChannelPayCodeList", vboxChannelPayCodeApi.GetChannelPayCodeList)                         // 获取通道账户付款二维码列表
