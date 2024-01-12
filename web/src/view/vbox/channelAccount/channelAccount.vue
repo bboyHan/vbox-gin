@@ -342,13 +342,15 @@
     <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
-        <el-descriptions column="6" border>
-          <el-descriptions-item label="用户id" :span="6">{{ formData.uid }}</el-descriptions-item>
+        <el-descriptions :column="6" border>
+          <el-descriptions-item label="用户id" :span="6">{{ formData.CreatedBy }}</el-descriptions-item>
           <el-descriptions-item label="账户ID" :span="6">{{ formData.acId }}</el-descriptions-item>
           <el-descriptions-item label="账户备注" :span="6">{{ formData.acRemark }}</el-descriptions-item>
           <el-descriptions-item label="通道账户" :span="3">{{ formData.acAccount }}</el-descriptions-item>
           <el-descriptions-item label="账户密码" :span="3">{{ formData.acPwd }}</el-descriptions-item>
-          <el-descriptions-item label="ck" :span="6">{{ formData.token }}</el-descriptions-item>
+          <el-descriptions-item label="ck" :span="6">
+            <el-input v-model="formData.token" type="textarea" readonly/>
+          </el-descriptions-item>
           <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
           <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
           <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>

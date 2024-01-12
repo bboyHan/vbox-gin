@@ -1,5 +1,31 @@
 <template>
   <div>
+    <div>
+      <el-col :span="24" :xs="24">
+        <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>我的积分</h2></div>
+      </el-col>
+      <el-row :gutter="12">
+        <el-col :xs="24" :span="6">
+          <CenterCard title="我的积分" :custom-style="walletCustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label"></div>
+                    <div class="value">{{ userBalance }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+      </el-row>
+    </div>
+
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
         <el-form-item label="通道ID" prop="cid">
@@ -297,6 +323,7 @@ import {getChannelProductSelf} from "@/api/channelProduct";
 import {getChannelAccountList} from "@/api/channelAccount";
 import {getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
 import {calculatePercentage, formatMoney} from "../../../utils/format";
+import {getUserWalletSelf} from "@/api/userWallet";
 
 
 const searchInfo = ref({})
@@ -373,6 +400,15 @@ const order4CustomStyle = ref({
   color: '#FFF',
   height: '150px',
 })
+const walletCustomStyle = ref({
+  background: 'linear-gradient(to right, #22111a, #606266)',
+  color: '#FFF',
+  height: '140px',
+})
+// 余额
+const userBalance = ref(0)
+
+
 // 搜索
 const onSubmit = () => {
   console.log("searchInfo.value",searchInfo.value)
@@ -487,6 +523,10 @@ const getTableData = async() => {
   nearYesterdayRate.value = (nearYesterdayRateResult.data)[0];
   console.log(nearOneHourRate.value)
   console.log(nearTodayRate.value)
+
+  let balanceVal = await getUserWalletSelf({ ...searchInfo.value })
+  userBalance.value = balanceVal.data.balance
+
 }
 
 getTableData()

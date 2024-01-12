@@ -233,7 +233,9 @@
           <el-descriptions-item label="账户备注" :span="6">{{ formAccData.acRemark }}</el-descriptions-item>
           <el-descriptions-item label="通道账户" :span="3">{{ formAccData.acAccount }}</el-descriptions-item>
           <el-descriptions-item label="账户密码" :span="3">{{ formAccData.acPwd }}</el-descriptions-item>
-          <el-descriptions-item label="ck" :span="6">{{ formAccData.token }}</el-descriptions-item>
+          <el-descriptions-item label="ck" :span="6">
+            <el-input v-model="formData.token" type="textarea" readonly/>
+          </el-descriptions-item>
           <el-descriptions-item label="通道id" :span="6">{{ formAccData.cid }}</el-descriptions-item>
           <el-descriptions-item label="笔数限制" :span="2">{{ formAccData.countLimit }}</el-descriptions-item>
           <el-descriptions-item label="日限额" :span="2">{{ formAccData.dailyLimit }}</el-descriptions-item>

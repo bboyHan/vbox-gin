@@ -999,7 +999,7 @@ func OrderCallbackTask() {
 
 				// 4.入库wallet
 				var c int64
-				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&c)
+				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.EventId).Count(&c)
 
 				if c == 0 {
 					wallet := vbox.UserWallet{
@@ -1008,7 +1008,7 @@ func OrderCallbackTask() {
 						Type:      global.WalletOrderType,
 						EventId:   v.Obj.EventId,
 						Recharge:  -v.Obj.Money,
-						Remark:    fmt.Sprintf(global.WalletEventIncome, v.Obj.Money, v.Obj.OrderId),
+						Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.OrderId),
 					}
 
 					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)

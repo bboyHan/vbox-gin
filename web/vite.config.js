@@ -11,6 +11,7 @@ import vuePlugin from '@vitejs/plugin-vue'
 import GvaPosition from './vitePlugin/gvaPosition'
 import GvaPositionServer from './vitePlugin/codeServer'
 import fullImportPlugin from './vitePlugin/fullImport/fullImport.js'
+import { terser } from 'rollup-plugin-terser';
 // @see https://cn.vitejs.dev/config/
 export default ({
   command,
@@ -93,6 +94,11 @@ export default ({
         targets: ['Android > 39', 'Chrome >= 60', 'Safari >= 10.1', 'iOS >= 10.3', 'Firefox >= 54', 'Edge >= 15'],
       }),
       vuePlugin(),
+      terser({
+        compress: {
+          drop_console: true
+        }
+      }),
       [Banner(`\n Build based on gin-vue-admin \n Time : ${timestamp}`)]
     ],
     css: {

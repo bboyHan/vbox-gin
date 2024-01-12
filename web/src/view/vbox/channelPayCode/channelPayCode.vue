@@ -50,8 +50,8 @@
     </div>
     <div class="gva-search-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-        <el-button type="primary" icon="plus" @click="openBatchDialog">批量新增</el-button>
+<!--        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>-->
+        <el-button type="primary" icon="plus" @click="openBatchDialog">新增</el-button>
         <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
           <p>确定要删除吗？</p>
           <div style="text-align: right; margin-top: 8px;">
@@ -82,9 +82,10 @@
         <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="140"/>
         <el-table-column align="left" label="备注" prop="acRemark" width="160"/>
-        <el-table-column align="left" label="过期时间" prop="expTime" width="160">
+        <el-table-column align="left" label="平台ID" prop="platId" width="360"/>
+<!--        <el-table-column align="left" label="过期时间" prop="expTime" width="160">
           <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
-        </el-table-column>
+        </el-table-column>-->
         <el-table-column align="left" label="剩余时间" prop="expTime" width="140">
           <template #default="scope">
             <span v-if="countdowns[scope.$index] > 0">{{ formatTime(countdowns[scope.$index]) }} </span>
@@ -112,7 +113,7 @@
         </el-table-column>
         <el-table-column align="left" label="金额" prop="money" width="80">
         </el-table-column>
-        <el-table-column align="left" label="付款码" prop="imgContent" width="120">
+<!--        <el-table-column align="left" label="付款码" prop="imgContent" width="120">
           <template #default="{ row }">
             <div v-if="!dialogImageShow[row.ID]">
               <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">预览</el-button>
@@ -122,7 +123,7 @@
               <el-image :src="row.imgBaseStr" fit="contain" class="thumbnail-image"/>
             </div>
           </template>
-        </el-table-column>
+        </el-table-column>-->
         <el-table-column align="left" label="操作" width="120">
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
@@ -409,7 +410,7 @@
     </el-dialog>
 
     <!--  传码  -->
-    <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
+<!--    <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="450px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-form-item label="产码方式" prop="type">
@@ -436,7 +437,7 @@
               <el-option
                   v-for="item in accList"
                   :key="item.acAccount"
-                  :label="formatJoin(' -- 备注： ', item.acAccount, item.acRemark)"
+                  :label="formatJoin(' &#45;&#45; 备注： ', item.acAccount, item.acRemark)"
                   :value="item.acId"
               />
             </el-select>
@@ -520,7 +521,7 @@
                 drag
                 multiple
             >
-              <!-- 图标 -->
+              &lt;!&ndash; 图标 &ndash;&gt;
               <el-icon style="font-size: 25px;">
                 <Plus/>
               </el-icon>
@@ -542,36 +543,42 @@
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-dialog>-->
 
     <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
-        <el-descriptions column="1" border>
-          <el-descriptions-item label="通道id">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="通道id" :span="1">
             {{ formData.cid }}
           </el-descriptions-item>
-          <el-descriptions-item label="通道账户名">
+          <el-descriptions-item label="通道账户名" :span="1">
             {{ formData.acAccount }}
           </el-descriptions-item>
-          <el-descriptions-item label="过期时间">
+          <el-descriptions-item label="金额" :span="1">
+            ￥{{ formData.money }}
+          </el-descriptions-item>
+          <el-descriptions-item label="过期时间" :span="1">
             {{ formatDate(formData.expTime) }}
           </el-descriptions-item>
-          <el-descriptions-item label="运营商">
+          <el-descriptions-item label="运营商" :span="1">
             {{ getOperatorChinese(formData.operator) }}
           </el-descriptions-item>
-          <el-descriptions-item label="地区">
-            {{ formData.location }}
+          <el-descriptions-item label="地区" :span="1">
+            {{ codeToText[formData.location] }}
           </el-descriptions-item>
-          <el-descriptions-item label="状态">
+          <el-descriptions-item label="状态" :span="2">
             {{ formatPayCodeStatus(formData.codeStatus) }}
           </el-descriptions-item>
-          <el-descriptions-item label="预处理">
+          <el-descriptions-item label="平台ID" :span="2">
+            {{ formData.platId }}
+          </el-descriptions-item>
+          <el-descriptions-item label="预处理" :span="2">
             <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
           </el-descriptions-item>
-          <el-descriptions-item label="付款码">
+<!--          <el-descriptions-item label="付款码">
             <el-image :src="formData.imgBaseStr" fit="contain" class="thumbnail-image"/>
-          </el-descriptions-item>
+          </el-descriptions-item>-->
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
@@ -580,35 +587,28 @@
 
 <script setup>
 import {
+  batchCreateChannelPayCode,
   createChannelPayCode,
   deleteChannelPayCode,
   deleteChannelPayCodeByIds,
-  updateChannelPayCode,
   findChannelPayCode,
-  getChannelPayCodeList, getPayCodeOverview, getPayCodeOverviewByChanAcc, batchCreateChannelPayCode
+  getChannelPayCodeList,
+  getPayCodeOverview
 } from '@/api/channelPayCode'
-import {
-  getChannelProductSelf
-} from '@/api/channelProduct'
-import {
-  getChannelAccountList
-} from '@/api/channelAccount'
+import {getChannelProductSelf} from '@/api/channelProduct'
+import {getChannelAccountList} from '@/api/channelAccount'
 
 // 全量引入格式化工具 请按需保留
 import {
-  getDictFunc,
   formatDate,
-  formatBoolean,
-  filterDict,
-  ReturnArrImg,
-  onDownloadFile,
-  formatPayCodeStatus,
   formatJoin,
+  formatOPSimple,
   formatPayCodeColor,
-  formatTime, formatMoneyDesc, formatOPDesc, formatOPSimple,
+  formatPayCodeStatus,
+  formatTime,
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {ref, reactive, onMounted} from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 import {codeToText, regionData} from 'element-china-area-data';
 import {Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';
 import dayjs from 'dayjs';
@@ -616,7 +616,6 @@ import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import provinces from '@/assets/json/provinces.json'
 import QRCode from "qrcode";
-import WarningBar from "@/components/warningBar/warningBar.vue";
 
 defineOptions({
   name: 'ChannelPayCode'
@@ -690,13 +689,12 @@ const getPayCodeOverviewByChanAccFunc = async (row) => {
   console.log(res.data)
   if (res.code === 0) {
     payCodeTableData.value = res.data.list
-    let result = payCodeTableData.value.reduce((acc, cur) => {
+    payCodeMap.value = payCodeTableData.value.reduce((acc, cur) => {
       const {x2, ...rest} = cur;
       acc[x2] = acc[x2] || [];
       acc[x2].push(rest);
       return acc;
-    }, {});
-    payCodeMap.value = result
+    }, {})
   }
 }
 
@@ -1169,9 +1167,9 @@ const getTableData = async () => {
   }
   setOptions()
   // getALlChannelAccount()
-  setRegionOptions(provinces, regionOptions.value, false)
 
 }
+// setRegionOptions(provinces, regionOptions.value, false)
 
 getTableData()
 

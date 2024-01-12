@@ -222,7 +222,7 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async() => {
   const table = await getUserWalletList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  const balanceVal = await getUserWalletSelf({ ...searchInfo.value })
+  const balanceVal = await getUserWalletSelf()
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
