@@ -93,9 +93,6 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="日期" width="180">
-          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
         <el-table-column align="left" label="付方ID" prop="pAccount" width="160">
           <template #default="scope">
             {{ scope.row.pAccount }}
@@ -107,9 +104,8 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
-        <el-table-column align="left" label="用户ID" prop="uid" width="120"/>
         <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
-        <el-table-column align="left" label="平台id" prop="platformOid" width="220"/>
+        <el-table-column align="left" label="平台ID" prop="platId" width="220"/>
         <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
         <el-table-column align="left" label="区域" prop="payRegion" width="180"/>
         <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
@@ -147,6 +143,16 @@
             </el-button>
           </template>
         </el-table-column>
+        <el-table-column align="left" label="补单状态" prop="handStatus" width="120">
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
+              {{ formatHandNotify(scope.row.handStatus) }}
+            </el-button>
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="创建时间" width="180">
+          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+        </el-table-column>
         <el-table-column align="left" label="回调时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
         </el-table-column>
@@ -183,10 +189,9 @@
           <el-descriptions-item label="付方ID">{{ formData.pAccount }}</el-descriptions-item>
           <el-descriptions-item label="金额">{{ formData.money }}</el-descriptions-item>
           <el-descriptions-item label="单价积分">{{ formData.unitPrice }}</el-descriptions-item>
-          <el-descriptions-item label="用户ID">{{ formData.uid }}</el-descriptions-item>
           <el-descriptions-item label="账号ID">{{ formData.acId }}</el-descriptions-item>
           <el-descriptions-item label="通道编码">{{ formData.channelCode }}</el-descriptions-item>
-          <el-descriptions-item label="平台id">{{ formData.platformOid }}</el-descriptions-item>
+          <el-descriptions-item label="平台id">{{ formData.platId }}</el-descriptions-item>
           <el-descriptions-item label="客户ip">{{ formData.payIp }}</el-descriptions-item>
           <el-descriptions-item label="区域">{{ formData.payRegion }}</el-descriptions-item>
           <el-descriptions-item label="客户端设备">{{ formData.payDevice }}</el-descriptions-item>
@@ -271,7 +276,7 @@ import {
   filterDict,
   ReturnArrImg,
   onDownloadFile,
-  formatNotify, formatPayed, formatPayedColor, formatNotifyColor
+  formatNotify, formatPayed, formatPayedColor, formatNotifyColor, formatHandNotify, formatHandNotifyColor
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive} from 'vue'
@@ -304,7 +309,7 @@ const formData = ref({
   uid: 0,
   acId: '',
   channelCode: '',
-  platformOid: '',
+  platId: '',
   payIp: '',
   payRegion: '',
   payDevice: '',
@@ -454,7 +459,7 @@ const closeDetailShow = () => {
     uid: 0,
     acId: '',
     channelCode: '',
-    platformOid: '',
+    platId: '',
     payIp: '',
     payRegion: '',
     payDevice: '',
@@ -495,7 +500,7 @@ const closeDialog = () => {
     uid: 0,
     acId: '',
     channelCode: '',
-    platformOid: '',
+    platId: '',
     payIp: '',
     payRegion: '',
     payDevice: '',

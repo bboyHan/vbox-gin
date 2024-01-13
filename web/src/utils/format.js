@@ -159,6 +159,33 @@ export const formatNotify = (status) => {
   }
 }
 
+// 补单
+export const formatHandNotify = (status) => {
+  if (status === 2) {
+    return '默认'
+  } else if(status === 1) {
+    return '已补单'
+  } else if(status === 3) {
+    return '候补单'
+  } else {
+    return '-'
+  }
+}
+
+// 补单
+export const formatHandNotifyColor = (status) => {
+  if (status === 2) {
+    return '#606266'
+  } else if(status === 1) {
+    return '#05811d'
+  } else if(status === 3) {
+    return '#3118dc'
+  } else {
+    return ''
+  }
+}
+
+
 export const formatBoolean = (bool) => {
   if (bool !== null) {
     return bool ? '是' : '否'

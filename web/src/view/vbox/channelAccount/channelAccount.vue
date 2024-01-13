@@ -631,9 +631,6 @@
               @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="55"/>
-            <el-table-column align="left" label="日期" width="180">
-              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-            </el-table-column>
             <el-table-column align="left" label="付方ID" prop="pAccount" width="160"/>
             <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
             <el-table-column align="left" label="用户ID" prop="CreatedBy" width="120"/>
@@ -658,6 +655,16 @@
                   {{ formatNotify(scope.row.cbStatus) }}
                 </el-button>
               </template>
+            </el-table-column>
+            <el-table-column align="left" label="补单状态" prop="handStatus" width="120">
+              <template #default="scope">
+                <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
+                  {{ formatHandNotify(scope.row.handStatus) }}
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column align="left" label="创建时间" width="180">
+              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
             </el-table-column>
             <el-table-column align="left" label="回调时间" width="180">
               <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
@@ -709,10 +716,9 @@
           <el-descriptions-item label="付方ID">{{ sysFormData.pAccount }}</el-descriptions-item>
           <el-descriptions-item label="金额">{{ sysFormData.money }}</el-descriptions-item>
           <el-descriptions-item label="单价积分">{{ sysFormData.unitPrice }}</el-descriptions-item>
-          <el-descriptions-item label="用户ID">{{ sysFormData.uid }}</el-descriptions-item>
           <el-descriptions-item label="账号ID">{{ sysFormData.acId }}</el-descriptions-item>
           <el-descriptions-item label="通道编码">{{ sysFormData.channelCode }}</el-descriptions-item>
-          <el-descriptions-item label="平台id">{{ sysFormData.platformOid }}</el-descriptions-item>
+          <el-descriptions-item label="平台ID">{{ sysFormData.platId }}</el-descriptions-item>
           <el-descriptions-item label="客户ip">{{ sysFormData.payIp }}</el-descriptions-item>
           <el-descriptions-item label="区域">{{ sysFormData.payRegion }}</el-descriptions-item>
           <el-descriptions-item label="客户端设备">{{ sysFormData.payDevice }}</el-descriptions-item>
@@ -784,7 +790,7 @@ import {
   formatOPSimple,
   formatPayedColor,
   formatNotifyColor,
-  formatPayed, formatNotify
+  formatPayed, formatNotify, formatHandNotifyColor, formatHandNotify
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
@@ -878,7 +884,7 @@ const closeSysDetailShow = () => {
     uid: 0,
     acId: '',
     channelCode: '',
-    platformOid: '',
+    platId: '',
     payIp: '',
     payRegion: '',
     payDevice: '',
@@ -901,7 +907,7 @@ const sysFormData = ref({
   uid: 0,
   acId: '',
   channelCode: '',
-  platformOid: '',
+  platId: '',
   payIp: '',
   payRegion: '',
   payDevice: '',
@@ -1310,7 +1316,7 @@ const closeSysDialog = () => {
     uid: 0,
     acId: '',
     channelCode: '',
-    platformOid: '',
+    platId: '',
     payIp: '',
     payRegion: '',
     payDevice: '',
