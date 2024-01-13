@@ -25,8 +25,8 @@ func CalSign(data interface{}) string {
 		field := t.Field(i)
 		value := fmt.Sprintf("%v", v.Field(i))
 		//if field.Name != "Sign" && value != "" {
-		fields = append(fields, field.Tag.Get("form"))
-		values[field.Tag.Get("form")] = value
+		fields = append(fields, field.Tag.Get("json"))
+		values[field.Tag.Get("json")] = value
 		//}
 	}
 

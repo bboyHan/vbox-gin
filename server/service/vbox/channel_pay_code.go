@@ -150,6 +150,14 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		}
 	}
 
+	if vboxChannelPayCode.Location == "" {
+		return fmt.Errorf("请传入正确的地区")
+	}
+
+	if vboxChannelPayCode.Operator == "" {
+		return fmt.Errorf("请传入正确的运营商")
+	}
+
 	// 组织
 	orgTmp := utils2.GetSelfOrg(vboxChannelPayCode.CreatedBy)
 
@@ -358,6 +366,7 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 	db := global.GVA_DB.Model(&vbox.ChannelPayCode{})
 	var vboxChannelPayCodes []vbox.ChannelPayCode
 	// 如果有条件搜索 下方会自动创建搜索语句
+	db.Where("created_by in ?", ids)
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
@@ -379,16 +388,16 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeInfoList(in
 	if info.CodeStatus != 0 {
 		db = db.Where("code_status = ?", info.CodeStatus)
 	}
-
-	if limit != 0 {
-		db = db.Limit(limit).Offset(offset)
-	}
-
-	err = db.Where("created_by in ?", ids).Order("id desc").Find(&vboxChannelPayCodes).Error
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
+	if limit != 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+
+	err = db.Order("id desc").Find(&vboxChannelPayCodes).Error
+
 	return vboxChannelPayCodes, total, err
 }
 

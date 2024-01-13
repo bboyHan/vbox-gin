@@ -50,7 +50,7 @@
     </div>
     <div class="gva-search-box">
       <div class="gva-btn-list">
-<!--        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>-->
+        <!--        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>-->
         <el-button type="primary" icon="plus" @click="openBatchDialog">新增</el-button>
         <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
           <p>确定要删除吗？</p>
@@ -83,9 +83,9 @@
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="140"/>
         <el-table-column align="left" label="备注" prop="acRemark" width="160"/>
         <el-table-column align="left" label="平台ID" prop="platId" width="360"/>
-<!--        <el-table-column align="left" label="过期时间" prop="expTime" width="160">
-          <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
-        </el-table-column>-->
+        <!--        <el-table-column align="left" label="过期时间" prop="expTime" width="160">
+                  <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
+                </el-table-column>-->
         <el-table-column align="left" label="剩余时间" prop="expTime" width="140">
           <template #default="scope">
             <span v-if="countdowns[scope.$index] > 0">{{ formatTime(countdowns[scope.$index]) }} </span>
@@ -113,17 +113,17 @@
         </el-table-column>
         <el-table-column align="left" label="金额" prop="money" width="80">
         </el-table-column>
-<!--        <el-table-column align="left" label="付款码" prop="imgContent" width="120">
-          <template #default="{ row }">
-            <div v-if="!dialogImageShow[row.ID]">
-              <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">预览</el-button>
-            </div>
-            <div v-else>
-              <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">取消预览</el-button>
-              <el-image :src="row.imgBaseStr" fit="contain" class="thumbnail-image"/>
-            </div>
-          </template>
-        </el-table-column>-->
+        <!--        <el-table-column align="left" label="付款码" prop="imgContent" width="120">
+                  <template #default="{ row }">
+                    <div v-if="!dialogImageShow[row.ID]">
+                      <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">预览</el-button>
+                    </div>
+                    <div v-else>
+                      <el-button link icon="search" @click="toggleDialog(row.ID, row.imgContent)">取消预览</el-button>
+                      <el-image :src="row.imgBaseStr" fit="contain" class="thumbnail-image"/>
+                    </div>
+                  </template>
+                </el-table-column>-->
         <el-table-column align="left" label="操作" width="120">
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
@@ -411,140 +411,140 @@
     </el-dialog>
 
     <!--  传码  -->
-<!--    <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="450px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-form-item label="产码方式" prop="type">
-            <el-button v-model="formData.type" type="primary">预产</el-button>
-          </el-form-item>
-          <el-form-item label="通道" prop="cid">
-            <el-cascader
-                v-model="formData.cid"
-                :options="channelCodeOptions"
-                :props="channelCodeProps"
-                @change="handleChange"
-                style="width: 100%"
-            />
-          </el-form-item>
-          <el-form-item label="通道账户" prop="acId">
-            <el-select
-                v-model="formData.acId"
-                placeholder="请选择通道账号"
-                filterable
-                clearable
-                style="width: 100%"
-                @change="handleAccChange"
-            >
-              <el-option
-                  v-for="item in accList"
-                  :key="item.acAccount"
-                  :label="formatJoin(' &#45;&#45; 备注： ', item.acAccount, item.acRemark)"
-                  :value="item.acId"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="金额" prop="money">
-            <el-input v-model.number="formData.money"
-                      placeholder="输入金额"
-                      :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                      :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
-            </el-input>
-          </el-form-item>
-          <el-form-item label="平台ID" prop="platId">
-            <el-input v-model="formData.platId" placeholder="输入平台ID"></el-input>
-          </el-form-item>
-          <el-form-item label="过期时间" prop="expTime">
-            <el-row>
-              <el-col>
-                <el-input-number v-model="numHours" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeH" :min="0">
-                </el-input-number>
-                <span> 小 时 </span>
-                <el-input-number v-model="numMinutes" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeM" :min="0">
-                </el-input-number>
-                <span> 分 钟 </span>
-                <el-input-number v-model="numSeconds" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeS" :min="0">
-                </el-input-number>
-                <span> 秒 </span>
-              </el-col>
-              <el-col>
-                <el-button link type="primary" @click="default7Day">7天</el-button>
-                <el-button link type="primary" @click="default1Day">1天</el-button>
-                <el-button link type="primary" @click="default2Hour">2小时</el-button>
-                <el-button link type="primary" @click="default1Hour">1小时</el-button>
-                <el-button link type="primary" @click="default10Minute">10分钟</el-button>
-                <el-button link type="primary" @click="default0Second">重置</el-button>
-              </el-col>
-            </el-row>
-          </el-form-item>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="运营商" prop="operator">
-                <el-select v-model="formData.operator" placeholder="请选择通信商" filterable style="width: 100%">
-                  <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+    <!--    <el-dialog width="40%" v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
+          <el-scrollbar height="450px">
+            <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+              <el-form-item label="产码方式" prop="type">
+                <el-button v-model="formData.type" type="primary">预产</el-button>
+              </el-form-item>
+              <el-form-item label="通道" prop="cid">
+                <el-cascader
+                    v-model="formData.cid"
+                    :options="channelCodeOptions"
+                    :props="channelCodeProps"
+                    @change="handleChange"
+                    style="width: 100%"
+                />
+              </el-form-item>
+              <el-form-item label="通道账户" prop="acId">
+                <el-select
+                    v-model="formData.acId"
+                    placeholder="请选择通道账号"
+                    filterable
+                    clearable
+                    style="width: 100%"
+                    @change="handleAccChange"
+                >
+                  <el-option
+                      v-for="item in accList"
+                      :key="item.acAccount"
+                      :label="formatJoin(' &#45;&#45; 备注： ', item.acAccount, item.acRemark)"
+                      :value="item.acId"
+                  />
                 </el-select>
               </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="地区" prop="location">
-                <el-cascader
-                    :change-on-select="true"
-                    style="width:100%"
-                    :options="regionOptions"
-                    v-model="selectedCity"
-                    @change="chge"
-                    placeholder="选择地区"
-                    filterable
-                    :props="{checkStrictly: false}"
-                >
-                </el-cascader>
+              <el-form-item label="金额" prop="money">
+                <el-input v-model.number="formData.money"
+                          placeholder="输入金额"
+                          :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                          :parser="(value) => value.replace(/￥\s?|(,*)/g, '')">
+                </el-input>
               </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="图片上传">
-            <el-upload
-                class="avatar-uploader"
-                action=""
-                :on-change="getFiles"
-                :on-remove="handlePicRemoves"
-                :on-preview="handlePicPreviews"
-                v-model="lists"
-                :limit="8"
-                list-type="picture-card"
-                :file-list="fileList"
-                :auto-upload="false"
-                accept="image/png, image/gif, image/jpg, image/jpeg"
-                drag
-                multiple
-            >
-              &lt;!&ndash; 图标 &ndash;&gt;
-              <el-icon style="font-size: 25px;">
-                <Plus/>
-              </el-icon>
-              <template #tip>
-                <div class="el-upload__tip">
-                  拖拽或点击上传
-                </div>
-              </template>
-            </el-upload>
-            <el-dialog v-model="dialogVisibles" title="预览" destroy-on-close>
-              <img :src="dialogImageUrs" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
-            </el-dialog>
-          </el-form-item>
-        </el-form>
-      </el-scrollbar>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
-          <el-button type="primary" @click="enterDialog">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>-->
+              <el-form-item label="平台ID" prop="platId">
+                <el-input v-model="formData.platId" placeholder="输入平台ID"></el-input>
+              </el-form-item>
+              <el-form-item label="过期时间" prop="expTime">
+                <el-row>
+                  <el-col>
+                    <el-input-number v-model="numHours" size="small"
+                                     :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                     controls-position="right" @change="handleChangeH" :min="0">
+                    </el-input-number>
+                    <span> 小 时 </span>
+                    <el-input-number v-model="numMinutes" size="small"
+                                     :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                     controls-position="right" @change="handleChangeM" :min="0">
+                    </el-input-number>
+                    <span> 分 钟 </span>
+                    <el-input-number v-model="numSeconds" size="small"
+                                     :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                                     controls-position="right" @change="handleChangeS" :min="0">
+                    </el-input-number>
+                    <span> 秒 </span>
+                  </el-col>
+                  <el-col>
+                    <el-button link type="primary" @click="default7Day">7天</el-button>
+                    <el-button link type="primary" @click="default1Day">1天</el-button>
+                    <el-button link type="primary" @click="default2Hour">2小时</el-button>
+                    <el-button link type="primary" @click="default1Hour">1小时</el-button>
+                    <el-button link type="primary" @click="default10Minute">10分钟</el-button>
+                    <el-button link type="primary" @click="default0Second">重置</el-button>
+                  </el-col>
+                </el-row>
+              </el-form-item>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="运营商" prop="operator">
+                    <el-select v-model="formData.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="地区" prop="location">
+                    <el-cascader
+                        :change-on-select="true"
+                        style="width:100%"
+                        :options="regionOptions"
+                        v-model="selectedCity"
+                        @change="chge"
+                        placeholder="选择地区"
+                        filterable
+                        :props="{checkStrictly: false}"
+                    >
+                    </el-cascader>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-form-item label="图片上传">
+                <el-upload
+                    class="avatar-uploader"
+                    action=""
+                    :on-change="getFiles"
+                    :on-remove="handlePicRemoves"
+                    :on-preview="handlePicPreviews"
+                    v-model="lists"
+                    :limit="8"
+                    list-type="picture-card"
+                    :file-list="fileList"
+                    :auto-upload="false"
+                    accept="image/png, image/gif, image/jpg, image/jpeg"
+                    drag
+                    multiple
+                >
+                  &lt;!&ndash; 图标 &ndash;&gt;
+                  <el-icon style="font-size: 25px;">
+                    <Plus/>
+                  </el-icon>
+                  <template #tip>
+                    <div class="el-upload__tip">
+                      拖拽或点击上传
+                    </div>
+                  </template>
+                </el-upload>
+                <el-dialog v-model="dialogVisibles" title="预览" destroy-on-close>
+                  <img :src="dialogImageUrs" style="display: block;max-width: 500px;margin: 0 auto;height: 500px;" alt=""/>
+                </el-dialog>
+              </el-form-item>
+            </el-form>
+          </el-scrollbar>
+          <template #footer>
+            <div class="dialog-footer">
+              <el-button @click="closeDialog">取 消</el-button>
+              <el-button type="primary" @click="enterDialog">确 定</el-button>
+            </div>
+          </template>
+        </el-dialog>-->
 
     <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
@@ -577,9 +577,9 @@
           <el-descriptions-item label="预处理" :span="2">
             <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
           </el-descriptions-item>
-<!--          <el-descriptions-item label="付款码">
-            <el-image :src="formData.imgBaseStr" fit="contain" class="thumbnail-image"/>
-          </el-descriptions-item>-->
+          <!--          <el-descriptions-item label="付款码">
+                      <el-image :src="formData.imgBaseStr" fit="contain" class="thumbnail-image"/>
+                    </el-descriptions-item>-->
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
@@ -1031,8 +1031,8 @@ const getACCChannelAccountByAcid = async () => {
 
 
 // 获取通道账号
-const getALlChannelAccount = async () => {
-  const res = await getChannelAccountList({cid: formData.value.cid, page: 1, pageSize: 999})
+const getALlChannelAccount = async (cid) => {
+  const res = await getChannelAccountList({cid: cid,sysStatus: 1, status: 1, page: 1, pageSize: 999})
   accList.value = res.data.list
 }
 
@@ -1053,7 +1053,7 @@ const channelCodeProps = {
 
 const handleChange = (value) => {
   console.log(value)
-  getALlChannelAccount()
+  getALlChannelAccount(value)
 }
 
 const handleOptChange = async (value) => {

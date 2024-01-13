@@ -275,7 +275,7 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 //			NotifyUrl:   "http://1.1.1.1",
 //			OrderId:     "P1234",
 //		}
-func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.OrderSimple2PayAccountRes, err error) {
 	var ID, accID, acAccount string
 	money := vpo.Money
 	cid := vpo.ChannelCode
@@ -541,7 +541,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	var payUrl string
 	payUrl, err = vpoService.HandlePayUrl2PAcc(vpo.OrderId)
 
-	rep = &vboxRep.Order2PayAccountRes{
+	rep = &vboxRep.OrderSimple2PayAccountRes{
 		OrderId:   vpo.OrderId,
 		Money:     vpo.Money,
 		PayUrl:    payUrl,
@@ -924,6 +924,7 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.PayOrder{})
 	var payOrders []vbox.PayOrder
+	db.Where("created_by in ?", ids)
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if !info.StartCreatedAt.IsZero() && !info.EndCreatedAt.IsZero() {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
@@ -950,14 +951,14 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 		db = db.Where("ac_id =?", info.AcId)
 	}
 
-	if limit != 0 {
-		db = db.Limit(limit).Offset(offset)
-	}
-	err = db.Where("created_by in ?", ids).Order("id desc").Find(&payOrders).Error
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
+	if limit != 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+	err = db.Order("id desc").Find(&payOrders).Error
 
 	return payOrders, total, err
 }
@@ -974,6 +975,10 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 
 		if info.ChannelCode != "" {
 			db = db.Where("channel_code =?", info.ChannelCode)
+		}
+
+		if info.PAccount != "" {
+			db = db.Where("p_account =?", info.PAccount)
 		}
 
 		if info.Keyword == "cas" {
@@ -1030,6 +1035,9 @@ func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSear
 
 		if info.ChannelCode != "" {
 			db = db.Where("channel_code =?", info.ChannelCode)
+		}
+		if info.PAccount != "" {
+			db = db.Where("p_account =?", info.PAccount)
 		}
 		if info.OrderStatus != 0 {
 			db = db.Where("order_status =?", info.OrderStatus)
@@ -1161,16 +1169,16 @@ func (vpoService *PayOrderService) GetPayOrderListByDt(info vboxReq.OrdersDtData
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code = ?", info.ChannelCode)
 	}
-	err = db.Where("created_by in ? and DATE_FORMAT(created_at, '%Y-%m-%d') = ?", ids, dt).
-		Order("id desc").
-		Find(&payOrders).Error
-	if err != nil {
-		return
-	}
+	db.Where("created_by in ? and DATE_FORMAT(created_at, '%Y-%m-%d') = ?", ids, dt)
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
+	err = db.Order("id desc").Find(&payOrders).Error
+	if err != nil {
+		return
+	}
+
 	return payOrders, total, err
 }
 

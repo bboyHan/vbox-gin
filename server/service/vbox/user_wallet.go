@@ -183,6 +183,7 @@ func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.U
 	db := global.GVA_DB.Model(&vbox.UserWallet{})
 	var userWallets []vbox.UserWallet
 	// 如果有条件搜索 下方会自动创建搜索语句
+	db.Where("uid in ?", ids)
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
@@ -195,15 +196,16 @@ func (userWalletService *UserWalletService) GetUserWalletInfoList(info vboxReq.U
 	if info.Remark != "" {
 		db = db.Where("remark LIKE ?", "%"+info.Remark+"%")
 	}
+
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
-
 	if limit != 0 {
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Debug().Where("uid in ?", ids).Find(&userWallets).Error
+	err = db.Debug().Order("id desc").Find(&userWallets).Error
+
 	return userWallets, total, err
 }

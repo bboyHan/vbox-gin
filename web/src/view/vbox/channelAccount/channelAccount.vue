@@ -412,7 +412,7 @@
     </el-dialog>
 
     <!-- 产码-->
-    <el-dialog width="40%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle"
+    <el-dialog width="60%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle"
                destroy-on-close>
       <el-scrollbar height="450px">
         <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
@@ -1109,6 +1109,7 @@ const searchRule = reactive({
 
 const elFormRef = ref()
 const elSearchFormRef = ref()
+const elSysFormRef = ref()
 
 // =========== 表格控制部分 ===========
 const page = ref(1)
@@ -1325,8 +1326,10 @@ const enterSysDialog = async () => {
     if (!valid) return
     switch (type.value) {
       case 'notify':
-        console.log(sysFormData.value)
-        await callback2Pa(sysFormData.value)
+        console.log(sysFormData.value);
+        await callback2Pa(sysFormData.value);
+        dialogSysFormVisible.value = false;
+        break;
     }
   })
 }

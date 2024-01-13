@@ -916,7 +916,7 @@ func OrderCallbackTask() {
 				var payUrl string
 				payUrl, err = HandlePayUrl2PAcc(v.Obj.OrderId)
 
-				notifyBody := vboxRep.Order2PayAccountRes{
+				signBody := &vboxRep.Order2PayAccountRes{
 					OrderId:   v.Obj.OrderId,
 					Money:     v.Obj.Money,
 					Status:    1,
@@ -924,10 +924,20 @@ func OrderCallbackTask() {
 					PayUrl:    payUrl,
 					Key:       vpa.PKey,
 				}
-				sign := utils.CalSign(notifyBody)
-				notifyBody.Sign = sign
+				//global.GVA_LOG.Info("初始body", zap.Any("body", signBody))
+				sign := utils.CalSign(signBody)
+				signBody.Sign = sign
 
-				global.GVA_LOG.Info("请求body", zap.Any("body", notifyBody))
+				notifyBody := vboxRep.OrderSign2PayAccountRes{
+					OrderId:   signBody.OrderId,
+					Money:     signBody.Money,
+					Status:    signBody.Status,
+					NotifyUrl: signBody.NotifyUrl,
+					PayUrl:    signBody.PayUrl,
+					Sign:      signBody.Sign,
+				}
+
+				global.GVA_LOG.Info("请求body", zap.Any("notifyBody", notifyBody))
 
 				var options = &vbHttp.RequestOptions{
 					Headers:      headers,

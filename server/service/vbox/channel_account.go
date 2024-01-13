@@ -423,6 +423,7 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.ChannelAccount{})
 	var vcas []vbox.ChannelAccount
+	db.Where("created_by in (?)", ids)
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
@@ -439,6 +440,9 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.Status != nil {
 		db = db.Where("status = ?", info.Status)
 	}
+	if info.SysStatus != nil {
+		db = db.Where("sys_status = ?", info.SysStatus)
+	}
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
 	}
@@ -451,6 +455,6 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 		db = db.Limit(limit).Offset(offset)
 	}
 
-	err = db.Where("created_by in (?)", ids).Order("id desc").Find(&vcas).Error
+	err = db.Order("id desc").Find(&vcas).Error
 	return vcas, total, err
 }

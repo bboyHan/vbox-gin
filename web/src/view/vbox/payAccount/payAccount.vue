@@ -195,6 +195,7 @@ const formData = ref({
   cid: '',
   pRemark: '',
   gateway: '',
+  cbAddr: '',
   doc: '',
   status: 0,
 })
@@ -503,12 +504,14 @@ const showVPAInfo = async (row) => {
   const res = await findPayAccount({ID: row.ID})
   const gatewayRes = await getPAccGateway({chan: "gateway"})
   const payDocRes = await getPAccGateway({chan: "pay_doc"})
+  const cbAddrRes = await getPAccGateway({chan: "cb_addr"})
   infoType.value = 'show'
   infoTitle.value = '对接信息'
   if (res.code === 0) {
     formData.value = res.data.repacc
     formData.value.gateway = gatewayRes.data.url
     formData.value.doc = payDocRes.data.url
+    formData.value.cbAddr = cbAddrRes.data.url
     dialogInfoVisible.value = true
   }
 }
@@ -532,6 +535,7 @@ const previewInfo = () => {
     商户Key: ${res.pKey}
     通道编码: ${res.cid}
     服务网关: ${res.gateway}
+    回调IP: ${res.cbAddr}
     接口文档: ${res.doc}`
   preViewCode.value = {
     '对接信息': "```shell" + copyInfo
@@ -548,6 +552,7 @@ const copyVPAInfo = () => {
     商户Key: ${res.pKey}
     通道编码: ${res.cid}
     服务网关: ${res.gateway}
+    回调IP: ${res.cbAddr}
     接口文档: ${res.doc}`
   const clipboard = new ClipboardJS('.btn-copy', {
     text: () => copyInfo

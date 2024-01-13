@@ -3,7 +3,7 @@
     <div class="gva-table-box">
       <div>
         <el-row :gutter="12">
-          <el-col v-for="(item, index) in tableData" :key="index" :span="6">
+          <el-col v-for="(item, index) in tableData" :key="index" :span="6" :xs="24">
             <el-card shadow="hover">
               <template #header>
                 <el-descriptions :title="item.productName" :column="2" border>
@@ -22,7 +22,7 @@
               </template>
               <el-row :gutter="12">
                 <el-col :span="12">
-                  <el-button type="link" icon="plus" @click="openBatchDialog(item)">批量添加</el-button>
+                  <el-button type="default" icon="plus" @click="openBatchDialog(item)">批量添加</el-button>
                 </el-col>
                 <el-col :span="12">
                   <el-button type="primary" icon="plus" @click="openDialog(item)">添加账号</el-button>
