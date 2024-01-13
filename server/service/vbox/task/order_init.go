@@ -9,7 +9,7 @@ import (
 	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
-	response2 "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
+	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/geo/model"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
@@ -907,7 +907,6 @@ func OrderCallbackTask() {
 					err = json.Unmarshal(jsonStr, &vpa)
 				}
 
-				//TODO 2. 发起回调
 				notifyUrl := v.Obj.NotifyUrl
 				client := vbHttp.NewHTTPClient()
 				var headers = map[string]string{
@@ -917,17 +916,24 @@ func OrderCallbackTask() {
 				var payUrl string
 				payUrl, err = HandlePayUrl2PAcc(v.Obj.OrderId)
 
+				notifyBody := vboxRep.Order2PayAccountRes{
+					OrderId:   v.Obj.OrderId,
+					Money:     v.Obj.Money,
+					Status:    1,
+					NotifyUrl: notifyUrl,
+					PayUrl:    payUrl,
+					Key:       vpa.PKey,
+				}
+				sign := utils.CalSign(notifyBody)
+				notifyBody.Sign = sign
+
+				global.GVA_LOG.Info("请求body", zap.Any("body", notifyBody))
+
 				var options = &vbHttp.RequestOptions{
 					Headers:      headers,
 					MaxRedirects: 3,
 					PayloadType:  "json",
-					Payload: response2.Order2PayAccountRes{
-						OrderId:   v.Obj.OrderId,
-						Money:     v.Obj.Money,
-						Status:    1,
-						PayUrl:    payUrl,
-						NotifyUrl: notifyUrl,
-					},
+					Payload:      notifyBody,
 				}
 
 				response, errH := client.Post(notifyUrl, options)

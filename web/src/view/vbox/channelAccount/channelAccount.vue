@@ -124,12 +124,14 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查询" width="140">
+        <el-table-column align="center" label="查询" width="180">
           <template #default="scope">
-            <el-row>
-              <el-col :span="24">
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录
-                </el-button>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
+              </el-col>
+              <el-col :span="12">
+                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统记录</el-button>
               </el-col>
             </el-row>
           </template>
@@ -555,7 +557,197 @@
       </template>
     </el-dialog>
 
+    <!-- 查询指定账户订单 -->
+    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow"
+               title="查看系统充值详情" destroy-on-close>
+      <el-scrollbar height="450px">
+        <div class="gva-search-box">
+          <el-form :inline="true" class="demo-form-inline">
+            <el-form-item>
+              <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
+              <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div class="gva-table-box">
+          <!--   简约版   -->
+          <el-table
+              v-if="isSimple"
+              ref="multipleTable"
+              style="width: 100%"
+              tooltip-effect="dark"
+              :data="orderSysTableData"
+              row-key="ID"
+              border
+              @selection-change="handleSelectionChange"
+          >
+            <el-table-column align="center" label="账号ID" prop="acId" width="180"/>
+            <el-table-column align="center" label="订单ID" prop="orderId" width="220"/>
+            <el-table-column align="center" label="金额" prop="money" width="120"/>
+            <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
+              <template #default="scope">
+                <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
+                  {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="回调状态" prop="cbStatus" width="120">
+              <template #default="scope">
+                <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
+                  {{ formatNotify(scope.row.cbStatus) }}
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="创建时间" width="180">
+              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+            </el-table-column>
+            <el-table-column align="left" label="操作" width="240">
+              <template #default="scope">
+                <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
+                  <el-icon style="margin-right: 5px">
+                    <InfoFilled/>
+                  </el-icon>
+                  详情
+                </el-button>
+                <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+                  <el-icon style="margin-right: 5px">
+                    <Position/>
+                  </el-icon>
+                  补单
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
 
+          <!--   详情版   -->
+          <el-table
+              v-else
+              ref="multipleTable"
+              style="width: 100%"
+              tooltip-effect="dark"
+              :data="orderSysTableData"
+              row-key="ID"
+              border
+              @selection-change="handleSelectionChange"
+          >
+            <el-table-column type="selection" width="55"/>
+            <el-table-column align="left" label="日期" width="180">
+              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+            </el-table-column>
+            <el-table-column align="left" label="付方ID" prop="pAccount" width="160"/>
+            <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
+            <el-table-column align="left" label="用户ID" prop="CreatedBy" width="120"/>
+            <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
+            <el-table-column align="left" label="平台id" prop="platId" width="320"/>
+            <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
+            <el-table-column align="left" label="区域" prop="payRegion" width="240"/>
+            <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
+            <el-table-column align="left" label="账号ID" prop="acId" width="180"/>
+            <el-table-column align="left" label="订单ID" prop="orderId" width="220"/>
+            <el-table-column align="left" label="金额" prop="money" width="120"/>
+            <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
+              <template #default="scope">
+                <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
+                  {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column align="left" label="回调状态" prop="cbStatus" width="120">
+              <template #default="scope">
+                <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
+                  {{ formatNotify(scope.row.cbStatus) }}
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column align="left" label="回调时间" width="180">
+              <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
+            </el-table-column>
+            <el-table-column align="left" label="操作" width="280">
+              <template #default="scope">
+                <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
+                  <el-icon style="margin-right: 5px">
+                    <InfoFilled/>
+                  </el-icon>
+                  详情
+                </el-button>
+                <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+                  <el-icon style="margin-right: 5px">
+                    <Position/>
+                  </el-icon>
+                  补单
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="gva-pagination">
+            <el-pagination
+                layout="total, sizes, prev, pager, next, jumper"
+                :current-page="sysPage"
+                :page-size="sysPageSize"
+                :page-sizes="[10, 30, 50, 100]"
+                :total="sysTotal"
+                @current-change="handleSysCurrentChange"
+                @size-change="handleSysSizeChange"
+            />
+          </div>
+        </div>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closePcDialog">取 消</el-button>
+          <el-button type="primary" @click="enterPcDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 订单查看详情 -->
+    <el-dialog v-model="sysDetailShow" style="width: 800px" lock-scroll :before-close="closeSysDetailShow" title="查看详情"
+               destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-descriptions column="1" border>
+          <el-descriptions-item label="订单ID">{{ sysFormData.orderId }}</el-descriptions-item>
+          <el-descriptions-item label="付方ID">{{ sysFormData.pAccount }}</el-descriptions-item>
+          <el-descriptions-item label="金额">{{ sysFormData.money }}</el-descriptions-item>
+          <el-descriptions-item label="单价积分">{{ sysFormData.unitPrice }}</el-descriptions-item>
+          <el-descriptions-item label="用户ID">{{ sysFormData.uid }}</el-descriptions-item>
+          <el-descriptions-item label="账号ID">{{ sysFormData.acId }}</el-descriptions-item>
+          <el-descriptions-item label="通道编码">{{ sysFormData.channelCode }}</el-descriptions-item>
+          <el-descriptions-item label="平台id">{{ sysFormData.platformOid }}</el-descriptions-item>
+          <el-descriptions-item label="客户ip">{{ sysFormData.payIp }}</el-descriptions-item>
+          <el-descriptions-item label="区域">{{ sysFormData.payRegion }}</el-descriptions-item>
+          <el-descriptions-item label="客户端设备">{{ sysFormData.payDevice }}</el-descriptions-item>
+          <el-descriptions-item label="订单状态">{{ formatBoolean(sysFormData.orderStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="回调状态">{{ formatBoolean(sysFormData.cbStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="回调时间">{{ formatDate(sysFormData.cbTime) }}</el-descriptions-item>
+        </el-descriptions>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!--  补单  -->
+    <el-dialog
+        v-model="dialogSysFormVisible"
+        :before-close="closeSysDialog"
+        :title="typeTitle"
+        destroy-on-close
+        style="width: 450px"
+    >
+      <el-scrollbar height="100px">
+        <el-form :model="sysFormData" label-position="right" ref="elSysFormRef" label-width="120px">
+          <el-form-item label="订单ID" prop="authCaptcha">
+            <el-input disabled v-model="sysFormData.orderId" :clearable="true" placeholder="请输入" style="width: 80%"/>
+          </el-form-item>
+          <el-form-item label="安全码" prop="authCaptcha">
+            <el-input v-model="sysFormData.authCaptcha" :clearable="true" placeholder="请输入安全码" style="width: 80%"/>
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeSysDialog">取 消</el-button>
+          <el-button type="primary" @click="enterSysDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -585,12 +777,19 @@ import {
   filterDict,
   ReturnArrImg,
   onDownloadFile,
-  formatUtcTimestamp, formatJoin, formatMoneyDesc, formatOPDesc, formatOPSimple
+  formatUtcTimestamp,
+  formatJoin,
+  formatMoneyDesc,
+  formatOPDesc,
+  formatOPSimple,
+  formatPayedColor,
+  formatNotifyColor,
+  formatPayed, formatNotify
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
 import WarningBar from "@/components/warningBar/warningBar.vue";
-import {Delete, Edit, InfoFilled, Loading, Plus, Select} from "@element-plus/icons-vue";
+import {Delete, Edit, Eleme, InfoFilled, Loading, Plus, Position, Select} from "@element-plus/icons-vue";
 import {
   batchCreateChannelPayCode,
   createChannelPayCode,
@@ -601,6 +800,7 @@ import dayjs from "dayjs";
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import provinces from "@/assets/json/provinces.json";
+import {callback2Pa, findPayOrder, getPayOrderList} from "@/api/payOrder";
 
 defineOptions({
   name: 'ChannelAccount'
@@ -621,6 +821,117 @@ const queryAccOrderHisFunc = async (row) => {
     orderHisTableData.value = res.data.list.WaterList
   }
 }
+// 系统查单
+const sysPage = ref(1)
+const sysTotal = ref(0)
+const sysPageSize = ref(10)
+
+// 系统查单分页 -----------
+//页面简约切换
+const isSimple = ref(true)
+// 重置
+const resetSimple = (status) => {
+  isSimple.value = status
+}
+const handleSysSizeChange = (val) => {
+  sysPageSize.value = val
+  queryAccOrderSysFunc()
+}
+
+// 系统查单修改页面容量
+const handleSysCurrentChange = (val) => {
+  sysPage.value = val
+  queryAccOrderSysFunc()
+}
+const queryAccOrderSysFunc = async (row) => {
+  const req = {...row}
+  console.log(req)
+
+  let res = await getPayOrderList({page: page.value, pageSize: pageSize.value, acId: req.acId})
+  console.log(res.data)
+  if (res.code === 0) {
+    orderSysTableData.value = res.data.list
+    sysTotal.value = res.data.total
+    sysPage.value = res.data.page
+    sysPageSize.value = res.data.pageSize
+  }
+}
+// 系统查单 打开详情
+const getSysDetails = async (row) => {
+  console.log(row)
+  // 打开弹窗
+  const res = await findPayOrder({ID: row.ID})
+  if (res.code === 0) {
+    sysFormData.value = res.data.repayOrder
+    openSysDetailShow()
+  }
+}
+const sysDetailShow = ref(false)
+// 关闭详情弹窗
+const closeSysDetailShow = () => {
+  sysDetailShow.value = false
+  sysFormData.value = {
+    orderId: '',
+    pAccount: '',
+    money: 0,
+    unitPrice: 0,
+    uid: 0,
+    acId: '',
+    channelCode: '',
+    platformOid: '',
+    payIp: '',
+    payRegion: '',
+    payDevice: '',
+    notifyUrl: '',
+    orderStatus: false,
+    cbStatus: false,
+    cbTime: new Date(),
+  }
+}
+// 系统查单打开详情弹窗
+const openSysDetailShow = () => {
+  sysDetailShow.value = true
+}
+const sysFormData = ref({
+  authCaptcha: '',
+  orderId: '',
+  pAccount: '',
+  money: 0,
+  unitPrice: 0,
+  uid: 0,
+  acId: '',
+  channelCode: '',
+  platformOid: '',
+  payIp: '',
+  payRegion: '',
+  payDevice: '',
+  resourceUrl: '',
+  notifyUrl: '',
+  orderStatus: 0,
+  cbStatus: 0,
+  handStatus: 0,
+  codeUseStatus: false,
+  asyncTime: new Date(),
+  cbTime: new Date(),
+})
+//补单
+// 打开弹窗
+const openSysDialog = () => {
+  type.value = 'notify'
+  dialogSysFormVisible.value = true
+  typeTitle.value = '补单'
+}
+
+// 打开详情（补单使用）
+const notifyPayOrder = async (row) => {
+  // 打开弹窗
+  const res = await findPayOrder({ID: row.ID})
+  if (res.code === 0) {
+    sysFormData.value = res.data.repayOrder
+    openSysDialog()
+  }
+}
+
 const getPayCodeOverviewByChanAccFunc = async (row) => {
   const req = {...row}
   console.log(req)
@@ -628,14 +939,19 @@ const getPayCodeOverviewByChanAccFunc = async (row) => {
   let res = await getPayCodeOverviewByChanAcc(req)
   console.log(res.data)
   if (res.code === 0) {
-    payCodeTableData.value = res.data.list
-    let result = payCodeTableData.value.reduce((acc, cur) => {
+    if (res.data.list.length === 0) {
+      ElMessage({
+        type: 'error',
+        message: '该账号暂无可用的预产记录'
+      })
+    }
+    payCodeTableData.value = res.data.list;
+    payCodeMap.value = payCodeTableData.value.reduce((acc, cur) => {
       const {x2, ...rest} = cur;
       acc[x2] = acc[x2] || [];
       acc[x2].push(rest);
       return acc;
     }, {});
-    payCodeMap.value = result
   }
 }
 // queryAccOrderHisFunc()
@@ -979,6 +1295,41 @@ const deleteChannelAccountFunc = async (row) => {
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
 
+// 系统查单补单
+const dialogSysFormVisible = ref(false)
+// 关闭弹窗
+const closeSysDialog = () => {
+  dialogSysFormVisible.value = false
+  sysFormData.value = {
+    authCaptcha: '',
+    orderId: '',
+    pAccount: '',
+    money: 0,
+    unitPrice: 0,
+    uid: 0,
+    acId: '',
+    channelCode: '',
+    platformOid: '',
+    payIp: '',
+    payRegion: '',
+    payDevice: '',
+    notifyUrl: '',
+    orderStatus: false,
+    cbStatus: false,
+    cbTime: new Date(),
+  }
+}
+// 系统单 弹窗确定
+const enterSysDialog = async () => {
+  elSysFormRef.value?.validate(async (valid) => {
+    if (!valid) return
+    switch (type.value) {
+      case 'notify':
+        console.log(sysFormData.value)
+        await callback2Pa(sysFormData.value)
+    }
+  })
+}
 // 查看详情控制标记
 const detailShow = ref(false)
 
@@ -1107,6 +1458,7 @@ const onSwitchEnable = async () => {
     })
     return
   }
+
   multipleSelection.value &&
   multipleSelection.value.map(item => {
     ids.push(item.ID)
@@ -1206,12 +1558,19 @@ const updateTokenInfoFunc = async (row) => {
 
 // 充值记录查询
 const orderHisVisible = ref(false)
+// 系统记录查询
+const orderSysVisible = ref(false)
 // 产码统计查询
 const payCodeOverviewVisible = ref(false)
 const channelCode = ref("")
 const orderHisTableData = ref([])
+const orderSysTableData = ref([])
 const payCodeTableData = ref([])
 const payCodeMap = ref({})
+const closeOrderSysShow = () => {
+  orderSysVisible.value = false
+  orderSysTableData.value = []
+}
 const closeOrderHisShow = () => {
   orderHisVisible.value = false
   orderHisTableData.value = []
@@ -1226,11 +1585,18 @@ const openOrderHisShow = async (row) => {
   console.log(req)
   await queryAccOrderHisFunc(req)
 }
+
+const openOrderSysShow = async (row) => {
+  orderSysVisible.value = true
+  let req = {...row}
+  console.log(req)
+  await queryAccOrderSysFunc(req)
+}
 const openPayCodeOverviewShow = async (row) => {
   payCodeOverviewVisible.value = true
   let req = {...row}
   console.log(req)
-  await getPayCodeOverviewByChanAccFunc(req)
+  await getPayCodeOverviewByChanAccFunc({acId:req.acId, codeStatus: 2})
 }
 
 //  产码 ---------------------

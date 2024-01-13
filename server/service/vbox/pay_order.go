@@ -202,7 +202,7 @@ func (vpoService *PayOrderService) CallbackOrder2PayAcc(orderID string, ctx *gin
 //			Key:         "",
 //			Sign:        "123",
 //		}
-func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.Order2PayAccountRes, err error) {
+func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.OrderSimple2PayAccountRes, err error) {
 	// 1. 校验签名
 	var vpa vbox.PayAccount
 	count, err := global.GVA_REDIS.Exists(context.Background(), vpo.Account).Result()
@@ -253,7 +253,7 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 	var payUrl string
 	payUrl, err = vpoService.HandlePayUrl2PAcc(vpo.OrderId)
 
-	rep = &vboxRep.Order2PayAccountRes{
+	rep = &vboxRep.OrderSimple2PayAccountRes{
 		OrderId:   vpo.OrderId,
 		Money:     order.Money,
 		PayUrl:    payUrl,
@@ -918,7 +918,6 @@ func (vpoService *PayOrderService) GetPayOrder(id uint) (payOrder vbox.PayOrder,
 }
 
 // GetPayOrderInfoList 分页获取订单记录
-// Author [piexlmax](https://github.com/piexlmax)
 func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSearch, ids []uint) (list []vbox.PayOrder, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
@@ -930,7 +929,13 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
 	if info.OrderId != "" {
-		db = db.Where("order_id =?", info.OrderId)
+		db = db.Where("order_id like ?", "%"+info.OrderId+"%")
+	}
+	if info.PAccount != "" {
+		db = db.Where("p_account =?", info.PAccount)
+	}
+	if info.HandStatus != 0 {
+		db = db.Where("hand_status =?", info.HandStatus)
 	}
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code =?", info.ChannelCode)

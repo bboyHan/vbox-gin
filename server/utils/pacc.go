@@ -14,6 +14,42 @@ import (
 	"strings"
 )
 
+// CalSign 校验签名合法性的通用方法
+func CalSign(data interface{}) string {
+	// 获取结构体字段及值
+	v := reflect.ValueOf(data).Elem() // 获取结构体的反射对象
+	t := v.Type()
+	fields := make([]string, 0)
+	values := make(map[string]interface{})
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := fmt.Sprintf("%v", v.Field(i))
+		//if field.Name != "Sign" && value != "" {
+		fields = append(fields, field.Tag.Get("form"))
+		values[field.Tag.Get("form")] = value
+		//}
+	}
+
+	// 按照字段名称的ASCII码升序进行排序
+	sort.Strings(fields)
+
+	// 拼接排序后的键值对
+	var signStr string
+	for _, field := range fields {
+		if field != "key" && field != "sign" {
+			signStr += field + "=" + fmt.Sprintf("%v", values[field]) + "&"
+		}
+	}
+	signStr += "key=" + fmt.Sprintf("%v", values["key"])
+
+	//fmt.Printf("计算前: %v", signStr)
+	// 计算MD5签名
+	sign := SignMD5(signStr)
+
+	global.GVA_LOG.Info("", zap.Any("计算sign", sign), zap.Any("原始signStr", signStr))
+	return sign
+}
+
 // VerifySign 校验签名合法性的通用方法
 func VerifySign(data interface{}) bool {
 	// 获取结构体字段及值
@@ -46,7 +82,7 @@ func VerifySign(data interface{}) bool {
 	// 计算MD5签名
 	sign := SignMD5(signStr)
 
-	global.GVA_LOG.Info("", zap.Any("计算前: %v", signStr), zap.Any("计算sign: %v", sign), zap.Any("传入sign", values["sign"]))
+	global.GVA_LOG.Info("", zap.Any("计算前", signStr), zap.Any("计算sign", sign), zap.Any("传入sign", values["sign"]))
 
 	//fmt.Printf("传入sign: %v", values["sign"])
 

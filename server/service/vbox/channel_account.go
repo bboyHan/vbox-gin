@@ -301,6 +301,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 	}
 
 	// 如果是开启，则发起一条消息，去查这个账号是否能开启
+
 	if vca.Status == 1 {
 		go func() {
 			conn, err := mq.MQ.ConnPool.GetConnection()
@@ -315,7 +316,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 			}
 
 			body := http2.DoGinContextBody(c)
-
+			vcaDB.Status = 1
 			oc := vboxReq.ChanAccAndCtx{
 				Obj: vcaDB,
 				Ctx: vboxReq.Context{
@@ -363,6 +364,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 					}
 
 					body := http2.DoGinContextBody(c)
+					vcaDB.Status = 1
 
 					oc := vboxReq.ChanAccAndCtx{
 						Obj: vcaDB,

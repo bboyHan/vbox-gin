@@ -180,7 +180,7 @@ func PayCodeCDCheckTask() {
 
 							var count int64
 
-							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", accDB.AcId).Count(&count).Error
+							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ? and order_status = ?", accDB.AcId, 1).Count(&count).Error
 
 							if err != nil {
 								global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())

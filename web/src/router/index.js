@@ -25,7 +25,7 @@ const routes = [{
   component: () => import('@/view/vbox/payOrder/orderTest.vue')
 },
 {
-  path: '/doc/payDoc',
+  path: '/payDoc',
   name: 'PayDoc',
   component: () => import('@/view/doc/PayDoc.vue')
 },

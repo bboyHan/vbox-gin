@@ -19,6 +19,17 @@ type PayOrderRes struct {
 type Order2PayAccountRes struct {
 	OrderId   string `json:"order_id" form:"order_id" url:"order_id"`
 	PayUrl    string `json:"pay_url" form:"pay_url" url:"pay_url"`
+	Key       string `json:"-" form:"key"`
+	NotifyUrl string `json:"notify_url" form:"notify_url" url:"notify_url"`
+	Money     int    `json:"money" form:"money" url:"money"`
+	Status    int    `json:"status" form:"status" url:"status"`
+	Sign      string `json:"sign" form:"sign" url:"sign"`
+}
+
+// OrderSimple2PayAccountRes 结构体
+type OrderSimple2PayAccountRes struct {
+	OrderId   string `json:"order_id" form:"order_id" url:"order_id"`
+	PayUrl    string `json:"pay_url" form:"pay_url" url:"pay_url"`
 	NotifyUrl string `json:"notify_url" form:"notify_url" url:"notify_url"`
 	Money     int    `json:"money" form:"money" url:"money"`
 	Status    int    `json:"status" form:"status" url:"status"`

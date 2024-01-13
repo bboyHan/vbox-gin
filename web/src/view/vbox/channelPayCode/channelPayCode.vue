@@ -190,6 +190,7 @@
                     <el-option label="已使用" value="1"/>
                     <el-option label="待使用" value="2"/>
                     <el-option label="已失效" value="3"/>
+                    <el-option label="冷却中" value="4"/>
                   </el-select>
                 </el-form-item>
                 <el-form-item label="运营商" prop="status">
@@ -678,13 +679,14 @@ const closePayCodeOverviewShow = () => {
 const openPayCodeOverviewShow = async () => {
   payCodeOverviewVisible.value = true
   let req = {...searchInfo.value}
-  console.log(req)
+
   await getPayCodeOverviewByChanAccFunc(req)
 }
 const getPayCodeOverviewByChanAccFunc = async (row) => {
   const req = {...row}
   console.log(req)
-
+  if(req.codeStatus === 0 ) req.codetatus = 2;
+  console.log(req)
   let res = await getPayCodeOverview(req)
   console.log(res.data)
   if (res.code === 0) {

@@ -97,6 +97,22 @@ export const findPayAccount = (params) => {
 }
 
 // @Tags PayAccount
+// @Summary 获取服务网关
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query model.PayAccount true "获取服务网关"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /pacc/findPayAccount [get]
+export const getPAccGateway = (params) => {
+  return service({
+    url: '/pacc/getPAccGateway',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags PayAccount
 // @Summary 分页获取付方列表
 // @Security ApiKeyAuth
 // @accept application/json
