@@ -47,10 +47,9 @@ const (
 	ChanOrgAccZSet      = "vb_acc_set:org_%d:chan_%s:money_%v"       // 同组织通道下可用账号
 	ChanOrgShopAddrZSet = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
-	WaitingChanOrgPayCodeLocZSet = "vb_waiting_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
-	ChanOrgPayCodeLocZSet        = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s"         // 同组织通道下可用付款码（取用池）
-	ChanOrgPayCodePrefix         = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                          // 同组织通道下可用付款码（取用池）
-	ChanOrgPayCodeMoneyPrefix    = "vb_pay_code_set:org_%d:chan_%s:money_*"                             // 同组织通道下可用付款码（取用池）
+	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
+	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
+	ChanOrgPayCodeMoneyPrefix = "vb_pay_code_set:org_%d:chan_%s:money_*"                     // 同组织通道下可用付款码（取用池）
 
 	PayOrderKey    = "vb_order:%s"
 	PayOrderJUCKey = "vb_juc_order:%s"
@@ -58,7 +57,9 @@ const (
 	OrgChanSet      = "vb_cid_list:org_%d"           // 组织下拥有的产品id
 	OrgShopMoneySet = "vb_shop_money:org_%d:chan_%s" // 同组织通道下可用商铺金额
 
-	AccWaiting = "vb_acc_waiting_pc:%s" // 等待开启的账户(冷却中)
+	PcAccWaiting = "vb_acc_waiting_pc:acid_%s" // 预产类-等待开启的账户(冷却中)
+
+	YdAccWaiting = "vb_acc_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
 )
 

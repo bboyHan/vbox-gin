@@ -302,37 +302,35 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 
 	// 如果是开启，则发起一条消息，去查这个账号是否能开启
 
-	if vca.Status == 1 {
-		go func() {
-			conn, err := mq.MQ.ConnPool.GetConnection()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-			}
-			defer mq.MQ.ConnPool.ReturnConnection(conn)
+	go func() {
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
 
-			ch, err := conn.Channel()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-			}
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
 
-			body := http2.DoGinContextBody(c)
-			vcaDB.Status = 1
-			oc := vboxReq.ChanAccAndCtx{
-				Obj: vcaDB,
-				Ctx: vboxReq.Context{
-					Body:      string(body),
-					ClientIP:  c.ClientIP(),
-					Method:    c.Request.Method,
-					UrlPath:   c.Request.URL.Path,
-					UserAgent: c.Request.UserAgent(),
-					UserID:    int(vcaDB.CreatedBy),
-				},
-			}
-			marshal, err := json.Marshal(oc)
+		body := http2.DoGinContextBody(c)
+		vcaDB.Status = vca.Status
+		oc := vboxReq.ChanAccAndCtx{
+			Obj: vcaDB,
+			Ctx: vboxReq.Context{
+				Body:      string(body),
+				ClientIP:  c.ClientIP(),
+				Method:    c.Request.Method,
+				UrlPath:   c.Request.URL.Path,
+				UserAgent: c.Request.UserAgent(),
+				UserID:    int(vcaDB.CreatedBy),
+			},
+		}
+		marshal, err := json.Marshal(oc)
 
-			err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
-		}()
-	}
+		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+	}()
 
 	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err
@@ -344,45 +342,43 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 
 		// 如果是开启，则发起一条消息，去查这个账号是否能开启
-		if upd.Status == 1 {
 
-			go func() {
-				conn, err := mq.MQ.ConnPool.GetConnection()
+		go func() {
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			var vcaDBList []vbox.ChannelAccount
+			err = global.GVA_DB.Model(vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Find(&vcaDBList).Error
+
+			for _, vcaDB := range vcaDBList {
+
+				ch, err := conn.Channel()
 				if err != nil {
-					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+					continue
 				}
-				defer mq.MQ.ConnPool.ReturnConnection(conn)
-				var vcaDBList []vbox.ChannelAccount
-				err = global.GVA_DB.Model(vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Find(&vcaDBList).Error
 
-				for _, vcaDB := range vcaDBList {
+				body := http2.DoGinContextBody(c)
+				vcaDB.Status = upd.Status
 
-					ch, err := conn.Channel()
-					if err != nil {
-						global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-						continue
-					}
-
-					body := http2.DoGinContextBody(c)
-					vcaDB.Status = 1
-
-					oc := vboxReq.ChanAccAndCtx{
-						Obj: vcaDB,
-						Ctx: vboxReq.Context{
-							Body:      string(body),
-							ClientIP:  c.ClientIP(),
-							Method:    c.Request.Method,
-							UrlPath:   c.Request.URL.Path,
-							UserAgent: c.Request.UserAgent(),
-							UserID:    int(vcaDB.CreatedBy),
-						},
-					}
-					marshal, err := json.Marshal(oc)
-
-					err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+				oc := vboxReq.ChanAccAndCtx{
+					Obj: vcaDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(vcaDB.CreatedBy),
+					},
 				}
-			}()
-		}
+				marshal, err := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+			}
+		}()
 
 		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
 			return err

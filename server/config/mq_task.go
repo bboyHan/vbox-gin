@@ -13,4 +13,5 @@ type MQTask struct {
 	AccEnableCheck  bool `mapstructure:"acc-enable-check" json:"acc-enable-check" yaml:"acc-enable-check"`       // 环境值
 	PayCodeCdCheck  bool `mapstructure:"pay-code-cd-check" json:"pay-code-cd-check" yaml:"pay-code-cd-check"`    // 环境值
 	PayCodeExpCheck bool `mapstructure:"pay-code-exp-check" json:"pay-code-exp-check" yaml:"pay-code-exp-check"` // 环境值
+	AccCDCheck      bool `mapstructure:"acc-cd-check" json:"acc-cd-check" yaml:"acc-cd-check"`
 }

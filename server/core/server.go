@@ -53,6 +53,9 @@ func RunWindowsServer() {
 		if global.GVA_CONFIG.MQTask.PayCodeCdCheck {
 			go task.PayCodeCDCheckTask()
 		}
+		if global.GVA_CONFIG.MQTask.AccCDCheck {
+			go task.AccCDCheckTask()
+		}
 	}
 
 	//定时任务入口

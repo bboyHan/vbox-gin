@@ -139,6 +139,26 @@ export const formatPayed = (status, acId) => {
   }
 }
 
+export const formatCDStatusColor = (status) => {
+  if (status === 2) {
+    return '#606266'
+  } else if(status === 1) {
+    return '#2b7fff'
+  } else {
+    return ''
+  }
+}
+
+export const formatCDStatus = (status) => {
+  if (status === 2) {
+    return '冷却中'
+  } else if(status === 1) {
+    return '正常'
+  } else {
+    return '-'
+  }
+}
+
 export const formatNotifyColor = (status) => {
   if (status === 2) {
     return '#606266'

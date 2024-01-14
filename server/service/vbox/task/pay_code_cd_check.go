@@ -73,12 +73,13 @@ func PayCodeCDCheckTask() {
 				//err = handler(msg.Body)
 				v := string(msg.Body)
 
-				global.GVA_LOG.Info("收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
+				global.GVA_LOG.Info("【预产类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
 
-				split := strings.Split(v, ":")
-				splitAcc := strings.Split(split[1], "_")
-				acID := splitAcc[0]
-				pcIDTmp := splitAcc[1]
+				split := strings.Split(v, "-")
+				//waitAccPcKey - "vb_acc_waiting_pc:acid_%s"
+				waitAccPcKey := split[0]
+				acID := strings.Split(strings.Split(waitAccPcKey, ":")[1], "_")[1]
+				pcIDTmp := split[1]
 				pcIDs := strings.Split(pcIDTmp, ",")
 
 				global.GVA_LOG.Info("开始处理查询冷却状态的账号", zap.Any("acID", acID), zap.Any("pcIDs", pcIDs))

@@ -194,7 +194,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		vboxChannelPayCode.CodeStatus = 4
 		err = global.GVA_DB.Create(vboxChannelPayCode).Error
 
-		waitAccPcKey := fmt.Sprintf(global.AccWaiting, vboxChannelPayCode.AcId)
+		waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, vboxChannelPayCode.AcId)
 
 		// 设置一个冷却时间
 		var cdTime time.Duration
@@ -211,7 +211,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		waitIDsTmp := strings.Join([]string{fmt.Sprintf("%d", vboxChannelPayCode.ID)}, ",")
 		global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
 
-		waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "_")
+		waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
 		err = ch.PublishWithDelay(task.PayCodeCDCheckDelayedExchange, task.PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 
 		pcMem := fmt.Sprintf("%d", vboxChannelPayCode.ID) + "_" + vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent

@@ -57,14 +57,14 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			}
 
 			//
-			conn, err := mq.MQ.ConnPool.GetConnection()
-			if err != nil {
+			conn, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
 				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(conn)
 
-			ch, err := conn.Channel()
-			if err != nil {
+			ch, errC := conn.Channel()
+			if errC != nil {
 				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
 			}
 
@@ -394,6 +394,36 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			ID = split[0]
 			accID = split[1]
 			acAccount = split[2]
+
+			//	2.3 取用的账号进入CD 冷却
+			accWaitYdKey := fmt.Sprintf(global.YdAccWaiting, accID, money)
+			accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+
+			// 设置一个冷却时间
+			var cdTime time.Duration
+			ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
+			if ttl > 0 {
+				global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
+				cdTime = ttl
+			} else {
+				duration, _ := HandleExpTime2Product(cid)
+				cdTime = duration + 60*time.Second
+			}
+			global.GVA_REDIS.Expire(context.Background(), accWaitYdKey, cdTime)
+
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+			err = ch.PublishWithDelay(task.AccCDCheckDelayedExchange, task.AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+
 		} else {
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
 			return nil, fmt.Errorf("当前组织无资源可用")
@@ -403,7 +433,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
-		//TODO ??? 模糊查
 		// 使用 Keys 命令进行模糊匹配
 		pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, money)
 		var keys []string

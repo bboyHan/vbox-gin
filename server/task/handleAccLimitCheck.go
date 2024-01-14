@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func HandleAccAvailable() (err error) {
+func HandleAccLimitCheck() (err error) {
 
 	var accDBList []vbox.ChannelAccount
 	global.GVA_DB.Model(&vbox.ChannelAccount{}).Table("vbox_channel_account").

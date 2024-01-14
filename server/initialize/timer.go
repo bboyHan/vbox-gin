@@ -39,8 +39,8 @@ func Timer() {
 		//	fmt.Println("add timer error:", err)
 		//}
 
-		_, err = global.GVA_Timer.AddTaskByFunc("handleAccAvailable", "@every 5s", func() {
-			err = task.HandleAccAvailable()
+		_, err = global.GVA_Timer.AddTaskByFunc("handleAccLimitCheck", "@every 5s", func() {
+			err = task.HandleAccLimitCheck()
 			if err != nil {
 				fmt.Println("timer error:", err)
 			}

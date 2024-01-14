@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"go.uber.org/zap"
+	"time"
 )
 
 func HandleShopMoneyAvailable() (err error) {
@@ -56,6 +57,7 @@ func HandleShopMoneyAvailable() (err error) {
 			}
 			//jsonStr, _ := json.Marshal(channelCodeList)
 			//rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
+			rdConn.Expire(context.Background(), key, 1*time.Minute)
 		} else {
 			cidList, _ := rdConn.SMembers(context.Background(), key).Result()
 			channelCodeList = cidList
@@ -85,6 +87,7 @@ func HandleShopMoneyAvailable() (err error) {
 					}
 					//jsonStr, _ := json.Marshal(moneyList)
 					//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+					rdConn.Expire(context.Background(), moneyKey, 1*time.Minute)
 				}
 			} else {
 				moneyMem, _ := rdConn.SMembers(context.Background(), moneyKey).Result()

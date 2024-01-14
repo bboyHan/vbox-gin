@@ -351,15 +351,15 @@ func OrderWaitingTask() {
 
 							// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
 							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id in ? ", pcDB.AcId).
-								Update("status", 4).Update("sys_status", 4)
+							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ? ", pcDB.AcId).
+								Update("cd_status", 2)
 
 							// 把当前acAccount下所有的预产等待队列置为冷却状态
-							waitAccPcKey := fmt.Sprintf(global.AccWaiting, pcDB.AcId)
+							waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
 							waitIDsTmp := strings.Join(waitIDs, ",")
 							global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
 
-							waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "_")
+							waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
 							err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 
 						} else {
@@ -509,14 +509,14 @@ func OrderWaitingTask() {
 										// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
 										global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
 										global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in (?) ", pcDB.AcId).
-											Update("status", 4).Update("sys_status", 4)
+											Update("cd_status", 2)
 
 										// 把当前acAccount下所有的预产等待队列置为冷却状态
-										waitAccPcKey := fmt.Sprintf(global.AccWaiting, pcDB.AcId)
+										waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
 										waitIDsTmp := strings.Join(waitIDs, ",")
 										global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
 
-										waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "_")
+										waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
 										err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 
 									}

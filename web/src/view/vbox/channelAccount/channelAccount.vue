@@ -93,6 +93,7 @@
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
+        <el-table-column align="left" label="ID" prop="acId" width="120"/>
         <el-table-column align="left" label="通道id" prop="cid" width="80"/>
         <el-table-column align="left" label="账户备注" prop="acRemark" width="120"/>
         <el-table-column align="left" label="通道账户" prop="acAccount" width="120"/>
@@ -122,6 +123,13 @@
                            :inactive-value="0" inactive-text="关闭" size="large" disabled/>
               </el-col>
             </el-row>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="冷却状态" prop="cbStatus" width="120">
+          <template #default="scope">
+            <el-button style="width: 80px" :color="formatCDStatusColor(scope.row.cdStatus)">
+              {{ formatCDStatus(scope.row.cdStatus) }}
+            </el-button>
           </template>
         </el-table-column>
         <el-table-column align="center" label="查询" width="180">
@@ -330,7 +338,7 @@
     </el-dialog>
 
     <!--  CK  -->
-    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeDialog" :title="变更CK"
+    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeDialog" title="变更CK"
                destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="token" prop="token">
@@ -795,7 +803,7 @@ import {
   formatOPSimple,
   formatPayedColor,
   formatNotifyColor,
-  formatPayed, formatNotify, formatHandNotifyColor, formatHandNotify
+  formatPayed, formatNotify, formatHandNotifyColor, formatHandNotify, formatCDStatusColor, formatCDStatus
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
@@ -1030,6 +1038,7 @@ const formData = ref({
   type: 0,
   status: 0,
   sysStatus: 0,
+  cbStatus: 0,
   uid: 0,
 })
 

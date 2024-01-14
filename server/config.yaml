@@ -216,6 +216,7 @@ mq-task:
     acc-enable-check: false
     pay-code-cd-check: false
     pay-code-exp-check: false
+    acc-cd-check: false
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai
