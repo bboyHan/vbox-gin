@@ -6,6 +6,26 @@
     <div class="gva-organization-box">
       <div class="gva-organization-box-left">
         <div class="toolbar">
+          <el-row :gutter="12">
+            <el-col :xs="24" :span="24">
+              <CenterCard title="我的积分" :custom-style="walletCustomStyle">
+                <template #action>
+                  <span class="gvaIcon-prompt" style="color: #999" />
+                </template>
+                <template #body>
+                  <!--              <Order :channel-code="searchInfo.cid"/>-->
+                  <div class="acc-container">
+                    <div class="indicator">
+                  <span>
+                    <div class="label"></div>
+                    <div class="value">{{ userBalance }}</div>
+                  </span>
+                    </div>
+                  </div>
+                </template>
+              </CenterCard>
+            </el-col>
+          </el-row>
         </div>
       </div>
       <div class="gva-organization-box-right">
@@ -172,9 +192,18 @@ export default {
 import { findOrgUserListSelf } from '@/plugin/organization/api/organization';
 import {deleteUser, selfRegister, resetCaptcha, resetPassword} from '@/api/user';
 import {ElMessage, ElMessageBox} from "element-plus";
-import {transferUserWallet} from "@/api/userWallet";
+import {getUserWalletSelf, transferUserWallet} from "@/api/userWallet";
 import { useBtnAuth } from '@/utils/btnAuth'
-import {reactive} from "vue";
+import {reactive, ref} from "vue";
+import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
+
+const walletCustomStyle = ref({
+  background: 'linear-gradient(to right, #22111a, #606266)',
+  color: '#FFF',
+  height: '140px',
+})
+
+const userBalance = ref(0)
 
 const btnAuth = useBtnAuth()
 const data = ref([])
@@ -248,11 +277,15 @@ const handleSizeChange = (e) => {
 // 获取当前组织用户列表
 const getUserTable = async() => {
   const res = await findOrgUserListSelf({ page: page.value, pageSize: pageSize.value, ...userSearch.value })
+  const balanceVal = await getUserWalletSelf()
   if (res.code === 0) {
     page.value = res.data.page
     pageSize.value = res.data.pageSize
     total.value = res.data.total
     userTable.value = res.data.list
+  }
+  if (balanceVal.code === 0) {
+    userBalance.value = balanceVal.data.balance
   }
 }
 
@@ -559,4 +592,37 @@ const clearOperateRecharge = () => {
   }
 }
 
+.acc-container{
+  color: #FFFFFF;
+}
+
+.indicator {
+  display: flex;
+  justify-content: space-around; // 使子元素水平居中展开
+  padding: 15px;
+  border-radius: 8px; // 添加圆角
+}
+
+.indicator span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  &:not(:last-child) {
+    border-right: 2px solid #fff; // 白色边框
+    margin-right: 15px; // 调整间距
+  }
+}
+
+.label {
+  color: #F5F5F5;
+  font-size: 14px;
+}
+
+.value {
+  color: #FFFFFF;
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 5px; // 调整间距
+}
 </style>

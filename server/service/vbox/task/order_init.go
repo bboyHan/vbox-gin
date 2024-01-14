@@ -947,7 +947,6 @@ func OrderCallbackTask() {
 				}
 
 				response, errH := client.Post(notifyUrl, options)
-				global.GVA_LOG.Info("回调响应消息", zap.Any("resp", response))
 				if errH != nil {
 					global.GVA_LOG.Error("回调异常", zap.Error(errH))
 					_ = msg.Reject(false)
@@ -970,6 +969,7 @@ func OrderCallbackTask() {
 
 					continue
 				}
+				global.GVA_LOG.Info("回调响应消息", zap.Any("状态码", response.StatusCode), zap.Any("响应内容", string(response.Body)))
 
 				nowTime := time.Now()
 				if v.Obj.HandStatus == 3 {

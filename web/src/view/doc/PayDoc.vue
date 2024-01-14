@@ -70,13 +70,6 @@
             <td><span>格式：URL。通知URL必须为直接可访问的URL，不允许携带查询串（用于通知商户成功支付的订单信息）</span></td>
           </tr>
           <tr>
-            <td><span>key</span></td>
-            <td><span>商户key</span></td>
-            <td><span>string</span></td>
-            <td><span>是</span></td>
-            <td><span>向运营或管理员申请获得</span></td>
-          </tr>
-          <tr>
             <td><span>sign</span></td>
             <td><span>签名</span></td>
             <td><span>string</span></td>
@@ -102,7 +95,7 @@
           class="CodeMirror-code" role="presentation"><div class="CodeMirror-activeline" style="position: relative;"><div
           class="CodeMirror-activeline-background CodeMirror-linebackground"></div><div
           class="CodeMirror-gutter-background CodeMirror-activeline-gutter" style="left: 0px; width: 0px;"></div><pre
-          class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;">POST /api/order/create?account={商户}&amp;channel_code={通道编码}&amp;money=10&amp;notify_url={回调地址}&amp;order_id=TEST170427200242867&amp;key={商户Key}&amp;sign={签名}</span></pre></div></div></div></div></div></div><div
+          class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;">POST /api/order/create?account={商户}&amp;channel_code={通道编码}&amp;money=10&amp;notify_url={回调地址}&amp;order_id=TEST170427200242867&amp;sign={签名}</span></pre></div></div></div></div></div></div><div
           style="position: absolute; height: 0px; width: 1px; border-bottom: 0px solid transparent; top: 46px;"></div><div
           class="CodeMirror-gutters" style="display: none; height: 46px;"></div></div></div></pre>
       <p><span>响应结果</span></p>
@@ -197,13 +190,6 @@
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td><span>key</span></td>
-            <td><span>商户key</span></td>
-            <td><span>string</span></td>
-            <td><span>是</span></td>
-            <td><span>向运营或管理员申请获得</span></td>
-          </tr>
-          <tr>
             <td><span>sign</span></td>
             <td><span>签名</span></td>
             <td><span>string</span></td>
@@ -229,7 +215,7 @@
           class="CodeMirror-code" role="presentation"><div class="CodeMirror-activeline" style="position: relative;"><div
           class="CodeMirror-activeline-background CodeMirror-linebackground"></div><div
           class="CodeMirror-gutter-background CodeMirror-activeline-gutter" style="left: 0px; width: 0px;"></div><pre
-          class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;">POST /api/order/query?account={商户}&amp;order_id=TEST170427200242867&amp;key={商户Key}&amp;sign={签名}</span></pre></div></div></div></div></div></div><div
+          class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;">POST /api/order/query?account={商户}&amp;order_id=TEST170427200242867&amp;sign={签名}</span></pre></div></div></div></div></div></div><div
           style="position: absolute; height: 0px; width: 1px; border-bottom: 0px solid transparent; top: 23px;"></div><div
           class="CodeMirror-gutters" style="display: none; height: 23px;"></div></div></div></pre>
       <p><span>响应结果</span></p>

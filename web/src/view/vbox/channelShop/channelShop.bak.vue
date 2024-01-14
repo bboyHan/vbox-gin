@@ -1,8 +1,7 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
-               @keyup.enter="onSubmit">
+      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
         <el-form-item label="通道ID" prop="cid">
           <el-cascader
               v-model="searchInfo.cid"
@@ -13,7 +12,7 @@
           />
         </el-form-item>
         <el-form-item label="店名" prop="shopRemark">
-          <el-input v-model="searchInfo.shopRemark" placeholder="搜索条件"/>
+          <el-input v-model="searchInfo.shopRemark" placeholder="搜索条件" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
@@ -27,109 +26,92 @@
       </div>
       <div>
         <div>
-          <div>
-              <el-row :gutter="12">
-                <el-col v-for="item in tableData" :span="12" :xs="24">
-                  <el-card shadow="hover">
-                    <template #header>
-                      <el-button type="info" style="font-size: 24px">{{ item.shopRemark }}</el-button>
-                      <el-descriptions  :column="6" border>
-                        <template #extra>
-                          <el-button link>商铺ID：{{ item.productId }}</el-button>
-                        </template>
-                        <el-descriptions-item :span="3">
-                          <template #label>
-                            <div>店名</div>
-                          </template>
-                          {{ item.shopRemark }}
-                        </el-descriptions-item>
-                        <el-descriptions-item :span="3">
-                          <template #label>
-                            <div>通道编码</div>
-                          </template>
-                          {{ item.cid }}
-                        </el-descriptions-item>
-                        <el-descriptions-item :span="6">
-                          <template #label>
-                            <div>商品数</div>
-                          </template>
-                          <el-tag type="" effect="dark"> {{ lengthFunc(item.list) }}</el-tag>
-                        </el-descriptions-item>
-                        <el-descriptions-item :span="3">
-                          <template #label>
-                            <div>已开启</div>
-                          </template>
-                          <el-tag type="success" effect="dark"> {{ statusOnCountFunc(item.list) }}</el-tag>
-                        </el-descriptions-item>
-                        <el-descriptions-item :span="3">
-                          <template #label>
-                            <div>未开启</div>
-                          </template>
-                          <el-tag type="danger" effect="dark"> {{ statusOffCountFunc(item.list) }}</el-tag>
-                        </el-descriptions-item>
-                        <el-descriptions-item :span="6" align="center">
-                          <template #label>
-                            <div>启用占比</div>
-                          </template>
-                          <el-row>
-                            <el-col :span="12">
-                              <el-progress type="dashboard" :percentage="calPercentage(item.list)">
-                                <template #default="{ percentage }">
-                                  <span class="percentage-value">{{ percentage }}%</span>
-                                  <span class="percentage-label">Running</span>
-                                </template>
-                              </el-progress>
-                            </el-col>
-                            <el-col :span="12">
-                              <el-row>
-                                <el-col :span="12">
-                                  <el-popconfirm @confirm="switchEnableAll(item, 1)" width="220"
-                                                 confirm-button-text="Yes" cancel-button-text="No, Thanks"
-                                                 :icon="InfoFilled" icon-color="#626AEF"
-                                                 title="确定要一键启用所有商品？">
-                                    <template #reference>
-                                      <el-button type="success"
-                                                 style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键开启
-                                      </el-button>
-                                    </template>
-                                  </el-popconfirm>
-                                </el-col>
-                                <el-col :span="12">
-                                  <el-popconfirm @confirm="switchEnableAll(item, 0)" width="220"
-                                                 confirm-button-text="Yes" cancel-button-text="No, Thanks"
-                                                 :icon="InfoFilled" icon-color="#626AEF"
-                                                 title="确定要一键启用所有商品？">
-                                    <template #reference>
-                                      <el-button type="danger"
-                                                 style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键关闭
-                                      </el-button>
-                                    </template>
-                                  </el-popconfirm>
-                                </el-col>
-                                <el-col :span="12">
-                                  <el-button type="primary" icon="edit" @click="updShopNameDialog(item)" round
-                                             style="margin-top: 10px; margin-bottom: 5px; width: 110px">店名修改
-                                  </el-button>
-                                </el-col>
-                                <el-col :span="12">
-                                  <el-button round color="#626aef" icon="edit" @click="updDialog(item)"
-                                             style="margin-top: 10px; margin-bottom: 5px; width: 110px">地址管理
-                                  </el-button>
-                                </el-col>
-                              </el-row>
-                            </el-col>
-                          </el-row>
-                        </el-descriptions-item>
-                      </el-descriptions>
-                    </template>
+          <el-tabs tab-position="left" :span="24">
+            <el-tab-pane :label="item.productName" v-for="(item, index) in vcpTableData" :key="index">
+              <div>
+                <el-tabs type="card" tab-position="top" :span="24">
+                  <el-tab-pane :label="itemInfo.productName" v-for="(itemInfo, index2) in item.children" :key="index2">
                     <el-row :gutter="12">
-                      <el-button round color="#626aef" icon="search" @click="">统计概览</el-button>
-                    </el-row>
-                  </el-card>
-                </el-col>
-              </el-row>
-          </div>
+                      <el-col v-for="(itemTable, indexTable) in chanMap[itemInfo.channelCode]" :key="indexTable" :span="8">
+                        <el-card shadow="hover">
+                          <template #header>
+                            <el-button type="info" style="font-size: 24px">{{ item.shopRemark }}</el-button>
+                            <el-descriptions :title="item.shopRemark" :column="6" border>
+                              <template #extra>
+                                <el-button link>商铺ID：{{ itemTable.productId }}</el-button>
+                              </template>
+                              <el-descriptions-item :span="3">
+                                <template #label><div>店名</div></template>
+                                {{ itemTable.shopRemark }}
+                              </el-descriptions-item>
+                              <el-descriptions-item :span="3">
+                                <template #label><div>通道编码</div></template>
+                                {{ itemTable.cid }}
+                              </el-descriptions-item>
+                              <el-descriptions-item :span="6">
+                                <template #label><div>商品数</div></template>
+                                <el-tag type="" effect="dark"> {{ lengthFunc(itemTable.list) }} </el-tag>
+                              </el-descriptions-item>
+                              <el-descriptions-item :span="3">
+                                <template #label><div>已开启</div></template>
+                                <el-tag type="success" effect="dark"> {{ statusOnCountFunc(itemTable.list) }} </el-tag>
+                              </el-descriptions-item>
+                              <el-descriptions-item :span="3">
+                                <template #label><div>未开启</div></template>
+                                <el-tag type="danger" effect="dark"> {{ statusOffCountFunc(itemTable.list) }} </el-tag>
+                              </el-descriptions-item>
+                              <el-descriptions-item :span="6" align="center">
+                                <template #label><div>启用占比</div></template>
+                                <el-row>
+                                  <el-col :span="12">
+                                    <el-progress type="dashboard" :percentage="calPercentage(itemTable.list)">
+                                      <template #default="{ percentage }">
+                                        <span class="percentage-value">{{ percentage }}%</span>
+                                        <span class="percentage-label">Running</span>
+                                      </template>
+                                    </el-progress>
+                                  </el-col>
+                                  <el-col :span="12">
+                                    <el-row>
+                                      <el-col :span="12">
+                                        <el-popconfirm @confirm="switchEnableAll(itemTable, 1)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="确定要一键启用所有商品？">
+                                          <template #reference>
+                                            <el-button type="success" style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键开启</el-button>
+                                          </template>
+                                        </el-popconfirm>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-popconfirm @confirm="switchEnableAll(itemTable, 0)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="确定要一键启用所有商品？">
+                                          <template #reference>
+                                            <el-button type="danger" style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键关闭</el-button>
+                                          </template>
+                                        </el-popconfirm>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-button type="primary" icon="edit" @click="updShopNameDialog(itemTable)" round style="margin-top: 10px; margin-bottom: 5px; width: 110px">店名修改</el-button>
+                                      </el-col>
+                                      <el-col :span="12">
+                                        <el-button round color="#626aef" icon="edit" @click="updDialog(itemTable)" style="margin-top: 10px; margin-bottom: 5px; width: 110px">地址管理</el-button>
+                                      </el-col>
+                                    </el-row>
 
+
+                                  </el-col>
+                                </el-row>
+                              </el-descriptions-item>
+                            </el-descriptions>
+                          </template>
+                          <el-row :gutter="12">
+                            <el-button round color="#626aef" icon="search" @click="">统计概览</el-button>
+                          </el-row>
+                        </el-card>
+                      </el-col>
+                    </el-row>
+                  </el-tab-pane>
+                </el-tabs>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
       </div>
     </div>
@@ -142,17 +124,17 @@
             <el-col :span="20">
               <el-form-item label="通道ID" prop="cid">
                 <el-cascader
-                    v-model="formData.cid"
-                    :options="channelCodeOptions"
-                    :props="channelCodeProps"
-                    @change="handleChange"
-                    style="width: 100%"
+                  v-model="formData.cid"
+                  :options="channelCodeOptions"
+                  :props="channelCodeProps"
+                  @change="handleChange"
+                  style="width: 100%"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="20">
-              <el-form-item label="店名" prop="shopRemark">
-                <el-input v-model="formData.shopRemark" :clearable="true" placeholder="请输入店铺备注"/>
+              <el-form-item label="店名"  prop="shopRemark" >
+                <el-input v-model="formData.shopRemark" :clearable="true"  placeholder="请输入店铺备注" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -167,49 +149,37 @@
               <el-table :data="formData.list" style="width: 100%">
                 <el-table-column label="地址" prop="address" style="width: 100%">
                   <template #default="scope">
-                    <el-input :rows="2" type="textarea" v-if="activeIndex === scope.$index"
-                              v-model="scope.row.address"></el-input>
+                    <el-input :rows="2" type="textarea" v-if="activeIndex === scope.$index" v-model="scope.row.address"></el-input>
                     <el-input :rows="2" type="textarea" disabled v-model="scope.row.address" readonly v-else></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column label="金额（元）" prop="money" width="120px">
                   <template #default="scope">
-                    <el-input type="number" v-if="activeIndex === scope.$index" v-model.number="scope.row.money"
-                              :step="10"></el-input>
+                    <el-input type="number" v-if="activeIndex === scope.$index" v-model.number="scope.row.money" :step="10"></el-input>
                     <span v-else>{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column label="开关" prop="status" width="100px">
                   <template #default="scope">
-                    <el-switch v-if="activeIndex === scope.$index" v-model="scope.row.status" :active-value="1"
-                               :inactive-value="0" active-text="开启"
+                    <el-switch v-if="activeIndex === scope.$index" v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
                                inactive-text="关闭" inline-prompt size="large" width="70px"></el-switch>
-                    <el-switch v-else v-model="scope.row.status" :active-value="1" :inactive-value="0"
-                               active-text="开启"
+                    <el-switch v-else v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
                                inactive-text="关闭" inline-prompt size="large" width="70px"></el-switch>
                   </template>
                 </el-table-column>
                 <el-table-column align="right" width="200">
                   <template #header>
-                    <el-button type="primary" @click="handleAdd">
-                      <Plus style="width:1em; height:1em;"/>
-                    </el-button>
+                    <el-button type="primary" @click="handleAdd"><Plus style="width:1em; height:1em;" /></el-button>
                   </template>
                   <template #default="scope">
                     <div v-if="activeIndex === scope.$index">
-                      <el-button type="primary" @click="handleSave"><Select style="width:1em; height:1em;"/></el-button>
+                      <el-button type="primary" @click="handleSave"><Select style="width:1em; height:1em;" /></el-button>
                     </div>
                     <div v-else>
-                      <el-button type="success" @click="handleEdit(scope.$index)">
-                        <Edit style="width:1em; height:1em;"/>
-                      </el-button>
-                      <el-popconfirm @confirm="handleDelete(scope.$index)" width="220" confirm-button-text="Yes"
-                                     cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
-                                     title="Are you sure to delete this?">
+                      <el-button type="success" @click="handleEdit(scope.$index)"><Edit style="width:1em; height:1em;" /></el-button>
+                      <el-popconfirm @confirm="handleDelete(scope.$index)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="Are you sure to delete this?">
                         <template #reference>
-                          <el-button type="danger">
-                            <Delete style="width:1em; height:1em;"/>
-                          </el-button>
+                          <el-button type="danger"><Delete style="width:1em; height:1em;" /></el-button>
                         </template>
                       </el-popconfirm>
                     </div>
@@ -229,8 +199,7 @@
     </el-dialog>
 
     <!--  修改店名备注  -->
-    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close
-               width="20%">
+    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="20%">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="24">
@@ -247,10 +216,10 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="店铺ID" prop="productId">
-              <el-input disabled v-model="formData.productId"/>
+              <el-input disabled v-model="formData.productId" />
             </el-form-item>
             <el-form-item label="店名备注" prop="cid">
-              <el-input v-model="formData.shopRemark" :clearable="true" placeholder="请输入店名备注"/>
+              <el-input v-model="formData.shopRemark" :clearable="true"  placeholder="请输入店名备注" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -264,31 +233,30 @@
     </el-dialog>
 
     <!--  修改商铺  -->
-    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close
-               width="60%">
+    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
             <el-col :span="24">
               <el-form-item label="通道ID" prop="cid" disabled="disabled">
                 <el-cascader
-                    v-model="formData.cid"
-                    :options="channelCodeOptions"
-                    :props="channelCodeProps"
-                    @change="handleChange"
-                    style="width: 100%"
-                    disabled
+                  v-model="formData.cid"
+                  :options="channelCodeOptions"
+                  :props="channelCodeProps"
+                  @change="handleChange"
+                  style="width: 100%"
+                  disabled
                 />
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="商铺ID" prop="productId">
-                <el-input disabled v-model="formData.productId" :clearable="true" placeholder="请输入产品ID"/>
+              <el-form-item label="商铺ID"  prop="productId" >
+                <el-input disabled v-model="formData.productId" :clearable="true" placeholder="请输入产品ID" />
               </el-form-item>
             </el-col>
             <el-col :span="16">
-              <el-form-item label="店名" prop="shopRemark">
-                <el-input v-model="formData.shopRemark" disabled/>
+              <el-form-item label="店名"  prop="shopRemark">
+                <el-input v-model="formData.shopRemark" disabled />
               </el-form-item>
             </el-col>
           </el-row>
@@ -303,52 +271,37 @@
               <el-table :data="formData.list" style="width: 100%">
                 <el-table-column label="地址" prop="address" style="width: 100%">
                   <template #default="scope">
-                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
-                              v-model="scope.row.address"></el-input>
+                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index" v-model="scope.row.address"></el-input>
                     <el-input :rows="2" type="textarea" disabled v-model="scope.row.address" readonly v-else></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column label="金额（元）" prop="money" width="120px">
                   <template #default="scope">
-                    <el-input type="number" v-if="activeUpdIndex === scope.$index" v-model.number="scope.row.money"
-                              :step="10"></el-input>
+                    <el-input type="number" v-if="activeUpdIndex === scope.$index" v-model.number="scope.row.money" :step="10"></el-input>
                     <span v-else>{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column label="开关" prop="status" width="100px">
                   <template #default="scope">
-                    <el-switch v-if="activeUpdIndex === scope.$index" v-model="scope.row.status" :active-value="1"
-                               :inactive-value="0" active-text="开启"
-                               inactive-text="关闭" inline-prompt size="large" width="70px"
-                               @change="()=>{switchEnable(scope.row)}"></el-switch>
-                    <el-switch v-else v-model="scope.row.status" :active-value="1" :inactive-value="0"
-                               active-text="开启"
-                               inactive-text="关闭" inline-prompt size="large" width="70px"
-                               @change="()=>{switchEnable(scope.row)}"></el-switch>
+                    <el-switch v-if="activeUpdIndex === scope.$index" v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
+                               inactive-text="关闭" inline-prompt size="large" width="70px" @change="()=>{switchEnable(scope.row)}"></el-switch>
+                    <el-switch v-else v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="开启"
+                               inactive-text="关闭" inline-prompt size="large" width="70px" @change="()=>{switchEnable(scope.row)}"></el-switch>
                   </template>
                 </el-table-column>
                 <el-table-column align="right" width="200">
                   <template #header>
-                    <el-button type="primary" @click="handleAdd2Upd">
-                      <Plus style="width:1em; height:1em;"/>
-                    </el-button>
+                    <el-button type="primary" @click="handleAdd2Upd"><Plus style="width:1em; height:1em;" /></el-button>
                   </template>
                   <template #default="scope">
                     <div v-if="activeUpdIndex === scope.$index">
-                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
-                      </el-button>
+                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;" /></el-button>
                     </div>
                     <div v-else>
-                      <el-button type="success" @click="handleEdit2Upd(scope.$index)">
-                        <Edit style="width:1em; height:1em;"/>
-                      </el-button>
-                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
-                                     cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
-                                     title="确定要删除该商品吗？">
+                      <el-button type="success" @click="handleEdit2Upd(scope.$index)"><Edit style="width:1em; height:1em;" /></el-button>
+                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes" cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF" title="确定要删除该商品吗？">
                         <template #reference>
-                          <el-button type="danger">
-                            <Delete style="width:1em; height:1em;"/>
-                          </el-button>
+                          <el-button type="danger"><Delete style="width:1em; height:1em;" /></el-button>
                         </template>
                       </el-popconfirm>
                     </div>
@@ -361,8 +314,7 @@
       </el-scrollbar>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
-               destroy-on-close>
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
           <el-descriptions-item label="用户ID">
@@ -407,8 +359,8 @@ import {
 } from '@/api/channelProduct'
 
 // 全量引入格式化工具 请按需保留
-import {getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile} from '@/utils/format'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
 import {CircleCheck, CircleClose, Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';
 import {setUserInfo} from "@/api/user";
@@ -462,7 +414,7 @@ const handleEdit2Upd = (index) => {
 };
 // 保存行
 const handleSave2Upd = () => {
-  let create = {...formData.value}
+  let create = { ...formData.value}
   let newList = []
   newList.push(formData.value.list[activeUpdIndex.value])
   create.list = newList
@@ -477,7 +429,7 @@ const handleDelete2Upd = function (index) {
   if (id) {
     console.log("有id，要删库 -> id: " + id)
     deleteChannelShopFunc({ID: id})
-  } else {
+  }else {
     console.log("没id的临时数据，随便删")
   }
   formData.value.list.splice(index, 1);
@@ -520,7 +472,7 @@ const statusOffCountFunc = (list) => {
   return c
 }
 const processChanMap = (list) => {
-  if (!list) list = []
+  if(!list) list= []
   for (let i = 0; i < list.length; i++) {
     const item = list[i];
 
@@ -573,7 +525,7 @@ const setChannelCodeOptions = (ChannelCodeData, optionsData, disabled) => {
 
 // ------------ 开关商品 -----------------
 // 开关单条
-const switchEnable = async (row) => {
+const switchEnable = async(row) => {
   console.log(row)
   // userInfo.value = JSON.parse(JSON.stringify(row))
   await nextTick()
@@ -582,10 +534,10 @@ const switchEnable = async (row) => {
     ...row
   }
   console.log(req)
-  if (req.id) {
+  if (req.id){
     const res = await updateChannelShop(req)
     if (res.code === 0) {
-      ElMessage({type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}单条商品成功`})
+      ElMessage({ type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}单条商品成功` })
       await getTableData()
     }
   } else {
@@ -594,7 +546,7 @@ const switchEnable = async (row) => {
 }
 
 // 开关所有
-const switchEnableAll = async (row, status) => {
+const switchEnableAll = async(row, status) => {
   console.log(row)
   // userInfo.value = JSON.parse(JSON.stringify(row))
   await nextTick()
@@ -604,10 +556,10 @@ const switchEnableAll = async (row, status) => {
     ...row
   }
   console.log(req)
-  if (req.productId) {
+  if (req.productId){
     const res = await updateChannelShop(req)
     if (res.code === 0) {
-      ElMessage({type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}店铺成功`})
+      ElMessage({ type: 'success', message: `${req.status === 0 ? '禁用' : '启用'}店铺成功` })
       await getTableData()
     }
   } else {
@@ -623,22 +575,22 @@ const formData = ref({
   productId: '',
   shopRemark: '',
   list: [
-    {
-      address: '',
-      money: 0,
-      status: 0
-    }
+      {
+        address: '',
+        money: 0,
+        status: 0
+      }
   ]
 })
 
 
 // 验证规则
 const rule = reactive({
-  cid: [
+  cid : [
     {
       required: true,
       message: '',
-      trigger: ['input', 'blur'],
+      trigger: ['input','blur'],
     },
     {
       whitespace: true,
@@ -668,7 +620,7 @@ const onReset = () => {
 
 // 搜索
 const onSubmit = () => {
-  elSearchFormRef.value?.validate(async (valid) => {
+  elSearchFormRef.value?.validate(async(valid) => {
     if (!valid) return
     page.value = 1
     pageSize.value = 10
@@ -683,9 +635,9 @@ const initForm = () => {
 }
 
 // 查询
-const getTableData = async () => {
-  const table = await getChannelShopList({page: page.value, pageSize: pageSize.value, ...searchInfo.value})
-  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value})
+const getTableData = async() => {
+  const table = await getChannelShopList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const vcpTable = await getChannelProductSelf({ page: 1, pageSize: 999, ...searchInfo.value })
 
   if (table.code === 0) {
     initForm()
@@ -705,7 +657,7 @@ getTableData()
 // ============== 表格控制部分结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
-const setOptions = async () => {
+const setOptions = async () =>{
   channelCodeOptions.value = []
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
@@ -730,8 +682,8 @@ const type = ref('')
 const typeTitle = ref('')
 
 // 更新行
-const updateChannelShopFunc = async (row) => {
-  const res = await findChannelShopByProductID({productId: row.productId})
+const updateChannelShopFunc = async(row) => {
+  const res = await findChannelShopByProductID({ productId: row.productId })
   type.value = 'update'
   if (res.code === 0) {
     formData.value = res.data.rechannelShop
@@ -743,7 +695,7 @@ const updateChannelShopFunc = async (row) => {
 // 删除行
 const deleteChannelShopFunc = async (row) => {
   console.log(row)
-  const res = await deleteChannelShop({ID: row.ID})
+  const res = await deleteChannelShop({ ID: row.ID })
   if (res.code === 0) {
     ElMessage({
       type: 'success',
@@ -772,7 +724,7 @@ const openDetailShow = () => {
 // 打开详情
 const getDetails = async (row) => {
   // 打开弹窗
-  const res = await findChannelShop({ID: row.ID})
+  const res = await findChannelShop({ ID: row.ID })
   if (res.code === 0) {
     formData.value = res.data.rechannelShop
     openDetailShow()
@@ -826,17 +778,17 @@ const closeDialog = () => {
     cid: '',
     productId: '',
     list: [
-      {
-        shopRemark: '',
-        money: 0,
-        status: 0,
-      }
+        {
+          shopRemark: '',
+          money: 0,
+          status: 0,
+        }
     ]
   }
 }
 // 弹窗确定
 const enterDialog = async () => {
-  elFormRef.value?.validate(async (valid) => {
+  elFormRef.value?.validate( async (valid) => {
     if (!valid) return
     let res
     switch (type.value) {
@@ -878,13 +830,11 @@ const enterDialog = async () => {
   font-size: 20px;
   color: #6B7687;
 }
-
 .percentage-value {
   display: block;
   margin-top: 10px;
   font-size: 28px;
 }
-
 .percentage-label {
   display: block;
   margin-top: 10px;

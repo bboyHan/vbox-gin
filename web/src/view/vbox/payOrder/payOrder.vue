@@ -517,7 +517,14 @@ const enterDialog = async () => {
     switch (type.value) {
       case 'notify':
         console.log(formData.value)
-        await callback2Pa(formData.value)
+        let res = await callback2Pa(formData.value);
+        if (res.code === 0) {
+          ElMessage({
+            type: 'success',
+            message: '回调成功'
+          })
+        }
+        dialogFormVisible.value = false
     }
   })
 }

@@ -116,7 +116,34 @@ func HandleAccAvailable() (err error) {
 			if flag {
 				global.GVA_LOG.Warn("当前账号已经超限额了，处理一下...", zap.Any("ac info", accDBTmp))
 
-				if global.PcContains(cid) {
+				if global.TxContains(cid) {
+
+					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
+					orgID := orgTmp[0]
+					pattern := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, "*")
+					var keys []string
+					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+					for _, key := range keys {
+						resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+							Min:    "0",
+							Max:    "0",
+							Offset: 0,
+							Count:  -1,
+						}).Val()
+
+						for _, waitMem := range resWaitTmpList {
+							if strings.Contains(waitMem, accDBTmp.AcAccount) {
+								//	把超限的码全部处理掉
+								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+									Update("status", 0).Update("sys_status", 0)
+							}
+						}
+					}
+				} else if global.PcContains(cid) {
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
 					pattern := fmt.Sprintf(global.ChanOrgPayCodeMoneyPrefix, orgID, cid)
@@ -140,6 +167,7 @@ func HandleAccAvailable() (err error) {
 								// 把 pay code中属于该账号的码全部处理掉
 								id := strings.Split(waitMem, "_")[0]
 								global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ? ", id).Update("code_status", 4)
+								// 把该账号的码全部状态置为0，即关停不可用
 								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}

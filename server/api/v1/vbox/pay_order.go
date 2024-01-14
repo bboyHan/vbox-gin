@@ -112,6 +112,8 @@ func (vpoApi *PayOrderApi) QueryOrder2PayAcc(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
+
 	if order, err := payOrderService.QueryOrder2PayAcc(&vpo); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)

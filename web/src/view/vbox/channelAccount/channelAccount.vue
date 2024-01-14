@@ -138,15 +138,20 @@
         </el-table-column>
         <el-table-column align="center" label="操作" width="120">
           <template #default="scope">
-            <el-row>
-              <el-col :span="24">
-                <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">
-                  产码
-                </el-button>
-                <el-button type="primary" link icon="info-filled" class="table-button"
-                           @click="openPayCodeOverviewShow(scope.row)"></el-button>
-              </el-col>
-            </el-row>
+            <div v-if="Number(scope.row.cid) === 3000">
+              <el-row>
+                <el-col :span="24">
+                  <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">
+                    产码
+                  </el-button>
+                  <el-button type="primary" link icon="info-filled" class="table-button"
+                             @click="openPayCodeOverviewShow(scope.row)"></el-button>
+                </el-col>
+              </el-row>
+            </div>
+            <div v-else>
+              <span>非预产通道</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column align="center" label="操作" width="120">
@@ -325,7 +330,7 @@
     </el-dialog>
 
     <!--  CK  -->
-    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeDialog" :title="'变更CK'"
+    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeDialog" :title="变更CK"
                destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="token" prop="token">
@@ -1333,7 +1338,13 @@ const enterSysDialog = async () => {
     switch (type.value) {
       case 'notify':
         console.log(sysFormData.value);
-        await callback2Pa(sysFormData.value);
+        let res = await callback2Pa(sysFormData.value);
+        if (res.code === 0) {
+          ElMessage({
+            type: 'success',
+            message: '回调成功'
+          })
+        }
         dialogSysFormVisible.value = false;
         break;
     }

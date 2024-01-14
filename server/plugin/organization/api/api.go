@@ -184,7 +184,12 @@ func (orgApi *OrganizationApi) FindOrgUserListSelf(c *gin.Context) {
 	var pageInfo organizationReq.OrgUserSearch
 	uid := utils.GetUserID(c)
 	pageInfo.OrgIds = utils2.GetDeepOrg(uid)
-	c.ShouldBindQuery(&pageInfo)
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+		return
+	}
 	if list, total, err := orgService.GetOrgUserListSelf(pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)

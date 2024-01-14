@@ -142,13 +142,13 @@ func (orgService *OrganizationService) GetOrgUserListSelf(info organizationReq.O
 	// 如果有条件搜索 下方会自动创建搜索语句
 	db = db.Where("organization_id in ?", info.OrgIds)
 	if info.Username != "" {
-		db = db.Where("SysUser.nick_name LIKE ?", "%"+info.Username+"%")
+		db = db.Where("SysUser.nickname LIKE ?", "%"+info.Username+"%")
 	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
-	err = db.Limit(limit).Offset(offset).Find(&orgs).Error
+	err = db.Limit(limit).Offset(offset).Order("SysUser.id desc").Find(&orgs).Error
 	return orgs, total, err
 }
 

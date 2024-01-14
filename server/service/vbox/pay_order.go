@@ -205,10 +205,10 @@ func (vpoService *PayOrderService) CallbackOrder2PayAcc(orderID string, ctx *gin
 func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2PayAccount) (rep *vboxRep.OrderSimple2PayAccountRes, err error) {
 	// 1. 校验签名
 	var vpa vbox.PayAccount
-	count, err := global.GVA_REDIS.Exists(context.Background(), vpo.Account).Result()
-	if count == 0 {
+	count, err := global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+vpo.Account).Result()
+	if count != 0 {
 		global.GVA_LOG.Warn("缓存中暂无", zap.Any("当前 pacc", vpo.Account))
-		jsonStr, _ := global.GVA_REDIS.Get(context.Background(), vpo.Account).Bytes()
+		jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+vpo.Account).Bytes()
 		err = json.Unmarshal(jsonStr, &vpa)
 	} else { //查库看有没有
 		err = global.GVA_DB.Model(&vbox.PayAccount{}).Table("vbox_pay_account").
@@ -217,7 +217,7 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 			return nil, err
 		} else { //有的话，更新一下redis
 			jsonStr, _ := json.Marshal(vpa)
-			global.GVA_REDIS.Set(context.Background(), vpa.PAccount, jsonStr, 0)
+			global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+vpa.PAccount, jsonStr, 10*time.Minute)
 		}
 	}
 
@@ -306,6 +306,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	}
 	vpo.Key = vpa.PKey
 	uidTmp := vpa.Uid
+
 	// 1.0 校验签名
 	signValid := utils.VerifySign(vpo)
 	if !signValid {
@@ -342,9 +343,10 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			return nil, err
 		}
 
-		for _, cid := range channelCodeList {
-			global.GVA_REDIS.SAdd(context.Background(), cidKey, cid)
+		for _, cidX := range channelCodeList {
+			global.GVA_REDIS.SAdd(context.Background(), cidKey, cidX)
 		}
+		global.GVA_REDIS.Expire(context.Background(), cidKey, 1*time.Minute)
 	} else {
 		members, _ := global.GVA_REDIS.SMembers(context.Background(), cidKey).Result()
 		channelCodeList = members
@@ -396,25 +398,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
 			return nil, fmt.Errorf("当前组织无资源可用")
 		}
-		var accTmp string
-		accTmp, err = global.GVA_REDIS.SPop(context.Background(), accKey).Result()
-
-		if err != nil {
-			if err == redis.Nil {
-				// Set为空
-				global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			} else {
-				// 异常错误
-				global.GVA_LOG.Error("redis err", zap.Error(err))
-			}
-			return nil, err
-		}
-
-		// 2.2 把可用的账号给出来继续往下执行建单步骤
-		split := strings.Split(accTmp, "_")
-		ID = split[0]
-		accID = split[1]
-		acAccount = split[2]
 
 	} else if global.J3Contains(cid) {
 
@@ -593,6 +576,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		for _, cid := range channelCodeList {
 			global.GVA_REDIS.SAdd(context.Background(), cidKey, cid)
 		}
+		global.GVA_REDIS.Expire(context.Background(), cidKey, 1*time.Minute)
 	} else {
 		members, _ := global.GVA_REDIS.SMembers(context.Background(), cidKey).Result()
 		channelCodeList = members
@@ -638,25 +622,6 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
 			return nil, fmt.Errorf("当前组织无资源可用")
 		}
-		var accTmp string
-		accTmp, err = global.GVA_REDIS.SPop(context.Background(), accKey).Result()
-
-		if err != nil {
-			if err == redis.Nil {
-				// Set为空
-				global.GVA_LOG.Warn("当前组织无账号可用, org", zap.Any("orgID", orgID))
-			} else {
-				// 异常错误
-				global.GVA_LOG.Error("redis err", zap.Error(err))
-			}
-			return nil, err
-		}
-
-		// 2.2 把可用的账号给出来继续往下执行建单步骤
-		split := strings.Split(accTmp, "_")
-		ID = split[0]
-		accID = split[1]
-		acAccount = split[2]
 
 	} else if global.J3Contains(cid) {
 
