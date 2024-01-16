@@ -1,6 +1,7 @@
 package vbox
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
@@ -69,6 +70,9 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexD(id uint
 // GetBdaChShopIndexDInfoList 分页获取用户通道店铺成率统计-天更新记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexDInfoList(info vboxReq.BdaChShopIndexDSearch) (list []vbox.BdaChShopIndexD, total int64, err error) {
+	fmt.Println("统计开始")
+	bdaChshopIndexDService.CronVboxBdaChShopIndexD()
+	fmt.Println("统计结束")
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db

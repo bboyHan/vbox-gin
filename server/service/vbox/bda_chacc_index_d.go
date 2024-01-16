@@ -1,6 +1,7 @@
 package vbox
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
@@ -69,6 +70,9 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexD(id uint) (
 // GetBdaChaccIndexDInfoList 分页获取用户通道粒度成率统计-天更新记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoList(info vboxReq.BdaChaccIndexDSearch) (list []vbox.BdaChaccIndexD, total int64, err error) {
+	fmt.Println("统计开始")
+	bdaChaccIndexDService.CronVboxBdaChaccIndexD()
+	fmt.Println("统计结束")
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
@@ -226,20 +230,24 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexDByHand
 
 func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexD() (err error) {
 	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	fmt.Println(dt, "统计开始")
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
 	var uids []int
 	err = db.Select("distinct created_by").Pluck("created_by", &uids).Error
+	fmt.Println("uids=", uids)
 	if err != nil {
 		return
 	}
 	var chIds []string
 	err = db.Select("distinct channel_code").Pluck("channel_code", &chIds).Error
+	fmt.Println("chIds=", chIds)
 	if err != nil {
 		return
 	}
 
 	var accIds []string
-	err = db.Select("distinct ac_id").Pluck("ac_id", &chIds).Error
+	err = db.Select("distinct ac_id").Pluck("ac_id", &accIds).Error
+	fmt.Println("accIds=", accIds)
 	if err != nil {
 		return
 	}
@@ -249,84 +257,97 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexD() (er
 			for _, accId := range accIds {
 
 				yInfoList, yOrderTotal, err := GetUsersAccChVboxPayOrderInfoList(uid, chId, accId, dt)
+				//fmt.Println("total", yOrderTotal)
 				if err != nil {
 					return err
 				}
-				yGroupedCounts := make(map[string]int16)
-				yOkGroupedCounts := make(map[string]int16)
-				yOkGroupedCosts := make(map[string]int)
+				if yOrderTotal > 0 {
 
-				for _, order := range yInfoList {
-					uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode + "-" + order.AcId
-					yGroupedCounts[uid]++
-					if order.OrderStatus == 1 {
-						yOkGroupedCounts[uid]++
-						yOkGroupedCosts[uid] += order.Money
-					}
-				}
+					yGroupedCounts := make(map[string]int16)
+					yOkGroupedCounts := make(map[string]int16)
+					yOkGroupedCosts := make(map[string]int)
 
-				yOrderQuantify := yOrderTotal
-				yOkOrderQuantify := 0
-				yOkRate := 0
-				yInCome := 0
-				// 判断 tGroupedCounts 中是否包含指定的 uid 键
-				key := strconv.Itoa(uid) + "-" + chId + "-" + accId
-				_, yContainsUID := yGroupedCounts[key]
-				_, yOkContainsUID := yOkGroupedCounts[key]
-
-				if yContainsUID {
-
-					yOrderQuantify = int64(yGroupedCounts[key])
-					if yOkContainsUID {
-						yOkOrderQuantify = int(yOkGroupedCounts[key])
+					for _, order := range yInfoList {
+						uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode + "-" + order.AcId
+						yGroupedCounts[uid]++
+						if order.OrderStatus == 1 {
+							yOkGroupedCounts[uid]++
+							yOkGroupedCosts[uid] += order.Money
+						}
 					}
 
-					if yOrderQuantify > 0 {
-						result := float64(yOkOrderQuantify) / float64(yOrderQuantify)
-						yOkRate = int(result * 100)
-						yInCome = yOkGroupedCosts[key]
+					yOrderQuantify := yOrderTotal
+					yOkOrderQuantify := 0
+					yOkRate := 0
+					yInCome := 0
+					// 判断 tGroupedCounts 中是否包含指定的 uid 键
+					key := strconv.Itoa(uid) + "-" + chId + "-" + accId
+					_, yContainsUID := yGroupedCounts[key]
+					_, yOkContainsUID := yOkGroupedCounts[key]
+
+					if yContainsUID {
+
+						yOrderQuantify = int64(yGroupedCounts[key])
+						if yOkContainsUID {
+							yOkOrderQuantify = int(yOkGroupedCounts[key])
+						}
+
+						if yOrderQuantify > 0 {
+							result := float64(yOkOrderQuantify) / float64(yOrderQuantify)
+							yOkRate = int(result * 100)
+							yInCome = yOkGroupedCosts[key]
+						}
+
 					}
 
+					var userInfo system.SysUser
+					err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
+					if err != nil {
+						return err
+					}
+					var vcp vbox.ChannelProduct
+					err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
+					if err != nil {
+						return err
+					}
+					var vca vbox.ChannelAccount
+					fmt.Println("accId=", accId, (accId == ""))
+					account := ""
+					acRemark := ""
+					if accId != "" {
+						err = global.GVA_DB.Where("ac_id is not null and ac_id != '' and ac_id = ?", accId).First(&vca).Error
+						if err != nil {
+							return err
+						}
+						account = vca.AcAccount
+						acRemark = vca.AcRemark
+					}
+
+					chCode := vcp.ChannelCode
+
+					entity := vbox.BdaChaccIndexD{
+						Uid:             &uid,
+						Username:        userInfo.Username,
+						AcId:            accId,
+						AcAccount:       account,
+						AcRemark:        acRemark,
+						ChannelCode:     chCode,
+						ProductId:       vcp.ProductId,
+						ProductName:     vcp.ProductName,
+						OrderQuantify:   int(yOrderQuantify),
+						OkOrderQuantify: yOkOrderQuantify,
+						Ratio:           float64(yOkRate),
+						Income:          yInCome,
+						Dt:              dt,
+						CreatedBy:       uint(uid),
+						UpdatedBy:       1,
+						DeletedBy:       1,
+					}
+					//fmt.Println(entity.Dt)
+					log.Println("统计 ch acc 结果=", entity)
+					err = global.GVA_DB.Save(&entity).Error
 				}
 
-				var userInfo system.SysUser
-				err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
-				if err != nil {
-					return err
-				}
-				var vcp vbox.ChannelProduct
-				err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
-				if err != nil {
-					return err
-				}
-				var vca vbox.ChannelAccount
-				err = global.GVA_DB.Where("ac_id = ?", accId).First(&vca).Error
-				if err != nil {
-					return err
-				}
-				chCode := vcp.ChannelCode
-
-				entity := vbox.BdaChaccIndexD{
-					Uid:             &uid,
-					Username:        userInfo.Username,
-					AcId:            accId,
-					AcAccount:       vca.AcAccount,
-					AcRemark:        vca.AcRemark,
-					ChannelCode:     chCode,
-					ProductId:       vcp.ProductId,
-					ProductName:     vcp.ProductName,
-					OrderQuantify:   int(yOrderQuantify),
-					OkOrderQuantify: yOkOrderQuantify,
-					Ratio:           float64(yOkRate),
-					Income:          yInCome,
-					Dt:              dt,
-					CreatedBy:       uint(uid),
-					UpdatedBy:       1,
-					DeletedBy:       1,
-				}
-				//fmt.Println(entity.Dt)
-				log.Println("统计 ch acc 结果=", entity)
-				err = global.GVA_DB.Save(&entity).Error
 			}
 		}
 	}
@@ -338,7 +359,7 @@ func GetUsersAccChVboxPayOrderInfoList(id int, chId string, accId string, dt str
 	db := global.GVA_DB.Model(&vbox.PayOrder{})
 	var vpos []vbox.PayOrder
 	//err = db.Where("uid = ? and ac_id = ? and channel_code = ? and DATE(created_at) = (CURDATE() - INTERVAL ? DAY)", id, accId, chId, num).Find(&vpos).Error
-	err = db.Where("created_by = ? and ac_id = ? and channel_code = ? and DATE(created_at) = ", id, accId, chId, dt).Find(&vpos).Error
+	err = db.Where("created_by = ? and ac_id = ? and channel_code = ? and DATE(created_at) = ?", id, accId, chId, dt).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
 }
