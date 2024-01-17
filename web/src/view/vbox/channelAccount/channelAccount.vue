@@ -53,8 +53,8 @@
     <div class="gva-table-box">
       <div class="gva-btn-list">
         <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-        <el-popover v-model:visible="deleteVisible" placement="top" width="160">
-          <p>确定要删除吗？</p>
+        <el-popover v-model:visible="deleteVisible" placement="top" width="240">
+          <p><span style="color: red;">注意：删除后，通道账户将无法使用(预产类资源也将清除)</span>，确定要删除吗？</p>
           <div style="text-align: right; margin-top: 8px;">
             <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
             <el-button type="primary" @click="onDelete">确定</el-button>
@@ -65,26 +65,26 @@
             </el-button>
           </template>
         </el-popover>
-        <el-popover v-model:visible="switchOnVisible" placement="top" width="160">
-          <p>确定批量开启吗？</p>
+        <el-popover v-model:visible="switchOnVisible" placement="top" width="240">
+          <p><span style="color: red;">注意：开启后，通道账户将进入待使用状态(预产类资源也将启用)</span>，确定批量开启吗？</p>
           <div style="text-align: right; margin-top: 8px;">
             <el-button type="primary" link @click="switchOnVisible = false">取消</el-button>
             <el-button type="primary" @click="onSwitchEnable">确定</el-button>
           </div>
           <template #reference>
-            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
+            <el-button icon="turn-off" style="margin-left: 10px;" :disabled="!multipleSelection.length"
                        @click="switchOnVisible = true">批量开启
             </el-button>
           </template>
         </el-popover>
-        <el-popover v-model:visible="switchOffVisible" placement="top" width="160">
-          <p>确定批量关闭吗？</p>
+        <el-popover v-model:visible="switchOffVisible" placement="top" width="240">
+          <p><span style="color: red;">注意：关闭后，通道账户将无法使用(预产类资源也将禁用)</span>，确定批量关闭吗？</p>
           <div style="text-align: right; margin-top: 8px;">
             <el-button type="primary" link @click="switchOffVisible = false">取消</el-button>
             <el-button type="primary" @click="onSwitchDisable">确定</el-button>
           </div>
           <template #reference>
-            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
+            <el-button icon="open" style="margin-left: 10px;" :disabled="!multipleSelection.length"
                        @click="switchOffVisible = true">批量关闭
             </el-button>
           </template>
@@ -114,9 +114,14 @@
           <template #default="scope">
             <el-row :gutter="12">
               <el-col :span="12">
-                <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启"
-                           :inactive-value="0" inactive-text="关闭" size="large"
-                           @change="()=>{switchEnable(scope.row)}"/>
+                <el-popover trigger="hover" placement="top" width="240">
+                  <p><span style="color: red;">注意</span>：操作后将通过系统审核，<span style="color: red;">审核通过后开启（或关闭）账号关联资源；</span><span style="color: blue;">未通过系统审核请查看"操作日志"</span>核查原因，确定操作？</p>
+                  <template #reference>
+                    <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启"
+                               :inactive-value="0" inactive-text="关闭" size="large"
+                               @change="()=>{switchEnable(scope.row)}"/>
+                  </template>
+                </el-popover>
               </el-col>
               <el-col :span="12">
                 <el-switch v-model="scope.row.sysStatus" inline-prompt :active-value="1" active-text="开启"
@@ -132,14 +137,17 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查询" width="180">
+        <el-table-column align="center" label="查询" width="240">
           <template #default="scope">
             <el-row :gutter="12">
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统记录</el-button>
+              </el-col>
+              <el-col :span="8">
+                <el-button type="primary" link class="table-button" @click="goWorkLog">操作日志</el-button>
               </el-col>
             </el-row>
           </template>
@@ -189,28 +197,12 @@
       </div>
     </div>
 
-    <!--  创建  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="500px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-form-item label="账户备注" prop="acRemark">
-            <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
-          </el-form-item>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="账户密码" prop="acPwd">
-                <el-input v-model="formData.acPwd" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
+    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close style="width: 400px">
+      <el-scrollbar height="100px">
+        <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
           <el-row>
             <el-col :span="24">
-              <el-form-item label="产码方式" prop="type">
+              <el-form-item label="产码方式" prop="type" :required="true">
                 <el-radio-group v-model="formData.type" @change="handleChange">
                   <el-radio label="1">
                     <template #default><span>引导</span></template>
@@ -227,13 +219,138 @@
           </el-row>
           <el-row>
             <el-col :span="24">
-              <el-form-item label="通道id" prop="cid">
+              <el-form-item label="通道ID" prop="cid" :required="true">
                 <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
                              style="width: 100%"/>
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item label="token" prop="token">
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeChanDialog">取 消</el-button>
+          <el-button type="primary" @click="enterChanDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  创建 1000 -->
+    <el-dialog v-model="dialog1000FormVisible" :before-close="close1000Dialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="500px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="产码方式" prop="type">
+                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                  <el-radio label="1">
+                    <template #default><span>引导</span></template>
+                  </el-radio>
+                  <el-radio label="2">
+                    <template #default><span>预产</span></template>
+                  </el-radio>
+                  <el-radio label="3">
+                    <template #default><span>原生</span></template>
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道ID" prop="cid" disabled>
+                <el-input v-model="formData.cid" readonly disabled></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
+            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+          </el-form-item>
+          <el-row>
+            <el-col :span="6"></el-col>
+            <el-col :span="12">
+              <warning-bar title="注：默认0，则无限额控制"/>
+            </el-col>
+            <el-col :span="6"></el-col>
+            <el-col :span="8">
+              <el-form-item label="日限额" prop="dailyLimit">
+                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限额" prop="totalLimit">
+                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="笔数限额" prop="countLimit">
+                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="状态开关" prop="status">
+            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                       inactive-text="关闭"></el-switch>
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="close1000Dialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  创建 2000 -->
+    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="500px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="产码方式" prop="type">
+                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                  <el-radio label="1">
+                    <template #default><span>引导</span></template>
+                  </el-radio>
+                  <el-radio label="2">
+                    <template #default><span>预产</span></template>
+                  </el-radio>
+                  <el-radio label="3">
+                    <template #default><span>原生</span></template>
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道ID" prop="cid" disabled>
+                <el-input v-model="formData.cid" readonly disabled></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
@@ -272,25 +389,145 @@
       </template>
     </el-dialog>
 
-    <!--  修改  -->
-    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close>
+    <!--  创建 3000 -->
+    <el-dialog v-model="dialog3000FormVisible" :before-close="close3000Dialog" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-form-item label="账户备注" prop="acRemark">
-            <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="产码方式" prop="type">
+                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                  <el-radio label="1">
+                    <template #default><span>引导</span></template>
+                  </el-radio>
+                  <el-radio label="2">
+                    <template #default><span>预产</span></template>
+                  </el-radio>
+                  <el-radio label="3">
+                    <template #default><span>原生</span></template>
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道ID" prop="cid" disabled>
+                <el-input v-model="formData.cid" readonly disabled></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
+            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
+            <el-col :span="6"></el-col>
+            <el-col :span="12">
+              <warning-bar title="注：默认0，则无限额控制"/>
+            </el-col>
+            <el-col :span="6"></el-col>
+            <el-col :span="8">
+              <el-form-item label="日限额" prop="dailyLimit">
+                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限额" prop="totalLimit">
+                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="笔数限额" prop="countLimit">
+                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="状态" prop="status">
+            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                       inactive-text="关闭"></el-switch>
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  修改 3000 -->
+    <el-dialog v-model="dialogUpd3000FormVisible" :before-close="closeUpd3000Dialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="300px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="通道ID" prop="cid">
+                <el-input v-model="formData.cid" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
             <el-col :span="12">
               <el-form-item label="通道账户" prop="acAccount">
                 <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入" disabled/>
               </el-form-item>
             </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
+            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+          </el-form-item>
+          <el-row>
+            <el-col :span="6"></el-col>
             <el-col :span="12">
-              <el-form-item label="账户密码" prop="acPwd">
-                <el-input v-model="formData.acPwd" :clearable="true" placeholder="请输入"/>
+              <warning-bar title="注：默认0，则无限额控制"/>
+            </el-col>
+            <el-col :span="6"></el-col>
+            <el-col :span="8">
+              <el-form-item label="日限额" prop="dailyLimit">
+                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限额" prop="totalLimit">
+                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="笔数限额" prop="countLimit">
+                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
           </el-row>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeUpd3000Dialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  修改 2000 -->
+    <el-dialog v-model="dialogUpd2000FormVisible" :before-close="closeUpd2000Dialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="300px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
             <el-col :span="24">
               <el-form-item label="通道id" prop="cid">
@@ -298,7 +535,19 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item label="token" prop="token">
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
@@ -323,22 +572,76 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item label="状态开关" prop="status">
-            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                       inactive-text="关闭"></el-switch>
-          </el-form-item>
         </el-form>
       </el-scrollbar>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
+          <el-button @click="closeUpd2000Dialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!--  修改 1000 -->
+    <el-dialog v-model="dialogUpd1000FormVisible" :before-close="closeUpd1000Dialog" :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="300px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="通道ID" prop="cid">
+                <el-input v-model="formData.cid" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="报文" prop="token">
+            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+          </el-form-item>
+          <el-row>
+            <el-col :span="6"></el-col>
+            <el-col :span="12">
+              <warning-bar title="注：默认0，则无限额控制"/>
+            </el-col>
+            <el-col :span="6"></el-col>
+            <el-col :span="8">
+              <el-form-item label="日限额" prop="dailyLimit">
+                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限额" prop="totalLimit">
+                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="笔数限额" prop="countLimit">
+                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeUpd1000Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!--  CK  -->
-    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeDialog" title="变更CK"
+    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeUpdTokenDialog" title="变更CK"
                destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="token" prop="token">
@@ -347,7 +650,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取 消</el-button>
+          <el-button @click="closeUpdTokenDialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
       </template>
@@ -416,7 +719,12 @@
             <el-divider></el-divider>
             <span v-for="pcDetail in pcData[1]" style="padding: 10px">
               <el-badge :value="pcDetail.x4">
-                <el-button>{{ codeToText[pcDetail.x3] }} | {{ pcDetail.x1 }}元</el-button>
+                <div v-if="formatRegionCode(pcDetail.x3, false)">
+                  <el-button>{{ pcDetail.x1 }}元</el-button>
+                </div>
+                <div v-else>
+                  <el-button>{{ formatRegionCode(pcDetail.x3, false) }} | {{ pcDetail.x1 }}元</el-button>
+                </div>
               </el-badge>
             </span>
           </div>
@@ -508,7 +816,7 @@
                     <span v-else>￥{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="运营商" prop="operator" width="120px">
+<!--                <el-table-column label="运营商" prop="operator" width="120px">
                   <template #default="scope">
                     <el-select :required="true" v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
                       <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
@@ -529,7 +837,7 @@
                     >
                     </el-cascader>
                   </template>
-                </el-table-column>
+                </el-table-column>-->
                 <el-table-column align="right" width="200">
                   <template #header>
                     <el-button type="primary" @click="handleAdd2Upd">
@@ -787,6 +1095,7 @@ import {
   getChannelProductSelf
 } from '@/api/channelProduct'
 import {codeToText, regionData} from 'element-china-area-data';
+import { useRouter } from 'vue-router'
 
 // 全量引入格式化工具 请按需保留
 import {
@@ -803,7 +1112,13 @@ import {
   formatOPSimple,
   formatPayedColor,
   formatNotifyColor,
-  formatPayed, formatNotify, formatHandNotifyColor, formatHandNotify, formatCDStatusColor, formatCDStatus
+  formatPayed,
+  formatNotify,
+  formatHandNotifyColor,
+  formatHandNotify,
+  formatCDStatusColor,
+  formatCDStatus,
+  formatRegionCode
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
@@ -1044,6 +1359,15 @@ const formData = ref({
 
 // 验证规则
 const rule = reactive({
+  acRemark: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },{
+    whitespace: true,
+    message: '不能只输入空格',
+    trigger: ['input', 'blur'],
+  }],
   acAccount: [{
     required: true,
     message: '',
@@ -1054,6 +1378,28 @@ const rule = reactive({
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
     }],
+  cid: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
+  type: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
+})
+const chanRule = reactive({
   cid: [{
     required: true,
     message: '',
@@ -1287,14 +1633,23 @@ const typeTitle = ref('')
 
 // 更新行
 // ca 更新
-const dialogUpdFormVisible = ref(false)
+const dialogUpd3000FormVisible = ref(false)
+const dialogUpd2000FormVisible = ref(false)
+const dialogUpd1000FormVisible = ref(false)
 const updateChannelAccountFunc = async (row) => {
   const res = await findChannelAccount({ID: row.ID})
   type.value = 'update'
   typeTitle.value = '修改'
   if (res.code === 0) {
     formData.value = res.data.revca
-    dialogUpdFormVisible.value = true
+    let cid = Number(res.data.revca.cid)
+    if (cid >= 3000 && cid <= 3099){
+      dialogUpd3000FormVisible.value = true
+    }else if (cid >= 2000 && cid <= 2099){
+      dialogUpd2000FormVisible.value = true
+    }else if (cid >= 1000 && cid <= 1099){
+      dialogUpd1000FormVisible.value = true
+    }
   }
 }
 
@@ -1314,7 +1669,9 @@ const deleteChannelAccountFunc = async (row) => {
 }
 
 // 弹窗控制标记
-const dialogFormVisible = ref(false)
+const dialog1000FormVisible = ref(false)
+const dialog2000FormVisible = ref(false)
+const dialog3000FormVisible = ref(false)
 
 // 系统查单补单
 const dialogSysFormVisible = ref(false)
@@ -1399,14 +1756,135 @@ const closeDetailShow = () => {
 const openDialog = () => {
   type.value = 'create'
   typeTitle.value = '创建'
-  dialogFormVisible.value = true
+  channelCodeOptions.value = []
+  dialogChanFormVisible.value = true
 }
 
 // 关闭弹窗
-const closeDialog = () => {
-  dialogFormVisible.value = false
-  dialogUpdFormVisible.value = false
+const close1000Dialog = () => {
+  dialog1000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+// 关闭弹窗
+const close2000Dialog = () => {
+  dialog2000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+// 关闭弹窗
+const close3000Dialog = () => {
+  dialog3000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+
+const closeUpd3000Dialog = () => {
+  dialogUpd3000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+const closeUpd2000Dialog = () => {
+  dialogUpd2000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+const closeUpd1000Dialog = () => {
+  dialogUpd1000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+const closeUpdTokenDialog = () => {
   dialogTokenFormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+const closeDialog = () => {
+  dialogTokenFormVisible.value = false
+  dialog1000FormVisible.value = false
+  dialog2000FormVisible.value = false
+  dialog3000FormVisible.value = false
+  dialogUpd1000FormVisible.value = false
+  dialogUpd2000FormVisible.value = false
+  dialogUpd3000FormVisible.value = false
+
   formData.value = {
     acId: '',
     acRemark: '',
@@ -1627,6 +2105,10 @@ const openPayCodeOverviewShow = async (row) => {
   console.log(req)
   await getPayCodeOverviewByChanAccFunc({acId:req.acId, codeStatus: 2})
 }
+const router = useRouter()
+const goWorkLog = async () => {
+    router.push({ name: 'vbRecord', replace: true })
+}
 
 //  产码 ---------------------
 
@@ -1688,9 +2170,9 @@ const pcFormData = ref({
   expTime: '',
   list: [
     {
-      operator: '',
-      location: '',
-      locList: '',
+      // operator: '',
+      // location: '',
+      // locList: '',
       imgBaseStr: '',
       imgContent: '',
       address: '',
@@ -1723,9 +2205,9 @@ const createByChannelPayCodeFunc = async (row) => {
       expTime: '',
       list: [
         {
-          operator: '',
-          location: '',
-          locList: '',
+          // operator: '',
+          // location: '',
+          // locList: '',
           imgBaseStr: '',
           imgContent: '',
           address: '',
@@ -1741,8 +2223,8 @@ let activeUpdIndex = ref(-1);
 // 新增行
 const handleAdd2Upd = function () {
   let item = {
-    operator: '',
-    location: '',
+    // operator: '',
+    // location: '',
     imgBaseStr: '',
     money: 0,
   };
@@ -1758,7 +2240,7 @@ const handleSave2Upd = () => {
   let create = {...pcFormData.value}
   let newList = []
   let ele = pcFormData.value.list[activeUpdIndex.value];
-  ele.location = ele.locList[0]
+  // ele.location = ele.locList[0]
   pcFormData.value.list[activeUpdIndex.value] = ele
   newList.push(ele)
   create.list = newList
@@ -1894,9 +2376,9 @@ const closePcDialog = () => {
     expTime: '',
     list: [
       {
-        operator: '',
-        location: '',
-        locList: '',
+        // operator: '',
+        // location: '',
+        // locList: '',
         imgBaseStr: '',
         imgContent: '',
         address: '',
@@ -1944,7 +2426,7 @@ const enterPcDialog = async () => {
                   flag = true;
                   break
                 }
-                if(!item.location){
+                /*if(!item.location){
                   ElMessage({
                     type: 'error',
                     message: '传入正确地区'
@@ -1959,7 +2441,7 @@ const enterPcDialog = async () => {
                   })
                   flag = true;
                   break
-                }
+                }*/
               }
             }
             if (flag) {
@@ -1986,6 +2468,33 @@ const enterPcDialog = async () => {
 }
 //  产码 ---------------------
 
+// 产码选择通道
+// 弹窗控制标记
+const dialogChanFormVisible = ref(false)
+
+// 关闭弹窗
+const closeChanDialog = () => {
+  dialogChanFormVisible.value = false
+}
+
+const elChanFormRef = ref()
+const enterChanDialog = async () => {
+  elChanFormRef.value?.validate(async (valid) => {
+    if (!valid) return
+    console.log(formData.value.cid)
+    dialogChanFormVisible.value = false
+    let channelCode = Number(formData.value.cid);
+    let type = Number(formData.value.type);
+
+    if (channelCode === 3000){
+      dialog3000FormVisible.value = true
+    }else if (channelCode >= 1000 && channelCode < 1099) {
+      dialog1000FormVisible.value = true
+    }else if (channelCode >= 2000 && channelCode < 2099) {
+      dialog2000FormVisible.value = true
+    }
+  });
+}
 </script>
 
 <style scoped>

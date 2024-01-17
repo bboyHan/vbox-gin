@@ -202,10 +202,11 @@ func PayCodeCDCheckTask() {
 						if pcDB.ExpTime.After(time.Now()) && !flag { // 设置的过期时间比当前时间晚，表示还可使用
 							global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
 							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id =?", pcDB.ID).Update("code_status", 2)
-						} else { // 过期了，直接删除redis，并且状态置为失效 3
+						} else { // 超限额，直接结束，并且状态置为失效 3
 							global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id =?", pcDB.ID).Update("code_status", 3)
 						}
+
 					}
 
 				}

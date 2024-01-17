@@ -4,11 +4,33 @@
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
                @keyup.enter="onSubmit">
         <el-form-item label="付方单号" prop="orderId">
-          <el-input v-model="searchInfo.orderId" placeholder="搜索条件"/>
+          <el-input v-model="searchInfo.orderId" placeholder="搜索付方单号"/>
+        </el-form-item>
+        <el-form-item label="账号ID" prop="acId">
+          <el-input v-model="searchInfo.acId" placeholder="搜索账号ID"/>
+        </el-form-item>
+        <el-form-item label="通道账号" prop="acAccount">
+          <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
+        </el-form-item>
+        <el-form-item label="通道编码" prop="cid">
+          <el-input v-model="searchInfo.cid" placeholder="搜索通道编码"/>
+        </el-form-item>
+        <el-form-item label="订单状态" prop="orderStatus">
+          <el-select v-model="searchInfo.orderStatus" placeholder="选择状态">
+            <el-option label="已支付" value="1"/>
+            <el-option label="未支付" value="2"/>
+            <el-option label="超时" value="3"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="回调状态" prop="cbStatus">
+          <el-select v-model="searchInfo.cbStatus" placeholder="选择状态">
+            <el-option label="已回调" value="1"/>
+            <el-option label="未回调" value="2"/>
+          </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
           <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
         </el-form-item>
@@ -29,10 +51,12 @@
         <el-table-column align="center" label="账号ID" prop="acId" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
-              {{ scope.row.acId }}
-              <el-button type="primary" link class="table-button" @click="getAccDetails(scope.row)">
-                <el-icon style="margin-right: 5px">
-                  <InfoFilled/>
+              <el-button type="text" link @click="getAccDetails(scope.row)">
+                {{ scope.row.acId }}
+              </el-button>
+              <el-button type="primary" link @click="openOrderHisShow(scope.row)">
+                <el-icon style="margin-right: 1px">
+                  <Search/>
                 </el-icon>
               </el-button>
             </div>
@@ -93,23 +117,8 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="付方ID" prop="pAccount" width="160">
-          <template #default="scope">
-            {{ scope.row.pAccount }}
-            <el-button type="primary" link class="table-button" @click="getPADetails(scope.row.pAccount)">
-              <el-icon style="margin-right: 5px">
-                <InfoFilled/>
-              </el-icon>
-            </el-button>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
-        <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
-        <el-table-column align="left" label="平台ID" prop="platId" width="220"/>
-        <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
-        <el-table-column align="left" label="区域" prop="payRegion" width="180"/>
-        <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
-        <el-table-column align="left" label="账号ID" prop="acId" width="180">
+        <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
+        <el-table-column align="center" label="账号ID" prop="acId" width="120">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
               {{ scope.row.acId }}
@@ -127,36 +136,29 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="订单ID" prop="orderId" width="220"/>
-        <el-table-column align="left" label="金额" prop="money" width="120"/>
-        <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
+        <el-table-column align="center" label="订单ID" prop="orderId" width="220"/>
+        <el-table-column align="center" label="金额" prop="money" width="80"/>
+        <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
           <template #default="scope">
             <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
               {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="回调状态" prop="cbStatus" width="120">
+        <el-table-column align="center" label="回调状态" prop="cbStatus" width="120">
           <template #default="scope">
             <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
               {{ formatNotify(scope.row.cbStatus) }}
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="补单状态" prop="handStatus" width="120">
-          <template #default="scope">
-            <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
-              {{ formatHandNotify(scope.row.handStatus) }}
-            </el-button>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="创建时间" width="180">
+        <el-table-column align="center" label="创建时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="回调时间" width="180">
+        <el-table-column align="center" label="回调时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="操作">
+        <el-table-column align="center" label="操作" width="180">
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
               <el-icon style="margin-right: 5px">
@@ -164,8 +166,31 @@
               </el-icon>
               详情
             </el-button>
+            <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+              <el-icon style="margin-right: 5px">
+                <Position/>
+              </el-icon>
+              补单
+            </el-button>
           </template>
         </el-table-column>
+        <el-table-column align="center" label="补单状态" prop="handStatus" width="120">
+          <template #default="scope">
+            <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
+              {{ formatHandNotify(scope.row.handStatus) }}
+            </el-button>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="付方ID" prop="pAccount" width="120">
+          <template #default="scope">
+            {{ scope.row.pAccount }}
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="单价积分" prop="unitPrice" width="120"/>
+        <el-table-column align="center" label="平台ID" prop="platId" width="320"/>
+        <el-table-column align="center" label="访客ip" prop="payIp" width="180"/>
+        <el-table-column align="center" label="区域" prop="payRegion" width="180"/>
+        <el-table-column align="center" label="客户端设备" prop="payDevice" width="120"/>
       </el-table>
       <div class="gva-pagination">
         <el-pagination
@@ -256,6 +281,29 @@
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
+
+    <!-- 指定账户官方充值详情 -->
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow"
+               title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
+          <el-table-column align="left" label="充值类型" prop="ShowName" width="180"/>
+          <el-table-column align="left" label="渠道" prop="PayChannel" width="100"/>
+          <el-table-column align="left" label="上游订单" prop="SerialNo" width="380"/>
+          <el-table-column align="left" label="充值账号" prop="ProvideID" width="120"/>
+          <el-table-column align="left" label="金额" prop="PayAmt" width="120">
+            <template #default="scope">
+              {{ Number(scope.row.PayAmt) / 100 }}
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="充值时间" prop="PayTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.PayTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
   </div>
 </template>
 
@@ -266,7 +314,7 @@ import {
   getPayOrderList
 } from '@/api/payOrder'
 import {
-  findChannelAccount,
+  findChannelAccount, queryAccOrderHis,
 } from '@/api/channelAccount'
 // 全量引入格式化工具 请按需保留
 import {
@@ -276,11 +324,17 @@ import {
   filterDict,
   ReturnArrImg,
   onDownloadFile,
-  formatNotify, formatPayed, formatPayedColor, formatNotifyColor, formatHandNotify, formatHandNotifyColor
+  formatNotify,
+  formatPayed,
+  formatPayedColor,
+  formatNotifyColor,
+  formatHandNotify,
+  formatHandNotifyColor,
+  formatUtcTimestamp
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive} from 'vue'
-import {Eleme, InfoFilled, Position} from "@element-plus/icons-vue";
+import {Eleme, InfoFilled, Position, Search} from "@element-plus/icons-vue";
 
 defineOptions({
   name: 'PayOrder'
@@ -585,6 +639,30 @@ const closeAccDetailShow = () => {
 }
 // ------ 账户详情 ------
 
+// ------ 账户充值记录 ---------
+const orderHisVisible = ref(false)
+const orderHisTableData = ref([])
+const openOrderHisShow = async (row) => {
+  orderHisVisible.value = true
+  let req = {...row}
+  console.log(req)
+  await queryAccOrderHisFunc(req)
+}
+const closeOrderHisShow = () => {
+  orderHisVisible.value = false
+  orderHisTableData.value = []
+}
+const queryAccOrderHisFunc = async (row) => {
+  const req = {...row}
+  const resAcc = await findChannelAccount({acId: req.acId})
+
+  let res = await queryAccOrderHis(resAcc.data.revca)
+  console.log(res.data)
+  if (res.code === 0) {
+    orderHisTableData.value = res.data.list.WaterList
+  }
+}
+// ------ 账户充值记录 ---------
 </script>
 
 <style>

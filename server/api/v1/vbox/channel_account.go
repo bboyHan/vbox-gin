@@ -140,6 +140,7 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	vca.CreatedBy = utils.GetUserID(c)
 	verify := utils.Rules{
 		"AcAccount": {utils.NotEmpty()},
+		"AcRemark":  {utils.NotEmpty()},
 		"Cid":       {utils.NotEmpty()},
 	}
 	if err := utils.Verify(vca, verify); err != nil {
@@ -171,7 +172,7 @@ func (vcaApi *ChannelAccountApi) DeleteChannelAccount(c *gin.Context) {
 		return
 	}
 	vca.DeletedBy = utils.GetUserID(c)
-	if err := vcaService.DeleteChannelAccount(vca); err != nil {
+	if err := vcaService.DeleteChannelAccount(vca, c); err != nil {
 		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
@@ -196,7 +197,7 @@ func (vcaApi *ChannelAccountApi) DeleteChannelAccountByIds(c *gin.Context) {
 		return
 	}
 	deletedBy := utils.GetUserID(c)
-	if err := vcaService.DeleteChannelAccountByIds(IDS, deletedBy); err != nil {
+	if err := vcaService.DeleteChannelAccountByIds(IDS, c, deletedBy); err != nil {
 		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {

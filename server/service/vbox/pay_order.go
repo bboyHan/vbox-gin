@@ -100,6 +100,7 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			}
 			global.GVA_REDIS.Set(context.Background(), key, jsonString, 2*time.Second)
 		}
+
 	} else if err != nil {
 		fmt.Println("error:", err)
 	} else {
@@ -109,7 +110,7 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 
 	rep = &vboxRep.OrderSimpleRes{
 		OrderId:     order.OrderId,
-		Account:     order.PAccount,
+		Account:     order.AcAccount,
 		Money:       order.Money,
 		ResourceUrl: order.ResourceUrl,
 		Status:      order.OrderStatus,
@@ -411,13 +412,13 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			}
 			global.GVA_REDIS.Expire(context.Background(), accWaitYdKey, cdTime)
 
-			conn, err := mq.MQ.ConnPool.GetConnection()
-			if err != nil {
+			conn, errC := mq.MQ.ConnPool.GetConnection()
+			if errC != nil {
 				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(conn)
-			ch, err := conn.Channel()
-			if err != nil {
+			ch, errN := conn.Channel()
+			if errN != nil {
 				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
 			}
 
@@ -535,6 +536,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 				Money:       vpo.Money,
 				NotifyUrl:   vpo.NotifyUrl,
 				AcId:        accID,
+				AcAccount:   acAccount,
 				EventId:     eventID,
 				EventType:   eventType,
 				ExpTime:     &add,
@@ -656,7 +658,6 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
-		//TODO ??? 模糊查
 		// 使用 Keys 命令进行模糊匹配
 		pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, money)
 		var keys []string
@@ -746,6 +747,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 		EventType:   eventType,
 		EventId:     eventID,
 		AcId:        accID,
+		AcAccount:   acAccount,
 		OrderId:     utils.GenerateID(global.WalletEventOrderPrefix),
 		Money:       vpo.Money,
 		NotifyUrl:   vpo.NotifyUrl,
@@ -943,6 +945,9 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id =?", info.AcId)
+	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account like ?", "%"+info.AcAccount+"%")
 	}
 
 	err = db.Count(&total).Error

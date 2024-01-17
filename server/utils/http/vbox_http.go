@@ -47,16 +47,32 @@ const (
 
 func ParseCookie(cookieStr string, targetKey string) string {
 	pairs := strings.Split(cookieStr, ";")
+	var flag bool
+	var valueX string
+	var valueY string
 	for _, pair := range pairs {
 		kv := strings.SplitN(pair, "=", 2)
-		if len(kv) == 2 && strings.Contains(strings.ToLower(strings.TrimSpace(kv[0])), strings.ToLower(targetKey)) {
-			return strings.TrimSpace(kv[1])
+		lowerKey := strings.ToLower(strings.TrimSpace(kv[0]))
+		lowerTargetKey := strings.ToLower(targetKey)
+		if len(kv) == 2 && strings.Contains(lowerKey, lowerTargetKey) {
+			if lowerKey == lowerTargetKey {
+				flag = true
+				valueX = strings.TrimSpace(kv[1])
+				break
+			}
+			valueY = strings.TrimSpace(kv[1])
 		}
-		if len(kv) == 1 && strings.ToLower(strings.TrimSpace(kv[0])) == strings.ToLower(targetKey) {
+		if len(kv) == 1 && lowerKey == lowerTargetKey {
 			return ""
 		}
 	}
-	return ""
+
+	if flag {
+		return valueX
+	} else {
+		return valueY
+	}
+
 }
 
 func ProxyAddress2DB() string {

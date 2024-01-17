@@ -11,6 +11,8 @@ export const formatOPDesc = (operator) => {
     opMsg = '运营商：联通'
   } else if(operator === 'dianxin') {
     opMsg = '运营商：电信'
+  } else if(operator === 'default') {
+    opMsg = '运营商：默认'
   } else {
     opMsg = '运营商：未知'
   }
@@ -26,6 +28,8 @@ export const formatOPSimple = (operator) => {
     opMsg = '联通'
   } else if(operator === 'dianxin') {
     opMsg = '电信'
+  } else if(operator === 'default') {
+    opMsg = '默认'
   } else {
     opMsg = '未知'
   }
@@ -83,8 +87,11 @@ export const formatRegionCode = (locationCode, isStrict) => {
   if (!locationCode){
     return '-'
   }
+  if(String(locationCode) === '10'){
+    return '默认'
+  }
   if (isStrict){
-
+    return codeToText[locationCode]
   }else {
     return codeToText[locationCode.slice(0, 2)]
   }

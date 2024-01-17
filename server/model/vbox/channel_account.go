@@ -17,7 +17,7 @@ type ChannelAccount struct {
 	DailyLimit int    `json:"dailyLimit" form:"dailyLimit" gorm:"column:daily_limit;comment:日限额;size:10;"`                //日限额
 	TotalLimit int    `json:"totalLimit" form:"totalLimit" gorm:"column:total_limit;comment:总限额;size:10;"`                //总限额
 	Status     int    `json:"status" form:"status" gorm:"column:status;comment:状态开关;size:2;"`                             //状态开关
-	SysStatus  int    `json:"sysStatus" form:"sysStatus" gorm:"column:sys_status;comment:系统开关;size:2;"`                   //系统开关
+	SysStatus  int    `json:"sysStatus" form:"sysStatus" gorm:"column:sys_status;comment:系统开关,0-关闭,1-开启,2-删除中;size:2;"`   //系统开关
 	CdStatus   int    `json:"cdStatus" form:"cdStatus" gorm:"default:1;column:cd_status;comment:是否冷却,1-默认,2-冷却中;size:2;"` //冷却状态
 	Uid        int    `json:"uid" form:"uid" gorm:"column:uid;comment:用户id;"`                                             //用户id
 	CreatedBy  uint   `gorm:"column:created_by;comment:创建者"`

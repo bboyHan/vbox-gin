@@ -546,6 +546,14 @@ const previewInfo = () => {
 const copyVPAInfo = () => {
   let res = formData.value;
   console.log(res)
+  if (!res.cid) {
+    ElMessage({
+      showClose: true,
+      message: "未指定通道产品编码,请核实",
+      type: 'error'
+    })
+    return
+  }
   let copyInfo = `
     商户备注: ${res.pRemark}
     商户ID: ${res.pAccount}

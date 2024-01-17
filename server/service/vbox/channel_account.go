@@ -263,14 +263,45 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 
 // DeleteChannelAccount 删除通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAccount) (err error) {
+func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAccount, c *gin.Context) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("deleted_by", vca.DeletedBy).Error; err != nil {
+		var vcaDB vbox.ChannelAccount
+		if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).First(&vcaDB).Error; err != nil {
 			return err
 		}
-		if err = tx.Delete(&vca).Error; err != nil {
+
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		body := http2.DoGinContextBody(c)
+
+		oc := vboxReq.ChanAccAndCtx{
+			Obj: vcaDB,
+			Ctx: vboxReq.Context{
+				Body:      string(body),
+				ClientIP:  c.ClientIP(),
+				Method:    c.Request.Method,
+				UrlPath:   c.Request.URL.Path,
+				UserAgent: c.Request.UserAgent(),
+				UserID:    int(vcaDB.DeletedBy),
+			},
+		}
+		marshal, err := json.Marshal(oc)
+
+		err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
+
+		if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
 			return err
 		}
+
 		return nil
 	})
 	return err
@@ -278,16 +309,55 @@ func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAc
 
 // DeleteChannelAccountByIds 批量删除通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.IdsReq, deletedBy uint) (err error) {
-	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", ids.Ids).Update("deleted_by", deletedBy).Error; err != nil {
-			return err
+func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.IdsReq, c *gin.Context, deletedBy uint) (err error) {
+
+	if len(ids.Ids) < 1 {
+		return fmt.Errorf("传入的id为空")
+	} else {
+		for _, ID := range ids.Ids {
+			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+				var vcaDB vbox.ChannelAccount
+				if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vcaDB).Error; err != nil {
+					return err
+				}
+
+				conn, err := mq.MQ.ConnPool.GetConnection()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+				}
+				defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+				ch, err := conn.Channel()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				}
+
+				body := http2.DoGinContextBody(c)
+
+				oc := vboxReq.ChanAccAndCtx{
+					Obj: vcaDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(deletedBy),
+					},
+				}
+				marshal, err := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
+
+				if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
+					return err
+				}
+
+				return nil
+			})
 		}
-		if err := tx.Where("id in ?", ids.Ids).Delete(&vbox.ChannelAccount{}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+	}
+
 	return err
 }
 

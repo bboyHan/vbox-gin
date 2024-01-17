@@ -1,12 +1,16 @@
 package vbox
 
 import (
+	"context"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"sort"
 	"time"
@@ -27,9 +31,12 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		pid = time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	}
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+		orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
+
 		for _, c := range channelShop.ChannelShopList {
+			var shopDB vbox.ChannelShop
 			if c.ID == 0 { //走创建
-				chNew := &vbox.ChannelShop{
+				chNew := vbox.ChannelShop{
 					Cid:        channelShop.Cid,
 					ProductId:  pid,
 					ShopRemark: channelShop.ShopRemark,
@@ -41,8 +48,9 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				if err := tx.Model(&vbox.ChannelShop{}).Create(&chNew).Error; err != nil {
 					return err
 				}
+				shopDB = chNew
 			} else { //走更新
-				chNew := &vbox.ChannelShop{
+				chNew := vbox.ChannelShop{
 					Cid:        channelShop.Cid,
 					ProductId:  pid,
 					ShopRemark: channelShop.ShopRemark,
@@ -54,6 +62,20 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				if err := tx.Model(&vbox.ChannelShop{}).Where("id = ?", c.ID).Updates(&chNew).Error; err != nil {
 					return err
 				}
+				shopDB = chNew
+			}
+
+			global.GVA_LOG.Info("创建/更新店铺信息", zap.Any("shopDB", shopDB))
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+			if c.Status == 1 {
+
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+					Member: keyMem,
+				})
+			} else {
+				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
 			}
 		}
 		return nil
@@ -66,6 +88,15 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 // Author [piexlmax](https://github.com/piexlmax)
 func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox.ChannelShop) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+		var shopDB vbox.ChannelShop
+		tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).First(&shopDB)
+
+		orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
+
+		key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+		keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+		global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+
 		if err := tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).Update("deleted_by", channelShop.DeletedBy).Error; err != nil {
 			return err
 		}
@@ -81,6 +112,18 @@ func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox
 // Author [piexlmax](https://github.com/piexlmax)
 func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request.IdsReq, deleted_by uint) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+		var shopDBList []vbox.ChannelShop
+		tx.Model(&vbox.ChannelShop{}).Where("id in ?", ids).Find(&shopDBList)
+
+		for _, shopDB := range shopDBList {
+			orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
+
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+		}
+
 		if err := tx.Model(&vbox.ChannelShop{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
 			return err
 		}
@@ -100,14 +143,63 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 			Update("shop_remark", channelShop.ShopRemark).
 			Update("updated_by", channelShop.UpdatedBy).Error
 	} else if channelShop.Type == 2 {
-		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.Id).
-			Update("status", channelShop.Status).
-			Update("updated_by", channelShop.UpdatedBy).Error
+		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+			var shopDB vbox.ChannelShop
+			tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).First(&shopDB)
+			orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+
+			if channelShop.Status == 1 {
+
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+					Member: keyMem,
+				})
+			} else {
+				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+			}
+
+			err = tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).
+				Update("status", channelShop.Status).
+				Update("updated_by", channelShop.UpdatedBy).Error
+
+			return nil
+		})
 
 	} else if channelShop.Type == 3 {
-		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
-			Update("status", channelShop.Status).
-			Update("updated_by", channelShop.UpdatedBy).Error
+		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+			var shopDBList []vbox.ChannelShop
+			tx.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).Find(&shopDBList)
+
+			for _, shopDB := range shopDBList {
+				orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
+
+				key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+				keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+
+				if channelShop.Status == 1 {
+
+					global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+						Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+						Member: keyMem,
+					})
+				} else {
+					global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+				}
+
+			}
+
+			err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
+				Update("status", channelShop.Status).
+				Update("updated_by", channelShop.UpdatedBy).Error
+
+			return nil
+
+		})
+
 	} else {
 		err = fmt.Errorf("不支持的操作，type检查")
 	}

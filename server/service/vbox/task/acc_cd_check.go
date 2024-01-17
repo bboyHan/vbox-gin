@@ -73,8 +73,6 @@ func AccCDCheckTask() {
 				//err = handler(msg.Body)
 				v := string(msg.Body)
 
-				global.GVA_LOG.Info("【预产类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
-
 				split := strings.Split(v, "-")
 				//waitAccYdKey - "vb_acc_waiting_yd:acid_%s:money_%v"
 				waitAccYdKey := split[0]
@@ -198,6 +196,10 @@ func AccCDCheckTask() {
 				ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 
 				if ttl <= 0 { //没进入冷却状态，直接置为已用
+
+					// 更新账号为正常状态
+					global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+
 					orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
 
 					accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgTmp[0], accDB.Cid, money)
@@ -213,12 +215,19 @@ func AccCDCheckTask() {
 					continue
 				} else { //仍然处于冷却状态，重新丢回ck check mq
 					if flag { // 表示超限了，删掉处理
+
+						// 更新账号为正常状态
+						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+
 						orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
 						accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgTmp[0], accDB.Cid, money)
 						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 						global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 					} else {
+
+						// 更新账号为冷却状态
+						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 2)
 						waitMsg := v
 						err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
 						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("ttl", ttl))

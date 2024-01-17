@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
@@ -8,6 +9,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 // string 去重方法
@@ -59,18 +61,34 @@ func GetChannelCodeByOrgID(orgID uint) []string {
 	return UniqStr(ids)
 }
 
-// 获取当前部门ID
+// GetSelfOrg 获取当前部门ID(传user ID)
 func GetSelfOrg(id uint) []uint {
-	var orgUser []model.OrgUser
-	err := global.GVA_DB.Find(&orgUser, "sys_user_id = ?", id).Error
-	if err != nil {
-		return []uint{}
+	orgKey := fmt.Sprintf(global.SysUserOrgPrefix, id)
+	orgVal := global.GVA_REDIS.SMembers(context.Background(), orgKey).Val()
+	if len(orgVal) == 0 { //查库
+		var orgUser []model.OrgUser
+		err := global.GVA_DB.Find(&orgUser, "sys_user_id = ?", id).Error
+		if err != nil {
+			return []uint{}
+		}
+		var orgId []uint
+		for _, m := range orgUser {
+			orgId = append(orgId, m.OrganizationID)
+		}
+
+		uniq := Uniq(orgId)
+
+		global.GVA_REDIS.SAdd(context.Background(), orgKey, uniq)
+		global.GVA_REDIS.Expire(context.Background(), orgKey, 5*time.Minute)
+
+		return uniq
+	} else {
+		orgIds, err := utils.ConvertStringSliceToUintSlice(orgVal)
+		if err != nil {
+			return []uint{}
+		}
+		return orgIds
 	}
-	var orgId []uint
-	for _, m := range orgUser {
-		orgId = append(orgId, m.OrganizationID)
-	}
-	return Uniq(orgId)
 }
 
 // 获取所有部门

@@ -32,7 +32,7 @@
     <div v-show="payVisible">
       <!-- 显示新的 div 的代码... -->
       <!--   1000 引导   -->
-      <div v-if="payTypeVisible === 1">
+      <div v-if="payTypeVisible >= 1000 && payTypeVisible < 1099">
         <div class="p_container">
           <div class="p_blue-section" v-for="index in 10" :key="index" :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content">
@@ -63,25 +63,33 @@
         </div>
         <div class="p_content_inner" style="margin-top: 20px;">
           <el-row>
-            <el-col>
+<!--            <el-col>
               <div style="height: 5px; margin-top: 20px">
               </div>
-            </el-col>
+            </el-col>-->
             <el-col>
               <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{ payData.money }}.00</span></span>
+                </div>
                 <div class="medicine-bag">
                   <span>{{ payData.account }}</span>
                 </div>
                 <div class="copy-tip">
                   <span>长按框内</span>
                   <span class="jtone"></span>
-                  <span>全选</span>
-                  <span class="jttwo"></span>
                   <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
                   <span class="jtthree"></span>
                   <span>打开跳转</span>
                 </div>
-<!--                <button class="copy_button" @click="">一键复制</button>-->
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo(payData)">一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo(payData)">复制成功</button>
+                </div>
               </div>
             </el-col>
           </el-row>
@@ -89,13 +97,14 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col>
-              <button class="p_button" @click="openPay(payData)">点击付款</button>
+              <button class="btn-copy p_button" @click="openPay(payData)">点击付款</button>
             </el-col>
           </el-row>
         </div>
       </div>
+
       <!--   3000 直付   -->
-      <div v-if="payTypeVisible === 2">
+      <div v-if="payTypeVisible >= 3000 && payTypeVisible < 3099">
         <div class="p_container">
           <!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
           <div class="p_blue-section" v-for="index in 10" :key="index" :style="{ backgroundColor: generateColor(index) }"></div>
@@ -146,7 +155,7 @@
                   </div>
                 </div>
                 <div class="copy-tip">
-                  <span>核对信息</span>
+                  <span>切换手机</span>
                   <span class="jtone"></span>
                   <span>打开微信</span>
                   <span class="jttwo"></span>
@@ -193,7 +202,7 @@ export default {
 }
 </script>
 <script setup>
-import { ElButton } from 'element-plus';
+import {ElButton, ElMessage} from 'element-plus';
 import { onMounted, ref, onUnmounted } from 'vue';
 import CountDown from 'vue-canvas-countdown';
 import { queryOrderSimple } from '@/api/payOrder';
@@ -201,11 +210,14 @@ import { useRoute } from 'vue-router';
 import { WarningFilled } from '@element-plus/icons-vue';
 import {formatTime} from "@/utils/format";
 import QRCode from "qrcode";
+import ClipboardJS from "clipboard";
+import {setCacheControl} from "@/utils/http";
 
 // 弹窗控制标记
 const dialogCountVisible = ref(true)
 const payVisible = ref(false)
 const payTypeVisible = ref(0)
+const copyInfoVisible = ref(false)
 const finishedVisible = ref(false)
 const timeoutVisible = ref(false)
 const exVisible = ref(false)
@@ -254,7 +266,57 @@ const onEnd = async () => {
   console.log('倒计时结束的回调函数');
 };
 
+// 复制
+const copyInfo = async (payData) => {
+  let copyInfo = `${payData.account}`
+  console.log("copyInfo", copyInfo)
+  const clipboard = new ClipboardJS('.btn-copy', {
+    text: () => copyInfo
+  });
+
+  clipboard.on('success', () => {
+    ElMessage({
+      type: 'success',
+      message: '复制成功'
+    })
+    copyInfoVisible.value = true
+    setTimeout(() => {
+      copyInfoVisible.value = false
+    }, 2000)
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
+
+  clipboard.on('error', () => {
+    ElMessage({
+      type: 'error',
+      message: '复制异常'
+    })
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
+
+};
+
 const openPay = async (payData) => {
+  const clipboard = new ClipboardJS('.btn-copy', {
+    text: () => payData.account
+  });
+
+  clipboard.on('success', () => {
+    ElMessage({
+      type: 'success',
+      message: '复制成功'
+    })
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
+
+  clipboard.on('error', () => {
+    ElMessage({
+      type: 'error',
+      message: '复制异常'
+    })
+    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  });
+
   location.href = payData.resource_url;
 };
 
@@ -268,6 +330,8 @@ onMounted(() => {
   // 启动定时器，每秒钟请求一次 HTTP 接口
   timerId = setInterval(queryOrder, 1000);
   calculateCountdown();
+
+  setCacheControl(180) // 设置缓存时间为180秒
 });
 
 onUnmounted(() => {
@@ -306,13 +370,8 @@ const queryOrder = async () => {
         notFoundVisible.value = true;
       } else if (result.code === 0) {
 
-        let cid = Number(result.data.channel_code);
-        if (cid >= 1000 && cid < 1099) {
-          payTypeVisible.value = 1;
-        } else if (cid >= 2000 && cid < 2099){
-          payTypeVisible.value = 1;
-        } else if (cid >= 3000 && cid < 3099){
-          payTypeVisible.value = 2;
+        payTypeVisible.value = Number(result.data.channel_code);
+
           if (content){
             QRCode.toDataURL(content)
                 .then((dataUrl) => {
@@ -324,7 +383,6 @@ const queryOrder = async () => {
           } else {
             // 付款码异常
           }
-        }
 
         if (result.data.status === 1) {
           finishedVisible.value = true;
@@ -484,6 +542,19 @@ h1 {
   width: 90%;
 }
 
+.copy_success_button {
+  border: none;
+  font-size: 16px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #0d650a, #71ab34);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 30px;
+  margin-top: 6px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+}
+
 .copy-tip {
   display: flex;
   justify-content: space-around;
@@ -559,6 +630,16 @@ h1 {
   border-top: 12px solid transparent;
   border-left: 10px solid rgb(77, 67, 61);
   border-bottom: 12px solid transparent;
+}
+
+.medicine-money-bag {
+  background: rgba(215, 197, 197, 0.1);
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  height: 30px;
 }
 
 .medicine-bag {

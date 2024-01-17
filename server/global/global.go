@@ -32,11 +32,12 @@ const (
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 
 	ResourceNotEnough = "当前库存不足，请及时核查匹配资源剩余情况"
 
 	NotifyEx          = "付方回调异常, err: %v， 付方响应信息： %v"
-	NotifyHandSuccess = "【候补单】付方回调成功， 付方响应信息： %v"
+	NotifyHandSuccess = "【候补单】付方回调成功， 付方响应信息： 状态码：%v，数据包：%v"
 )
 
 const (
@@ -68,12 +69,14 @@ const (
 )
 
 const (
-	PayAccPrefix = "p_acc_id:" // 商户信息
+	SysUserOrgPrefix = "sys_user:%d"
 )
 
 // PAcc 相关
 
 const (
+	PayAccPrefix = "p_acc_id:" // 商户信息
+
 	PAccPay    = "p_acc_pay"
 	PAccCreate = "p_acc_create"
 	PAccQuery  = "p_acc_query"

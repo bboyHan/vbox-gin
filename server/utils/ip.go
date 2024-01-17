@@ -38,6 +38,6 @@ func ISP(ispCtx string) string {
 	} else if strings.Contains(ispCtx, "移动") {
 		return "yidong"
 	} else {
-		return ""
+		return "default"
 	}
 }

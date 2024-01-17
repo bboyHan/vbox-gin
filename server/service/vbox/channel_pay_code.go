@@ -151,11 +151,12 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 	}
 
 	if vboxChannelPayCode.Location == "" {
-		return fmt.Errorf("请传入正确的地区")
+		vboxChannelPayCode.Location = "10"
+		global.GVA_LOG.Info("使用默认的地区")
 	}
 
 	if vboxChannelPayCode.Operator == "" {
-		return fmt.Errorf("请传入正确的运营商")
+		vboxChannelPayCode.Operator = "default"
 	}
 
 	// 组织

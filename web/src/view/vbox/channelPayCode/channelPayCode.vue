@@ -212,10 +212,16 @@
                 <div>{{ formatOPSimple(pcData[0]) }}</div>
                 <el-divider></el-divider>
                 <span v-for="pcDetail in pcData[1]" style="padding: 10px">
-              <el-badge :value="pcDetail.x4">
-                <el-button>{{ codeToText[pcDetail.x3] }} | {{ pcDetail.x1 }}元</el-button>
-              </el-badge>
-            </span>
+                  <el-badge :value="pcDetail.x4">
+                    <div v-if="formatRegionCode(pcDetail.x3, false)">
+                      <el-button>{{ pcDetail.x1 }}元</el-button>
+                    </div>
+                    <div v-else>
+                      <el-button>{{ formatRegionCode(pcDetail.x3, false) }} | {{ pcDetail.x1 }}元</el-button>
+                    </div>
+                    <!--                <el-button>{{ codeToText[pcDetail.x3] }} | {{ pcDetail.x1 }}元</el-button>-->
+                  </el-badge>
+                </span>
               </div>
             </div>
           </el-scrollbar>
@@ -348,28 +354,28 @@
                     <span v-else>￥{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="运营商" prop="operator" width="120px">
-                  <template #default="scope">
-                    <el-select v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
-                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
-                    </el-select>
-                  </template>
-                </el-table-column>
-                <el-table-column label="地区" prop="locList" width="120px">
-                  <template #default="scope">
-                    <el-cascader
-                        :change-on-select="true"
-                        style="width:100%"
-                        :options="regionOptions"
-                        v-model="scope.row.locList"
-                        @change="chge"
-                        placeholder="选择地区"
-                        filterable
-                        :props="{checkStrictly: false}"
-                    >
-                    </el-cascader>
-                  </template>
-                </el-table-column>
+                <!--                <el-table-column label="运营商" prop="operator" width="120px">
+                                  <template #default="scope">
+                                    <el-select v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                                    </el-select>
+                                  </template>
+                                </el-table-column>
+                                <el-table-column label="地区" prop="locList" width="120px">
+                                  <template #default="scope">
+                                    <el-cascader
+                                        :change-on-select="true"
+                                        style="width:100%"
+                                        :options="regionOptions"
+                                        v-model="scope.row.locList"
+                                        @change="chge"
+                                        placeholder="选择地区"
+                                        filterable
+                                        :props="{checkStrictly: false}"
+                                    >
+                                    </el-cascader>
+                                  </template>
+                                </el-table-column>-->
                 <el-table-column align="right" width="200">
                   <template #header>
                     <el-button type="primary" @click="handleAdd2Upd">
@@ -605,7 +611,7 @@ import {
   formatJoin,
   formatOPSimple,
   formatPayCodeColor,
-  formatPayCodeStatus,
+  formatPayCodeStatus, formatRegionCode,
   formatTime,
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -627,8 +633,8 @@ let activeUpdIndex = ref(-1);
 // 新增行
 const handleAdd2Upd = function () {
   let item = {
-    operator: '',
-    location: '',
+    // operator: '',
+    // location: '',
     imgBaseStr: '',
     money: 0,
   };
@@ -644,7 +650,7 @@ const handleSave2Upd = () => {
   let create = {...batchFormData.value}
   let newList = []
   let ele = batchFormData.value.list[activeUpdIndex.value];
-  ele.location = ele.locList[0]
+  // ele.location = ele.locList[0]
   batchFormData.value.list[activeUpdIndex.value] = ele
   newList.push(ele)
   create.list = newList
@@ -679,13 +685,12 @@ const closePayCodeOverviewShow = () => {
 const openPayCodeOverviewShow = async () => {
   payCodeOverviewVisible.value = true
   let req = {...searchInfo.value}
-
   await getPayCodeOverviewByChanAccFunc(req)
 }
 const getPayCodeOverviewByChanAccFunc = async (row) => {
   const req = {...row}
-  console.log(req)
-  if(req.codeStatus === 0 ) req.codetatus = 2;
+  console.log(req.codeStatus)
+  if (typeof req.codeStatus === 'undefined') req.codeStatus = 2;
   console.log(req)
   let res = await getPayCodeOverview(req)
   console.log(res.data)
@@ -722,9 +727,9 @@ const batchFormData = ref({
   expTime: '',
   list: [
     {
-      operator: '',
-      location: '',
-      locList: '',
+      // operator: '',
+      // location: '',
+      // locList: '',
       imgBaseStr: '',
       imgContent: '',
       address: '',
@@ -1032,7 +1037,7 @@ const getACCChannelAccountByAcid = async () => {
 
 // 获取通道账号
 const getALlChannelAccount = async (cid) => {
-  const res = await getChannelAccountList({cid: cid,sysStatus: 1, status: 1, page: 1, pageSize: 999})
+  const res = await getChannelAccountList({cid: cid, sysStatus: 1, status: 1, page: 1, pageSize: 999})
   accList.value = res.data.list
 }
 
@@ -1359,9 +1364,9 @@ const openBatchDialog = () => {
     expTime: '',
     list: [
       {
-        operator: '',
-        location: '',
-        locList: '',
+        // operator: '',
+        // location: '',
+        // locList: '',
         imgBaseStr: '',
         imgContent: '',
         address: '',

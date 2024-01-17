@@ -107,30 +107,32 @@ service.interceptors.response.use(
     switch (error.response.status) {
       case 500:
         ElMessageBox.confirm(`
-        <p>检测到系统错误${error}</p>
+        <p>系统<span style="color:red"> 500 </span>错误,请稍后再试...</p>
+<!--        <p>错误信息：${error}</p>-->
 <!--        <p>错误码<span style="color:red"> 500 </span>：此类错误内容常见于后台panic，请先查看后台日志，如果影响您正常使用可强制登出清理缓存</p>-->
-        <p>错误码<span style="color:red"> 500 </span>：请联系管理员反馈处理</p>
-        `, '后台异常', {
+<!--        <p>错误码<span style="color:red"> 500 </span>：请联系管理员反馈处理</p>-->
+        `, '系统异常', {
           dangerouslyUseHTMLString: true,
           distinguishCancelAndClose: true,
-          confirmButtonText: '清理缓存',
+          // confirmButtonText: '清理缓存',
           cancelButtonText: '取消'
         })
           .then(() => {
             let userStore = useUserStore()
             userStore.token = ''
             localStorage.clear()
-            router.push({ name: 'Login', replace: true })
+            // router.push({ name: 'Login', replace: true })
           })
         break
       case 404:
         ElMessageBox.confirm(`
-          <p>检测到接口错误${error}</p>
-          <p>错误码<span style="color:red"> 404 </span>：资源未找到</p>
-          `, '接口报错', {
+        <p>系统<span style="color:red"> 404 </span>错误,资源未找到...</p>
+        <!--  <p>系统错误${error}</p>
+          <p>错误码<span style="color:red"> 404 </span>：资源未找到</p>-->
+          `, '系统异常', {
           dangerouslyUseHTMLString: true,
           distinguishCancelAndClose: true,
-          confirmButtonText: '我知道了',
+          // confirmButtonText: '我知道了',
           cancelButtonText: '取消'
         })
         break

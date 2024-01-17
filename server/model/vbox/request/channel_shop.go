@@ -14,7 +14,7 @@ type ChannelShopSearch struct {
 }
 
 type ChannelShopReq struct {
-	Id         uint   `json:"id" form:"id"`                 //ID
+	ID         uint   `json:"id" form:"id"`                 //ID
 	Type       uint   `json:"type" form:"type"`             //操作类型 1-更新店名 2-开关单条 3-开关整个店
 	Cid        string `json:"cid" form:"cid"`               //通道ID
 	ProductId  string `json:"productId" form:"productId"`   //产品ID

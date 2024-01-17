@@ -46,6 +46,7 @@ func RunWindowsServer() {
 		}
 		if global.GVA_CONFIG.MQTask.AccEnableCheck {
 			go task.ChanAccEnableCheckTask()
+			go task.ChanAccDelCheckTask()
 		}
 		if global.GVA_CONFIG.MQTask.PayCodeExpCheck {
 			go task.PayCodeExpCheck()
