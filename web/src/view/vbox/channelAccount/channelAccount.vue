@@ -197,7 +197,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close style="width: 400px">
+    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" :draggable="true" destroy-on-close style="width: 400px">
       <el-scrollbar height="100px">
         <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
           <el-row>
@@ -236,7 +236,7 @@
     </el-dialog>
 
     <!--  创建 1000 -->
-    <el-dialog v-model="dialog1000FormVisible" :before-close="close1000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialog1000FormVisible" :before-close="close1000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -313,7 +313,7 @@
     </el-dialog>
 
     <!--  创建 2000 -->
-    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -390,7 +390,7 @@
     </el-dialog>
 
     <!--  创建 3000 -->
-    <el-dialog v-model="dialog3000FormVisible" :before-close="close3000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialog3000FormVisible" :before-close="close3000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -467,7 +467,7 @@
     </el-dialog>
 
     <!--  修改 3000 -->
-    <el-dialog v-model="dialogUpd3000FormVisible" :before-close="closeUpd3000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd3000FormVisible" :before-close="closeUpd3000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -525,7 +525,7 @@
     </el-dialog>
 
     <!--  修改 2000 -->
-    <el-dialog v-model="dialogUpd2000FormVisible" :before-close="closeUpd2000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd2000FormVisible" :before-close="closeUpd2000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -583,7 +583,7 @@
     </el-dialog>
 
     <!--  修改 1000 -->
-    <el-dialog v-model="dialogUpd1000FormVisible" :before-close="closeUpd1000Dialog" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd1000FormVisible" :before-close="closeUpd1000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -641,7 +641,7 @@
     </el-dialog>
 
     <!--  CK  -->
-    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeUpdTokenDialog" title="变更CK"
+    <el-dialog v-model="dialogTokenFormVisible" :before-close="closeUpdTokenDialog" :draggable="true" title="变更CK"
                destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="token" prop="token">
@@ -657,7 +657,7 @@
     </el-dialog>
 
     <!-- 查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions :column="6" border>
@@ -686,7 +686,7 @@
     </el-dialog>
 
     <!-- 查看充值详情 -->
-    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow"
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" :draggable="true" lock-scroll :before-close="closeOrderHisShow"
                title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
@@ -709,7 +709,7 @@
     </el-dialog>
 
     <!-- 查看产码详情 -->
-    <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll
+    <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :draggable="true"
                :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
       <el-scrollbar height="550px">
         <div class="region-card-container">
@@ -733,7 +733,7 @@
     </el-dialog>
 
     <!-- 产码-->
-    <el-dialog width="60%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle"
+    <el-dialog width="60%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" :draggable="true"
                destroy-on-close>
       <el-scrollbar height="450px">
         <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
@@ -879,7 +879,7 @@
     </el-dialog>
 
     <!-- 查询指定账户订单 -->
-    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow"
+    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow" :draggable="true"
                title="查看系统充值详情" destroy-on-close>
       <el-scrollbar height="450px">
         <div class="gva-search-box">
@@ -1029,7 +1029,7 @@
     </el-dialog>
 
     <!-- 订单查看详情 -->
-    <el-dialog v-model="sysDetailShow" style="width: 800px" lock-scroll :before-close="closeSysDetailShow" title="查看详情"
+    <el-dialog v-model="sysDetailShow" style="width: 800px" lock-scroll :before-close="closeSysDetailShow" title="查看详情" :draggable="true"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -1054,7 +1054,7 @@
     <el-dialog
         v-model="dialogSysFormVisible"
         :before-close="closeSysDialog"
-        :title="typeTitle"
+        :title="typeTitle" :draggable="true"
         destroy-on-close
         style="width: 450px"
     >

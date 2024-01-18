@@ -33,7 +33,7 @@
         </el-table-column>
       </el-table>
     </div>
-    <el-dialog v-model="dialogFormVisible" :title="dialogTitle">
+    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" :draggable="true">
       <el-scrollbar height="500px">
         <el-form ref="channelProductForm" :model="form" :rules="rules" label-width="80px">
           <el-form-item label="父级编码" prop="parentId">

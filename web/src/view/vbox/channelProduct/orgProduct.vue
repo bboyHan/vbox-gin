@@ -99,7 +99,7 @@
       </div>
     </div>
     <el-dialog
-      v-model="orgDialog"
+      v-model="orgDialog" :draggable="true"
       title="组织管理"
     >
       <el-form :model="orgForm" label-width="120px">
@@ -135,7 +135,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="orgProductDialog" title="组织产品">
+    <el-dialog v-model="orgProductDialog" :draggable="true" title="组织产品">
       <el-form v-model="orgProductForm" label-width="120px">
         <el-form-item label="组织">
           <el-select v-model="orgProductForm.organizationID" disabled placeholder="请选择目标组织">

@@ -206,7 +206,7 @@
     </div>
 
     <!-- 订单查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" :draggable="true" lock-scroll :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -231,7 +231,7 @@
     <el-dialog
         v-model="dialogFormVisible"
         :before-close="closeDialog"
-        :title="typeTitle"
+        :title="typeTitle" :draggable="true"
         destroy-on-close
         style="width: 450px"
     >
@@ -254,7 +254,7 @@
     </el-dialog>
 
     <!-- 账号查看详情 -->
-    <el-dialog v-model="detailAccShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow"
+    <el-dialog v-model="detailAccShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow" :draggable="true"
                title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="6" border>
@@ -283,7 +283,7 @@
     </el-dialog>
 
     <!-- 指定账户官方充值详情 -->
-    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow"
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow" :draggable="true"
                title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">

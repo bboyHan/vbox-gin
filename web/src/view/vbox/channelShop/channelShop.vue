@@ -135,7 +135,7 @@
     </div>
 
     <!--  创建商铺  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="60%">
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="120px">
           <el-row>
@@ -198,6 +198,7 @@
                   <template #default="scope">
                     <div v-if="activeIndex === scope.$index">
                       <el-button type="primary" @click="handleSave"><Select style="width:1em; height:1em;"/></el-button>
+                      <el-button type="primary" @click="handleDelete(scope.$index)"><Delete style="width:1em; height:1em;"/></el-button>
                     </div>
                     <div v-else>
                       <el-button type="success" @click="handleEdit(scope.$index)">
@@ -229,7 +230,7 @@
     </el-dialog>
 
     <!--  修改店名备注  -->
-    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close
+    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close
                width="20%">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
@@ -264,7 +265,7 @@
     </el-dialog>
 
     <!--  修改商铺  -->
-    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close
+    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close
                width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
@@ -311,7 +312,7 @@
                 <el-table-column label="金额（元）" prop="money" width="120px">
                   <template #default="scope">
                     <el-input type="number" v-if="activeUpdIndex === scope.$index" v-model.number="scope.row.money"
-                              :step="10"></el-input>
+                              :step="10" disabled></el-input>
                     <span v-else>{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
@@ -329,22 +330,27 @@
                 </el-table-column>
                 <el-table-column align="right" width="200">
                   <template #header>
-                    <el-button type="primary" @click="handleAdd2Upd">
-                      <Plus style="width:1em; height:1em;"/>
-                    </el-button>
+                    <el-popconfirm @confirm="handleAdd2Upd" width="320" confirm-button-text="Yes"
+                                   cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
+                                   title="确定要添加商品吗？">
+                      <template #reference>
+                        <el-button type="danger">
+                          <Plus style="width:1em; height:1em;"/>
+                        </el-button>
+                      </template>
+                    </el-popconfirm>
                   </template>
                   <template #default="scope">
                     <div v-if="activeUpdIndex === scope.$index">
-                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
-                      </el-button>
+                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/></el-button>
                     </div>
                     <div v-else>
                       <el-button type="success" @click="handleEdit2Upd(scope.$index)">
                         <Edit style="width:1em; height:1em;"/>
                       </el-button>
-                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
+                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="320" confirm-button-text="Yes"
                                      cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
-                                     title="确定要删除该商品吗？">
+                                     title="注意：如果只剩一条记录，删除商品时将连同店铺一起删除。确定要删除该商品吗？">
                         <template #reference>
                           <el-button type="danger">
                             <Delete style="width:1em; height:1em;"/>
@@ -361,7 +367,7 @@
       </el-scrollbar>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -466,6 +472,34 @@ const handleSave2Upd = () => {
   let newList = []
   newList.push(formData.value.list[activeUpdIndex.value])
   create.list = newList
+  console.log(create.list)
+  if (create.list.length === 0) {
+    ElMessage({
+      type: 'error',
+      message: '请至少添加一个商铺地址'
+    })
+    return
+  }else {
+    for (let i = 0; i < create.list.length; i++) {
+      let addr = create.list[i].address
+      let money = create.list[i].money
+      console.log(addr)
+      console.log(money)
+      if (addr === '') {
+        ElMessage({
+          type: 'error',
+          message: '请填写正确地址'
+        })
+        return
+      } else if (money === 0) {
+        ElMessage({
+          type: 'error',
+          message: '请填写正确金额'
+        })
+        return
+      }
+    }
+  }
   createChannelShop(create)
   activeUpdIndex.value = -1;
 };
@@ -685,7 +719,7 @@ const initForm = () => {
 // 查询
 const getTableData = async () => {
   const table = await getChannelShopList({page: page.value, pageSize: pageSize.value, ...searchInfo.value})
-  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value})
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: 1})
 
   if (table.code === 0) {
     initForm()
@@ -841,9 +875,63 @@ const enterDialog = async () => {
     let res
     switch (type.value) {
       case 'create':
+        if (formData.value.list.length === 0) {
+          ElMessage({
+            type: 'error',
+            message: '请至少添加一个商铺地址'
+          })
+          return
+        }else {
+          for (let i = 0; i < formData.value.list.length; i++) {
+            let addr = formData.value.list[i].address
+            let money = formData.value.list[i].money
+            console.log(addr)
+            console.log(money)
+            if (addr === '') {
+              ElMessage({
+                type: 'error',
+                message: '请填写地址'
+              })
+              return
+            } else if (money === 0) {
+              ElMessage({
+                type: 'error',
+                message: '请填写正确金额'
+              })
+              return
+            }
+          }
+        }
         res = await createChannelShop(formData.value)
         break
       case 'update':
+        if (formData.value.list.length === 0) {
+          ElMessage({
+            type: 'error',
+            message: '请至少添加一个商铺地址'
+          })
+          return
+        }else {
+          for (let i = 0; i < formData.value.list.length; i++) {
+            let addr = formData.value.list[i].address
+            let money = formData.value.list[i].money
+            console.log(addr)
+            console.log(money)
+            if (addr === '') {
+              ElMessage({
+                type: 'error',
+                message: '请填写地址'
+              })
+              return
+            } else if (money === 0) {
+              ElMessage({
+                type: 'error',
+                message: '请填写正确金额'
+              })
+              return
+            }
+          }
+        }
         res = await updateChannelShop(formData.value)
         break
       case 'updateShopRemark':

@@ -35,7 +35,7 @@
     </div>
 
     <!--  账号添加  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="添加" destroy-on-close>
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" title="添加" destroy-on-close>
       <el-form :model="accFormData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="账户备注" prop="acRemark">
           <el-input v-model="accFormData.acRemark" :clearable="true" placeholder="请输入"/>
@@ -104,7 +104,7 @@
     </el-dialog>
 
     <!--  账号批量添加  -->
-    <el-dialog v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" title="批量添加" destroy-on-close>
+    <el-dialog v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" :draggable="true" title="批量添加" destroy-on-close>
       <el-form :model="accBatchFormData" label-position="right" ref="elBatchFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="24">

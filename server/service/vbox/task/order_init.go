@@ -166,7 +166,7 @@ package task
 //							global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
 //							_ = msg.Ack(true)
 //							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
+//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 //							}
 //							continue
 //						}
@@ -206,7 +206,7 @@ package task
 //							global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", v.Obj.Money))
 //							_ = msg.Ack(true)
 //							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
+//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 //							}
 //							continue
 //						}
@@ -290,7 +290,7 @@ package task
 //							}
 //
 //							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
+//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 //							}
 //							continue
 //						} else if resList != nil && len(resList) > 0 {
@@ -374,7 +374,7 @@ package task
 //							global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
 //							_ = msg.Ack(true)
 //							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
+//								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 //							}
 //							continue
 //						}
@@ -450,7 +450,7 @@ package task
 //										}
 //
 //										if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-//											global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
+//											global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 //										}
 //										continue
 //									} else {

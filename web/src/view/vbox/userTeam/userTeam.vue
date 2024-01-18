@@ -77,7 +77,7 @@
     </div>
 
     <!--  新增成员  -->
-    <el-dialog v-model="addUserDialog" title="新增成员" width="400px">
+    <el-dialog v-model="addUserDialog" :draggable="true" title="新增成员" width="400px">
       <el-form ref="elFormRef" :model="userForm" label-width="80px" :rules="rules">
         <el-form-item label="用户名">
           <el-input v-model="userForm.username" prop="username"/>
@@ -104,7 +104,7 @@
     </el-dialog>
 
     <!-- 防爆验证码 -->
-    <el-dialog v-model="showAuthCaptcha" title="重置安全码" width="360px" @close="clearAuthCaptcha">
+    <el-dialog v-model="showAuthCaptcha" title="重置安全码" :draggable="true" width="360px" @close="clearAuthCaptcha">
       <el-form ref="modifyCapForm" :model="capModify" label-width="80px">
         <el-form-item label="用户ID" prop="toUid">
           <el-input v-model="capModify.ID" disabled />
@@ -122,7 +122,7 @@
     </el-dialog>
 
     <!-- 查看 -->
-    <el-dialog v-model="showQRCode" title="安全码" width="300px" @close="closeAuthCaptcha">
+    <el-dialog v-model="showQRCode" title="安全码" :draggable="true" width="300px" @close="closeAuthCaptcha">
       <div class="qrcode-generator">
         <div v-if="isNotSetting" style="margin-bottom: 20px">
           暂未设置安全码，请尽快设置！
@@ -135,7 +135,7 @@
     </el-dialog>
 
     <!-- 积分划转 -->
-    <el-dialog v-model="showRechargeVisible" title="积分划转" width="360px" @close="clearRecharge">
+    <el-dialog v-model="showRechargeVisible" title="积分划转" :draggable="true" width="360px" @close="clearRecharge">
       <el-form :model="rechargeForm" label-width="80px">
         <el-form-item label="用户ID" prop="toUid">
           <el-input v-model="rechargeForm.toUid" disabled />
@@ -156,7 +156,7 @@
     </el-dialog>
 
     <!-- 直充 -->
-    <el-dialog v-model="operateRechargeVisible" title="积分充值" width="360px" @close="clearOperateRecharge">
+    <el-dialog v-model="operateRechargeVisible" title="积分充值" :draggable="true" width="360px" @close="clearOperateRecharge">
       <el-form :model="rechargeForm" label-width="80px">
         <el-form-item label="用户ID" prop="toUid">
           <el-input v-model="rechargeForm.toUid" disabled />

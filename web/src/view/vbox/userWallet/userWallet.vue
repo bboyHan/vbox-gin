@@ -91,7 +91,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" :draggable="true" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
                 <el-descriptions-item label="用户ID">

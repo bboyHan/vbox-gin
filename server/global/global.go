@@ -34,7 +34,10 @@ const (
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 
-	ResourceNotEnough = "当前库存不足，请及时核查匹配资源剩余情况"
+	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
+	ResourceShopNotEnough    = "当前库存不足，请及时核查匹配【引导商铺情况】，请求通道：%s，请求金额：%v"
+	ResourcePayCodeNotEnough = "当前库存不足，请及时核查匹配【预产码剩余情况】，请求通道：%s，请求金额：%v"
+	ResourceAccNotEnough     = "当前库存不足，请及时核查匹配【通道账号情况】，请求通道：%s，请求金额：%v"
 
 	NotifyEx          = "付方回调异常, err: %v， 付方响应信息： %v"
 	NotifyHandSuccess = "【候补单】付方回调成功， 付方响应信息： 状态码：%v，数据包：%v"
@@ -45,7 +48,8 @@ const (
 	BloomFilterCapacity  = 100000
 
 	ChanOrgAccFilter    = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
-	ChanOrgAccZSet      = "vb_acc_set:org_%d:chan_%s:money_%v"       // 同组织通道下可用账号
+	ChanOrgQBAccZSet    = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号
+	ChanOrgJ3AccZSet    = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
 	ChanOrgShopAddrZSet = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
 	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
@@ -60,7 +64,9 @@ const (
 
 	PcAccWaiting = "vb_acc_waiting_pc:acid_%s" // 预产类-等待开启的账户(冷却中)
 
-	YdAccWaiting = "vb_acc_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
+	YdQBAccWaiting = "vb_acc_qb_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
+
+	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
 )
 

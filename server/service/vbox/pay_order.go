@@ -277,7 +277,6 @@ func (vpoService *PayOrderService) QueryOrder2PayAcc(vpo *vboxReq.QueryOrder2Pay
 //			OrderId:     "P1234",
 //		}
 func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2PayAccount) (rep *vboxRep.OrderSimple2PayAccountRes, err error) {
-	var ID, accID, acAccount string
 	money := vpo.Money
 	cid := vpo.ChannelCode
 
@@ -369,68 +368,25 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	//
 
 	if global.TxContains(cid) { // tx 引导
-		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
-		var resList []string
-		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
-			Min:    "0",
-			Max:    "0",
-			Offset: 0,
-			Count:  1,
-		}).Result()
-		if err != nil {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
-			return nil, fmt.Errorf("当前组织无资源可用")
-		}
-		if resList != nil && len(resList) > 0 {
-			accTmp := resList[0]
-
-			// 2.1 把账号设置为已用
-			global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
-				Score:  1,
-				Member: accTmp,
-			})
-
-			// 2.2 把可用的账号给出来继续往下执行建单步骤
-			split := strings.Split(accTmp, "_")
-			ID = split[0]
-			accID = split[1]
-			acAccount = split[2]
-
-			//	2.3 取用的账号进入CD 冷却
-			accWaitYdKey := fmt.Sprintf(global.YdAccWaiting, accID, money)
-			accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
-
-			// 设置一个冷却时间
-			var cdTime time.Duration
-			ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
-			if ttl > 0 {
-				global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
-				cdTime = ttl
-			} else {
-				duration, _ := HandleExpTime2Product(cid)
-				cdTime = duration + 60*time.Second
-			}
-			global.GVA_REDIS.Expire(context.Background(), accWaitYdKey, cdTime)
-
-			conn, errC := mq.MQ.ConnPool.GetConnection()
-			if errC != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-			}
-			defer mq.MQ.ConnPool.ReturnConnection(conn)
-			ch, errN := conn.Channel()
-			if errN != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-			}
-
-			waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-			err = ch.PublishWithDelay(task.AccCDCheckDelayedExchange, task.AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
-
+		accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
 		} else {
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
 			return nil, fmt.Errorf("当前组织无资源可用")
 		}
 
 	} else if global.J3Contains(cid) {
+
+		accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgID, cid)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
+		} else {
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
+		}
 
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
@@ -495,7 +451,15 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	var rsUrl string
 	if eventType == 1 {
 		eventID, err = vpoService.HandleEventID2chShop(vpo.ChannelCode, vpo.Money, orgTmp)
+		if err != nil {
+			global.GVA_LOG.Error("HandleEventID2chShop该组织配置的资源不足，请核查", zap.Error(err))
+			return nil, err
+		}
 		rsUrl, err = vpoService.HandleResourceUrl2chShop(eventID)
+		if err != nil {
+			global.GVA_LOG.Error("HandleResourceUrl2chShop该组织配置的资源不足，请核查", zap.Error(err))
+			return nil, err
+		}
 	} else if eventType == 2 {
 		//跳过， 不匹配
 	}
@@ -514,8 +478,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		return nil, err
 	}
 
-	global.GVA_LOG.Info("此次请求后台账号资源核查通过", zap.Any("请求金额", money))
-	global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", acAccount))
+	global.GVA_LOG.Info("此次请求后台账号资源核查通过，订单进入等待匹配", zap.Any("orderID", vpo.OrderId), zap.Any("请求金额", money))
 
 	jucKey := fmt.Sprintf(global.PayOrderJUCKey, vpo.OrderId)
 	count, err = global.GVA_REDIS.Exists(context.Background(), jucKey).Result()
@@ -535,8 +498,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 				OrderId:     vpo.OrderId,
 				Money:       vpo.Money,
 				NotifyUrl:   vpo.NotifyUrl,
-				AcId:        accID,
-				AcAccount:   acAccount,
 				EventId:     eventID,
 				EventType:   eventType,
 				ExpTime:     &add,
@@ -545,6 +506,20 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			}
 
 			err = global.GVA_DB.Create(&order).Error
+
+			// 设置检查长时间未匹配的订单
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			waitOrderMsg := fmt.Sprintf("%s-%d", order.OrderId, order.ID)
+			err = ch.PublishWithDelay(task.OrderStatusCheckDelayedExchange, task.OrderStatusCheckDelayedRoutingKey, []byte(waitOrderMsg), 10*time.Minute)
 
 		}()
 	} else {
@@ -623,32 +598,10 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	}
 
 	if global.TxContains(cid) { // tx 引导
-		accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, money)
-		var resList []string
-		resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
-			Min:    "0",
-			Max:    "0",
-			Offset: 0,
-			Count:  1,
-		}).Result()
-		if err != nil {
-			fmt.Printf("当前组织无账号可用, org : %d", orgID)
-			return nil, fmt.Errorf("当前组织无资源可用")
-		}
-		if resList != nil && len(resList) > 0 {
-			accTmp := resList[0]
-
-			// 2.1 把账号设置为已用
-			global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
-				Score:  1,
-				Member: accTmp,
-			})
-
-			// 2.2 把可用的账号给出来继续往下执行建单步骤
-			split := strings.Split(accTmp, "_")
-			ID = split[0]
-			accID = split[1]
-			acAccount = split[2]
+		accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
 		} else {
 			fmt.Printf("当前组织无账号可用, org : %d", orgID)
 			return nil, fmt.Errorf("当前组织无资源可用")
@@ -656,6 +609,14 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 
 	} else if global.J3Contains(cid) {
 
+		accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgID, cid)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
+		} else {
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
+		}
 	} else if global.PcContains(cid) {
 		// 预产类 查 预产库
 		// 使用 Keys 命令进行模糊匹配
@@ -722,8 +683,16 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 	var eventID string
 	var rsUrl string
 	if eventType == 1 {
-		eventID, err = vpoService.HandleEventID2chShop(cid, vpo.Money, orgTmp)
+		eventID, err = vpoService.HandleEventID2chShop(vpo.ChannelCode, vpo.Money, orgTmp)
+		if err != nil {
+			global.GVA_LOG.Error("HandleEventID2chShop该组织配置的资源不足，请核查", zap.Error(err))
+			return nil, err
+		}
 		rsUrl, err = vpoService.HandleResourceUrl2chShop(eventID)
+		if err != nil {
+			global.GVA_LOG.Error("HandleResourceUrl2chShop该组织配置的资源不足，请核查", zap.Error(err))
+			return nil, err
+		}
 	} else if eventType == 2 {
 		//跳过， 不匹配
 	}
@@ -773,6 +742,20 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 
 	var payUrl string
 	payUrl, err = vpoService.HandlePayUrl2PAcc(oid)
+
+	// 设置检查长时间未匹配的订单
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+	ch, err := conn.Channel()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
+
+	waitOrderMsg := fmt.Sprintf("%s-%d", order.OrderId, order.ID)
+	err = ch.PublishWithDelay(task.OrderStatusCheckDelayedExchange, task.OrderStatusCheckDelayedRoutingKey, []byte(waitOrderMsg), 10*time.Minute)
 
 	rep = &vboxRep.Order2PayAccountRes{
 		OrderId:   oid,
@@ -1329,6 +1312,7 @@ func (vpoService *PayOrderService) HandleEventID2chShop(chanID string, money int
 	}
 
 	if len(zs) <= 0 {
+		global.GVA_LOG.Info("该组织配置的资源不足，请核查", zap.Any("orgIDs", orgIDs), zap.Any("chanID", chanID), zap.Any("money", money))
 		return "", fmt.Errorf("该组织配置的资源不足，请核查")
 	}
 

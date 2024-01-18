@@ -11,6 +11,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
@@ -128,412 +129,507 @@ func OrderWaitingTask() {
 				orgTmp := utils2.GetSelfOrg(vpa.Uid)
 				orgID := orgTmp[0]
 				cid := v.Obj.ChannelCode
+				money := v.Obj.Money
 
 				// 设置一个冷却时间
 				duration, _ := HandleExpTime2Product(cid)
 				cdTime := duration + 60*time.Second
+				var tmpKey, tmpMem string
 
-				if v.Obj.AcId != "" {
-					accID = v.Obj.AcId
-					acAccount = v.Obj.AcAccount
-				} else {
-					if global.TxContains(cid) {
-						accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, v.Obj.Money)
+				if global.TxContains(cid) {
+					accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
+					tmpKey = accKey
+					var resList []string
+					resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  1,
+					}).Result()
 
-						var resList []string
-						resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
-							Min:    "0",
-							Max:    "0",
-							Offset: 0,
-							Count:  1,
-						}).Result()
+					if err != nil {
+						global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						continue
+					}
+					if resList != nil && len(resList) > 0 {
+						accTmp := resList[0]
+						tmpMem = accTmp
+						// 2.1 把账号设置为已用
+						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
+							Score:  1,
+							Member: accTmp,
+						})
 
+						// 2.2 把可用的账号给出来继续往下执行建单步骤
+						split := strings.Split(accTmp, "_")
+						ID = split[0]
+						accID = split[1]
+						acAccount = split[2]
+
+						var vca vbox.ChannelAccount
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 						if err != nil {
-							global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
+							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
+
 							_ = msg.Ack(true)
-							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
-							}
-							continue
+							return
 						}
-						if resList != nil && len(resList) > 0 {
-							accTmp := resList[0]
+						v.Obj.CreatedBy = vca.CreatedBy
+						v.Obj.AcId = vca.AcId
+						v.Obj.AcAccount = vca.AcAccount
+						v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
+						v.Ctx.UserID = int(vca.CreatedBy)
 
-							// 2.1 把账号设置为已用
-							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
-								Score:  1,
-								Member: accTmp,
-							})
+						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
-							// 2.2 把可用的账号给出来继续往下执行建单步骤
-							split := strings.Split(accTmp, "_")
-							ID = split[0]
-							accID = split[1]
-							acAccount = split[2]
-
-							var vca vbox.ChannelAccount
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
-							if err != nil {
-								//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
-
-								global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
-
-								_ = msg.Ack(true)
-								return
-							}
-							v.Obj.CreatedBy = vca.CreatedBy
-							v.Obj.AcId = vca.AcId
-							v.Obj.AcAccount = vca.AcAccount
-							v.Ctx.UserID = int(vca.CreatedBy)
-
-							global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
-
-						} else {
-							global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", v.Obj.Money))
-							_ = msg.Ack(true)
-							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
-							}
-							continue
-						}
-
-					} else if global.J3Contains(cid) {
-
-					} else if global.PcContains(cid) {
-						/*if v.Obj.PayRegion == "" {
-							global.GVA_LOG.Error("当前未匹配到库中地区 err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
-							// 如果解析消息失败，则直接丢弃消息
-							_ = msg.Reject(false)
-							continue
-						}
-						// 做一下ip访问匹配
-						var province, ISP string
-						if strings.Contains(v.Obj.PayRegion, "内网") {
-							//	随机给一个北京的IP（电信|移动|联通）
-							ISP = "default"
-							province = "默认"
-						} else {
-							splitLoc := strings.Split(v.Obj.PayRegion, "|")
-							province = splitLoc[2]
-							ISP = global.ISPTranslate(splitLoc[4])
-						}
-						if !global.ISPContains(ISP) {
-							//	随机把ISP赋值为 yidong|liantong|dianxin 其中一个
-							ISP = "default"
-						}
-						if !global.ProvinceContains(province) {
-							province = "默认"
-						}
-						global.GVA_LOG.Info("当前匹配到库中地区", zap.Any("db.region", v.Obj.PayRegion), zap.Any("province", province), zap.Any("ISP", ISP))
-
-						// 查下省
-						var geo model.Geo
-						err = global.GVA_DB.Model(&model.Geo{}).Table("geo_provinces").
-							Where("name LIKE ?", "%"+province+"%").First(&geo).Error
-						if err != nil {
-							global.GVA_LOG.Error("当前未匹配到库中地区 err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
-							// 如果解析消息失败，则直接丢弃消息
-							_ = msg.Reject(false)
-							continue
-						}
-
-						ispPY := utils.ISP(ISP)
-						provinceCode := geo.Code*/
-
-						ispPY := "default"
-						provinceCode := "10"
-						pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgID, cid, v.Obj.Money, ispPY, provinceCode)
-
-						global.GVA_LOG.Info("pcKey", zap.Any("pcKey", pcKey))
-
-						var resList []string
-						resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), pcKey, &redis.ZRangeBy{
-							Min:    "0",
-							Max:    "0",
-							Offset: 0,
-							Count:  1,
-						}).Result()
-
-						if err != nil {
-							global.GVA_LOG.Error("当前归属地区预产不足, redis err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
-							// 如果解析消息失败，则直接丢弃消息
-							_ = msg.Reject(false)
-
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.ResourceNotEnough),
-								UserID:  v.Ctx.UserID,
-							}
-							err = operationRecordService.CreateSysOperationRecord(record)
-							if err != nil {
-								global.GVA_LOG.Error("record 入库失败..." + err.Error())
-							}
-
-							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
-							}
-							continue
-						} else if resList != nil && len(resList) > 0 {
-							pcTmp := resList[0]
-							// 2.1 把预产设置为已用 ,置为1
-							global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{
-								Score:  1,
-								Member: pcTmp,
-							})
-
-							// 2.2 把可用的账号给出来继续往下执行建单步骤
-							split := strings.Split(pcTmp, "_")
-							ID = split[0]
-							MID = split[1]
-							acAccount = split[2]
-							imgContent = split[3]
-
-							var pcDB vbox.ChannelPayCode
-							err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).First(&pcDB).Error
-							if err != nil {
-								//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
-
-								global.GVA_LOG.Error("匹配预产异常", zap.Error(err))
-
-								_ = msg.Ack(true)
-								return
-							}
-							v.Obj.CreatedBy = pcDB.CreatedBy
-							v.Obj.AcId = pcDB.AcId
-							v.Obj.AcAccount = pcDB.AcAccount
-							v.Obj.PlatId = pcDB.PlatId
-							v.Ctx.UserID = int(pcDB.CreatedBy)
-
-							err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).
-								Update("code_status", 1).Error
-
-							global.GVA_LOG.Info("匹配预产", zap.Any("MID", MID), zap.Any("acAccount", acAccount), zap.Any("imgContent", imgContent))
-
-							//匹配成功之后，要把当前acAccount相同金额的所有预产置为 等候状态，不允许被取用
-							pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, v.Obj.Money)
-							keys, _ := global.GVA_REDIS.Keys(context.Background(), pattern).Result()
-
-							var waitIDs []string
-							for _, key := range keys {
-								var resWaitTmpList []string
-								resWaitTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
-									Min:    "0",
-									Max:    "0",
-									Offset: 0,
-									Count:  -1,
-								}).Result()
-
-								for _, waitMem := range resWaitTmpList {
-									if strings.Contains(waitMem, acAccount) {
-										global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-											Score:  4,
-											Member: waitMem,
-										})
-
-										//添加到 waitIDs 中
-										id := strings.Split(waitMem, "_")[0]
-										waitIDs = append(waitIDs, id)
-									}
-								}
-							}
-
-							if len(waitIDs) > 0 {
-								// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
-								global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
-
-								// 把当前acAccount下所有的预产等待队列置为冷却状态
-								waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
-								waitIDsTmp := strings.Join(waitIDs, ",")
-								global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
-
-								waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
-								err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-							}
-
-						} else {
-							global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
-							_ = msg.Ack(true)
-							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
-							}
-							continue
-						}
-						/*else {
-
-							//给一次随机匹配其它地区的机会
-							if len(resList) == 0 {
-								pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, v.Obj.Money)
-								keys, errR := global.GVA_REDIS.Keys(context.Background(), pattern).Result()
-								if errR != nil {
-									global.GVA_LOG.Error("匹配预产异常", zap.Error(errR))
-									_ = msg.Ack(true)
-									continue
-								}
-
-								if len(keys) == 0 {
-									fmt.Println("No keys found with the given prefix")
-									global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
-									_ = msg.Ack(true)
-									continue
-								} else {
-									var flag bool
-									var keyEle string
-
-									for _, key := range keys {
-										var resTmpList []string
-										resTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
-											Min:    "0",
-											Max:    "0",
-											Offset: 0,
-											Count:  1,
-										}).Result()
-
-										// 检查是否为 redis.Nil 错误
-										if err != nil {
-											// 检查是否为 redis.Nil 错误
-											if errors.Is(err, redis.Nil) {
-												global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
-											} else {
-												global.GVA_LOG.Error("redis err", zap.Error(err))
-											}
-										} else if len(resTmpList) == 0 {
-											global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
-										} else {
-											// 匹配成功
-											flag = true
-											keyEle = key
-											break
-										}
-
-									}
-
-									if !flag {
-
-										global.GVA_LOG.Error("当前归属地区预产不足, redis err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
-										// 如果解析消息失败，则直接丢弃消息
-										_ = msg.Reject(false)
-
-										//入库操作记录
-										record := sysModel.SysOperationRecord{
-											Ip:      v.Ctx.ClientIP,
-											Method:  v.Ctx.Method,
-											Path:    v.Ctx.UrlPath,
-											Agent:   v.Ctx.UserAgent,
-											Status:  500,
-											Latency: time.Since(now),
-											Resp:    fmt.Sprintf(global.ResourceNotEnough),
-											UserID:  v.Ctx.UserID,
-										}
-										err = operationRecordService.CreateSysOperationRecord(record)
-										if err != nil {
-											global.GVA_LOG.Error("record 入库失败..." + err.Error())
-										}
-
-										if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
-											global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB.Error))
-										}
-										continue
-									} else {
-										// 匹配成功
-										resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), keyEle, &redis.ZRangeBy{
-											Min:    "0",
-											Max:    "0",
-											Offset: 0,
-											Count:  1,
-										}).Result()
-
-										keyMem := resList[0]
-
-										// 把预产设置为已用
-										global.GVA_REDIS.ZAdd(context.Background(), keyEle, redis.Z{
-											Score:  1,
-											Member: keyMem,
-										})
-
-										split := strings.Split(keyMem, "_")
-										ID = split[0]
-										MID = split[1]
-										acAccount = split[2]
-										imgContent = split[3]
-
-										global.GVA_LOG.Warn("本地区匹配不足了，随机匹配其它预产", zap.Any("db.region", v.Obj.PayRegion), zap.Any("匹配码keyEle", keyEle), zap.Any("匹配码keyMem", keyMem))
-
-										var pcDB vbox.ChannelPayCode
-										err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).First(&pcDB).Error
-										if err != nil {
-											//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
-
-											global.GVA_LOG.Error("匹配预产异常", zap.Error(err))
-
-											_ = msg.Ack(true)
-											return
-										}
-										v.Obj.CreatedBy = pcDB.CreatedBy
-										v.Obj.AcId = pcDB.AcId
-										v.Obj.AcAccount = pcDB.AcAccount
-										v.Obj.PlatId = pcDB.PlatId
-										v.Ctx.UserID = int(pcDB.CreatedBy)
-
-										err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).Update("code_status", 1).Error
-
-										//匹配成功之后，要把当前acAccount相同金额的所有预产置为 等候状态，不允许被取用
-										var waitIDs []string
-
-										for _, key := range keys {
-											var resWaitTmpList []string
-											resWaitTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
-												Min:    "0",
-												Max:    "0",
-												Offset: 0,
-												Count:  -1,
-											}).Result()
-
-											for _, waitMem := range resWaitTmpList {
-												if strings.Contains(waitMem, acAccount) {
-													global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-														Score:  4,
-														Member: waitMem,
-													})
-
-													//添加到 waitIDs 中
-													id := strings.Split(waitMem, "_")[0]
-													waitIDs = append(waitIDs, id)
-												}
-
-											}
-										}
-
-										// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
-										global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
-										global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in (?) ", pcDB.AcId).
-											Update("cd_status", 2)
-
-										// 把当前acAccount下所有的预产等待队列置为冷却状态
-										waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
-										waitIDsTmp := strings.Join(waitIDs, ",")
-										global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
-
-										waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
-										err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-
-									}
-								}
-							}
-
-						}*/
 					} else {
-						global.GVA_LOG.Error("当前渠道非法无可用, channel", zap.Any("channel", cid))
+						global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", money))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourceAccNotEnough, cid, money),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						continue
+					}
+
+				} else if global.J3Contains(cid) {
+
+					accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgID, cid)
+					tmpKey = accKey
+
+					var resList []string
+					resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  1,
+					}).Result()
+
+					if err != nil {
+						global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						continue
+					}
+					if resList != nil && len(resList) > 0 {
+						accTmp := resList[0]
+						tmpMem = accTmp
+						// 2.1 把账号设置为已用
+						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
+							Score:  1,
+							Member: accTmp,
+						})
+
+						// 2.2 把可用的账号给出来继续往下执行建单步骤
+						split := strings.Split(accTmp, "_")
+						ID = split[0]
+						accID = split[1]
+						acAccount = split[2]
+
+						var vca vbox.ChannelAccount
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
+						if err != nil {
+							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
+
+							_ = msg.Ack(true)
+							return
+						}
+						v.Obj.CreatedBy = vca.CreatedBy
+						v.Obj.AcId = vca.AcId
+						v.Obj.AcAccount = vca.AcAccount
+						v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
+						v.Ctx.UserID = int(vca.CreatedBy)
+
+						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
+
+					} else {
+						global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", money))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourceAccNotEnough, cid, money),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						continue
+					}
+
+				} else if global.PcContains(cid) {
+					/*if v.Obj.PayRegion == "" {
+						global.GVA_LOG.Error("当前未匹配到库中地区 err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
+						// 如果解析消息失败，则直接丢弃消息
+						_ = msg.Reject(false)
+						continue
+					}
+					// 做一下ip访问匹配
+					var province, ISP string
+					if strings.Contains(v.Obj.PayRegion, "内网") {
+						//	随机给一个北京的IP（电信|移动|联通）
+						ISP = "default"
+						province = "默认"
+					} else {
+						splitLoc := strings.Split(v.Obj.PayRegion, "|")
+						province = splitLoc[2]
+						ISP = global.ISPTranslate(splitLoc[4])
+					}
+					if !global.ISPContains(ISP) {
+						//	随机把ISP赋值为 yidong|liantong|dianxin 其中一个
+						ISP = "default"
+					}
+					if !global.ProvinceContains(province) {
+						province = "默认"
+					}
+					global.GVA_LOG.Info("当前匹配到库中地区", zap.Any("db.region", v.Obj.PayRegion), zap.Any("province", province), zap.Any("ISP", ISP))
+
+					// 查下省
+					var geo model.Geo
+					err = global.GVA_DB.Model(&model.Geo{}).Table("geo_provinces").
+						Where("name LIKE ?", "%"+province+"%").First(&geo).Error
+					if err != nil {
+						global.GVA_LOG.Error("当前未匹配到库中地区 err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
 						// 如果解析消息失败，则直接丢弃消息
 						_ = msg.Reject(false)
 						continue
 					}
 
+					ispPY := utils.ISP(ISP)
+					provinceCode := geo.Code*/
+
+					ispPY := "default"
+					provinceCode := "10"
+					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgID, cid, money, ispPY, provinceCode)
+
+					global.GVA_LOG.Info("pcKey", zap.Any("pcKey", pcKey))
+
+					var resList []string
+					resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), pcKey, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  1,
+					}).Result()
+
+					if err != nil {
+						global.GVA_LOG.Error("当前归属地区预产不足, redis err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
+						// 如果解析消息失败，则直接丢弃消息
+						_ = msg.Reject(false)
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourceNotEnough),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("record 入库失败..." + err.Error())
+						}
+
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						continue
+					} else if resList != nil && len(resList) > 0 {
+						pcTmp := resList[0]
+						// 2.1 把预产设置为已用 ,置为1
+						global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{
+							Score:  1,
+							Member: pcTmp,
+						})
+
+						// 2.2 把可用的账号给出来继续往下执行建单步骤
+						split := strings.Split(pcTmp, "_")
+						ID = split[0]
+						MID = split[1]
+						acAccount = split[2]
+						imgContent = split[3]
+
+						var pcDB vbox.ChannelPayCode
+						err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).First(&pcDB).Error
+						if err != nil {
+							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+							global.GVA_LOG.Error("匹配预产异常", zap.Error(err))
+
+							_ = msg.Ack(true)
+							return
+						}
+						v.Obj.CreatedBy = pcDB.CreatedBy
+						v.Obj.AcId = pcDB.AcId
+						v.Obj.AcAccount = pcDB.AcAccount
+						v.Obj.PlatId = pcDB.PlatId
+						v.Ctx.UserID = int(pcDB.CreatedBy)
+
+						err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).
+							Update("code_status", 1).Error
+
+						global.GVA_LOG.Info("匹配预产", zap.Any("MID", MID), zap.Any("acAccount", acAccount), zap.Any("imgContent", imgContent))
+
+						//匹配成功之后，要把当前acAccount相同金额的所有预产置为 等候状态，不允许被取用
+						pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, money)
+						keys, _ := global.GVA_REDIS.Keys(context.Background(), pattern).Result()
+
+						var waitIDs []string
+						for _, key := range keys {
+							var resWaitTmpList []string
+							resWaitTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+								Min:    "0",
+								Max:    "0",
+								Offset: 0,
+								Count:  -1,
+							}).Result()
+
+							for _, waitMem := range resWaitTmpList {
+								if strings.Contains(waitMem, acAccount) {
+									global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+										Score:  4,
+										Member: waitMem,
+									})
+
+									//添加到 waitIDs 中
+									id := strings.Split(waitMem, "_")[0]
+									waitIDs = append(waitIDs, id)
+								}
+							}
+						}
+
+						if len(waitIDs) > 0 {
+							// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
+							global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
+
+							// 把当前acAccount下所有的预产等待队列置为冷却状态
+							waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
+							waitIDsTmp := strings.Join(waitIDs, ",")
+							global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
+
+							waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
+							err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+
+							global.GVA_LOG.Info("同账号涉及的其它资源进入冷却状态", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+						} else {
+							global.GVA_LOG.Info("同账号暂无涉及的其它资源")
+						}
+
+					} else {
+						global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourcePayCodeNotEnough, cid, money),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						continue
+					}
+					/*else {
+
+						//给一次随机匹配其它地区的机会
+						if len(resList) == 0 {
+							pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgID, cid, v.Obj.Money)
+							keys, errR := global.GVA_REDIS.Keys(context.Background(), pattern).Result()
+							if errR != nil {
+								global.GVA_LOG.Error("匹配预产异常", zap.Error(errR))
+								_ = msg.Ack(true)
+								continue
+							}
+
+							if len(keys) == 0 {
+								fmt.Println("No keys found with the given prefix")
+								global.GVA_LOG.Warn("当前组织无付款码可用, org", zap.Any("orgID", orgID))
+								_ = msg.Ack(true)
+								continue
+							} else {
+								var flag bool
+								var keyEle string
+
+								for _, key := range keys {
+									var resTmpList []string
+									resTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  1,
+									}).Result()
+
+									// 检查是否为 redis.Nil 错误
+									if err != nil {
+										// 检查是否为 redis.Nil 错误
+										if errors.Is(err, redis.Nil) {
+											global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+										} else {
+											global.GVA_LOG.Error("redis err", zap.Error(err))
+										}
+									} else if len(resTmpList) == 0 {
+										global.GVA_LOG.Warn("The set is empty", zap.Any("key", key))
+									} else {
+										// 匹配成功
+										flag = true
+										keyEle = key
+										break
+									}
+
+								}
+
+								if !flag {
+
+									global.GVA_LOG.Error("当前归属地区预产不足, redis err", zap.Error(err), zap.Any("db.region", v.Obj.PayRegion))
+									// 如果解析消息失败，则直接丢弃消息
+									_ = msg.Reject(false)
+
+									//入库操作记录
+									record := sysModel.SysOperationRecord{
+										Ip:      v.Ctx.ClientIP,
+										Method:  v.Ctx.Method,
+										Path:    v.Ctx.UrlPath,
+										Agent:   v.Ctx.UserAgent,
+										Status:  500,
+										Latency: time.Since(now),
+										Resp:    fmt.Sprintf(global.ResourceNotEnough),
+										UserID:  v.Ctx.UserID,
+									}
+									err = operationRecordService.CreateSysOperationRecord(record)
+									if err != nil {
+										global.GVA_LOG.Error("record 入库失败..." + err.Error())
+									}
+
+									if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0); errDB != nil {
+										global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+									}
+									continue
+								} else {
+									// 匹配成功
+									resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), keyEle, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  1,
+									}).Result()
+
+									keyMem := resList[0]
+
+									// 把预产设置为已用
+									global.GVA_REDIS.ZAdd(context.Background(), keyEle, redis.Z{
+										Score:  1,
+										Member: keyMem,
+									})
+
+									split := strings.Split(keyMem, "_")
+									ID = split[0]
+									MID = split[1]
+									acAccount = split[2]
+									imgContent = split[3]
+
+									global.GVA_LOG.Warn("本地区匹配不足了，随机匹配其它预产", zap.Any("db.region", v.Obj.PayRegion), zap.Any("匹配码keyEle", keyEle), zap.Any("匹配码keyMem", keyMem))
+
+									var pcDB vbox.ChannelPayCode
+									err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).First(&pcDB).Error
+									if err != nil {
+										//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+										global.GVA_LOG.Error("匹配预产异常", zap.Error(err))
+
+										_ = msg.Ack(true)
+										return
+									}
+									v.Obj.CreatedBy = pcDB.CreatedBy
+									v.Obj.AcId = pcDB.AcId
+									v.Obj.AcAccount = pcDB.AcAccount
+									v.Obj.PlatId = pcDB.PlatId
+									v.Ctx.UserID = int(pcDB.CreatedBy)
+
+									err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).Update("code_status", 1).Error
+
+									//匹配成功之后，要把当前acAccount相同金额的所有预产置为 等候状态，不允许被取用
+									var waitIDs []string
+
+									for _, key := range keys {
+										var resWaitTmpList []string
+										resWaitTmpList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+											Min:    "0",
+											Max:    "0",
+											Offset: 0,
+											Count:  -1,
+										}).Result()
+
+										for _, waitMem := range resWaitTmpList {
+											if strings.Contains(waitMem, acAccount) {
+												global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+													Score:  4,
+													Member: waitMem,
+												})
+
+												//添加到 waitIDs 中
+												id := strings.Split(waitMem, "_")[0]
+												waitIDs = append(waitIDs, id)
+											}
+
+										}
+									}
+
+									// 把 pay code中除了本ID的，其它都让他进入冷却状态(包括对应通道账号)
+									global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id in ? ", waitIDs).Update("code_status", 4)
+									global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_id in (?) ", pcDB.AcId).
+										Update("cd_status", 2)
+
+									// 把当前acAccount下所有的预产等待队列置为冷却状态
+									waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, pcDB.AcId)
+									waitIDsTmp := strings.Join(waitIDs, ",")
+									global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
+
+									waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
+									err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+
+								}
+							}
+						}
+
+					}*/
+				} else {
+					global.GVA_LOG.Error("当前渠道非法无可用, channel", zap.Any("channel", cid))
+					// 如果解析消息失败，则直接丢弃消息
+					_ = msg.Reject(false)
+					continue
 				}
 
 				// 2.1 判断当前产品属于那种类型 1-商铺关联，2-付码关联
@@ -544,15 +640,70 @@ func OrderWaitingTask() {
 
 				if eventType == 1 {
 					if v.Obj.EventId == "" {
+						eventID, err = HandleEventID2chShop(cid, money, orgTmp)
+						if err != nil {
+							global.GVA_LOG.Error("商铺未匹配", zap.Error(err))
+							_ = msg.Ack(true)
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+
+							if global.TxContains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.J3Contains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.PcContains(cid) {
+							}
+
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.ResourceShopNotEnough, cid, money),
+								UserID:  v.Ctx.UserID,
+							}
+							err = operationRecordService.CreateSysOperationRecord(record)
+							continue
+						}
 						// 获取 ID后，获取具体的跳转Url
 						rsUrl, err = HandleResourceUrl2chShop(eventID)
 						if err != nil {
 							global.GVA_LOG.Error("商铺地址未匹配", zap.Error(err))
-						}
-						// 轮询获取同通道 指定金额的 商铺地址+ID
-						eventID, err = HandleEventID2chShop(cid, v.Obj.Money, orgTmp)
-						if err != nil {
-							global.GVA_LOG.Error("商铺未匹配", zap.Error(err))
+							_ = msg.Ack(true)
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+
+							if global.TxContains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.J3Contains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.PcContains(cid) {
+							}
+
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.ResourceShopNotEnough, cid, money),
+								UserID:  v.Ctx.UserID,
+							}
+							err = operationRecordService.CreateSysOperationRecord(record)
+							continue
 						}
 					} else {
 						eventID = v.Obj.EventId
@@ -593,6 +744,42 @@ func OrderWaitingTask() {
 
 					_ = msg.Reject(false)
 					continue
+				}
+
+				// 发起本次匹配的下次CD恢复
+				if global.TxContains(cid) {
+					//	2.3 取用的账号进入CD 冷却
+					accWaitYdKey := fmt.Sprintf(global.YdQBAccWaiting, accID, money)
+					accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+
+					// 设置一个冷却时间
+					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
+					if ttl > 0 {
+						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
+						cdTime = ttl
+					}
+					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
+
+					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+
+				} else if global.J3Contains(cid) {
+					//	2.3 取用的账号进入CD 冷却
+					accWaitYdKey := fmt.Sprintf(global.YdJ3AccWaiting, accID)
+					accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+
+					// 设置一个冷却时间
+					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
+					if ttl > 0 {
+						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
+						cdTime = ttl
+					}
+					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
+
+					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+
+				} else if global.PcContains(cid) {
 				}
 
 				_ = msg.Ack(true)

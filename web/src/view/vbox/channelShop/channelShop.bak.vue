@@ -117,7 +117,7 @@
     </div>
 
     <!--  创建商铺  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="60%">
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="120px">
           <el-row>
@@ -199,7 +199,7 @@
     </el-dialog>
 
     <!--  修改店名备注  -->
-    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="20%">
+    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :draggable="true" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="20%">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="24">
@@ -233,7 +233,7 @@
     </el-dialog>
 
     <!--  修改商铺  -->
-    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :title="typeTitle" destroy-on-close width="60%">
+    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -314,7 +314,7 @@
       </el-scrollbar>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
           <el-descriptions-item label="用户ID">

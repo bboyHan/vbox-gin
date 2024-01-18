@@ -7,7 +7,9 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
@@ -30,56 +32,75 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 	if pid == "" {
 		pid = time.Now().Format("20060102150405") + rand_string.RandomInt(3)
 	}
-	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+	orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
+
+	for _, c := range channelShop.ChannelShopList {
+		var shopDB vbox.ChannelShop
+		if c.ID == 0 { //走创建
+			chNew := vbox.ChannelShop{
+				Cid:        channelShop.Cid,
+				ProductId:  pid,
+				ShopRemark: channelShop.ShopRemark,
+				Address:    c.Address,
+				Money:      c.Money,
+				Status:     c.Status,
+				CreatedBy:  channelShop.CreatedBy,
+			}
+			if err := global.GVA_DB.Model(&vbox.ChannelShop{}).Create(&chNew).Error; err != nil {
+				return err
+			}
+			shopDB = chNew
+			shopDB.ID = chNew.ID
+			global.GVA_LOG.Info("创建店铺信息", zap.Any("shopDB", shopDB))
+
+		} else { //走更新
+			chNew := vbox.ChannelShop{
+				Cid:        channelShop.Cid,
+				ProductId:  pid,
+				ShopRemark: channelShop.ShopRemark,
+				Address:    c.Address,
+				Money:      c.Money,
+				Status:     c.Status,
+				UpdatedBy:  channelShop.CreatedBy,
+			}
+			if err := global.GVA_DB.Model(&vbox.ChannelShop{}).Where("id = ?", c.ID).Updates(&chNew).Error; err != nil {
+				return err
+			}
+			shopDB = chNew
+			global.GVA_LOG.Info("更新店铺信息", zap.Any("shopDB", shopDB))
+		}
+
+		key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
+		keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+		if c.Status == 1 {
+
+			global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+				Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+				Member: keyMem,
+			})
+		} else {
+			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+		}
+	}
+
+	if err == nil {
+		conn, errC := mq.MQ.ConnPool.GetConnection()
+		if errC != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+		ch, errN := conn.Channel()
+		if errN != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
 		orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
 
-		for _, c := range channelShop.ChannelShopList {
-			var shopDB vbox.ChannelShop
-			if c.ID == 0 { //走创建
-				chNew := vbox.ChannelShop{
-					Cid:        channelShop.Cid,
-					ProductId:  pid,
-					ShopRemark: channelShop.ShopRemark,
-					Address:    c.Address,
-					Money:      c.Money,
-					Status:     c.Status,
-					CreatedBy:  channelShop.CreatedBy,
-				}
-				if err := tx.Model(&vbox.ChannelShop{}).Create(&chNew).Error; err != nil {
-					return err
-				}
-				shopDB = chNew
-			} else { //走更新
-				chNew := vbox.ChannelShop{
-					Cid:        channelShop.Cid,
-					ProductId:  pid,
-					ShopRemark: channelShop.ShopRemark,
-					Address:    c.Address,
-					Money:      c.Money,
-					Status:     c.Status,
-					UpdatedBy:  channelShop.CreatedBy,
-				}
-				if err := tx.Model(&vbox.ChannelShop{}).Where("id = ?", c.ID).Updates(&chNew).Error; err != nil {
-					return err
-				}
-				shopDB = chNew
-			}
-
-			global.GVA_LOG.Info("创建/更新店铺信息", zap.Any("shopDB", shopDB))
-			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
-			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-			if c.Status == 1 {
-
-				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
-					Member: keyMem,
-				})
-			} else {
-				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
-			}
-		}
-		return nil
-	})
+		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
+		createBy := channelShop.CreatedBy
+		waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+		err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
+	}
 
 	return err
 }
@@ -87,8 +108,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 // DeleteChannelShop 删除引导商铺记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox.ChannelShop) (err error) {
+	var shopDB vbox.ChannelShop
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		var shopDB vbox.ChannelShop
 		tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).First(&shopDB)
 
 		orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
@@ -105,12 +126,32 @@ func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox
 		}
 		return nil
 	})
+
+	if err == nil {
+		conn, errC := mq.MQ.ConnPool.GetConnection()
+		if errC != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+		ch, errN := conn.Channel()
+		if errN != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
+
+		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], shopDB.Cid)
+		createBy := shopDB.CreatedBy
+		waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+		err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
+	}
 	return err
 }
 
 // DeleteChannelShopByIds 批量删除引导商铺记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request.IdsReq, deleted_by uint) (err error) {
+func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request.IdsReq, deletedBy uint) (err error) {
+	var cidList []string
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 
 		var shopDBList []vbox.ChannelShop
@@ -122,9 +163,10 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
 			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
 			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+			cidList = append(cidList, shopDB.Cid)
 		}
 
-		if err := tx.Model(&vbox.ChannelShop{}).Where("id in ?", ids.Ids).Update("deleted_by", deleted_by).Error; err != nil {
+		if err := tx.Model(&vbox.ChannelShop{}).Where("id in ?", ids.Ids).Update("deleted_by", deletedBy).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("id in ?", ids.Ids).Delete(&vbox.ChannelShop{}).Error; err != nil {
@@ -132,6 +174,30 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 		}
 		return nil
 	})
+
+	uniqCIDs := utils2.UniqStr(cidList)
+
+	if err == nil {
+		conn, errC := mq.MQ.ConnPool.GetConnection()
+		if errC != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+		ch, errN := conn.Channel()
+		if errN != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		orgTmp := utils2.GetSelfOrg(deletedBy)
+
+		for _, cid := range uniqCIDs {
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+			createBy := deletedBy
+			waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+			err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
+		}
+	}
+
 	return err
 }
 
@@ -202,6 +268,25 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 
 	} else {
 		err = fmt.Errorf("不支持的操作，type检查")
+	}
+
+	if err == nil {
+		conn, errC := mq.MQ.ConnPool.GetConnection()
+		if errC != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+		ch, errN := conn.Channel()
+		if errN != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		orgTmp := utils2.GetSelfOrg(channelShop.UpdatedBy)
+
+		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
+		createBy := channelShop.UpdatedBy
+		waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+		err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
 	}
 
 	return err

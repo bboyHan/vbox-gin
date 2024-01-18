@@ -120,7 +120,7 @@ func HandleAccLimitCheck() (err error) {
 
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
-					pattern := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, "*")
+					pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, "*")
 					var keys []string
 					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
 
@@ -141,6 +141,28 @@ func HandleAccLimitCheck() (err error) {
 								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}
+						}
+					}
+				} else if global.J3Contains(cid) {
+					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
+					orgID := orgTmp[0]
+					key := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgID, cid)
+
+					resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  -1,
+					}).Val()
+
+					for _, waitMem := range resWaitTmpList {
+						if strings.Contains(waitMem, accDBTmp.AcAccount) {
+							//	把超限的码全部处理掉
+							global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+							// 把该账号的码全部状态置为0，即关停不可用
+							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								Update("status", 0).Update("sys_status", 0)
 						}
 					}
 				} else if global.PcContains(cid) {
@@ -174,6 +196,7 @@ func HandleAccLimitCheck() (err error) {
 						}
 					}
 				}
+
 			}
 		}()
 
