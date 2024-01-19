@@ -28,20 +28,20 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="请求IP" prop="ip" width="120"/>
+        <el-table-column align="left" label="请求IP" prop="ip" width="160"/>
         <el-table-column align="left" label="处理记录" prop="path">
           <template #default="scope">
             <div>
               <el-popover v-if="scope.row.resp" placement="left-start" trigger="click">
                 <div class="popover-box">
-                  <pre>{{ fmtBody(scope.row.resp) }}</pre>
+                  <p>{{ fmtBody(scope.row.resp) }}</p>
                 </div>
                 <template #reference>
-                  <el-icon style="cursor: pointer;"><warning /></el-icon>
+                  <el-icon style="cursor: pointer;margin-right: 2px"><info-filled /></el-icon>
                 </template>
               </el-popover>
               <span v-else>无</span>
-              {{ fmtBody(scope.row.resp) }}
+              {{ fmtSimpleBody(scope.row.resp) }}
             </div>
           </template>
         </el-table-column>
@@ -62,14 +62,14 @@
 </template>
 
 <script setup>
-import { formatStatus2ETag } from '@/utils/format'
+import {fmtBody, fmtSimpleBody, formatStatus2ETag} from '@/utils/format'
 import {
   getSysOperationRecordSelf,
 } from '@/api/sysOperationRecord' // 此处请自行替换地址
 import { formatDate } from '@/utils/format'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import {Warning} from "@element-plus/icons-vue";
+import {InfoFilled, Warning} from "@element-plus/icons-vue";
 
 defineOptions({
   name: 'SysOperationRecord'
@@ -124,14 +124,6 @@ getTableData()
 const multipleSelection = ref([])
 const handleSelectionChange = (val) => {
   multipleSelection.value = val
-}
-
-const fmtBody = (value) => {
-  try {
-    return JSON.parse(value)
-  } catch (err) {
-    return value
-  }
 }
 
 </script>

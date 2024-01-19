@@ -1,10 +1,26 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
+	"net/http"
 	"reflect"
 	"regexp"
+	"strings"
 )
+
+// ParseRequest 解析http 报文内容
+func ParseRequest(requestString string) (*http.Request, error) {
+	reader := bufio.NewReader(strings.NewReader(requestString))
+
+	// 使用 http.ReadRequest 函数解析请求
+	request, err := http.ReadRequest(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return request, nil
+}
 
 // FilterNotContains a 全集，b 子集，筛选出 a 中不在 b 中的元素
 func FilterNotContains(a, b []string) []string {

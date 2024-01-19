@@ -65,7 +65,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="说明" prop="remark" width="320" />
+        <el-table-column align="left" label="说明" prop="remark" width="420" />
         <el-table-column align="left" label="日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>

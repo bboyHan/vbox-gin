@@ -35,6 +35,17 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 	orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
 
 	for _, c := range channelShop.ChannelShopList {
+		// 增加校验
+		if c.Money <= 0 {
+			return fmt.Errorf("传入的金额不合法")
+		}
+		if c.Address == "" {
+			return fmt.Errorf("传入的地址不合法")
+		}
+	}
+
+	for _, c := range channelShop.ChannelShopList {
+
 		var shopDB vbox.ChannelShop
 		if c.ID == 0 { //走创建
 			chNew := vbox.ChannelShop{
@@ -63,6 +74,7 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				Status:     c.Status,
 				UpdatedBy:  channelShop.CreatedBy,
 			}
+			chNew.ID = c.ID
 			if err := global.GVA_DB.Model(&vbox.ChannelShop{}).Where("id = ?", c.ID).Updates(&chNew).Error; err != nil {
 				return err
 			}

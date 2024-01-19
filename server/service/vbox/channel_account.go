@@ -220,6 +220,18 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.Ch
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount, c *gin.Context) (err error) {
 	vca.AcId = rand_string.RandomInt(8)
+
+	//增加校验
+	if global.TxContains(vca.Cid) {
+
+	} else if global.PcContains(vca.Cid) {
+
+	} else if global.J3Contains(vca.Cid) {
+
+	} else {
+		return errors.New("该信道暂不支持创建账号")
+	}
+
 	err = global.GVA_DB.Create(vca).Error
 	//vca传入的所有值 转化成 vcaDB vbox.ChannelAccount存放
 

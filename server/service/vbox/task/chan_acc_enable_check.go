@@ -277,7 +277,8 @@ func ChanAccEnableCheckTask() {
 
 						errQ := product.QryQQRecords(v.Obj)
 						if errQ != nil {
-							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败...", zap.Error(errQ))
+
 							//入库操作记录
 							record := sysModel.SysOperationRecord{
 								Ip:      v.Ctx.ClientIP,

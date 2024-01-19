@@ -311,9 +311,11 @@
                 </el-table-column>
                 <el-table-column label="金额（元）" prop="money" width="120px">
                   <template #default="scope">
-                    <el-input type="number" v-if="activeUpdIndex === scope.$index" v-model.number="scope.row.money"
+                    <el-input type="number" v-if="!editUpdMoneyVisible(scope.row, scope.$index)" v-model.number="scope.row.money"
                               :step="10" disabled></el-input>
-                    <span v-else>{{ scope.row.money }}</span>
+                    <el-input type="number" v-else v-model.number="scope.row.money"
+                              :step="10"></el-input>
+<!--                    <span v-else>{{ scope.row.money }}</span>-->
                   </template>
                 </el-table-column>
                 <el-table-column label="开关" prop="status" width="100px">
@@ -454,17 +456,58 @@ const handleDelete = function (index) {
 let activeUpdIndex = ref(-1);
 // 新增行
 const handleAdd2Upd = function () {
+  for (let ele of formData.value.list) {
+    if (ele.address === ''){
+      ElMessage({
+        type: 'error',
+        message: '请先正确填写上一条记录中的地址'
+      })
+      return
+    }
+    if (ele.money === 0) {
+      ElMessage({
+        type: 'error',
+        message: '请先正确填写上一条记录中的金额'
+      })
+      return
+    }
+  }
   let item = {
     address: '',
-    money: 10,
+    money: 0,
     status: 0
   };
   formData.value.list.push(item);
   activeUpdIndex.value = formData.value.list.length - 1;
 };
+
+
+const editUpdMoneyVisible = (row, index) => {
+  console.log(row)
+  if (row.id) {
+    formData.value.list[index].enable = false
+    return false
+  } else {
+    formData.value.list[index].enable = true
+    return true
+  }
+  // let flag = activeUpdIndex.value === index
+  // console.log(flag)
+}
+
 // 编辑行
 const handleEdit2Upd = (index) => {
   activeUpdIndex.value = index;
+  let ele = formData.value.list[index];
+  console.log("handleEdit2Upd ele", ele)
+  // let money = Number(ele.money);
+  let id = ele.id;
+  if (id) {
+    formData.value.list[index].enable = false
+    // editUpdMoneyVisible.value = false
+  } else {
+    formData.value.list[index].enable = true
+  }
 };
 // 保存行
 const handleSave2Upd = () => {
@@ -660,7 +703,8 @@ const formData = ref({
     {
       address: '',
       money: 0,
-      status: 0
+      status: 0,
+      enable: true,
     }
   ]
 })

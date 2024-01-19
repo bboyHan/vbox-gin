@@ -118,13 +118,15 @@
       >
         <el-table-column type="selection" width="55"/>
         <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
-        <el-table-column align="center" label="账号ID" prop="acId" width="120">
+        <el-table-column align="center" label="账号ID" prop="acId" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
-              {{ scope.row.acId }}
-              <el-button type="primary" link class="table-button" @click="getAccDetails(scope.row)">
-                <el-icon style="margin-right: 5px">
-                  <InfoFilled/>
+              <el-button type="text" link @click="getAccDetails(scope.row)">
+                {{ scope.row.acId }}
+              </el-button>
+              <el-button type="primary" link @click="openOrderHisShow(scope.row)">
+                <el-icon style="margin-right: 1px">
+                  <Search/>
                 </el-icon>
               </el-button>
             </div>
@@ -132,7 +134,7 @@
               <el-button type="info" link class="table-button">库存不足</el-button>
             </div>
             <div v-else>
-              <el-button type="info" :loading-icon="Eleme" loading>匹配中</el-button>
+              <el-button type="info" :loading-icon="Eleme" loading link class="table-button">匹配中</el-button>
             </div>
           </template>
         </el-table-column>
@@ -181,7 +183,7 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="付方ID" prop="pAccount" width="120">
+        <el-table-column align="center" label="付方ID" prop="pAccount" width="160">
           <template #default="scope">
             {{ scope.row.pAccount }}
           </template>
@@ -189,7 +191,7 @@
         <el-table-column align="center" label="单价积分" prop="unitPrice" width="120"/>
         <el-table-column align="center" label="平台ID" prop="platId" width="320"/>
         <el-table-column align="center" label="访客ip" prop="payIp" width="180"/>
-        <el-table-column align="center" label="区域" prop="payRegion" width="180"/>
+        <el-table-column align="center" label="区域" prop="payRegion" width="240"/>
         <el-table-column align="center" label="客户端设备" prop="payDevice" width="120"/>
       </el-table>
       <div class="gva-pagination">

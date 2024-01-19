@@ -45,7 +45,27 @@ const (
 	DB      = 2
 )
 
+func IsValidCookie(cookieString string) bool {
+	// 解析Cookie字符串
+	request := &http.Request{Header: http.Header{"Cookie": {cookieString}}}
+	cookies := request.Cookies()
+
+	// 验证解析后的 Cookie 是否合法
+	for _, cookie := range cookies {
+		if cookie.Name == "" || cookie.Value == "" {
+			return false
+		}
+	}
+
+	return true
+}
+
 func ParseCookie(cookieStr string, targetKey string) string {
+	fg := IsValidCookie(cookieStr)
+	if !fg {
+		global.GVA_LOG.Warn("cookie不合法", zap.String("cookie", cookieStr))
+		return ""
+	}
 	pairs := strings.Split(cookieStr, ";")
 	var flag bool
 	var valueX string
