@@ -10,8 +10,10 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -134,6 +136,7 @@ func OrderConfirmTask() {
 					continue
 				}
 
+				money := v.Obj.Money
 				if global.TxContains(chanID) {
 
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
@@ -151,7 +154,7 @@ func OrderConfirmTask() {
 					if vm, ok := rdMap["Q币"]; !ok {
 						global.GVA_LOG.Info("还没有QB的充值记录")
 					} else {
-						if rd, ok2 := vm[strconv.FormatInt(int64(v.Obj.Money*100), 10)]; !ok2 {
+						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
 							global.GVA_LOG.Info("还没有QB的充值记录")
 
 						} else { // 证明这种金额的，充上了
@@ -181,13 +184,110 @@ func OrderConfirmTask() {
 						}
 					}
 				} else if global.J3Contains(chanID) {
+					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
+					j3Record, errQy := product.QryJ3Record(vca)
+					if errQy != nil {
+						// 查单有问题，直接订单要置为超时，消息置为处理完毕
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
+						// 重新丢回去 下一个20s再查一次
+						marshal, _ := json.Marshal(v)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+						_ = msg.Ack(true)
+						continue
+					}
+
+					nowBalance := j3Record.LeftCoins
+					J3AccBalanceKey := fmt.Sprintf(global.J3AccBalanceZSet, vca.AcId)
+					nowTimeUnix := odDB.CreatedAt.Unix()
+					//对账时间
+					checkTime := time.Now().Unix()
+					valMembers, err := global.GVA_REDIS.ZRangeByScore(context.Background(), J3AccBalanceKey, &redis.ZRangeBy{
+						Min:    strconv.FormatInt(nowTimeUnix, 10),
+						Max:    strconv.FormatInt(nowTimeUnix, 10),
+						Offset: 0,
+						Count:  1,
+					}).Result()
+					if len(valMembers) > 0 {
+						mem := valMembers[0]
+						split := strings.Split(mem, "_")
+						hisBalance, _ := strconv.Atoi(split[4])
+						if hisBalance+money*100 == nowBalance { // 充值成功的情况
+
+							keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+							delMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+							global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
+								Score:  float64(nowTimeUnix),
+								Member: keyMem,
+							})
+							global.GVA_REDIS.ZRem(context.Background(), J3AccBalanceKey, delMem)
+
+							v.Obj.PlatId = keyMem
+
+							//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
+							if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).
+								Update("plat_id", keyMem).Error; err != nil {
+								global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+								_ = msg.Reject(false)
+								continue
+							}
+
+							// 4.入库wallet
+							var count int64
+							global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&count)
+
+							if count == 0 {
+								wallet := vbox.UserWallet{
+									Uid:       v.Obj.CreatedBy,
+									CreatedBy: v.Obj.CreatedBy,
+									Type:      global.WalletOrderType,
+									EventId:   v.Obj.EventId,
+									Recharge:  -money,
+									Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.OrderId),
+								}
+
+								global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
+							}
+
+							_ = msg.Ack(true)
+							global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("orderId", v.Obj.OrderId))
+
+							// 同时把订单 redis信息也设置一下缓存信息
+							v.Obj.OrderStatus = 1
+							odKey := fmt.Sprintf(global.PayOrderKey, v.Obj.OrderId)
+							jsonString, _ := json.Marshal(v.Obj)
+							global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
+
+							// 并且发起一个回调通知的消息
+							marshal, _ := json.Marshal(v)
+							err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+							global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
+
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_LOG.Info("未对账成功，当前余额为", zap.Any("nowBalance", nowBalance), zap.Any("hisBalance", hisBalance), zap.Any("money", money))
+							// 重新丢回去 下一个20s再查一次
+							marshal, _ := json.Marshal(v)
+							err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+							_ = msg.Ack(true)
+							continue
+						}
+
+					} else {
+						// 异常情况处理
+						global.GVA_LOG.Error("订单匹配消息查redis数据异常", zap.Error(err), zap.Any("valMembers", valMembers))
+						// 如果解析消息失败，则直接丢弃消息
+						_ = msg.Reject(false)
+						continue
+					}
+
 				} else if global.PcContains(chanID) {
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", *odDB.CreatedAt), zap.Any("传入的过期时间", *expTime))
 
-					records, errQ := product.QryQQRecordsByID(vca, odDB.PlatId)
-					if errQ != nil {
+					records, errQy := product.QryQQRecordsByID(vca, odDB.PlatId)
+					if errQy != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
-						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
 						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
@@ -198,7 +298,7 @@ func OrderConfirmTask() {
 					if vm, ok := rdMap["Q币"]; !ok {
 						global.GVA_LOG.Info("还没有QB的充值记录")
 					} else {
-						if rd, ok2 := vm[strconv.FormatInt(int64(v.Obj.Money*100), 10)]; !ok2 {
+						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
 							global.GVA_LOG.Info("还没有QB的充值记录")
 
 						} else { // 证明这种金额的，充上了
@@ -220,8 +320,8 @@ func OrderConfirmTask() {
 										CreatedBy: v.Obj.CreatedBy,
 										Type:      global.WalletOrderType,
 										EventId:   v.Obj.EventId,
-										Recharge:  -v.Obj.Money,
-										Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.OrderId),
+										Recharge:  -money,
+										Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.OrderId),
 									}
 
 									global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)

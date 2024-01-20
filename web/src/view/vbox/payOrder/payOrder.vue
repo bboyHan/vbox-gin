@@ -68,7 +68,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="订单ID" prop="orderId" width="220"/>
+        <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
         <el-table-column align="center" label="金额" prop="money" width="120"/>
         <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
           <template #default="scope">
@@ -138,7 +138,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="订单ID" prop="orderId" width="220"/>
+        <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
         <el-table-column align="center" label="金额" prop="money" width="80"/>
         <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
           <template #default="scope">

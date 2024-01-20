@@ -364,7 +364,6 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 	// ----- 校验该组织是否有此产品 -----------
 
 	// 2. 查供应库存账号是否充足 (优先从缓存池取，取空后查库取，如果库也空了，咋报错库存不足)
-	// 分不同的类型来查库存 （1- 引导类 查账号库__!直接匹配了!  2- 预产类 查预产库__!只查不匹配!）
 	//
 
 	if global.TxContains(cid) { // tx 引导
@@ -873,7 +872,33 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 		return "", err
 	}
 
-	return shop.Address, nil
+	cid := shop.Cid
+
+	var payUrl string
+	switch cid {
+	case "2001": //j3 tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1001": //jd
+		payUrl, err = utils.HandleJDUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1003": //zfb
+		payUrl, err = utils.HandleAlipayUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	default:
+		payUrl = shop.Address
+	}
+
+	return payUrl, nil
 }
 
 func (vpoService *PayOrderService) HandleResourceUrl2payCode(eventID string) (addr string, err error) {
@@ -1322,6 +1347,7 @@ func (vpoService *PayOrderService) HandleEventID2chShop(chanID string, money int
 		Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
 		Member: orgShopID,
 	})
+	global.GVA_LOG.Info("获取引导商铺匹配信息", zap.Any("orgShopID", orgShopID))
 
 	return orgShopID, err
 }

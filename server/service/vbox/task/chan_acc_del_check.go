@@ -114,18 +114,10 @@ func ChanAccDelCheckTask() {
 
 				} else if global.J3Contains(cid) { //QB引导，
 
-					moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
-					moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
 					accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
-
-					for _, money := range moneyList {
-						moneyTmp := money
-						go func() {
-							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
-							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-						}()
-					}
+					waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
+					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 				} else if global.PcContains(cid) { //QB直付，查一下有没有还没剩余的预产，处理掉
 					var pcDBList []vbox.ChannelPayCode

@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
@@ -34,13 +35,29 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 	}
 	orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
 
+	cid := channelShop.Cid
 	for _, c := range channelShop.ChannelShopList {
 		// 增加校验
 		if c.Money <= 0 {
 			return fmt.Errorf("传入的金额不合法")
 		}
 		if c.Address == "" {
-			return fmt.Errorf("传入的地址不合法")
+			return fmt.Errorf("传入的地址不合法, %s", c.Address)
+		}
+		var flag bool
+		switch cid {
+		case "2001": //j3 tb
+			flag = utils.ValidTBUrl(c.Address)
+			break
+		case "1001": //jd
+			flag = utils.ValidJDUrl(c.Address)
+			break
+		case "1003": //zfb
+			flag = utils.ValidAlipayUrl(c.Address)
+			break
+		}
+		if !flag {
+			return fmt.Errorf("传入的地址不合法, %s", c.Address)
 		}
 	}
 

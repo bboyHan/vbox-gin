@@ -11,6 +11,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -178,7 +179,7 @@ func OrderWaitingTask() {
 							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
 
 							_ = msg.Ack(true)
-							return
+							continue
 						}
 						v.Obj.CreatedBy = vca.CreatedBy
 						v.Obj.AcId = vca.AcId
@@ -250,16 +251,49 @@ func OrderWaitingTask() {
 							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
 
 							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
-
 							_ = msg.Ack(true)
-							return
+							continue
 						}
 						v.Obj.CreatedBy = vca.CreatedBy
 						v.Obj.AcId = vca.AcId
 						v.Obj.AcAccount = vca.AcAccount
-						v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
 						v.Ctx.UserID = int(vca.CreatedBy)
 
+						// 查一下当前余额
+						j3Record, errQy := product.QryJ3Record(vca)
+						if errQy != nil {
+							// 查单有问题，直接订单要置为超时，消息置为处理完毕
+							global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryJ3RecordsEx, accID, acAccount),
+								UserID:  v.Ctx.UserID,
+							}
+							err = operationRecordService.CreateSysOperationRecord(record)
+							continue
+						}
+
+						balance := j3Record.LeftCoins
+						J3AccBalanceKey := fmt.Sprintf(global.J3AccBalanceZSet, vca.AcId)
+						nowTimeUnix := v.Obj.CreatedAt.Unix()
+						keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, balance, 0, 0)
+
+						global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
+							Score:  float64(nowTimeUnix),
+							Member: keyMem,
+						})
+
+						v.Obj.PlatId = keyMem
+
+						global.GVA_LOG.Info("当前余额情况", zap.Any("j3Record", j3Record))
 						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
 					} else {
@@ -385,7 +419,7 @@ func OrderWaitingTask() {
 							global.GVA_LOG.Error("匹配预产异常", zap.Error(err))
 
 							_ = msg.Ack(true)
-							return
+							continue
 						}
 						v.Obj.CreatedBy = pcDB.CreatedBy
 						v.Obj.AcId = pcDB.AcId
@@ -906,7 +940,34 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 		return "", err
 	}
 
-	return shop.Address, nil
+	cid := shop.Cid
+
+	var payUrl string
+	switch cid {
+	case "2001": //j3 tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1001": //jd
+		payUrl, err = utils.HandleJDUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1003": //zfb
+		payUrl, err = utils.HandleAlipayUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	default:
+		payUrl = shop.Address
+	}
+
+	return payUrl, nil
+
 }
 
 /*

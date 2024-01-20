@@ -82,7 +82,10 @@ func AccCDCheckTask() {
 				ID := accInfo[0]
 				acID := accInfo[1]
 				acAccount := accInfo[2]
-				money := accInfo[3]
+				var money string
+				if len(accInfo) == 4 {
+					money = accInfo[3]
+				}
 
 				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
 
@@ -253,7 +256,7 @@ func AccCDCheckTask() {
 
 					} else {
 						// 更新账号为冷却状态
-						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 2)
+						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
 						waitMsg := v
 						err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
 						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("ttl", ttl))

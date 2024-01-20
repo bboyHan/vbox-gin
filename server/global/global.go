@@ -32,6 +32,8 @@ const (
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryJ3ShopEx         = "当前组织无商铺地址匹配，请核查商铺信息，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 
 	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
@@ -62,7 +64,8 @@ const (
 	OrgChanSet      = "vb_cid_list:org_%d"           // 组织下拥有的产品id
 	OrgShopMoneySet = "vb_shop_money:org_%d:chan_%s" // 同组织通道下可用商铺金额
 
-	PcAccWaiting = "vb_acc_waiting_pc:acid_%s" // 预产类-等待开启的账户(冷却中)
+	PcAccWaiting     = "vb_acc_waiting_pc:acid_%s"  // 预产类-等待开启的账户(冷却中)
+	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
 	YdQBAccWaiting = "vb_acc_qb_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 

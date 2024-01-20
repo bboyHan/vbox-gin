@@ -3,11 +3,185 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"go.uber.org/zap"
 	"net/http"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
 )
+
+// ValidAlipayUrl 查找Alipay url合法性
+func ValidAlipayUrl(requestString string) bool {
+	if strings.Contains(requestString, "alipays://platformapi") {
+	} else if strings.Contains(requestString, "https://ur.alipay.com") {
+	} else {
+		return false
+	}
+	return true
+}
+
+// ValidJDUrl 查找JD url合法性
+func ValidJDUrl(requestString string) bool {
+	if strings.Contains(requestString, "openapp.jdmobile://") {
+	} else if strings.Contains(requestString, "m.jd.com") {
+	} else if strings.Contains(requestString, "item.jd.com") {
+	} else {
+		return false
+	}
+	return true
+}
+
+// HandleAlipayUrl 处理Alipay url
+func HandleAlipayUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	if strings.Contains(requestString, "alipays://platformapi") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "https://ur.alipay.com") {
+		payUrl = "alipays://platformapi/startapp?appId=20000067&url=" + url.QueryEscape(requestString)
+		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+	} else {
+		return "", fmt.Errorf("不合法的ZFB链接")
+	}
+	return payUrl, nil
+}
+
+// HandleJDUrl 处理jd url
+func HandleJDUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+
+	if strings.Contains(requestString, "openapp.jdmobile://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "item.jd.com") {
+		re := regexp.MustCompile(`item.jd.com/(\d+)\.html`)
+		match := re.FindStringSubmatch(requestString)
+		if match != nil && len(match) > 1 {
+			skuId := match[1]
+			schemaBody := "{\"sourceValue\":\"0_productDetail_97\",\"des\":\"productDetail\",\"skuId\":\"" + skuId + "\",\"category\":\"jump\",\"sourceType\":\"PCUBE_CHANNEL\"}"
+			payUrl = "openapp.jdmobile://virtual?params=" + url.QueryEscape(schemaBody)
+			global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+		} else {
+			return "", fmt.Errorf("不合法的JD链接")
+		}
+	} else if strings.Contains(requestString, "m.jd.com") {
+		re := regexp.MustCompile(`/product/(\d+)\.html`)
+		match := re.FindStringSubmatch(requestString)
+		if match != nil && len(match) > 1 {
+			skuId := match[1]
+			schemaBody := "{\"sourceValue\":\"0_productDetail_97\",\"des\":\"productDetail\",\"skuId\":\"" + skuId + "\",\"category\":\"jump\",\"sourceType\":\"PCUBE_CHANNEL\"}"
+			payUrl = "openapp.jdmobile://virtual?params=" + url.QueryEscape(schemaBody)
+			global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+		} else {
+			return "", fmt.Errorf("不合法的JD链接")
+		}
+	} else {
+		return "", fmt.Errorf("不合法的JD链接")
+	}
+	return payUrl, nil
+}
+
+// ValidTBUrl 校验tb url合法性
+func ValidTBUrl(requestString string) bool {
+	if strings.Contains(requestString, "m.tb.cn") {
+	} else if strings.Contains(requestString, "tbopen://") {
+	} else if strings.Contains(requestString, "m.taobao.com") {
+	} else if strings.Contains(requestString, "item.taobao.com") {
+	} else {
+		return false
+	}
+	return true
+}
+
+// HandleTBUrl 处理tb url
+func HandleTBUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+
+	if strings.Contains(requestString, "m.tb.cn") {
+		// 先请求一次,获取 html body
+		client := vbHttp.NewHTTPClient()
+		var options = &vbHttp.RequestOptions{
+			MaxRedirects: 3,
+		}
+		resp, errQ := client.Get(requestString, options)
+		if errQ != nil {
+			global.GVA_LOG.Error("err:  ->", zap.Error(errQ))
+			return "", fmt.Errorf("不合法的链接")
+		}
+		htmlBody := string(resp.Body)
+		//fmt.Printf("%s", htmlBody)
+
+		// 先请求一次,获取 html body
+		re := regexp.MustCompile(`var url = '([^']*)'`)
+		match := re.FindStringSubmatch(htmlBody)
+		if match != nil && len(match) > 1 {
+			tmpUrl := match[1]
+			global.GVA_LOG.Info("", zap.Any("tmpUrl", (tmpUrl)))
+
+			parsedURL, errX := url.Parse(tmpUrl)
+			if errX != nil {
+				global.GVA_LOG.Warn("无效的 URL:", zap.Error(errX))
+				return "", fmt.Errorf("不合法的链接")
+			}
+
+			query := parsedURL.Query()
+			itemId := query.Get("id")
+			global.GVA_LOG.Info("", zap.Any("itemID", itemId))
+			if itemId == "" {
+				// m.taobao.com/i(\d+)\.htm
+				re = regexp.MustCompile(`m.taobao.com/i(\d+)\.htm`)
+				match = re.FindStringSubmatch(htmlBody)
+				if match != nil && len(match) > 1 {
+					itemId = match[1]
+					global.GVA_LOG.Info("二次修复查找", zap.Any("itemID", itemId))
+				}
+			}
+
+			if itemId == "" {
+				return "", fmt.Errorf("不合法的链接")
+			}
+
+			schema := "https://h5.m.taobao.com/awp/core/detail.htm?id=" + itemId
+
+			payUrl = "tbopen://m.taobao.com/tbopen/index.html?h5Url=" + url.QueryEscape(schema)
+			global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+		}
+
+	} else if strings.Contains(requestString, "item.taobao.com") {
+		parsedURL, errX := url.Parse(requestString)
+		if errX != nil {
+			global.GVA_LOG.Warn("无效的 URL:", zap.Error(errX))
+			return "", fmt.Errorf("不合法的链接")
+		}
+
+		query := parsedURL.Query()
+		itemId := query.Get("id")
+		global.GVA_LOG.Info("", zap.Any("itemID", itemId))
+		if itemId == "" {
+			return "", fmt.Errorf("不合法的链接")
+		}
+
+		schema := "https://h5.m.taobao.com/awp/core/detail.htm?id=" + itemId
+
+		payUrl = "tbopen://m.taobao.com/tbopen/index.html?h5Url=" + url.QueryEscape(schema)
+		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+
+	} else if strings.Contains(requestString, "tbopen://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "main.m.taobao.com") {
+		//payUrl = "tbopen://m.taobao.com/tbopen/index.html?h5Url=" + url.QueryEscape(requestString)
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+		//global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+	} else {
+		return "", fmt.Errorf("不合法的TB链接")
+	}
+	return payUrl, nil
+}
 
 // ParseRequest 解析http 报文内容
 func ParseRequest(requestString string) (*http.Request, error) {

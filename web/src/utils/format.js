@@ -230,12 +230,14 @@ export const formatDate = (time) => {
 }
 
 export const formatUtcTimestamp = (utcTimestamp) => {
-    if (utcTimestamp !== null && utcTimestamp !== '') {
+    if (utcTimestamp !== null && utcTimestamp !== '' && utcTimestamp !== "0") {
         const date = new Date(0) // 创建一个时间对象，并将其初始化为 1970 年 1 月 1 日 00:00:00 UTC 时间
         date.setUTCSeconds(utcTimestamp) // 将时间戳设置为 UTC 时间
         return formatTimeToStr(date, 'yyyy-MM-dd hh:mm:ss')
+    } else if (utcTimestamp === "0"){
+        return '-'
     } else {
-        return ''
+        return '-'
     }
 }
 

@@ -1,21 +1,5 @@
 <template>
   <div>
-    <div class="gva-table-box">
-      <el-row :gutter="16">
-        <div v-for="item in countItem">
-          <el-col :span="16">
-            通道ID： {{ item.cid }}
-            <el-button color="#05411d">
-              <el-icon class="is-loading">
-                <Loading/>
-              </el-icon>
-              已开启数量： {{ item.total }}
-            </el-button>
-          </el-col>
-        </div>
-      </el-row>
-    </div>
-    <el-divider/>
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
                @keyup.enter="onSubmit">
@@ -25,10 +9,10 @@
         <el-form-item label="账户备注" prop="acRemark">
           <el-input v-model="searchInfo.acRemark" placeholder="搜索条件"/>
         </el-form-item>
-        <el-form-item label="账户id" prop="acId">
+        <el-form-item label="账户ID" prop="acId">
           <el-input v-model.number="searchInfo.acId" placeholder="搜索条件"/>
         </el-form-item>
-        <el-form-item label="通道id" prop="cid">
+        <el-form-item label="通道ID" prop="cid">
           <el-cascader
               v-model="searchInfo.cid"
               :options="channelCodeOptions"
@@ -66,7 +50,8 @@
           </template>
         </el-popover>
         <el-popover v-model:visible="switchOnVisible" placement="top" width="240">
-          <p><span style="color: red;">注意：开启后，通道账户将进入待使用状态(预产类资源也将启用)</span>，确定批量开启吗？</p>
+          <p><span style="color: red;">注意：开启后，通道账户将进入待使用状态(预产类资源也将启用)</span>，确定批量开启吗？
+          </p>
           <div style="text-align: right; margin-top: 8px;">
             <el-button type="primary" link @click="switchOnVisible = false">取消</el-button>
             <el-button type="primary" @click="onSwitchEnable">确定</el-button>
@@ -89,14 +74,22 @@
             </el-button>
           </template>
         </el-popover>
+        <span v-for="item in countItem">
+          <el-col :span="12"><span style="width: 100px"></span>
+            <el-button>
+                【通道ID：{{ item.cid }}】<el-icon class="is-loading" style="margin-right: 2px"><Loading/> </el-icon>
+                已开启 <span style="color: red"><b>{{ item.total }} </b></span> 个
+            </el-button>
+          </el-col>
+        </span>
       </div>
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
         <el-table-column align="left" label="ID" prop="acId" width="120"/>
-        <el-table-column align="left" label="通道id" prop="cid" width="80"/>
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="120"/>
-        <el-table-column align="left" label="通道账户" prop="acAccount" width="120"/>
+        <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="160"/>
+        <el-table-column align="left" label="通道账户" prop="acAccount" width="160"/>
         <el-table-column align="left" label="账户密钥" prop="acPwd" width="120"/>
         <el-table-column align="left" label="CK" prop="token" width="260">
           <template #default="scope">
@@ -115,7 +108,8 @@
             <el-row :gutter="12">
               <el-col :span="12">
                 <el-popover trigger="hover" placement="top" width="240">
-                  <p><span style="color: red;">注意</span>：操作后将通过系统审核，<span style="color: red;">审核通过后开启（或关闭）账号关联资源；</span><span style="color: blue;">未通过系统审核请查看"操作日志"</span>核查原因，确定操作？</p>
+                  <p><span style="color: red;">注意</span>：操作后将通过系统审核，<span style="color: red;">审核通过后开启（或关闭）账号关联资源；</span><span
+                      style="color: blue;">未通过系统审核请查看"操作日志"</span>核查原因，确定操作？</p>
                   <template #reference>
                     <el-switch v-model="scope.row.status" inline-prompt :active-value="1" active-text="开启"
                                :inactive-value="0" inactive-text="关闭" size="large"
@@ -141,10 +135,12 @@
           <template #default="scope">
             <el-row :gutter="12">
               <el-col :span="8">
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录</el-button>
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录
+                </el-button>
               </el-col>
               <el-col :span="8">
-                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统记录</el-button>
+                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统记录
+                </el-button>
               </el-col>
               <el-col :span="8">
                 <el-button type="primary" link class="table-button" @click="goWorkLog">操作日志</el-button>
@@ -197,7 +193,8 @@
       </div>
     </div>
 
-    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" :draggable="true" destroy-on-close style="width: 400px">
+    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" :draggable="true"
+               destroy-on-close style="width: 400px">
       <el-scrollbar height="100px">
         <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
           <el-row>
@@ -236,74 +233,73 @@
     </el-dialog>
 
     <!--  创建 1000 -->
-    <el-dialog v-model="dialog1000FormVisible" :before-close="close1000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="500px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="产码方式" prop="type">
-                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                  <el-radio label="1">
-                    <template #default><span>引导</span></template>
-                  </el-radio>
-                  <el-radio label="2">
-                    <template #default><span>预产</span></template>
-                  </el-radio>
-                  <el-radio label="3">
-                    <template #default><span>原生</span></template>
-                  </el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="通道ID" prop="cid" disabled>
-                <el-input v-model="formData.cid" readonly disabled></el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="账户备注" prop="acRemark">
-                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>
-          <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
-            </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
-              <el-form-item label="日限额" prop="dailyLimit">
-                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="总限额" prop="totalLimit">
-                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
-                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="状态开关" prop="status">
-            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                       inactive-text="关闭"></el-switch>
-          </el-form-item>
-        </el-form>
-      </el-scrollbar>
+    <el-dialog v-model="dialog1000FormVisible" :before-close="close1000Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="产码方式" prop="type">
+              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                <el-radio label="1">
+                  <template #default><span>引导</span></template>
+                </el-radio>
+                <el-radio label="2">
+                  <template #default><span>预产</span></template>
+                </el-radio>
+                <el-radio label="3">
+                  <template #default><span>原生</span></template>
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="报文" prop="token">
+          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="6"></el-col>
+          <el-col :span="12">
+            <warning-bar title="注：默认0，则无限额控制"/>
+          </el-col>
+          <el-col :span="6"></el-col>
+          <el-col :span="8">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="笔数限额" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态开关" prop="status">
+          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                     inactive-text="关闭"></el-switch>
+        </el-form-item>
+      </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="close1000Dialog">取 消</el-button>
@@ -313,74 +309,69 @@
     </el-dialog>
 
     <!--  创建 2000 -->
-    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="500px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="产码方式" prop="type">
-                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                  <el-radio label="1">
-                    <template #default><span>引导</span></template>
-                  </el-radio>
-                  <el-radio label="2">
-                    <template #default><span>预产</span></template>
-                  </el-radio>
-                  <el-radio label="3">
-                    <template #default><span>原生</span></template>
-                  </el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="通道ID" prop="cid" disabled>
-                <el-input v-model="formData.cid" readonly disabled></el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="账户备注" prop="acRemark">
-                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>
-          <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
-            </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
-              <el-form-item label="日限额" prop="dailyLimit">
-                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="总限额" prop="totalLimit">
-                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
-                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="状态开关" prop="status">
-            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                       inactive-text="关闭"></el-switch>
-          </el-form-item>
-        </el-form>
-      </el-scrollbar>
+    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule2000" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="产码方式" prop="type">
+              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                <el-radio label="1">
+                  <template #default><span>引导</span></template>
+                </el-radio>
+                <el-radio label="2">
+                  <template #default><span>预产</span></template>
+                </el-radio>
+                <el-radio label="3">
+                  <template #default><span>原生</span></template>
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="报文" prop="token">
+          <el-input v-model="formData.token" type="textarea" :clearable="true"
+                    placeholder="输入示例：https://security.seasungame.com/security_extend_server/helper/balance/queryBalance?gameCode=jx3&account=aa123123&accountType=&zoneCode=z22&SN=98710641126&remark=&sign=36A360706FD189A2BF867D70F61117BE"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="6"></el-col>
+          <el-col :span="12">
+            <warning-bar title="注：默认0，则无限额控制"/>
+          </el-col>
+          <el-col :span="6"></el-col>
+          <el-col :span="8">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="笔数限额" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态开关" prop="status">
+          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                     inactive-text="关闭"></el-switch>
+        </el-form-item>
+      </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closeDialog">取 消</el-button>
@@ -390,74 +381,73 @@
     </el-dialog>
 
     <!--  创建 3000 -->
-    <el-dialog v-model="dialog3000FormVisible" :before-close="close3000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
-      <el-scrollbar height="500px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="产码方式" prop="type">
-                <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                  <el-radio label="1">
-                    <template #default><span>引导</span></template>
-                  </el-radio>
-                  <el-radio label="2">
-                    <template #default><span>预产</span></template>
-                  </el-radio>
-                  <el-radio label="3">
-                    <template #default><span>原生</span></template>
-                  </el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="通道ID" prop="cid" disabled>
-                <el-input v-model="formData.cid" readonly disabled></el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="账户备注" prop="acRemark">
-                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>
-          <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
-            </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
-              <el-form-item label="日限额" prop="dailyLimit">
-                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="总限额" prop="totalLimit">
-                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
-                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-form-item label="状态" prop="status">
-            <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                       inactive-text="关闭"></el-switch>
-          </el-form-item>
-        </el-form>
-      </el-scrollbar>
+    <el-dialog v-model="dialog3000FormVisible" :before-close="close3000Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="产码方式" prop="type">
+              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                <el-radio label="1">
+                  <template #default><span>引导</span></template>
+                </el-radio>
+                <el-radio label="2">
+                  <template #default><span>预产</span></template>
+                </el-radio>
+                <el-radio label="3">
+                  <template #default><span>原生</span></template>
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="报文" prop="token">
+          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="6"></el-col>
+          <el-col :span="12">
+            <warning-bar title="注：默认0，则无限额控制"/>
+          </el-col>
+          <el-col :span="6"></el-col>
+          <el-col :span="8">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="笔数限额" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态" prop="status">
+          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                     inactive-text="关闭"></el-switch>
+        </el-form-item>
+      </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closeDialog">取 消</el-button>
@@ -467,7 +457,8 @@
     </el-dialog>
 
     <!--  修改 3000 -->
-    <el-dialog v-model="dialogUpd3000FormVisible" :before-close="closeUpd3000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd3000FormVisible" :before-close="closeUpd3000Dialog" :draggable="true"
+               :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -525,9 +516,10 @@
     </el-dialog>
 
     <!--  修改 2000 -->
-    <el-dialog v-model="dialogUpd2000FormVisible" :before-close="closeUpd2000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd2000FormVisible" :before-close="closeUpd2000Dialog" :draggable="true"
+               :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule2000" label-width="80px">
           <el-row>
             <el-col :span="24">
               <el-form-item label="通道id" prop="cid">
@@ -583,7 +575,8 @@
     </el-dialog>
 
     <!--  修改 1000 -->
-    <el-dialog v-model="dialogUpd1000FormVisible" :before-close="closeUpd1000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialogUpd1000FormVisible" :before-close="closeUpd1000Dialog" :draggable="true"
+               :title="typeTitle" destroy-on-close>
       <el-scrollbar height="300px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -657,7 +650,8 @@
     </el-dialog>
 
     <!-- 查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow"
+               title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions :column="6" border>
@@ -685,8 +679,9 @@
       </el-scrollbar>
     </el-dialog>
 
-    <!-- 查看充值详情 -->
-    <el-dialog v-model="orderHisVisible" style="width: 1100px" :draggable="true" lock-scroll :before-close="closeOrderHisShow"
+    <!-- 查看充值详情 1000 3000 -->
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" :draggable="true" lock-scroll
+               :before-close="closeOrderHisShow"
                title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
@@ -702,6 +697,46 @@
           <el-table-column align="left" label="充值时间" prop="PayTime" width="160">
             <template #default="scope">
               {{ formatUtcTimestamp(scope.row.PayTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!-- 查看充值详情 2000 -->
+    <el-dialog v-model="orderHis2000Visible" style="width: 1100px" :draggable="true" lock-scroll
+               :before-close="closeOrderHis2000Show"
+               title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-descriptions :column="4" border style="background-color: #a5abb4">
+          <el-descriptions-item label="名称">{{ orderHis2000Info.gameName }}</el-descriptions-item>
+          <el-descriptions-item label="账号">{{ orderHis2000Info.account }}</el-descriptions-item>
+          <el-descriptions-item label="区域">{{ orderHis2000Info.zoneName }}</el-descriptions-item>
+          <el-descriptions-item label="积分">{{ orderHis2000Info.leftCoins }}</el-descriptions-item>
+        </el-descriptions>
+        <el-table tooltip-effect="dark" :data="orderHis2000List" row-key="ID" style="width: 100%">
+          <el-table-column align="center" label="账号" prop="acAccount" width="220"/>
+          <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+          <el-table-column align="center" label="金额" prop="money" width="90"/>
+          <el-table-column align="center" label="首查积分" prop="hisBalance" width="90"/>
+          <el-table-column align="center" label="首查时间" prop="nowTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.nowTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="核准积分" prop="nowBalance" width="90">
+            <template #default="scope">
+              <div v-if="Number(scope.row.nowBalance) === 0">
+                -
+              </div>
+              <div v-else>
+                {{ Number(scope.row.nowBalance)}}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="核准时间" prop="checkTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.checkTime) }}
             </template>
           </el-table-column>
         </el-table>
@@ -733,143 +768,142 @@
     </el-dialog>
 
     <!-- 产码-->
-    <el-dialog width="60%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle" :draggable="true"
+    <el-dialog width="60%" v-model="pcDialogFormVisible" :before-close="closePcDialog" :title="typeTitle"
+               :draggable="true"
                destroy-on-close>
-      <el-scrollbar height="450px">
-        <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
+      <el-form :model="pcFormData" label-position="right" ref="pcElFormRef" :rules="pcRule" label-width="100px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="通道" prop="cid">
+              <el-input v-model="pcFormData.cid" :clearable="true" placeholder="请输入" disabled/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道账户ID" prop="acId">
+              <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="过期时间" prop="expTime">
           <el-row>
-            <el-col :span="12">
-              <el-form-item label="通道" prop="cid">
-                <el-input v-model="pcFormData.cid" :clearable="true" placeholder="请输入" disabled/>
-              </el-form-item>
+            <el-col>
+              <el-input-number v-model="numHours" size="small"
+                               :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                               controls-position="right" @change="handleChangeH" :min="0">
+              </el-input-number>
+              <span> 小 时 </span>
+              <el-input-number v-model="numMinutes" size="small"
+                               :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                               controls-position="right" @change="handleChangeM" :min="0">
+              </el-input-number>
+              <span> 分 钟 </span>
+              <el-input-number v-model="numSeconds" size="small"
+                               :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
+                               controls-position="right" @change="handleChangeS" :min="0">
+              </el-input-number>
+              <span> 秒 </span>
             </el-col>
-            <el-col :span="12">
-              <el-form-item label="通道账户ID" prop="acId">
-                <el-input v-model="pcFormData.acId" :clearable="true" placeholder="请输入" disabled/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="pcFormData.acAccount" :clearable="true" placeholder="请输入" disabled/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="账户备注" prop="acRemark">
-                <el-input v-model="pcFormData.acRemark" :clearable="true" placeholder="请输入" disabled/>
-              </el-form-item>
+            <el-col>
+              <el-button link type="primary" @click="default7Day">7天</el-button>
+              <el-button link type="primary" @click="default1Day">1天</el-button>
+              <el-button link type="primary" @click="default2Hour">2小时</el-button>
+              <el-button link type="primary" @click="default1Hour">1小时</el-button>
+              <el-button link type="primary" @click="default10Minute">10分钟</el-button>
+              <el-button link type="primary" @click="default0Second">重置</el-button>
             </el-col>
           </el-row>
-          <el-form-item label="过期时间" prop="expTime">
-            <el-row>
-              <el-col>
-                <el-input-number v-model="numHours" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeH" :min="0">
-                </el-input-number>
-                <span> 小 时 </span>
-                <el-input-number v-model="numMinutes" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeM" :min="0">
-                </el-input-number>
-                <span> 分 钟 </span>
-                <el-input-number v-model="numSeconds" size="small"
-                                 :parser="(value) => value.replace(/￥\s?|(,*)/g, '')"
-                                 controls-position="right" @change="handleChangeS" :min="0">
-                </el-input-number>
-                <span> 秒 </span>
-              </el-col>
-              <el-col>
-                <el-button link type="primary" @click="default7Day">7天</el-button>
-                <el-button link type="primary" @click="default1Day">1天</el-button>
-                <el-button link type="primary" @click="default2Hour">2小时</el-button>
-                <el-button link type="primary" @click="default1Hour">1小时</el-button>
-                <el-button link type="primary" @click="default10Minute">10分钟</el-button>
-                <el-button link type="primary" @click="default0Second">重置</el-button>
-              </el-col>
-            </el-row>
-          </el-form-item>
+        </el-form-item>
 
-          <el-card style="{width: 100% !important}" shadow="never">
-            <template #header>
-              <div class="card-header">
-                <span>明细</span>
-              </div>
-            </template>
-            <div>
-              <el-table :data="pcFormData.list" style="width: 100%">
-                <el-table-column label="报文" prop="imgBaseStr" style="width: 100%">
-                  <template #default="scope">
-                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
-                              v-model="scope.row.imgBaseStr" :required="true"></el-input>
-                    <el-input :rows="2" type="textarea" disabled v-model="scope.row.imgBaseStr" readonly
-                              v-else></el-input>
-                  </template>
-                </el-table-column>
-                <el-table-column label="金额（元）" prop="money" width="120px">
-                  <template #default="scope">
-                    <el-input v-if="activeUpdIndex === scope.$index"
-                              v-model.number="scope.row.money"
-                              placeholder="输入金额"
-                              :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                              :parser="(value) => value.replace(/￥\s?|(,*)/g, '')" :required="true">
-                    </el-input>
-                    <span v-else>￥{{ scope.row.money }}</span>
-                  </template>
-                </el-table-column>
-<!--                <el-table-column label="运营商" prop="operator" width="120px">
-                  <template #default="scope">
-                    <el-select :required="true" v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
-                      <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
-                    </el-select>
-                  </template>
-                </el-table-column>
-                <el-table-column label="地区" prop="locList" width="120px">
-                  <template #default="scope">
-                    <el-cascader
-                        :change-on-select="true"
-                        style="width:100%"
-                        :options="regionOptions"
-                        v-model="scope.row.locList"
-                        @change="chge"
-                        placeholder="选择地区"
-                        filterable
-                        :props="{checkStrictly: false}" :rules="cascaderRules"
-                    >
-                    </el-cascader>
-                  </template>
-                </el-table-column>-->
-                <el-table-column align="right" width="200">
-                  <template #header>
-                    <el-button type="primary" @click="handleAdd2Upd">
-                      <Plus style="width:1em; height:1em;"/>
-                    </el-button>
-                  </template>
-                  <template #default="scope">
-                    <div v-if="activeUpdIndex === scope.$index">
-                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
-                      </el-button>
-                    </div>
-                    <div v-else>
-                      <el-button type="success" @click="handleEdit2Upd(scope.$index)">
-                        <Edit style="width:1em; height:1em;"/>
-                      </el-button>
-                      <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
-                                     cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
-                                     title="确定要删除该商品吗？">
-                        <template #reference>
-                          <el-button type="danger">
-                            <Delete style="width:1em; height:1em;"/>
-                          </el-button>
-                        </template>
-                      </el-popconfirm>
-                    </div>
-                  </template>
-                </el-table-column>
-              </el-table>
+        <el-card style="{width: 100% !important}" shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span>明细</span>
             </div>
-          </el-card>
-        </el-form>
-      </el-scrollbar>
+          </template>
+          <div>
+            <el-table :data="pcFormData.list" style="width: 100%">
+              <el-table-column label="报文" prop="imgBaseStr" style="width: 100%">
+                <template #default="scope">
+                  <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
+                            v-model="scope.row.imgBaseStr" :required="true"></el-input>
+                  <el-input :rows="2" type="textarea" disabled v-model="scope.row.imgBaseStr" readonly
+                            v-else></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="金额（元）" prop="money" width="120px">
+                <template #default="scope">
+                  <el-input v-if="activeUpdIndex === scope.$index"
+                            v-model.number="scope.row.money"
+                            placeholder="输入金额"
+                            :formatter="(value) => `￥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                            :parser="(value) => value.replace(/￥\s?|(,*)/g, '')" :required="true">
+                  </el-input>
+                  <span v-else>￥{{ scope.row.money }}</span>
+                </template>
+              </el-table-column>
+              <!--                <el-table-column label="运营商" prop="operator" width="120px">
+                                <template #default="scope">
+                                  <el-select :required="true" v-model="scope.row.operator" placeholder="请选择通信商" filterable style="width: 100%">
+                                    <el-option v-for="item in operators" :key="item.value" :label="item.label" :value="item.value"/>
+                                  </el-select>
+                                </template>
+                              </el-table-column>
+                              <el-table-column label="地区" prop="locList" width="120px">
+                                <template #default="scope">
+                                  <el-cascader
+                                      :change-on-select="true"
+                                      style="width:100%"
+                                      :options="regionOptions"
+                                      v-model="scope.row.locList"
+                                      @change="chge"
+                                      placeholder="选择地区"
+                                      filterable
+                                      :props="{checkStrictly: false}" :rules="cascaderRules"
+                                  >
+                                  </el-cascader>
+                                </template>
+                              </el-table-column>-->
+              <el-table-column align="right" width="200">
+                <template #header>
+                  <el-button type="primary" @click="handleAdd2Upd">
+                    <Plus style="width:1em; height:1em;"/>
+                  </el-button>
+                </template>
+                <template #default="scope">
+                  <div v-if="activeUpdIndex === scope.$index">
+                    <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
+                    </el-button>
+                  </div>
+                  <div v-else>
+                    <el-button type="success" @click="handleEdit2Upd(scope.$index)">
+                      <Edit style="width:1em; height:1em;"/>
+                    </el-button>
+                    <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="220" confirm-button-text="Yes"
+                                   cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
+                                   title="确定要删除该商品吗？">
+                      <template #reference>
+                        <el-button type="danger">
+                          <Delete style="width:1em; height:1em;"/>
+                        </el-button>
+                      </template>
+                    </el-popconfirm>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </el-card>
+      </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closePcDialog">取 消</el-button>
@@ -879,147 +913,146 @@
     </el-dialog>
 
     <!-- 查询指定账户订单 -->
-    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow" :draggable="true"
+    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow"
+               :draggable="true"
                title="查看系统充值详情" destroy-on-close>
-      <el-scrollbar height="450px">
-        <div class="gva-search-box">
-          <el-form :inline="true" class="demo-form-inline">
-            <el-form-item>
-              <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
-              <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-        <div class="gva-table-box">
-          <!--   简约版   -->
-          <el-table
-              v-if="isSimple"
-              ref="multipleTable"
-              style="width: 100%"
-              tooltip-effect="dark"
-              :data="orderSysTableData"
-              row-key="ID"
-              border
-              @selection-change="handleSelectionChange"
-          >
-            <el-table-column align="center" label="账号ID" prop="acId" width="180"/>
-            <el-table-column align="center" label="订单ID" prop="orderId" width="220"/>
-            <el-table-column align="center" label="金额" prop="money" width="120"/>
-            <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
-              <template #default="scope">
-                <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-                  {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column align="center" label="回调状态" prop="cbStatus" width="120">
-              <template #default="scope">
-                <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
-                  {{ formatNotify(scope.row.cbStatus) }}
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column align="center" label="创建时间" width="180">
-              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-            </el-table-column>
-            <el-table-column align="left" label="操作" width="240">
-              <template #default="scope">
-                <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
-                  <el-icon style="margin-right: 5px">
-                    <InfoFilled/>
-                  </el-icon>
-                  详情
-                </el-button>
-                <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
-                  <el-icon style="margin-right: 5px">
-                    <Position/>
-                  </el-icon>
-                  补单
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+      <div class="gva-search-box">
+        <el-form :inline="true" class="demo-form-inline">
+          <el-form-item>
+            <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
+            <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="gva-table-box">
+        <!--   简约版   -->
+        <el-table
+            v-if="isSimple"
+            ref="multipleTable"
+            style="width: 100%"
+            tooltip-effect="dark"
+            :data="orderSysTableData"
+            row-key="ID"
+            border
+            @selection-change="handleSelectionChange"
+        >
+          <el-table-column align="center" label="账号ID" prop="acId" width="180"/>
+          <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+          <el-table-column align="center" label="金额" prop="money" width="120"/>
+          <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
+            <template #default="scope">
+              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
+                {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="回调状态" prop="cbStatus" width="120">
+            <template #default="scope">
+              <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
+                {{ formatNotify(scope.row.cbStatus) }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="创建时间" width="180">
+            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          </el-table-column>
+          <el-table-column align="left" label="操作" width="240">
+            <template #default="scope">
+              <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
+                <el-icon style="margin-right: 5px">
+                  <InfoFilled/>
+                </el-icon>
+                详情
+              </el-button>
+              <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+                <el-icon style="margin-right: 5px">
+                  <Position/>
+                </el-icon>
+                补单
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
 
-          <!--   详情版   -->
-          <el-table
-              v-else
-              ref="multipleTable"
-              style="width: 100%"
-              tooltip-effect="dark"
-              :data="orderSysTableData"
-              row-key="ID"
-              border
-              @selection-change="handleSelectionChange"
-          >
-            <el-table-column type="selection" width="55"/>
-            <el-table-column align="left" label="付方ID" prop="pAccount" width="160"/>
-            <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
-            <el-table-column align="left" label="用户ID" prop="CreatedBy" width="120"/>
-            <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
-            <el-table-column align="left" label="平台id" prop="platId" width="320"/>
-            <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
-            <el-table-column align="left" label="区域" prop="payRegion" width="240"/>
-            <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
-            <el-table-column align="left" label="账号ID" prop="acId" width="180"/>
-            <el-table-column align="left" label="订单ID" prop="orderId" width="220"/>
-            <el-table-column align="left" label="金额" prop="money" width="120"/>
-            <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
-              <template #default="scope">
-                <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-                  {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column align="left" label="回调状态" prop="cbStatus" width="120">
-              <template #default="scope">
-                <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
-                  {{ formatNotify(scope.row.cbStatus) }}
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column align="left" label="补单状态" prop="handStatus" width="120">
-              <template #default="scope">
-                <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
-                  {{ formatHandNotify(scope.row.handStatus) }}
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column align="left" label="创建时间" width="180">
-              <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-            </el-table-column>
-            <el-table-column align="left" label="回调时间" width="180">
-              <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
-            </el-table-column>
-            <el-table-column align="left" label="操作" width="280">
-              <template #default="scope">
-                <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
-                  <el-icon style="margin-right: 5px">
-                    <InfoFilled/>
-                  </el-icon>
-                  详情
-                </el-button>
-                <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
-                  <el-icon style="margin-right: 5px">
-                    <Position/>
-                  </el-icon>
-                  补单
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="gva-pagination">
-            <el-pagination
-                layout="total, sizes, prev, pager, next, jumper"
-                :current-page="sysPage"
-                :page-size="sysPageSize"
-                :page-sizes="[10, 30, 50, 100]"
-                :total="sysTotal"
-                @current-change="handleSysCurrentChange"
-                @size-change="handleSysSizeChange"
-            />
-          </div>
+        <!--   详情版   -->
+        <el-table
+            v-else
+            ref="multipleTable"
+            style="width: 100%"
+            tooltip-effect="dark"
+            :data="orderSysTableData"
+            row-key="ID"
+            border
+            @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55"/>
+          <el-table-column align="left" label="付方ID" prop="pAccount" width="160"/>
+          <el-table-column align="left" label="单价积分" prop="unitPrice" width="120"/>
+          <el-table-column align="left" label="用户ID" prop="CreatedBy" width="120"/>
+          <el-table-column align="left" label="通道编码" prop="channelCode" width="120"/>
+          <el-table-column align="left" label="平台id" prop="platId" width="320"/>
+          <el-table-column align="left" label="访客ip" prop="payIp" width="180"/>
+          <el-table-column align="left" label="区域" prop="payRegion" width="240"/>
+          <el-table-column align="left" label="客户端设备" prop="payDevice" width="120"/>
+          <el-table-column align="left" label="账号ID" prop="acId" width="180"/>
+          <el-table-column align="left" label="订单ID" prop="orderId" width="230"/>
+          <el-table-column align="left" label="金额" prop="money" width="120"/>
+          <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
+            <template #default="scope">
+              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
+                {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="回调状态" prop="cbStatus" width="120">
+            <template #default="scope">
+              <el-button style="width: 90px" :color="formatNotifyColor(scope.row.cbStatus)">
+                {{ formatNotify(scope.row.cbStatus) }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="补单状态" prop="handStatus" width="120">
+            <template #default="scope">
+              <el-button style="width: 90px" :color="formatHandNotifyColor(scope.row.handStatus)">
+                {{ formatHandNotify(scope.row.handStatus) }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="创建时间" width="180">
+            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          </el-table-column>
+          <el-table-column align="left" label="回调时间" width="180">
+            <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
+          </el-table-column>
+          <el-table-column align="left" label="操作" width="280">
+            <template #default="scope">
+              <el-button type="primary" link class="table-button" @click="getSysDetails(scope.row)">
+                <el-icon style="margin-right: 5px">
+                  <InfoFilled/>
+                </el-icon>
+                详情
+              </el-button>
+              <el-button type="primary" link class="table-button" @click="notifyPayOrder(scope.row)">
+                <el-icon style="margin-right: 5px">
+                  <Position/>
+                </el-icon>
+                补单
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="gva-pagination">
+          <el-pagination
+              layout="total, sizes, prev, pager, next, jumper"
+              :current-page="sysPage"
+              :page-size="sysPageSize"
+              :page-sizes="[10, 30, 50, 100]"
+              :total="sysTotal"
+              @current-change="handleSysCurrentChange"
+              @size-change="handleSysSizeChange"
+          />
         </div>
-      </el-scrollbar>
+      </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closePcDialog">取 消</el-button>
@@ -1029,25 +1062,24 @@
     </el-dialog>
 
     <!-- 订单查看详情 -->
-    <el-dialog v-model="sysDetailShow" style="width: 800px" lock-scroll :before-close="closeSysDetailShow" title="查看详情" :draggable="true"
+    <el-dialog v-model="sysDetailShow" style="width: 800px" lock-scroll :before-close="closeSysDetailShow"
+               title="查看详情" :draggable="true"
                destroy-on-close>
-      <el-scrollbar height="550px">
-        <el-descriptions column="1" border>
-          <el-descriptions-item label="订单ID">{{ sysFormData.orderId }}</el-descriptions-item>
-          <el-descriptions-item label="付方ID">{{ sysFormData.pAccount }}</el-descriptions-item>
-          <el-descriptions-item label="金额">{{ sysFormData.money }}</el-descriptions-item>
-          <el-descriptions-item label="单价积分">{{ sysFormData.unitPrice }}</el-descriptions-item>
-          <el-descriptions-item label="账号ID">{{ sysFormData.acId }}</el-descriptions-item>
-          <el-descriptions-item label="通道编码">{{ sysFormData.channelCode }}</el-descriptions-item>
-          <el-descriptions-item label="平台ID">{{ sysFormData.platId }}</el-descriptions-item>
-          <el-descriptions-item label="客户ip">{{ sysFormData.payIp }}</el-descriptions-item>
-          <el-descriptions-item label="区域">{{ sysFormData.payRegion }}</el-descriptions-item>
-          <el-descriptions-item label="客户端设备">{{ sysFormData.payDevice }}</el-descriptions-item>
-          <el-descriptions-item label="订单状态">{{ formatBoolean(sysFormData.orderStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="回调状态">{{ formatBoolean(sysFormData.cbStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="回调时间">{{ formatDate(sysFormData.cbTime) }}</el-descriptions-item>
-        </el-descriptions>
-      </el-scrollbar>
+      <el-descriptions column="1" border>
+        <el-descriptions-item label="订单ID">{{ sysFormData.orderId }}</el-descriptions-item>
+        <el-descriptions-item label="付方ID">{{ sysFormData.pAccount }}</el-descriptions-item>
+        <el-descriptions-item label="金额">{{ sysFormData.money }}</el-descriptions-item>
+        <el-descriptions-item label="单价积分">{{ sysFormData.unitPrice }}</el-descriptions-item>
+        <el-descriptions-item label="账号ID">{{ sysFormData.acId }}</el-descriptions-item>
+        <el-descriptions-item label="通道编码">{{ sysFormData.channelCode }}</el-descriptions-item>
+        <el-descriptions-item label="平台ID">{{ sysFormData.platId }}</el-descriptions-item>
+        <el-descriptions-item label="客户ip">{{ sysFormData.payIp }}</el-descriptions-item>
+        <el-descriptions-item label="区域">{{ sysFormData.payRegion }}</el-descriptions-item>
+        <el-descriptions-item label="客户端设备">{{ sysFormData.payDevice }}</el-descriptions-item>
+        <el-descriptions-item label="订单状态">{{ formatBoolean(sysFormData.orderStatus) }}</el-descriptions-item>
+        <el-descriptions-item label="回调状态">{{ formatBoolean(sysFormData.cbStatus) }}</el-descriptions-item>
+        <el-descriptions-item label="回调时间">{{ formatDate(sysFormData.cbTime) }}</el-descriptions-item>
+      </el-descriptions>
     </el-dialog>
 
     <!--  补单  -->
@@ -1064,7 +1096,8 @@
             <el-input disabled v-model="sysFormData.orderId" :clearable="true" placeholder="请输入" style="width: 80%"/>
           </el-form-item>
           <el-form-item label="安全码" prop="authCaptcha">
-            <el-input v-model="sysFormData.authCaptcha" :clearable="true" placeholder="请输入安全码" style="width: 80%"/>
+            <el-input v-model="sysFormData.authCaptcha" :clearable="true" placeholder="请输入安全码"
+                      style="width: 80%"/>
           </el-form-item>
         </el-form>
       </el-scrollbar>
@@ -1095,7 +1128,7 @@ import {
   getChannelProductSelf
 } from '@/api/channelProduct'
 import {codeToText, regionData} from 'element-china-area-data';
-import { useRouter } from 'vue-router'
+import {useRouter} from 'vue-router'
 
 // 全量引入格式化工具 请按需保留
 import {
@@ -1145,15 +1178,25 @@ dayjs.extend(utcPlugin);
 dayjs.extend(timezone);
 
 const countItem = ref([])
-const queryAccOrderHisFunc = async (row) => {
-  const req = {...row}
-  console.log(req)
-
-  let res = await queryAccOrderHis(req)
-  console.log(res.data)
-  if (res.code === 0) {
-    orderHisTableData.value = res.data.list.WaterList
+const queryAccOrderHisFunc = async (row, cid) => {
+  let res = await queryAccOrderHis(row)
+  // console.log(res.data)
+  if (cid >= 3000 && cid <= 3099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 1000 && cid <= 1099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 2000 && cid <= 2099) {
+    if (res.code === 0) {
+      orderHis2000Info.value = res.data.list.info
+      orderHis2000List.value = res.data.list.list
+    }
   }
+
+
 }
 // 系统查单
 const sysPage = ref(1)
@@ -1363,7 +1406,7 @@ const rule = reactive({
     required: true,
     message: '',
     trigger: ['input', 'blur'],
-  },{
+  }, {
     whitespace: true,
     message: '不能只输入空格',
     trigger: ['input', 'blur'],
@@ -1378,6 +1421,38 @@ const rule = reactive({
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
     }],
+  cid: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
+  type: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  },
+    {
+      whitespace: true,
+      message: '不能只输入空格',
+      trigger: ['input', 'blur'],
+    }],
+})
+// 验证规则
+const rule2000 = reactive({
+  acRemark: [{
+    required: true,
+    message: '',
+    trigger: ['input', 'blur'],
+  }, {
+    whitespace: true,
+    message: '不能只输入空格',
+    trigger: ['input', 'blur'],
+  }],
   cid: [{
     required: true,
     message: '',
@@ -1435,7 +1510,7 @@ const pcRule = reactive({
 })
 const cascaderRules = reactive({
   acAccount: [
-    { required: true, message: '请选择', trigger: ['input', 'blur', 'change'], }
+    {required: true, message: '请选择', trigger: ['input', 'blur', 'change'],}
   ],
 })
 
@@ -1474,6 +1549,7 @@ const searchRule = reactive({
 })
 
 const elFormRef = ref()
+const elForm2000Ref = ref()
 const elSearchFormRef = ref()
 const elSysFormRef = ref()
 
@@ -1643,11 +1719,11 @@ const updateChannelAccountFunc = async (row) => {
   if (res.code === 0) {
     formData.value = res.data.revca
     let cid = Number(res.data.revca.cid)
-    if (cid >= 3000 && cid <= 3099){
+    if (cid >= 3000 && cid <= 3099) {
       dialogUpd3000FormVisible.value = true
-    }else if (cid >= 2000 && cid <= 2099){
+    } else if (cid >= 2000 && cid <= 2099) {
       dialogUpd2000FormVisible.value = true
-    }else if (cid >= 1000 && cid <= 1099){
+    } else if (cid >= 1000 && cid <= 1099) {
       dialogUpd1000FormVisible.value = true
     }
   }
@@ -1924,7 +2000,7 @@ const enterDialog = async () => {
       closeDialog()
       getTableData()
     }
-  })
+  });
 }
 
 // 通道账号开关（批量）
@@ -2065,12 +2141,15 @@ const updateTokenInfoFunc = async (row) => {
 
 // 充值记录查询
 const orderHisVisible = ref(false)
+const orderHis2000Visible = ref(false)
 // 系统记录查询
 const orderSysVisible = ref(false)
 // 产码统计查询
 const payCodeOverviewVisible = ref(false)
 const channelCode = ref("")
 const orderHisTableData = ref([])
+const orderHis2000Info = ref([])
+const orderHis2000List = ref([])
 const orderSysTableData = ref([])
 const payCodeTableData = ref([])
 const payCodeMap = ref({})
@@ -2082,15 +2161,28 @@ const closeOrderHisShow = () => {
   orderHisVisible.value = false
   orderHisTableData.value = []
 }
+const closeOrderHis2000Show = () => {
+  orderHis2000Visible.value = false
+  orderHis2000List.value = []
+  orderHis2000Info.value = {}
+}
 const closePayCodeOverviewShow = () => {
   payCodeOverviewVisible.value = false
   payCodeTableData.value = []
 }
 const openOrderHisShow = async (row) => {
-  orderHisVisible.value = true
   let req = {...row}
   console.log(req)
-  await queryAccOrderHisFunc(req)
+  let cid = req.cid
+  if (cid >= 3000 && cid <= 3099) {
+    orderHisVisible.value = true;
+  } else if (cid >= 1000 && cid <= 1099) {
+    orderHisVisible.value = true;
+  } else if (cid >= 2000 && cid <= 2099) {
+    orderHis2000Visible.value = true;
+  }
+
+  await queryAccOrderHisFunc(req, cid)
 }
 
 const openOrderSysShow = async (row) => {
@@ -2103,11 +2195,11 @@ const openPayCodeOverviewShow = async (row) => {
   payCodeOverviewVisible.value = true
   let req = {...row}
   console.log(req)
-  await getPayCodeOverviewByChanAccFunc({acId:req.acId, codeStatus: 2})
+  await getPayCodeOverviewByChanAccFunc({acId: req.acId, codeStatus: 2})
 }
 const router = useRouter()
 const goWorkLog = async () => {
-    router.push({ name: 'vbRecord', replace: true })
+  router.push({name: 'vbRecord', replace: true})
 }
 
 //  产码 ---------------------
@@ -2407,10 +2499,10 @@ const enterPcDialog = async () => {
               })
               flag = true;
               break
-            }else {
+            } else {
               for (let i = 0; i < pcFormData.value.list.length; i++) {
                 let item = pcFormData.value.list[i]
-                if(item.money <= 0) {
+                if (item.money <= 0) {
                   ElMessage({
                     type: 'error',
                     message: '金额需大于0'
@@ -2418,7 +2510,7 @@ const enterPcDialog = async () => {
                   flag = true;
                   break
                 }
-                if (!item.imgBaseStr){
+                if (!item.imgBaseStr) {
                   ElMessage({
                     type: 'error',
                     message: '传入正确报文'
@@ -2446,7 +2538,7 @@ const enterPcDialog = async () => {
             }
             if (flag) {
               return
-            }else {
+            } else {
               pcFormData.value.type = 2
               console.log(pcFormData.value)
               res = await batchCreateChannelPayCode(pcFormData.value)
@@ -2486,11 +2578,11 @@ const enterChanDialog = async () => {
     let channelCode = Number(formData.value.cid);
     let type = Number(formData.value.type);
 
-    if (channelCode === 3000){
+    if (channelCode === 3000) {
       dialog3000FormVisible.value = true
-    }else if (channelCode >= 1000 && channelCode < 1099) {
+    } else if (channelCode >= 1000 && channelCode < 1099) {
       dialog1000FormVisible.value = true
-    }else if (channelCode >= 2000 && channelCode < 2099) {
+    } else if (channelCode >= 2000 && channelCode < 2099) {
       dialog2000FormVisible.value = true
     }
   });
