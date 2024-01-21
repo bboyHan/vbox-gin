@@ -13,6 +13,29 @@ import (
 	"strings"
 )
 
+// ParseUrlContent 识别url内容，如果含有多个，则返回第一个
+func ParseUrlContent(content string) (url string, err error) {
+	// 1.
+	// 使用正则表达式匹配 URL
+	//re := regexp.MustCompile(`((https?://)[^\s]+)`)
+	//urls := re.FindAllString(content, -1)
+	//
+	//// 输出匹配结果
+	//for _, url = range urls {
+	//	fmt.Println(url)
+	//}
+
+	//	2.处理查找第一个
+	// 使用正则表达式匹配 URL
+	re := regexp.MustCompile(`((https?://)[^\s]+)`)
+	url = re.FindString(content)
+
+	// 输出匹配结果
+	global.GVA_LOG.Info("解析url结果", zap.Any("url", url))
+	return url, err
+
+}
+
 // ValidAlipayUrl 查找Alipay url合法性
 func ValidAlipayUrl(requestString string) bool {
 	if strings.Contains(requestString, "alipays://platformapi") {
@@ -34,13 +57,23 @@ func ValidJDUrl(requestString string) bool {
 	return true
 }
 
+// ValidDYUrl 查找JD url合法性
+func ValidDYUrl(requestString string) bool {
+	if strings.Contains(requestString, "snssdk1128://") {
+	} else if strings.Contains(requestString, "v.douyin.com") {
+	} else {
+		return false
+	}
+	return true
+}
+
 // HandleAlipayUrl 处理Alipay url
 func HandleAlipayUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 	if strings.Contains(requestString, "alipays://platformapi") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
-	} else if strings.Contains(requestString, "https://ur.alipay.com") {
+	} else if strings.Contains(requestString, "ur.alipay.com") {
 		payUrl = "alipays://platformapi/startapp?appId=20000067&url=" + url.QueryEscape(requestString)
 		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
 	} else {
@@ -94,6 +127,41 @@ func ValidTBUrl(requestString string) bool {
 		return false
 	}
 	return true
+}
+
+// HandleDYUrl 处理dy url
+func HandleDYUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+
+	if strings.Contains(requestString, "snssdk1128://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "v.douyin.com") {
+		client := vbHttp.NewHTTPClient()
+		var options = &vbHttp.RequestOptions{
+			MaxRedirects: 0,
+		}
+		resp, errQ := client.Get(requestString, options)
+		if errQ != nil {
+			global.GVA_LOG.Error("err:  ->", zap.Error(errQ))
+			return "", fmt.Errorf("不合法的链接")
+		}
+		respHeaders := resp.Headers
+		loc := respHeaders["Location"]
+		parsedURL, errX := url.Parse(loc)
+		if errX != nil {
+			global.GVA_LOG.Error("err:  ->", zap.Error(errX))
+			return "", fmt.Errorf("不合法的链接")
+		}
+		query := parsedURL.Query()
+		detailSchema := query.Get("detail_schema")
+		payUrl = strings.ReplaceAll(detailSchema, "sslocal://", "snssdk1128://")
+		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+	} else {
+		return "", fmt.Errorf("不合法的DY链接")
+	}
+
+	return payUrl, nil
 }
 
 // HandleTBUrl 处理tb url

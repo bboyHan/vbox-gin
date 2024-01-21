@@ -113,7 +113,7 @@ func AccCDCheckTask() {
 					msgX := fmt.Sprintf(global.BalanceNotEnough, accDB.AcId, accDB.AcAccount)
 
 					global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 						Update("sys_status", 0).Error
 				}
 
@@ -133,7 +133,7 @@ func AccCDCheckTask() {
 					if err != nil {
 						global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 						continue
 					}
@@ -143,7 +143,7 @@ func AccCDCheckTask() {
 
 						msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDB.AcId, accDB.AcAccount)
 						global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 
 					}
@@ -168,7 +168,7 @@ func AccCDCheckTask() {
 						msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDB.AcId, accDB.AcAccount)
 						global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
 
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 
 						global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDB))
@@ -191,7 +191,7 @@ func AccCDCheckTask() {
 						msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDB.AcId, accDB.AcAccount)
 
 						global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 						global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDB))
 					}
@@ -202,7 +202,7 @@ func AccCDCheckTask() {
 				cid := accDB.Cid
 				if ttl <= 0 { //冷却结束，直接置为已用
 					// 更新账号为正常状态
-					global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+					global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
 
 					orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
 
@@ -236,7 +236,7 @@ func AccCDCheckTask() {
 					if flag { // 表示超限了，删掉处理
 
 						// 更新账号为正常状态
-						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+						global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
 
 						orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
 
@@ -255,8 +255,12 @@ func AccCDCheckTask() {
 						}
 
 					} else {
-						// 更新账号为冷却状态
-						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
+						if global.TxContains(cid) { // 引导
+						} else if global.J3Contains(cid) { // 剑三引导
+							// 更新账号为冷却状态
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
+						} else if global.PcContains(cid) { // wx qb
+						}
 						waitMsg := v
 						err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
 						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("ttl", ttl))

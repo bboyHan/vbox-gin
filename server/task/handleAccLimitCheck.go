@@ -40,7 +40,7 @@ func HandleAccLimitCheck() (err error) {
 				msgX := fmt.Sprintf(global.BalanceNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 
 				global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
-				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+				err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 					Update("status", 0).Update("sys_status", 0).Error
 			}
 
@@ -60,7 +60,7 @@ func HandleAccLimitCheck() (err error) {
 
 					msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 					global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 				}
 			}
@@ -84,7 +84,7 @@ func HandleAccLimitCheck() (err error) {
 					msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 					global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
 
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 
 					global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
@@ -107,7 +107,7 @@ func HandleAccLimitCheck() (err error) {
 					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 
 					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
 				}
@@ -120,7 +120,7 @@ func HandleAccLimitCheck() (err error) {
 
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
-					pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, "*")
+					pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
 					var keys []string
 					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
 
@@ -138,7 +138,7 @@ func HandleAccLimitCheck() (err error) {
 								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
 								// 把该账号的码全部状态置为0，即关停不可用
-								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}
 						}
@@ -161,7 +161,7 @@ func HandleAccLimitCheck() (err error) {
 							global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
 							// 把该账号的码全部状态置为0，即关停不可用
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 								Update("status", 0).Update("sys_status", 0)
 						}
 					}
@@ -190,7 +190,7 @@ func HandleAccLimitCheck() (err error) {
 								id := strings.Split(waitMem, "_")[0]
 								global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ? ", id).Update("code_status", 4)
 								// 把该账号的码全部状态置为0，即关停不可用
-								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}
 						}

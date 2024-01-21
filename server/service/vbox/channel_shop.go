@@ -43,6 +43,13 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		}
 		if c.Address == "" {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)
+		} else {
+			//	如果是口令地址，则先解析url
+			addr, errA := utils.ParseUrlContent(c.Address)
+			if errA != nil {
+				return fmt.Errorf("传入的地址不合法, %s", c.Address)
+			}
+			c.Address = addr
 		}
 		var flag bool
 		switch cid {
@@ -52,7 +59,13 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		case "1001": //jd
 			flag = utils.ValidJDUrl(c.Address)
 			break
-		case "1003": //zfb
+		case "1002": //dy
+			flag = utils.ValidDYUrl(c.Address)
+			break
+		case "1003": //jym
+			flag = utils.ValidAlipayUrl(c.Address)
+			break
+		case "1004": //zfb
 			flag = utils.ValidAlipayUrl(c.Address)
 			break
 		}
@@ -245,7 +258,7 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 			orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
 			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
 			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-
+			channelShop.Cid = shopDB.Cid
 			if channelShop.Status == 1 {
 
 				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
@@ -263,6 +276,24 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 			return nil
 		})
 
+		if err == nil {
+			conn, errC := mq.MQ.ConnPool.GetConnection()
+			if errC != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			ch, errN := conn.Channel()
+			if errN != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			orgTmp := utils2.GetSelfOrg(channelShop.UpdatedBy)
+
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
+			createBy := channelShop.UpdatedBy
+			waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+			err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
+		}
 	} else if channelShop.Type == 3 {
 		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 
@@ -285,6 +316,7 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 					global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
 				}
 
+				channelShop.Cid = shopDB.Cid
 			}
 
 			err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
@@ -295,27 +327,26 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 
 		})
 
+		if err == nil {
+			conn, errC := mq.MQ.ConnPool.GetConnection()
+			if errC != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			ch, errN := conn.Channel()
+			if errN != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			orgTmp := utils2.GetSelfOrg(channelShop.UpdatedBy)
+
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
+			createBy := channelShop.UpdatedBy
+			waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
+			err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
+		}
 	} else {
 		err = fmt.Errorf("不支持的操作，type检查")
-	}
-
-	if err == nil {
-		conn, errC := mq.MQ.ConnPool.GetConnection()
-		if errC != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
-		ch, errN := conn.Channel()
-		if errN != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
-
-		orgTmp := utils2.GetSelfOrg(channelShop.UpdatedBy)
-
-		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
-		createBy := channelShop.UpdatedBy
-		waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
-		err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))
 	}
 
 	return err

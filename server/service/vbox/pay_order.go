@@ -459,6 +459,7 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			global.GVA_LOG.Error("HandleResourceUrl2chShop该组织配置的资源不足，请核查", zap.Error(err))
 			return nil, err
 		}
+		global.GVA_LOG.Info("创建订单时匹配shop", zap.Any("eventID", eventID), zap.Any("rsUrl", rsUrl))
 	} else if eventType == 2 {
 		//跳过， 不匹配
 	}
@@ -692,6 +693,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 			global.GVA_LOG.Error("HandleResourceUrl2chShop该组织配置的资源不足，请核查", zap.Error(err))
 			return nil, err
 		}
+		global.GVA_LOG.Info("创建订单时匹配shop", zap.Any("eventID", eventID), zap.Any("rsUrl", rsUrl))
 	} else if eventType == 2 {
 		//跳过， 不匹配
 	}
@@ -857,6 +859,7 @@ func (vpoService *PayOrderService) HandlePayUrl2PAcc(orderId string) (string, er
 }
 
 func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (addr string, err error) {
+	global.GVA_LOG.Info("接收event id", zap.Any("eventID", eventID))
 	//1. 如果是引导类的，获取引导地址 - channel shop
 	split := strings.Split(eventID, "_")
 	if len(split) <= 1 {
@@ -866,29 +869,46 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 	ID := split[1]
 
 	var shop vbox.ChannelShop
-	db := global.GVA_DB.Model(&vbox.ChannelShop{}).Table("vbox_channel_shop")
-	err = db.Where("id = ?", ID).First(&shop).Error
+	err = global.GVA_DB.Debug().Model(&vbox.ChannelShop{}).Where("id = ?", ID).First(&shop).Error
 	if err != nil {
 		return "", err
 	}
+	global.GVA_LOG.Info("查出shop", zap.Any("shop", shop))
 
 	cid := shop.Cid
 
 	var payUrl string
 	switch cid {
 	case "2001": //j3 tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleTBUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
 		break
 	case "1001": //jd
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleJDUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
 		break
-	case "1003": //zfb
+	case "1002": //jd
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleDYUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1003": //jym
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleAlipayUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1004": //zfb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleAlipayUrl(shop.Address)
 		if err != nil {
 			return "", err

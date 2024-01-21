@@ -213,8 +213,8 @@ func NewHTTPClient(proxyAddr ...string) *FastHttpClient {
 		client: &fasthttp.Client{
 			Dial:                dialFunc,
 			MaxConnsPerHost:     100,
-			ReadBufferSize:      4096,
-			WriteBufferSize:     4096,
+			ReadBufferSize:      8192, // 设置 ReadBufferSize 大小
+			WriteBufferSize:     8192,
 			MaxIdleConnDuration: 10 * time.Second,
 		},
 	}

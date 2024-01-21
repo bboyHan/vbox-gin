@@ -105,6 +105,90 @@
         </div>
       </div>
 
+      <!--   1100 JW 引导   -->
+      <div v-if="payTypeVisible >= 1100 && payTypeVisible < 1199">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col>
+                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col>
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_card_info_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">① 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_card_info_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-jw-bag">
+                  <textarea v-model="inputString"
+                            :placeholder="`粘贴示例：\n您已购买成功(订单号:205...)，如下：\n卡号：2312290766321121;\n密码：2732221581323347;`"></textarea>
+                  <!--                  <el-input v-model="inputString" placeholder="请输入待匹配的字符串"-->
+                  <!--                            style=" border: none;background-color: transparent;"></el-input>-->
+                  <!-- 在这里显示匹配到的卡号和密码 -->
+                </div>
+                <div>
+                  <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
+                  <div class="medicine-jw-card-info-bag">
+                    <div v-if="cardNumber && password" class="result-container">
+                      <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b style="color: blue;font-size: 16px"> {{ cardNumber }}</b></p>
+                      <p><strong style="padding-right: 10px;font-size: 14px">密码:</strong><b style="color: blue;font-size: 16px"> {{ password }}</b></p>
+                    </div>
+                    <div v-else>
+                      <p style="color: #c4bdbd;">未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p_content_card_submit_button">
+                  <div v-if="cardNumber && password" class="result-container">
+                    <el-row :gutter="12">
+                      <el-col :span="24">
+                        <button class="btn-copy p_submit_success_button" @click="openCardVisible">③ 提交卡密</button>
+                      </el-col>
+                    </el-row>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy p_submit_button" @click="warnCardInfo">③ 提交卡密</button>
+                  </div>
+                </div>
+
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+
+      </div>
+
       <!--   2000 引导   -->
       <div v-if="payTypeVisible >= 2000 && payTypeVisible < 2099">
         <div class="p_container">
@@ -257,80 +341,154 @@
         </div>
       </div>
 
-      <!--   步骤指导   -->
-      <el-dialog width="360px" v-model="dialogYd1000Visible" :draggable="true" :before-close="closeYdDialog" :style="backgroundYdImageStyle"
-                 top="5vh" destroy-on-close>
-        <div style="padding: 0; margin: -20px 0 0;">
+      <!--   卡密信息确认   -->
+      <el-dialog width="360px" v-model="dialogCardVisible" :draggable="true" :before-close="closeCardVisible"
+                 :style="backgroundYdImageStyle" top="40vh" destroy-on-close>
+        <div>
           <div>
-            <div v-if="Number(payData.channel_code) === 1003">
-              <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_qb_jym.png">
-            </div>
-            <div v-else-if="Number(payData.channel_code) === 2001">
-              <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_j3_tb.png">
-            </div>
-          </div>
-          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
-            <el-row>
-              <el-col>
-                <div style="height: 100px; margin-top: 20px">
-                  <div class="medicine-money-bag">
-                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
-                      payData.money
-                    }}.00</span></span>
-                  </div>
-                  <div class="medicine-bag">
-                    <span>{{ payData.account }}</span>
-                  </div>
-                  <div class="copy-tip">
-                    <span>长按框内</span>
-                    <span class="jtone"></span>
-                    <span>复制</span>
-                    <span class="jttwo"></span>
-                    <span>记金额</span>
-                    <span class="jtthree"></span>
-                    <span>打开跳转</span>
-                  </div>
-                  <div v-if="!copyInfoVisible">
-                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
-                  </div>
-                  <div v-else>
-                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
-                  </div>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <div class="yd_p_content_button_qr">
-              <el-row :gutter="12">
-                <el-col>
-                  <div v-if="readInfoVisible">
-                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
-                  </div>
-                  <div v-else>
-                    <button class="yd_p_button" @click="openPay">点此支付</button>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog width="360px" v-model="dialogYd2000Visible" :draggable="true" :before-close="closeYdDialog" :style="backgroundYdImageStyle"
-                 top="5vh" destroy-on-close>
-        <div style="padding: 0; margin: -20px 0 0;">
-          <div>
-            <div v-if="Number(payData.channel_code) === 1003">
-              <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_qb_jym.png">
-            </div>
-            <div v-else-if="Number(payData.channel_code) === 2001">
-              <div v-if="tmH5Visible">
-                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_j3_tm.png">
+            <div class="medicine-jw-card-info-submit-bag">
+              <div v-if="cardNumber && password" class="result-container">
+                <p style="padding: 5px"><strong style="color: red">核对确认，提交后不可修改！</strong></p>
+                <p style="padding: 5px"><strong>卡号:</strong><b style="color: blue;font-size: 20px"> {{ cardNumber }}</b></p>
+                <p style="padding: 5px"><strong>密码:</strong><b style="color: blue;font-size: 20px"> {{ password }}</b></p>
               </div>
               <div v-else>
-                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_j3_tb.png">
+                <p>未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div>
+                    <button class="yd_p_button" @click="submitCardInfo">确认提交卡密</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   步骤指导   -->
+      <el-dialog width="360px" v-model="dialogYd1000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 1003">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jym.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1002">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_dy.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1001">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jd.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1004">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_zfb.png">
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   引导步骤1100   -->
+      <el-dialog width="360px" v-model="dialogYd1100Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 1101">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jw.png">
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <el-dialog width="360px" v-model="dialogYd2000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 2001">
+              <div v-if="tmH5Visible">
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_j3_tm.png">
+              </div>
+              <div v-else>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_j3_tb.png">
               </div>
             </div>
           </div>
@@ -375,7 +533,7 @@
                     <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                   </div>
                   <div v-else>
-                    <button class="yd_p_button" @click="openPay">点此支付</button>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
                   </div>
                 </el-col>
               </el-row>
@@ -383,6 +541,20 @@
           </div>
         </template>
       </el-dialog>
+    </div>
+
+    <!-- 提示card模态框 -->
+    <div v-if="showCardModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">未识别到合法卡密</p>
+      </div>
+    </div>
+
+    <!-- 提示copy模态框 -->
+    <div v-if="showCopyModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">复制成功</p>
+      </div>
     </div>
 
     <div v-show="notFoundVisible">
@@ -410,7 +582,7 @@ export default {
 </script>
 <script setup>
 import {ElButton, ElMessage} from 'element-plus';
-import {onMounted, ref, onUnmounted, onBeforeUnmount, watch} from 'vue';
+import {onMounted, ref, onUnmounted, onBeforeUnmount, watch, watchEffect} from 'vue';
 import CountDown from 'vue-canvas-countdown';
 import {queryOrderSimple} from '@/api/payOrder';
 import {useRoute} from 'vue-router';
@@ -427,7 +599,7 @@ const backgroundYdImageStyle = `background-image: url(${bgImage});background-siz
 const dialogCountVisible = ref(true)
 const payVisible = ref(false)
 const payTypeVisible = ref(0)
-const     tmH5Visible =  ref(false)
+const tmH5Visible = ref(false)
 const copyInfoVisible = ref(false)
 const readInfoVisible = ref(false)
 const finishedVisible = ref(false)
@@ -478,6 +650,38 @@ const onEnd = async () => {
   console.log('倒计时结束的回调函数');
 };
 
+// 识别card info
+// --------------- card --------------------
+// 输入的字符串
+const inputString = ref('');
+// 提取卡号和密码的正则表达式
+const cardNumberRegex = /卡号[：:](\d{16})/;
+const passwordRegex = /密码[：:](\d{16})/;
+
+// 使用 ref 来存储匹配到的卡号和密码
+const cardNumber = ref(null);
+const password = ref(null);
+
+// 监听输入的字符串变化，进行匹配
+watchEffect(() => {
+  // 重置匹配结果
+  cardNumber.value = null;
+  password.value = null;
+
+  // 匹配卡号
+  const matchCardNumber = inputString.value.match(cardNumberRegex);
+  if (matchCardNumber) {
+    cardNumber.value = matchCardNumber[1];
+  }
+
+  // 匹配密码
+  const matchPassword = inputString.value.match(passwordRegex);
+  if (matchPassword) {
+    password.value = matchPassword[1];
+  }
+});
+// --------------- card --------------------
+
 // 复制
 const copyInfo = async () => {
   let copyInfo = `${payData.value.account}`
@@ -487,10 +691,10 @@ const copyInfo = async () => {
   });
 
   clipboard.on('success', () => {
-    ElMessage({
-      type: 'success',
-      message: '复制成功'
-    })
+    showCopyModal.value = true
+    setTimeout(() => {
+      showCopyModal.value = false
+    }, 300)
     copyInfoVisible.value = true
     setTimeout(() => {
       copyInfoVisible.value = false
@@ -509,11 +713,13 @@ const copyInfo = async () => {
 };
 
 const dialogYd1000Visible = ref(false)
+const dialogYd1100Visible = ref(false)
 const dialogYd2000Visible = ref(false)
 const dialogYd3000Visible = ref(false)
 
 const closeYdDialog = async () => {
   dialogYd1000Visible.value = false
+  dialogYd1100Visible.value = false
   dialogYd2000Visible.value = false
   dialogYd3000Visible.value = false
 }
@@ -529,6 +735,13 @@ const openYdVisible = async () => {
       readInfoVisible.value = false
     }, 3000)
     dialogYd2000Visible.value = true
+  } else if (cid >= 1100 && cid < 1199) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd1100Visible.value = true
   } else if (cid >= 1000 && cid < 1099) {
     startCountdown()
     readInfoVisible.value = true
@@ -542,27 +755,33 @@ const openYdVisible = async () => {
 }
 
 const openPay = async () => {
-  const clipboard = new ClipboardJS('.btn-copy', {
-    text: () => payData.value.account
+  let copyInfo = `${payData.value.account}`
+  const clipboardX = new ClipboardJS('.btn-copy', {
+    text: () => copyInfo
   });
 
-  clipboard.on('success', () => {
-    ElMessage({
-      type: 'success',
-      message: '复制成功'
-    })
-    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  clipboardX.on('success', () => {
+    console.log('复制成功',copyInfo)
+
+    // 等待200毫秒后跳转
+    setTimeout(() => {
+      // window.location.href = payData.value.resource_url;
+      window.open(payData.value.resource_url, '_blank')
+    }, 100);
+
+    clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
 
-  clipboard.on('error', () => {
+  clipboardX.on('error', () => {
     ElMessage({
       type: 'error',
       message: '复制异常'
     })
-    clipboard.destroy(); // 销毁 ClipboardJS 实例
+    console.log('复制异常',copyInfo)
+
+    clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
 
-  location.href = payData.value.resource_url;
 };
 
 // 添加一个空变量作为定时器的 ID
@@ -593,6 +812,7 @@ const payData = ref({
   order_id: '',
   resource_url: '',
   status: 0,
+  ext: 0,
 })
 
 const reqCnt = ref(0)
@@ -750,6 +970,41 @@ onBeforeUnmount(() => {
   clearInterval(timerYD);
 });
 
+// card info
+const dialogCardVisible = ref(false)
+
+const openCardVisible = async () => {
+  dialogCardVisible.value = true
+}
+const closeCardVisible = () => {
+  dialogCardVisible.value = false
+}
+
+//modal提示
+// 控制是否显示模态框
+const showCopyModal = ref(false);
+const showCardModal = ref(false);
+const submitCardInfo = async () => {
+  let c = cardNumber.value
+  let p = password.value
+  if (c && p) {
+    payData.value.ext = c + "_" + p
+    console.log('提交卡密', payData.value.ext)
+  }else {
+    await warnCardInfo();
+  }
+}
+const warnCardInfo = () => {
+  // 显示模态框
+  showCardModal.value = true;
+
+  // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+  setTimeout(() => {
+    showCardModal.value = false;
+  }, 1000);
+}
+
+
 </script>
 
 <style scoped>
@@ -884,7 +1139,7 @@ h1 {
   padding: 12px 24px;
   font-size: 22px;
   color: #e7dfdf;
-  background: linear-gradient(90deg,#5498ff 1%,#00d9d0 100%);
+  background: linear-gradient(90deg, #5498ff 1%, #00d9d0 100%);
   margin-top: 6px;
   width: 80%;
   border-radius: 12px;
@@ -1030,4 +1285,146 @@ h1 {
   height: 180px;
 }
 
+.p_content_card_info_inner {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 380px;
+  left: 5%;
+  right: 5%;
+  height: 270px;
+  background-color: #f2f2f2;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.p_content_card_info_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 340px;
+  left: 5%;
+  right: 5%;
+}
+
+.p_content_card_submit_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 240px;
+  left: 5%;
+  right: 5%;
+}
+
+.medicine-jw-bag {
+  background: rgba(215, 197, 197, 0.1);
+  border: 1px solid rgba(59, 28, 23, 0.99);
+  margin-top: 6px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 100px;
+}
+
+.medicine-jw-card-info-bag {
+  background: rgba(220, 200, 200, 0.1);
+  border: 2px dashed rgba(59, 28, 23, 0.5);
+  margin-top: 8px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 50px;
+}
+
+.medicine-jw-card-info-submit-bag {
+  background: rgba(220, 200, 200, 0.1);
+  border: 1px dashed rgba(59, 28, 23, 0.5);
+  margin-top: 8px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 120px;
+}
+
+textarea {
+  resize: none;
+  border: none;
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  font-size: 16px;
+  line-height: 1.5;
+  outline: none;
+  overflow: auto;
+}
+/* 设置 placeholder 文字样式 */
+textarea::placeholder {
+  color: #c4bdbd; /* 设置灰色提示文字颜色 */
+}
+.result-container {
+  border-radius: 5px;
+}
+
+.result-container p {
+  margin: 5px 0;
+}
+
+.p_submit_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #e8731f, #d54d11, #c91258);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.p_submit_success_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #064954, #2c9a12, #075cbd);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 透明黑色背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #111111;
+  color: #FFFFFF;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.modal-content p {
+  margin: 0;
+}
 </style>

@@ -3,26 +3,42 @@ package main
 //
 //import (
 //	"fmt"
-//	"github.com/flipped-aurora/gin-vue-admin/server/global"
-//	"github.com/flipped-aurora/gin-vue-admin/server/utils"
-//	"go.uber.org/zap"
+//	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+//	"net/url"
+//	"regexp"
+//	"strings"
 //)
 //
 //func main() {
 //
-//	//client := vbHttp.NewHTTPClient()
-//	token := "https://m.tb.cn/h.5qxWGxH4tGbl2Yk?tk=6WmhWi4OGI2"
-//	//var options = &vbHttp.RequestOptions{
-//	//	MaxRedirects: 3,
-//	//}
-//	//resp, err := client.Get(token, options)
-//	//if err != nil {
-//	//	global.GVA_LOG.Error("err:  ->", zap.Error(err))
-//	//}
+//	client := vbHttp.NewHTTPClient()
+//	content := "https://v.douyin.com/iLm9L8P2/"
+//	var options = &vbHttp.RequestOptions{
+//		MaxRedirects: 0,
+//	}
+//	re := regexp.MustCompile(`((https?://)[^\s]+)`)
+//	urlX := re.FindString(content)
+//	resp, err := client.Get(urlX, options)
+//	if err != nil {
+//		//global.GVA_LOG.Error("err:  ->", zap.Error(err))
+//	}
 //	//htmlBody := string(resp.Body)
-//	////fmt.Printf("%s", htmlBody)
-//	//
-//	//if strings.Contains(htmlBody, "m.tb.cn") {
+//	respHeaders := resp.Headers
+//	loc := respHeaders["Location"]
+//	//fmt.Printf("%s", loc)
+//
+//	parsedURL, _ := url.Parse(loc)
+//
+//	query := parsedURL.Query()
+//	detail_schema := query.Get("detail_schema")
+//	//fmt.Printf("%s", detail_schema)
+//
+//	//decodedURL, err := url.QueryUnescape(detail_schema)
+//
+//	replace := strings.ReplaceAll(detail_schema, "sslocal://", "snssdk1128://")
+//	fmt.Printf("\n%s", replace)
+//
+//	//if strings.Contains(htmlBody, "v.douyin.com") {
 //	//	// 先请求一次,获取 html body
 //	//
 //	//	re := regexp.MustCompile(`var url = '([^']*)'`)
@@ -47,9 +63,5 @@ package main
 //	//
 //	//	}
 //	//}
-//	payUrl, err := utils.HandleTBUrl(token)
-//	if err != nil {
-//		global.GVA_LOG.Error("err:  ->", zap.Error(err))
-//	}
-//	fmt.Printf("\npayUrl: %s", payUrl)
+//
 //}

@@ -114,7 +114,7 @@ func ChanAccEnableCheckTask() {
 						if err != nil {
 							global.GVA_LOG.Error("余额不足情况下，record 入库失败..." + err.Error())
 						}
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 							Update("sys_status", 0).Error
 						// 不允许开启sys_status， 到这里结束
 						_ = msg.Reject(false)
@@ -139,7 +139,7 @@ func ChanAccEnableCheckTask() {
 							if err != nil {
 								global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
 								_ = msg.Reject(false)
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 									Update("sys_status", 0).Error
 								continue
 							}
@@ -151,7 +151,7 @@ func ChanAccEnableCheckTask() {
 							global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
 							_ = msg.Reject(false)
 							continue
-						} else {                               // redis查出来了，直接比一下
+						} else { // redis查出来了，直接比一下
 							if dailyUsed >= v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 
 								//入库操作记录
@@ -171,7 +171,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_LOG.Error("当前账号日消耗已经超限额情况下，record 入库失败..." + err.Error())
 								}
 
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 									Update("sys_status", 0).Error
 
 								global.GVA_LOG.Info("当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
@@ -205,7 +205,7 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Reject(false)
 
 							continue
-						} else {                               // redis查出来了，直接比一下
+						} else { // redis查出来了，直接比一下
 							if totalUsed >= v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
 								//入库操作记录
@@ -225,7 +225,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_LOG.Error("当前账号总消耗已经超限额情况下，record 入库失败..." + err.Error())
 								}
 
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 									Update("sys_status", 0).Error
 								global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 								_ = msg.Reject(false)
@@ -264,7 +264,7 @@ func ChanAccEnableCheckTask() {
 							if err != nil {
 								global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
 							}
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
 							global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
@@ -296,7 +296,7 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
 							}
 
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
 							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
@@ -325,7 +325,7 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
 							}
 
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0)
 							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
@@ -352,7 +352,7 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
 							}
 
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0)
 							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
@@ -366,7 +366,7 @@ func ChanAccEnableCheckTask() {
 
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-						pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, "*")
+						pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
 						if len(moneyList) >= len(keys) {
@@ -378,12 +378,12 @@ func ChanAccEnableCheckTask() {
 									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
 										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
-										global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
 										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
 										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -394,18 +394,18 @@ func ChanAccEnableCheckTask() {
 							for _, key := range keys {
 								keyTmp := key
 								go func() {
-									money := strings.Split(keyTmp, ":")[4]
+									money := strings.Split(keyTmp, ":")[3]
 									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
 									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
 									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
 										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
-										global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
 										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
 										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -437,7 +437,7 @@ func ChanAccEnableCheckTask() {
 								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
 							}
 
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0)
 							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
@@ -451,12 +451,12 @@ func ChanAccEnableCheckTask() {
 						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 						if ttl > 0 { //该账号正在冷却中
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 							cdTime := ttl
 							_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 						} else {
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
 
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -506,7 +506,7 @@ func ChanAccEnableCheckTask() {
 					}
 					//3. 校验都没啥问题，开启sys_status = 1，即可以调度订单使用
 					//global.GVA_LOG.Info("消息 : ", zap.Any("msg", msg.Body))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).Update("sys_status", 1).Error
 
 				} else {
 					global.GVA_LOG.Info("收到一条需要处理的账号【关闭】", zap.Any("v", v))
@@ -514,7 +514,7 @@ func ChanAccEnableCheckTask() {
 					if global.TxContains(cid) {
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-						pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, "*")
+						pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
 						if len(moneyList) >= len(keys) {
@@ -542,7 +542,7 @@ func ChanAccEnableCheckTask() {
 							for _, key := range keys {
 								keyTmp := key
 								go func() {
-									money := strings.Split(keyTmp, ":")[4]
+									money := strings.Split(keyTmp, ":")[3]
 									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
 									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
 									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")

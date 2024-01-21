@@ -87,7 +87,7 @@ func ChanAccDelCheckTask() {
 
 					moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 					moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-					pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, "*")
+					pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 					keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
 					if len(moneyList) >= len(keys) {
@@ -104,7 +104,7 @@ func ChanAccDelCheckTask() {
 						for _, key := range keys {
 							keyTmp := key
 							go func() {
-								money := strings.Split(keyTmp, ":")[4]
+								money := strings.Split(keyTmp, ":")[3]
 								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
 								global.GVA_REDIS.ZRem(context.Background(), keyTmp, waitAccMem)
 								global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", keyTmp), zap.Any("waitAccMem", waitAccMem))

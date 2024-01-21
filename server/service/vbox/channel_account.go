@@ -302,6 +302,20 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		return errors.New("该信道暂不支持创建账号")
 	}
 
+	if vca.AcAccount == "" {
+		return errors.New("账号信息不完整")
+	} else {
+		var count int64
+		if err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_account = ?", vca.AcAccount).Count(&count).Error; err != nil {
+			global.GVA_LOG.Warn("系统查询异常", zap.Error(err))
+			return errors.New("系统查询异常，请重试或联系管理员")
+		}
+		if count > 0 {
+			global.GVA_LOG.Warn("账号已存在，不允许重复添加，请核实", zap.Any("ac_account", vca.AcAccount))
+			return errors.New("账号已存在，不允许重复添加，请核查")
+		}
+	}
+
 	err = global.GVA_DB.Create(vca).Error
 	//vca传入的所有值 转化成 vcaDB vbox.ChannelAccount存放
 
@@ -380,7 +394,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAc
 
 		err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
 
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
+		if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
 			return err
 		}
 
@@ -431,7 +445,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.I
 
 				err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
 
-				if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
+				if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
 					return err
 				}
 
@@ -484,7 +498,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
 	}()
 
-	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
+	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err
 }
 
@@ -532,7 +546,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 			}
 		}()
 
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
+		if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("id in ?", upd.Ids).Updates(&vbox.ChannelAccount{}).Error; err != nil {
@@ -582,13 +596,13 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 // GetChannelAccount 根据id获取通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.ChannelAccount, err error) {
-	err = global.GVA_DB.Where("id = ?", id).First(&vca).Error
+	err = global.GVA_DB.Unscoped().Where("id = ?", id).First(&vca).Error
 	return
 }
 
 // GetChannelAccountByAcId 根据AcId获取通道账号记录
 func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (vca vbox.ChannelAccount, err error) {
-	err = global.GVA_DB.Where("ac_id = ?", acId).First(&vca).Error
+	err = global.GVA_DB.Unscoped().Where("ac_id = ?", acId).First(&vca).Error
 	return
 }
 

@@ -674,7 +674,9 @@ func OrderWaitingTask() {
 
 				if eventType == 1 {
 					if v.Obj.EventId == "" {
+						global.GVA_LOG.Info("event id 空，查一次")
 						eventID, err = HandleEventID2chShop(cid, money, orgTmp)
+						global.GVA_LOG.Info("event id获取一次", zap.Any("eventID", eventID), zap.Error(err))
 						if err != nil {
 							global.GVA_LOG.Error("商铺未匹配", zap.Error(err))
 							_ = msg.Ack(true)
@@ -708,6 +710,7 @@ func OrderWaitingTask() {
 						}
 						// 获取 ID后，获取具体的跳转Url
 						rsUrl, err = HandleResourceUrl2chShop(eventID)
+						global.GVA_LOG.Info("查出rsUrl", zap.Any("rsUrl", rsUrl))
 						if err != nil {
 							global.GVA_LOG.Error("商铺地址未匹配", zap.Error(err))
 							_ = msg.Ack(true)
@@ -753,6 +756,9 @@ func OrderWaitingTask() {
 				v.Obj.EventType = eventType
 				v.Obj.EventId = eventID
 				v.Obj.ResourceUrl = rsUrl
+				if rsUrl == "" && v.Obj.EventId != "" && eventType == 1 {
+					v.Obj.ResourceUrl, err = HandleResourceUrl2chShop(v.Obj.EventId)
+				}
 
 				if err := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Updates(v.Obj); err != nil {
 					global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(err.Error))
@@ -925,6 +931,7 @@ func HandlePayUrl2PAcc(orderId string) (string, error) {
 }
 
 func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
+	global.GVA_LOG.Info("接收event id", zap.Any("eventID", eventID))
 	//1. 如果是引导类的，获取引导地址 - channel shop
 	split := strings.Split(eventID, "_")
 	if len(split) <= 1 {
@@ -934,11 +941,11 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 	ID := split[1]
 
 	var shop vbox.ChannelShop
-	db := global.GVA_DB.Model(&vbox.ChannelShop{}).Table("vbox_channel_shop")
-	err = db.Where("id = ?", ID).First(&shop).Error
+	err = global.GVA_DB.Debug().Model(&vbox.ChannelShop{}).Where("id = ?", ID).First(&shop).Error
 	if err != nil {
 		return "", err
 	}
+	global.GVA_LOG.Info("查出shop", zap.Any("shop", shop))
 
 	cid := shop.Cid
 
@@ -956,7 +963,19 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 			return "", err
 		}
 		break
-	case "1003": //zfb
+	case "1002": //dy
+		payUrl, err = utils.HandleDYUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1003": //jym
+		payUrl, err = utils.HandleAlipayUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+		break
+	case "1004": //zfb
 		payUrl, err = utils.HandleAlipayUrl(shop.Address)
 		if err != nil {
 			return "", err
@@ -965,6 +984,8 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 	default:
 		payUrl = shop.Address
 	}
+
+	global.GVA_LOG.Info("处理后", zap.Any("payUrl", payUrl))
 
 	return payUrl, nil
 

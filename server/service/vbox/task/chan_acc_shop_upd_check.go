@@ -115,7 +115,7 @@ func ChanAccShopUpdCheckTask() {
 
 				if global.TxContains(cid) { //QB yd
 
-					pattern := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, "*")
+					pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
 					keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
 					global.GVA_LOG.Info("", zap.Any("keys", keys))
@@ -127,6 +127,7 @@ func ChanAccShopUpdCheckTask() {
 							myEle := strings.Split(m, "_")[1]
 							subMoneyList = append(subMoneyList, myEle)
 						}
+						global.GVA_LOG.Info("", zap.Any("subMoneyList", subMoneyList))
 						// 先过滤出
 						notList := utils.FilterNotContains(moneyList, subMoneyList)
 
@@ -140,12 +141,12 @@ func ChanAccShopUpdCheckTask() {
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中
-									global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 									cdTime := ttl
 									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 								} else {
-									global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
 									accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -160,6 +161,7 @@ func ChanAccShopUpdCheckTask() {
 							myEle := strings.Split(m, "_")[1]
 							keyMoneyList = append(keyMoneyList, myEle)
 						}
+						global.GVA_LOG.Info("", zap.Any("subMoneyList", keyMoneyList))
 
 						notList := utils.FilterNotContains(keyMoneyList, moneyList)
 
@@ -197,12 +199,12 @@ func ChanAccShopUpdCheckTask() {
 						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 						if ttl > 0 { //该账号正在冷却中
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 							cdTime := ttl
 							_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 						} else {
-							global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}

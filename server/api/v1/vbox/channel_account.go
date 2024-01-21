@@ -148,7 +148,7 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	}
 	if err := vcaService.CreateChannelAccount(&vca, c); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
-		response.FailWithMessage("创建失败", c)
+		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithMessage("创建成功", c)
 	}
