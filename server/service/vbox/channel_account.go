@@ -157,7 +157,7 @@ func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelA
 // QueryAccOrderHis 查询通道账号的官方记录
 func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccount) (res interface{}, err error) {
 
-	var url string
+	var urlQ string
 
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
@@ -169,16 +169,16 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		}
 
 		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
-			First(&url).Error
+			First(&urlQ).Error
 
 		if err != nil {
 			return nil, errors.New("该信道无资源配置")
 		}
 
-		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, url, 10*time.Minute)
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, urlQ, 10*time.Minute)
 
 	} else {
-		url, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+		urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
 	}
 
 	if global.TxContains(vca.Cid) { // tx系
@@ -187,7 +187,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		if err != nil {
 			return nil, err
 		}
-		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
 
 		if records.Ret != 0 {
 			return nil, fmt.Errorf("该账号ck存在异常，请核查")
@@ -249,7 +249,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		if err != nil {
 			return nil, err
 		}
-		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
 
 		if records.Ret != 0 {
 			return nil, fmt.Errorf("该账号ck存在异常，请核查")

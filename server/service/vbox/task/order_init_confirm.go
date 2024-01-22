@@ -240,9 +240,9 @@ func OrderConfirmTask() {
 									Uid:       v.Obj.CreatedBy,
 									CreatedBy: v.Obj.CreatedBy,
 									Type:      global.WalletOrderType,
-									EventId:   v.Obj.EventId,
+									EventId:   v.Obj.OrderId,
 									Recharge:  -money,
-									Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.OrderId),
+									Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.ChannelCode, v.Obj.OrderId),
 								}
 
 								global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
@@ -319,9 +319,9 @@ func OrderConfirmTask() {
 										Uid:       v.Obj.CreatedBy,
 										CreatedBy: v.Obj.CreatedBy,
 										Type:      global.WalletOrderType,
-										EventId:   v.Obj.EventId,
+										EventId:   v.Obj.OrderId,
 										Recharge:  -money,
-										Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.OrderId),
+										Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.ChannelCode, v.Obj.OrderId),
 									}
 
 									global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)

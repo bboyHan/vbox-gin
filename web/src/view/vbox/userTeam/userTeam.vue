@@ -42,24 +42,34 @@
           <el-table :data="userTable" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" />
             <el-table-column prop="sysUser.username" label="用户名" width="120" />
-            <el-table-column label="操作列" min-width="220">
+            <el-table-column align="center" prop="x9" label="积分" width="90" />
+            <el-table-column label="操作列" min-width="490">
               <template #default="{row}">
-                <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet" @click="showOperateRecharge(row)"> 充值 </el-button>
-                <el-button link type="primary" icon="switch" @click="showRecharge(row)"> 积分划转 </el-button>
-                <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(row)"> 重置密码 </el-button>
-                <el-button type="primary" link icon="lock" @click="getAuthCaptcha(row)"> 安全码 </el-button>
-                <el-popover v-model="row.visible" placement="top" width="160">
-                  <p>确定要删除此用户吗</p>
-                  <div style="text-align: right; margin-top: 8px;">
-                    <el-button type="primary" link @click="row.visible = false">取消</el-button>
-                    <el-button type="primary" @click="deleteUserFunc(row)">确定</el-button>
-                  </div>
-                  <template #reference>
-                    <el-button type="primary" link icon="delete">删除</el-button>
-                  </template>
-                </el-popover>
+                  <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet" @click="showOperateRecharge(row)"> 充值 </el-button>
+                  <el-button link type="primary" icon="wallet-filled" @click="showCostRecharge(row)"> 结算 </el-button>
+                  <el-button link type="primary" icon="switch" @click="showRecharge(row)"> 积分划转 </el-button>
+                  <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(row)"> 重置密码 </el-button>
+                  <el-button type="primary" link icon="lock" @click="getAuthCaptcha(row)"> 安全码 </el-button>
+                  <el-popover v-model="row.visible" placement="top" width="160">
+                    <p>确定要删除此用户吗</p>
+                    <div style="text-align: right; margin-top: 8px;">
+                      <el-button type="primary" link @click="row.visible = false">取消</el-button>
+                      <el-button type="primary" @click="deleteUserFunc(row)">确定</el-button>
+                    </div>
+                    <template #reference>
+                      <el-button type="danger" link icon="delete">删除</el-button>
+                    </template>
+                  </el-popover>
               </template>
             </el-table-column>
+            <el-table-column align="center" prop="x1" label="前日收入" width="90" />
+            <el-table-column align="center" prop="x2" label="前日支出" width="90" />
+            <el-table-column align="center" prop="x3" label="昨日收入" width="90" />
+            <el-table-column align="center" prop="x4" label="昨日支出" width="90" />
+            <el-table-column align="center" prop="x5" label="今日收入" width="90" />
+            <el-table-column align="center" prop="x6" label="今日支出" width="90" />
+            <el-table-column align="center" prop="x7" label="总收入" width="90" />
+            <el-table-column align="center" prop="x8" label="总支出" width="90" />
           </el-table>
           <div class="gva-pagination">
             <el-pagination
@@ -119,6 +129,75 @@
           <el-button type="primary" @click="resetAuthCaptcha">确 定</el-button>
         </div>
       </template>
+    </el-dialog>
+
+    <!-- 积分结算 -->
+    <el-dialog v-model="showCostRechargeVisible" title="积分结算" :draggable="true" width="560px" @close="closeCostRecharge">
+      <el-form :model="costRechargeForm" label-width="80px">
+<!--        <el-row :gutter="8">-->
+<!--          <el-col :span="12">-->
+<!--          </el-col>-->
+<!--          <el-col :span="12">-->
+<!--          </el-col>-->
+
+<!--        </el-row>-->
+        <el-row :gutter="8">
+          <el-col :span="12">
+            <el-form-item label="用户ID" prop="x0">
+              <el-input v-model="costRechargeForm.x0" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="用户名" prop="username">
+              <el-input v-model="costRechargeForm.username" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="总余额" prop="x9">
+              <el-input v-model="costRechargeForm.x9" readonly />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="8">
+          <el-col :span="8">
+            <el-form-item label="3日前消费" prop="x1">
+              <el-input v-model="costRechargeForm.x1" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="2日前消费" prop="x2">
+              <el-input v-model="costRechargeForm.x2" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="昨日消费" prop="x3">
+              <el-input v-model="costRechargeForm.x3" readonly />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="8">
+          <el-col :span="24">
+            <el-form-item label="今日消费" prop="x4">
+              <el-input v-model="costRechargeForm.x4" readonly />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="8">
+          <el-col :span="12">
+            <el-form-item label="（昨日）" prop="x5">
+              转账: {{ costRechargeForm.x5 }} / 充值: {{ costRechargeForm.x6 }}
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="（今日）" prop="x6">
+              转账: {{ costRechargeForm.x7 }} / 充值: {{ costRechargeForm.x8 }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+
+      </el-form>
     </el-dialog>
 
     <!-- 查看 -->
@@ -192,7 +271,7 @@ export default {
 import { findOrgUserListSelf } from '@/plugin/organization/api/organization';
 import {deleteUser, selfRegister, resetCaptcha, resetPassword} from '@/api/user';
 import {ElMessage, ElMessageBox} from "element-plus";
-import {getUserWalletSelf, transferUserWallet} from "@/api/userWallet";
+import {getUserWalletCostOV, getUserWalletOverview, getUserWalletSelf, transferUserWallet} from "@/api/userWallet";
 import { useBtnAuth } from '@/utils/btnAuth'
 import {reactive, ref} from "vue";
 import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
@@ -277,12 +356,49 @@ const handleSizeChange = (e) => {
 // 获取当前组织用户列表
 const getUserTable = async() => {
   const res = await findOrgUserListSelf({ page: page.value, pageSize: pageSize.value, ...userSearch.value })
+  const walletRes = await getUserWalletOverview({...userSearch.value })
   const balanceVal = await getUserWalletSelf()
+  console.log("walletRes",walletRes.data)
+  let resultMap;
+  if (walletRes.code === 0) {
+    resultMap = reactive(new Map(walletRes.data.map(item => [item.x0, item])));
+  }else {
+    resultMap = reactive(new Map());
+  }
   if (res.code === 0) {
     page.value = res.data.page
     pageSize.value = res.data.pageSize
     total.value = res.data.total
     userTable.value = res.data.list
+
+    for (let i = 0; i < userTable.value.length; i++) {
+      let userID = userTable.value[i].sysUserID;
+      const resultForX0 = resultMap.has(userID) ? resultMap.get(userID) : null;
+      if (resultForX0) {
+        userTable.value[i].x0 = resultForX0.x0
+        userTable.value[i].x1 = resultForX0.x1
+        userTable.value[i].x2 = resultForX0.x2
+        userTable.value[i].x3 = resultForX0.x3
+        userTable.value[i].x4 = resultForX0.x4
+        userTable.value[i].x5 = resultForX0.x5
+        userTable.value[i].x6 = resultForX0.x6
+        userTable.value[i].x7 = resultForX0.x7
+        userTable.value[i].x8 = resultForX0.x8
+        userTable.value[i].x9 = resultForX0.x9
+      } else {
+        userTable.value[i].x0 = userID
+        userTable.value[i].x1 = 0
+        userTable.value[i].x2 = 0
+        userTable.value[i].x3 = 0
+        userTable.value[i].x4 = 0
+        userTable.value[i].x5 = 0
+        userTable.value[i].x6 = 0
+        userTable.value[i].x7 = 0
+        userTable.value[i].x8 = 0
+        userTable.value[i].x9 = 0
+      }
+    }
+    console.log(userTable.value)
   }
   if (balanceVal.code === 0) {
     userBalance.value = balanceVal.data.balance
@@ -440,6 +556,28 @@ const getAuthCaptcha = (row) => {
   }
 };
 // ---------- 重置防爆码 end ----------
+
+// ---------- 消费结算 ----------
+const showCostRechargeVisible = ref(false)
+let costRechargeForm =ref({});
+
+const showCostRecharge = async(row) => {
+  const voRes = await getUserWalletCostOV({toUid: row.sysUser.ID});
+  console.log(voRes.data)
+  if (voRes.code === 0) {
+    costRechargeForm.value = voRes.data[0];
+    costRechargeForm.value.username = row.sysUser.username
+    showCostRechargeVisible.value = true
+    console.log(costRechargeForm.value)
+    showCostRechargeVisible.value = true
+
+  }
+}
+const closeCostRecharge = () => {
+  showCostRechargeVisible.value = false
+  costRechargeForm.value = {};
+}
+// ---------- 消费结算 ----------
 
 // ---------- 充值划转 ----------
 const showRechargeVisible = ref(false)

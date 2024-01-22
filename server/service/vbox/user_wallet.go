@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/songzhibin97/gkit/tools/rand_string"
@@ -172,6 +173,64 @@ func (userWalletService *UserWalletService) GetUserWallet(id uint) (userWallet v
 func (userWalletService *UserWalletService) GetUserWalletSelf(id uint) (balance int, err error) {
 	err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge),0) as balance").Where("uid = ?", id).First(&balance).Error
 	return
+}
+
+// GetUserWalletCostOV 获取指定用户3日内消费情况
+func (userWalletService *UserWalletService) GetUserWalletCostOV(info vboxReq.UserWalletSearch, id uint) (ov []vboxRep.DataWalletOverView, err error) {
+	//err = global.GVA_DB.Model(&vbox.UserWallet{}).Select("IFNULL(sum(recharge),0) as balance").Where("uid = ?", id).First(&balance).Error
+	db := global.GVA_DB.Model(&vbox.UserWallet{})
+	if info.ToUid == 0 {
+		//未传值，则默认查自己
+		info.ToUid = id
+	}
+	orgUserIds := utils2.GetDeepUserIDs(id)
+	isExist := utils.Contains(orgUserIds, info.ToUid)
+	if !isExist {
+		return nil, errors.New("不允许给非当前团队的积分数据")
+	}
+
+	err = db.Select(
+		`uid AS x0,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 3 DAY AND recharge < 0 AND type = 3 THEN recharge ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND recharge < 0 AND type = 3 THEN recharge ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND recharge < 0 AND type = 3 THEN recharge ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND recharge < 0 AND type = 3 THEN recharge ELSE 0 END), 0) AS x4,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND recharge > 0 AND type in (1,2) THEN recharge ELSE 0 END), 0) AS x5,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND recharge < 0 AND type in (1,2) THEN recharge ELSE 0 END), 0) AS x6,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND recharge > 0 AND type in (1,2) THEN recharge ELSE 0 END), 0) AS x7,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND recharge < 0 AND type in (1,2) THEN recharge ELSE 0 END), 0) AS x8,
+    IFNULL(SUM(recharge), 0) AS x9`).
+		Where("uid = ?", info.ToUid).Find(&ov).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return ov, err
+}
+
+// GetUserWalletOverview 获取当前用户钱包余额
+func (userWalletService *UserWalletService) GetUserWalletOverview(info vboxReq.UserWalletSearch, ids []uint) (ov []vboxRep.DataWalletOverView, err error) {
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.UserWallet{})
+
+	err = db.Select(
+		`uid AS x0,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND recharge > 0 THEN recharge ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND recharge < 0 THEN recharge ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND recharge > 0 THEN recharge ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND recharge < 0 THEN recharge ELSE 0 END), 0) AS x4,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND recharge > 0 THEN recharge ELSE 0 END), 0) AS x5,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND recharge < 0 THEN recharge ELSE 0 END), 0) AS x6,
+    IFNULL(SUM(CASE WHEN recharge > 0 THEN recharge ELSE 0 END), 0) AS x7,
+    IFNULL(SUM(CASE WHEN recharge < 0 THEN recharge ELSE 0 END), 0) AS x8,
+    IFNULL(SUM(recharge), 0) AS x9`).
+		Where("uid in ?", ids).Group("x0").Find(&ov).Error
+	if err != nil {
+		return
+	}
+
+	return ov, err
+
 }
 
 // GetUserWalletInfoList 分页获取用户钱包记录

@@ -22,8 +22,10 @@ func (s *UserWalletRouter) InitUserWalletRouter(Router *gin.RouterGroup) {
 		userWalletRouter.PUT("updateUserWallet", userWalletApi.UpdateUserWallet)              // 更新用户钱包
 	}
 	{
-		userWalletRouterWithoutRecord.GET("findUserWallet", userWalletApi.FindUserWallet)       // 根据ID获取用户钱包
-		userWalletRouterWithoutRecord.GET("getUserWalletSelf", userWalletApi.GetUserWalletSelf) // 根据ID获取用户钱包
-		userWalletRouterWithoutRecord.GET("getUserWalletList", userWalletApi.GetUserWalletList) // 获取用户钱包列表
+		userWalletRouterWithoutRecord.GET("findUserWallet", userWalletApi.FindUserWallet)               // 根据ID获取用户钱包
+		userWalletRouterWithoutRecord.GET("getUserWalletSelf", userWalletApi.GetUserWalletSelf)         // 根据ID获取用户钱包
+		userWalletRouterWithoutRecord.GET("getUserWalletList", userWalletApi.GetUserWalletList)         // 获取用户钱包列表
+		userWalletRouterWithoutRecord.GET("getUserWalletOverview", userWalletApi.GetUserWalletOverview) // 查看用户钱包统计概览
+		userWalletRouterWithoutRecord.GET("getUserWalletCostOV", userWalletApi.GetUserWalletCostOV)     // 获取指定用户3日内消费情况
 	}
 }

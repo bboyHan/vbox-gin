@@ -205,6 +205,7 @@
       v-model="dialogFormVisible"
       :before-close="closeDialog"
       :title="dialogTitle"
+      :draggable="true"
     >
       <warning-bar title="新增API，需要在角色管理内配置权限才可使用" />
       <el-form

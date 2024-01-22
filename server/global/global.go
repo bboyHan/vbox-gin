@@ -101,13 +101,13 @@ const (
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                // 充值
-	WalletEventTransferPrefix = "VBTS"                // 划转
-	WalletEventOrderPrefix    = "VBOD"                // 订单消费
-	WalletEventRecharge       = "充值积分[%d]"            // 充值
-	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]" // 划转
-	WalletEventIncome         = "积分增加[%d], 来自[%s]"    // 划转
-	WalletEventOrderCost      = "积分消费[%d], 来自订单[%s]"  // 消费
+	WalletEventRechargePrefix = "VBIN"                         // 充值
+	WalletEventTransferPrefix = "VBTS"                         // 划转
+	WalletEventOrderPrefix    = "VBOD"                         // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"                     // 充值
+	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]"          // 划转
+	WalletEventIncome         = "积分增加[%d], 来自用户:[%s]"          // 划转
+	WalletEventOrderCost      = "积分消费[%d], 来自(通道:[%s])订单:[%s]" // 消费
 )
 
 var (

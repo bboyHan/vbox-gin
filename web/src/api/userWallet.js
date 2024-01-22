@@ -127,3 +127,35 @@ export const getUserWalletSelf = (params) => {
     params
   })
 }
+
+// @Tags UserWallet
+// @Summary 查看用户钱包统计概览
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "查看用户钱包统计概览"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /userWallet/getUserWalletOverview [get]
+export const getUserWalletOverview = (params) => {
+  return service({
+    url: '/userWallet/getUserWalletOverview',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags UserWallet
+// @Summary 获取指定用户3日内消费情况
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取指定用户3日内消费情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /userWallet/getUserWalletOverview [get]
+export const getUserWalletCostOV = (params) => {
+  return service({
+    url: '/userWallet/getUserWalletCostOV',
+    method: 'get',
+    params
+  })
+}

@@ -10,6 +10,7 @@ type UserWalletSearch struct {
 	vbox.UserWallet
 	StartCreatedAt *time.Time `json:"startCreatedAt" form:"startCreatedAt"`
 	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
+	ToUid          uint       `json:"toUid" form:"toUid" ` //（划转至）用户ID
 	request.PageInfo
 }
 
