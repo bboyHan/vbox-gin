@@ -216,3 +216,53 @@ func (userWalletApi *UserWalletApi) GetUserWalletList(c *gin.Context) {
 		}, "获取成功", c)
 	}
 }
+
+// GetUserWalletOverview 查看用户钱包统计概览
+// @Tags UserWallet
+// @Summary 分页获取用户钱包列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.UserWalletSearch true "查看用户钱包统计概览"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /userWallet/getUserWalletList [get]
+func (userWalletApi *UserWalletApi) GetUserWalletOverview(c *gin.Context) {
+	var pageInfo vboxReq.UserWalletSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if ret, err := userWalletService.GetUserWalletOverview(pageInfo, ids); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(ret, c)
+	}
+}
+
+// GetUserWalletCostOV 获取指定用户3日内消费情况
+// @Tags UserWallet
+// @Summary 分页获取用户钱包列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.UserWalletSearch true "获取指定用户3日内消费情况"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /userWallet/getUserWalletCostOV [get]
+func (userWalletApi *UserWalletApi) GetUserWalletCostOV(c *gin.Context) {
+	var pageInfo vboxReq.UserWalletSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	id := utils.GetUserID(c)
+	if ret, err := userWalletService.GetUserWalletCostOV(pageInfo, id); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(ret, c)
+	}
+}

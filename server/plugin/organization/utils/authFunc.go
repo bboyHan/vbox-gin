@@ -210,11 +210,11 @@ func GetAllUserIDs() []uint {
 	return Uniq(usersID)
 }
 
-// 自动获取当前用户拥有的权限的用户ID
+// GetUserIDS 自动获取当前用户拥有的权限的用户ID
 func GetUserIDS(c *gin.Context) []uint {
 	user := utils.GetUserInfo(c)
 	var data model.DataAuthority
-	err := global.GVA_DB.First(&data, "authority_id = ?", user.AuthorityId).Error
+	err := global.GVA_DB.Debug().First(&data, "authority_id = ?", user.AuthorityId).Error
 	if err != nil {
 		return []uint{}
 	}

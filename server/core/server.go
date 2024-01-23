@@ -37,6 +37,7 @@ func RunWindowsServer() {
 	if global.GVA_CONFIG.System.UseMQTask {
 		if global.GVA_CONFIG.MQTask.OrderWait {
 			go task.OrderWaitingTask()
+			go task.OrderStatusCheckTask()
 		}
 		if global.GVA_CONFIG.MQTask.OrderConfirm {
 			go task.OrderConfirmTask()
@@ -47,6 +48,7 @@ func RunWindowsServer() {
 		if global.GVA_CONFIG.MQTask.AccEnableCheck {
 			go task.ChanAccEnableCheckTask()
 			go task.ChanAccDelCheckTask()
+			go task.ChanAccShopUpdCheckTask()
 		}
 		if global.GVA_CONFIG.MQTask.PayCodeExpCheck {
 			go task.PayCodeExpCheck()

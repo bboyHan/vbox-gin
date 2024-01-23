@@ -152,7 +152,7 @@
 
       <div class="region-card-container">
         <!-- 查看产码详情 -->
-        <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll
+        <el-dialog v-model="payCodeOverviewVisible" style="width: 1100px" lock-scroll :draggable="true"
                    :before-close="closePayCodeOverviewShow" title="查看产码详情" destroy-on-close>
           <el-scrollbar height="550px">
             <div class="gva-search-box">
@@ -263,7 +263,7 @@
     </div>
 
     <!--  批量创建  -->
-    <el-dialog width="60%" v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" :title="typeTitle"
+    <el-dialog width="60%" v-model="dialogBatchFormVisible" :before-close="closeBatchDialog" :title="typeTitle" :draggable="true"
                destroy-on-close>
       <el-scrollbar height="500px">
         <el-form :model="batchFormData" label-position="right" ref="elBatchFormRef" :rules="batchRule"
@@ -552,7 +552,7 @@
           </template>
         </el-dialog>-->
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" :draggable="true"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions :column="2" border>

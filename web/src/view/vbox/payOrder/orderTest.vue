@@ -135,7 +135,9 @@ const orderTestCreate = async (chanId, money, authCaptcha) => {
   console.log(order.data)
   orderData.value = order.data.order_id
   if (orderData.value){
-    await router.push({name: 'Pay', query: {orderId: orderData.value}})
+    setTimeout(() => {
+      router.push({name: 'Pay', query: {orderId: orderData.value}})
+    }, 1500)
   }
 }
 

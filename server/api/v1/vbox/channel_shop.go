@@ -46,7 +46,7 @@ func (channelShopApi *ChannelShopApi) CreateChannelShop(c *gin.Context) {
 	}
 	if err := channelShopService.CreateChannelShop(&channelShop); err != nil {
 		global.GVA_LOG.Error("创建/更新失败!", zap.Error(err))
-		response.FailWithMessage("创建/更新失败", c)
+		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithMessage("创建/更新成功", c)
 	}

@@ -48,7 +48,7 @@ func OrderCallbackTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 20
+	consumerCount := 10
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -205,16 +205,16 @@ func OrderCallbackTask() {
 
 				// 4.入库wallet
 				var c int64
-				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.EventId).Count(&c)
+				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&c)
 
 				if c == 0 {
 					wallet := vbox.UserWallet{
 						Uid:       v.Obj.CreatedBy,
 						CreatedBy: v.Obj.CreatedBy,
 						Type:      global.WalletOrderType,
-						EventId:   v.Obj.EventId,
+						EventId:   v.Obj.OrderId,
 						Recharge:  -v.Obj.Money,
-						Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.OrderId),
+						Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.ChannelCode, v.Obj.OrderId),
 					}
 
 					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)

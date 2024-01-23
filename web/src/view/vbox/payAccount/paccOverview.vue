@@ -24,7 +24,7 @@
       <!-- 商户信息 -->
       <el-row :gutter="24">
         <el-col :span="24" :xs="24">
-          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>通道账号</h2></div>
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>付方账号</h2></div>
         </el-col>
         <el-col :span="6" :xs="24">
           <CenterCard title="当前查询商户" :custom-style="accCustomStyle">

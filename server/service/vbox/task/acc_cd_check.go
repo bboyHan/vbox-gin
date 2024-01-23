@@ -56,7 +56,7 @@ func AccCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 5
+	consumerCount := 10
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -75,19 +75,23 @@ func AccCDCheckTask() {
 
 				split := strings.Split(v, "-")
 				//waitAccYdKey - "vb_acc_waiting_yd:acid_%s:money_%v"
+				//         j3  - "vb_acc_j3_waiting_yd:acid_%s:money_%v"
 				waitAccYdKey := split[0]
 				waitAccMem := split[1]
 				accInfo := strings.Split(waitAccMem, "_")
 				ID := accInfo[0]
 				acID := accInfo[1]
 				acAccount := accInfo[2]
-				money := accInfo[3]
+				var money string
+				if len(accInfo) == 4 {
+					money = accInfo[3]
+				}
 
 				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
 
 				var accDB vbox.ChannelAccount
-				if errQ := global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&accDB); errQ != nil {
-					global.GVA_LOG.Error("没找到记录", zap.Any("err", errQ), zap.Any("ID", ID), zap.Any("acID", acID), zap.Any("acAccount", acAccount), zap.Any("money", money))
+				if errQ := global.GVA_DB.Debug().First(&accDB, ID).Error; errQ != nil {
+					global.GVA_LOG.Error("查找异常", zap.Error(errQ), zap.Any("ID", ID), zap.Any("acID", acID), zap.Any("acAccount", acAccount), zap.Any("money", money))
 					_ = msg.Reject(false)
 					continue
 				}
@@ -109,7 +113,7 @@ func AccCDCheckTask() {
 					msgX := fmt.Sprintf(global.BalanceNotEnough, accDB.AcId, accDB.AcAccount)
 
 					global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 						Update("sys_status", 0).Error
 				}
 
@@ -129,7 +133,7 @@ func AccCDCheckTask() {
 					if err != nil {
 						global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
 						_ = msg.Reject(false)
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 						continue
 					}
@@ -139,7 +143,7 @@ func AccCDCheckTask() {
 
 						msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDB.AcId, accDB.AcAccount)
 						global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 
 					}
@@ -164,7 +168,7 @@ func AccCDCheckTask() {
 						msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDB.AcId, accDB.AcAccount)
 						global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
 
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 
 						global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDB))
@@ -187,7 +191,7 @@ func AccCDCheckTask() {
 						msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDB.AcId, accDB.AcAccount)
 
 						global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
-						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 							Update("sys_status", 0).Error
 						global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDB))
 					}
@@ -195,39 +199,68 @@ func AccCDCheckTask() {
 
 				ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 
-				if ttl <= 0 { //没进入冷却状态，直接置为已用
-
+				cid := accDB.Cid
+				if ttl <= 0 { //冷却结束，直接置为已用
 					// 更新账号为正常状态
-					global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+					global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
 
 					orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
 
-					accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgTmp[0], accDB.Cid, money)
+					if global.TxContains(cid) { // 引导
+						accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
 
-					if flag { // 表示超限了，删掉处理
-						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-						global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-					} else {
-						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-						global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						if flag { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
+					} else if global.J3Contains(cid) { // 剑三引导
+						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
+
+						if flag { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
+					} else if global.PcContains(cid) { // wx qb
+						global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))
 					}
+
 					_ = msg.Ack(true)
 					continue
 				} else { //仍然处于冷却状态，重新丢回ck check mq
 					if flag { // 表示超限了，删掉处理
 
 						// 更新账号为正常状态
-						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 1)
+						global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
 
 						orgTmp := utils2.GetSelfOrg(accDB.CreatedBy)
-						accKey := fmt.Sprintf(global.ChanOrgAccZSet, orgTmp[0], accDB.Cid, money)
-						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-						global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+						if global.TxContains(cid) { // 引导
+							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+						} else if global.J3Contains(cid) { // 剑三引导
+							accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+						} else if global.PcContains(cid) { // wx qb
+							global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))
+						}
 
 					} else {
-
-						// 更新账号为冷却状态
-						global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status = ?", 2)
+						if global.TxContains(cid) { // 引导
+						} else if global.J3Contains(cid) { // 剑三引导
+							// 更新账号为冷却状态
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
+						} else if global.PcContains(cid) { // wx qb
+						}
 						waitMsg := v
 						err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
 						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("ttl", ttl))

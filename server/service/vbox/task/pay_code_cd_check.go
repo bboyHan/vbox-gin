@@ -56,7 +56,7 @@ func PayCodeCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 5
+	consumerCount := 10
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -115,7 +115,7 @@ func PayCodeCDCheckTask() {
 							msgX := fmt.Sprintf(global.BalanceNotEnough, pcDB.AcId, pcDB.AcAccount)
 
 							global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 								Update("sys_status", 0).Error
 						}
 
@@ -135,7 +135,7 @@ func PayCodeCDCheckTask() {
 							if err != nil {
 								global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
 								_ = msg.Reject(false)
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 									Update("sys_status", 0).Error
 								continue
 							}
@@ -145,7 +145,7 @@ func PayCodeCDCheckTask() {
 
 								msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDB.AcId, accDB.AcAccount)
 								global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 									Update("sys_status", 0).Error
 
 							}
@@ -170,7 +170,7 @@ func PayCodeCDCheckTask() {
 								msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDB.AcId, accDB.AcAccount)
 								global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
 
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 									Update("sys_status", 0).Error
 
 								global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDB))
@@ -193,7 +193,7 @@ func PayCodeCDCheckTask() {
 								msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDB.AcId, accDB.AcAccount)
 
 								global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
-								err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
 									Update("sys_status", 0).Error
 								global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDB))
 							}

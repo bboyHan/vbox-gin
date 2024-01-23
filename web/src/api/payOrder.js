@@ -161,3 +161,19 @@ export const queryOrderSimple = (params) => {
     params
   })
 }
+
+// @Tags PayOrder
+// @Summary 客户端回补信息
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query model.VboxPayOrder true "客户端回补信息"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"查询成功"}"
+// @Router /vpo/cbExt [get]
+export const cbExt = (data) => {
+  return service({
+    url: '/order/cbExt',
+    method: 'post',
+    data
+  })
+}

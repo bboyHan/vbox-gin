@@ -8,7 +8,6 @@ import (
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -40,7 +39,7 @@ func HandleAccLimitCheck() (err error) {
 				msgX := fmt.Sprintf(global.BalanceNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 
 				global.GVA_LOG.Error("余额不足...", zap.Any("msg", msgX))
-				err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+				err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 					Update("status", 0).Update("sys_status", 0).Error
 			}
 
@@ -60,7 +59,7 @@ func HandleAccLimitCheck() (err error) {
 
 					msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 					global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 				}
 			}
@@ -84,7 +83,7 @@ func HandleAccLimitCheck() (err error) {
 					msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 					global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
 
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 
 					global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
@@ -107,7 +106,7 @@ func HandleAccLimitCheck() (err error) {
 					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
 
 					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
-					err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
 				}
@@ -120,7 +119,7 @@ func HandleAccLimitCheck() (err error) {
 
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
-					pattern := fmt.Sprintf(global.ChanOrgAccZSet, orgID, cid, "*")
+					pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
 					var keys []string
 					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
 
@@ -138,9 +137,31 @@ func HandleAccLimitCheck() (err error) {
 								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
 								// 把该账号的码全部状态置为0，即关停不可用
-								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}
+						}
+					}
+				} else if global.J3Contains(cid) {
+					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
+					orgID := orgTmp[0]
+					key := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgID, cid)
+
+					resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  -1,
+					}).Val()
+
+					for _, waitMem := range resWaitTmpList {
+						if strings.Contains(waitMem, accDBTmp.AcAccount) {
+							//	把超限的码全部处理掉
+							global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+							// 把该账号的码全部状态置为0，即关停不可用
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								Update("status", 0).Update("sys_status", 0)
 						}
 					}
 				} else if global.PcContains(cid) {
@@ -168,65 +189,17 @@ func HandleAccLimitCheck() (err error) {
 								id := strings.Split(waitMem, "_")[0]
 								global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ? ", id).Update("code_status", 4)
 								// 把该账号的码全部状态置为0，即关停不可用
-								global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
 									Update("status", 0).Update("sys_status", 0)
 							}
 						}
 					}
 				}
+
 			}
 		}()
 
 	}
 
 	return err
-}
-
-func HandleExpTime2Product(chanID string) (time.Duration, error) {
-	var key string
-
-	if global.TxContains(chanID) {
-		key = "1000"
-	} else if global.J3Contains(chanID) {
-		key = "2000"
-	} else if global.PcContains(chanID) {
-		key = "3000"
-	}
-
-	var expTimeStr string
-	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
-	if count == 0 {
-		if err != nil {
-			global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		}
-
-		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
-
-		var proxy vbox.Proxy
-		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
-		err = db.Where("status = ?", 1).Where("chan = ?", key).
-			First(&proxy).Error
-		if err != nil || proxy.Url == "" {
-			return 0, err
-		}
-		expTimeStr = proxy.Url
-		seconds, _ := strconv.Atoi(expTimeStr)
-		duration := time.Duration(seconds) * time.Second
-
-		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
-		global.GVA_LOG.Info("数据库取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
-
-		return duration, nil
-	} else if err != nil {
-		global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		return 0, err
-	} else {
-		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
-		seconds, _ := strconv.Atoi(expTimeStr)
-
-		duration := time.Duration(seconds) * time.Second
-
-		//global.GVA_LOG.Info("缓存池取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
-		return duration, err
-	}
 }

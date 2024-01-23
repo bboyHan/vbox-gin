@@ -77,7 +77,7 @@
         />
       </div>
     </div>
-    <el-dialog width="360px" v-model="dialogFormVisible" :before-close="closeDialog"
+    <el-dialog width="360px" v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true"
                :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-scrollbar height="50px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
@@ -94,7 +94,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -118,7 +118,7 @@
     </el-dialog>
 
     <!--  对接信息复制  -->
-    <el-dialog v-model="dialogInfoVisible" :before-close="closeInfoDialog" :title="infoTitle" destroy-on-close>
+    <el-dialog v-model="dialogInfoVisible" :before-close="closeInfoDialog" :draggable="true" :title="infoTitle" destroy-on-close>
       <el-form :model="formData" label-position="left" ref="elFormRef" label-width="80px">
         <el-form-item label="商户ID" prop="pAccount">
           <el-input v-model="formData.pAccount" readonly/>
@@ -144,7 +144,7 @@
     </el-dialog>
 
     <!--  预览  -->
-    <el-dialog v-model="previewFlag">
+    <el-dialog v-model="previewFlag" :draggable="true">
       <PreviewCodeDialog v-if="previewFlag" ref="previewNode" :preview-code="preViewCode"/>
       <template #footer>
         <div class="dialog-footer" style="padding-top:14px;padding-right:14px">

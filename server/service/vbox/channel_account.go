@@ -8,6 +8,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
+	j3 "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
@@ -16,10 +17,13 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -153,28 +157,28 @@ func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelA
 // QueryAccOrderHis 查询通道账号的官方记录
 func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccount) (res interface{}, err error) {
 
-	rdConn := global.GVA_REDIS.Conn()
-	defer rdConn.Close()
-	var url string
+	var urlQ string
 
-	c, err := rdConn.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
 		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
+		} else if global.J3Contains(vca.Cid) {
+			channelCode = "j3_proxy"
 		}
 
 		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
-			First(&url).Error
+			First(&urlQ).Error
 
 		if err != nil {
 			return nil, errors.New("该信道无资源配置")
 		}
 
-		rdConn.Set(context.Background(), global.ProductRecordQBPrefix, url, 10*time.Minute)
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, urlQ, 10*time.Minute)
 
 	} else {
-		url, _ = rdConn.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+		urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
 	}
 
 	if global.TxContains(vca.Cid) { // tx系
@@ -183,7 +187,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		if err != nil {
 			return nil, err
 		}
-		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
 
 		if records.Ret != 0 {
 			return nil, fmt.Errorf("该账号ck存在异常，请核查")
@@ -192,12 +196,60 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		return records, nil
 	} else if global.J3Contains(vca.Cid) {
 
+		record, err := product.QryJ3Record(*vca)
+		if err != nil {
+			return nil, err
+		}
+
+		timeMax := strconv.FormatInt(time.Now().Unix(), 10)
+		global.GVA_LOG.Info("", zap.Any("timeMax", timeMax))
+		accKey := fmt.Sprintf(global.J3AccBalanceZSet, vca.AcId)
+
+		list := global.GVA_REDIS.ZRevRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+			Min:    "0",
+			Max:    timeMax,
+			Offset: 0,
+			Count:  100,
+		}).Val()
+		var accRecords []j3.J3AccountRecord
+		for _, mem := range list {
+			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+			// 映射到J3AccountRecord 中
+			keyMem := strings.Split(mem, "_")
+			money, _ := strconv.Atoi(keyMem[2])
+			//nowTimeStr := keyMem[3]
+			//checkTimeStr := keyMem[5]
+			//var nowTime, checkTime time.Time
+			//nowUnix, _ := strconv.ParseInt(nowTimeStr, 10, 64)
+			//if checkTimeStr != "0" {
+			//	checkUnix, _ := strconv.ParseInt(checkTimeStr, 10, 64)
+			//	checkTime = time.Unix(checkUnix, 0)
+			//}
+			//nowTime = time.Unix(nowUnix, 0)
+
+			accRecord := j3.J3AccountRecord{
+				OrderID:    keyMem[0],
+				AcAccount:  keyMem[1],
+				Money:      money,
+				NowTime:    keyMem[3],
+				HisBalance: keyMem[4],
+				CheckTime:  keyMem[5],
+				NowBalance: keyMem[6],
+			}
+
+			accRecords = append(accRecords, accRecord)
+		}
+		ret := &j3.J3Records{
+			J3BalanceData: *record,
+			List:          accRecords,
+		}
+		return ret, nil
 	} else if global.PcContains(vca.Cid) {
 		openID, openKey, err := product.Secret(vca.Token)
 		if err != nil {
 			return nil, err
 		}
-		records := product.Records(url, openID, openKey, 24*30*time.Hour)
+		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
 
 		if records.Ret != 0 {
 			return nil, fmt.Errorf("该账号ck存在异常，请核查")
@@ -220,6 +272,50 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.Ch
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount, c *gin.Context) (err error) {
 	vca.AcId = rand_string.RandomInt(8)
+	token := vca.Token
+	//增加校验
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) {
+		_, _, errX := product.Secret(token)
+		if errX != nil {
+			return errX
+		}
+	} else if global.J3Contains(vca.Cid) {
+		parsedURL, errX := url.Parse(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("无效的 URL:", zap.Error(errX))
+			return errors.New("无效的URL")
+		}
+
+		query := parsedURL.Query()
+		account := query.Get("account")
+		zoneCode := query.Get("zoneCode")
+		SN := query.Get("SN")
+		sign := query.Get("sign")
+		if account == "" || zoneCode == "" || SN == "" || sign == "" {
+			return errors.New("账号信息不完整")
+		}
+		if zoneCode != "z22" {
+			return errors.New("仅支持双线二区参数，请核查")
+		}
+		vca.AcAccount = account
+	} else {
+		return errors.New("该信道暂不支持创建账号")
+	}
+
+	if vca.AcAccount == "" {
+		return errors.New("账号信息不完整")
+	} else {
+		var count int64
+		if err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_account = ?", vca.AcAccount).Count(&count).Error; err != nil {
+			global.GVA_LOG.Warn("系统查询异常", zap.Error(err))
+			return errors.New("系统查询异常，请重试或联系管理员")
+		}
+		if count > 0 {
+			global.GVA_LOG.Warn("账号已存在，不允许重复添加，请核实", zap.Any("ac_account", vca.AcAccount))
+			return errors.New("账号已存在，不允许重复添加，请核查")
+		}
+	}
+
 	err = global.GVA_DB.Create(vca).Error
 	//vca传入的所有值 转化成 vcaDB vbox.ChannelAccount存放
 
@@ -298,7 +394,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAc
 
 		err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
 
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
+		if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
 			return err
 		}
 
@@ -349,7 +445,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccountByIds(ids request.I
 
 				err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
 
-				if err := tx.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
+				if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
 					return err
 				}
 
@@ -402,7 +498,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
 	}()
 
-	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
+	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err
 }
 
@@ -450,7 +546,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 			}
 		}()
 
-		if err := tx.Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
+		if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("id in ?", upd.Ids).Updates(&vbox.ChannelAccount{}).Error; err != nil {
@@ -464,6 +560,35 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 // UpdateChannelAccount 更新通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAccount) (err error) {
+	token := vca.Token
+	//增加校验
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) {
+		_, _, errX := product.Secret(token)
+		if errX != nil {
+			return errX
+		}
+	} else if global.J3Contains(vca.Cid) {
+		parsedURL, errX := url.Parse(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("无效的 URL:", zap.Error(errX))
+			return errors.New("无效的URL")
+		}
+
+		query := parsedURL.Query()
+		account := query.Get("account")
+		zoneCode := query.Get("zoneCode")
+		SN := query.Get("SN")
+		sign := query.Get("sign")
+		if account == "" || zoneCode == "" || SN == "" || sign == "" {
+			return errors.New("账号信息不完整")
+		}
+		if zoneCode != "z22" {
+			return errors.New("仅支持双线二区参数，请核查")
+		}
+		vca.AcAccount = account
+	} else {
+		return errors.New("该信道暂不支持创建账号")
+	}
 	err = global.GVA_DB.Save(&vca).Error
 	return err
 }
@@ -471,13 +596,13 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 // GetChannelAccount 根据id获取通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.ChannelAccount, err error) {
-	err = global.GVA_DB.Where("id = ?", id).First(&vca).Error
+	err = global.GVA_DB.Unscoped().Where("id = ?", id).First(&vca).Error
 	return
 }
 
 // GetChannelAccountByAcId 根据AcId获取通道账号记录
 func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (vca vbox.ChannelAccount, err error) {
-	err = global.GVA_DB.Where("ac_id = ?", acId).First(&vca).Error
+	err = global.GVA_DB.Unscoped().Where("ac_id = ?", acId).First(&vca).Error
 	return
 }
 

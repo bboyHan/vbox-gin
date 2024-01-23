@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="showPassword" title="修改密码" width="360px" @close="clearPassword">
+    <el-dialog v-model="showPassword" title="修改密码" :draggable="true" width="360px" @close="clearPassword">
       <el-form ref="modifyPwdForm" :model="pwdModify" :rules="rules" label-width="80px">
         <el-form-item :minlength="6" label="原密码" prop="password">
           <el-input v-model="pwdModify.password" show-password/>
@@ -89,7 +89,7 @@
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="genPassword" title="密码生成器" width="560px" @close="closeGenPassword">
+    <el-dialog v-model="genPassword" title="密码生成器" :draggable="true" width="560px" @close="closeGenPassword">
       <div class="container">
         <div class="result">
           <div class="result__title field-title">生成的密码</div>
@@ -127,7 +127,7 @@
     </el-dialog>
 
     <!-- 防爆验证码 -->
-    <el-dialog v-model="showAuthCaptcha" title="重置安全码" width="360px" @close="clearAuthCaptcha">
+    <el-dialog v-model="showAuthCaptcha" title="重置安全码" :draggable="true" width="360px" @close="clearAuthCaptcha">
       <el-form ref="modifyCapForm" :model="capModify" label-width="80px">
         <el-form-item label="用户ID" prop="toUid">
           <el-input v-model="capModify.ID" disabled />
@@ -145,7 +145,7 @@
     </el-dialog>
 
     <!-- 查看 -->
-    <el-dialog v-model="showQRCode" title="安全码" width="300px" @close="closeAuthCaptcha">
+    <el-dialog v-model="showQRCode" title="安全码" :draggable="true" width="300px" @close="closeAuthCaptcha">
       <div class="qrcode-generator">
         <div v-if="isNotSetting" style="margin-bottom: 20px">
           暂未设置安全码，请尽快设置！

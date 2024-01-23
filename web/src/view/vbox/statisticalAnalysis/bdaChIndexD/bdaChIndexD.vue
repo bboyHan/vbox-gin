@@ -85,7 +85,7 @@
             />
         </div>
     </div>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-scrollbar height="500px">
           <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
             <el-form-item label="用户id:"  prop="uid" >
@@ -128,7 +128,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
+    <el-dialog v-model="detailShow" style="width: 800px" :draggable="true" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
                 <el-descriptions-item label="用户id">

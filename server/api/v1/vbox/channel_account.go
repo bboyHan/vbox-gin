@@ -139,9 +139,8 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	}
 	vca.CreatedBy = utils.GetUserID(c)
 	verify := utils.Rules{
-		"AcAccount": {utils.NotEmpty()},
-		"AcRemark":  {utils.NotEmpty()},
-		"Cid":       {utils.NotEmpty()},
+		"AcRemark": {utils.NotEmpty()},
+		"Cid":      {utils.NotEmpty()},
 	}
 	if err := utils.Verify(vca, verify); err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -149,7 +148,7 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	}
 	if err := vcaService.CreateChannelAccount(&vca, c); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
-		response.FailWithMessage("创建失败", c)
+		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithMessage("创建成功", c)
 	}

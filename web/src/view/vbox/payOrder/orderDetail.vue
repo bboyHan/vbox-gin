@@ -34,8 +34,9 @@
       <!--   1000 引导   -->
       <div v-if="payTypeVisible >= 1000 && payTypeVisible < 1099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index" :style="{ backgroundColor: generateColor(index) }"></div>
-          <div class="p_content">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
               <el-col>
                 <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
@@ -48,7 +49,10 @@
               </el-col>
               <el-col>
                 <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px"><WarningFilled /></el-icon>请在规定时间内付款！
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
                   <div>
                     <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
                     <span v-else>-1 （已过期）</span>
@@ -61,16 +65,14 @@
             </el-row>
           </div>
         </div>
-        <div class="p_content_inner" style="margin-top: 20px;">
+        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
           <el-row>
-<!--            <el-col>
-              <div style="height: 5px; margin-top: 20px">
-              </div>
-            </el-col>-->
             <el-col>
               <div style="height: 100px; margin-top: 20px">
                 <div class="medicine-money-bag">
-                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{ payData.money }}.00</span></span>
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
                 </div>
                 <div class="medicine-bag">
                   <span>{{ payData.account }}</span>
@@ -85,10 +87,10 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo(payData)">一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
                 </div>
                 <div v-else>
-                  <button class="btn-copy copy_success_button" @click="copyInfo(payData)">复制成功</button>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
                 </div>
               </div>
             </el-col>
@@ -96,8 +98,166 @@
         </div>
         <div class="p_content_button">
           <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+
+      <!--   1100 JW 引导   -->
+      <div v-if="payTypeVisible >= 1100 && payTypeVisible < 1199">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col>
+                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col>
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_card_info_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">① 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_card_info_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
             <el-col>
-              <button class="btn-copy p_button" @click="openPay(payData)">点击付款</button>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-jw-bag">
+                  <textarea v-model="inputString"
+                            :placeholder="`粘贴示例：\n您已购买成功(订单号:205...)，如下：\n卡号：2312290766321121;\n密码：2732221581323347;`"></textarea>
+                  <!--                  <el-input v-model="inputString" placeholder="请输入待匹配的字符串"-->
+                  <!--                            style=" border: none;background-color: transparent;"></el-input>-->
+                  <!-- 在这里显示匹配到的卡号和密码 -->
+                </div>
+                <div>
+                  <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
+                  <div class="medicine-jw-card-info-bag">
+                    <div v-if="cardNumber && password" class="result-container">
+                      <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b style="color: blue;font-size: 16px"> {{ cardNumber }}</b></p>
+                      <p><strong style="padding-right: 10px;font-size: 14px">密码:</strong><b style="color: blue;font-size: 16px"> {{ password }}</b></p>
+                    </div>
+                    <div v-else>
+                      <p style="color: #c4bdbd;">未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p_content_card_submit_button">
+                  <div v-if="cardNumber && password" class="result-container">
+                    <el-row :gutter="12">
+                      <el-col :span="24">
+                        <button class="btn-copy p_submit_success_button" @click="openCardVisible">③ 提交卡密</button>
+                      </el-col>
+                    </el-row>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy p_submit_button" @click="warnCardInfo">③ 提交卡密</button>
+                  </div>
+                </div>
+
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+
+      </div>
+
+      <!--   2000 引导   -->
+      <div v-if="payTypeVisible >= 2000 && payTypeVisible < 2099">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col>
+                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col>
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                </div>
+                <div class="medicine-bag">
+                  <span>{{ payData.account }}</span>
+                </div>
+                <div class="copy-tip">
+                  <span>长按框内</span>
+                  <span class="jtone"></span>
+                  <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
+                  <span class="jtthree"></span>
+                  <span>打开跳转</span>
+                </div>
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
             </el-col>
           </el-row>
         </div>
@@ -107,7 +267,8 @@
       <div v-if="payTypeVisible >= 3000 && payTypeVisible < 3099">
         <div class="p_container">
           <!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
-          <div class="p_blue-section" v-for="index in 10" :key="index" :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content">
             <el-row :gutter="12">
               <el-col>
@@ -121,7 +282,10 @@
               </el-col>
               <el-col>
                 <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px"><WarningFilled /></el-icon>请在规定时间内付款！
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
                   <div>
                     <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
                     <span v-else>-1 （已过期）</span>
@@ -161,7 +325,7 @@
                   <span class="jttwo"></span>
                   <span>扫一扫</span>
                   <span class="jtthree"></span>
-                  <span>确认付款</span>
+                  <span>扫码付款</span>
                 </div>
                 <!--                <button class="copy_button" @click="">一键复制</button>-->
               </div>
@@ -177,7 +341,235 @@
         </div>
       </div>
 
+      <!--   卡密信息确认   -->
+      <el-dialog width="360px" v-model="dialogCardVisible" :draggable="true" :before-close="closeCardVisible"
+                 :style="backgroundYdImageStyle" top="40vh" destroy-on-close>
+        <div>
+          <div>
+            <div class="medicine-jw-card-info-submit-bag">
+              <div v-if="cardNumber && password" class="result-container">
+                <p style="padding: 5px"><strong style="color: red">核对确认，提交后不可修改！</strong></p>
+                <p style="padding: 5px"><strong>卡号:</strong><b style="color: blue;font-size: 20px"> {{ cardNumber }}</b></p>
+                <p style="padding: 5px"><strong>密码:</strong><b style="color: blue;font-size: 20px"> {{ password }}</b></p>
+              </div>
+              <div v-else>
+                <p>未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div>
+                    <button class="yd_p_button" @click="submitCardInfo">确认提交卡密</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   步骤指导   -->
+      <el-dialog width="360px" v-model="dialogYd1000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 1003">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jym.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1002">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_dy.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1001">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jd.png">
+            </div>
+            <div v-else-if="Number(payData.channel_code) === 1004">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_zfb.png">
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   引导步骤1100   -->
+      <el-dialog width="360px" v-model="dialogYd1100Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 1101">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_jw.png">
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <el-dialog width="360px" v-model="dialogYd2000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 2001">
+              <div v-if="tmH5Visible">
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_j3_tm.png">
+              </div>
+              <div v-else>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_j3_tb.png">
+              </div>
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
     </div>
+
+    <!-- 提示card模态框 -->
+    <div v-if="showCardModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">未识别到合法卡密</p>
+      </div>
+    </div>
+
+    <!-- 提示copy模态框 -->
+    <div v-if="showCopyModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">复制成功</p>
+      </div>
+    </div>
+
+    <!-- 提示submit card模态框 -->
+    <div v-if="showSubmitCardModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">您已提交成功，等待客服核实</p>
+      </div>
+    </div>
+    <!-- 提示submit card err模态框 -->
+    <div v-if="showSubmitErrModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">{{ showSubmitErrInfo }}</p>
+      </div>
+    </div>
+
     <div v-show="notFoundVisible">
       <!-- 显示新的 div 的代码... -->
       <h1>订单不存在</h1>
@@ -203,21 +595,26 @@ export default {
 </script>
 <script setup>
 import {ElButton, ElMessage} from 'element-plus';
-import { onMounted, ref, onUnmounted } from 'vue';
+import {onMounted, ref, onUnmounted, onBeforeUnmount, watch, watchEffect} from 'vue';
 import CountDown from 'vue-canvas-countdown';
-import { queryOrderSimple } from '@/api/payOrder';
-import { useRoute } from 'vue-router';
-import { WarningFilled } from '@element-plus/icons-vue';
+import {cbExt, queryOrderSimple} from '@/api/payOrder';
+import {useRoute} from 'vue-router';
+import {WarningFilled} from '@element-plus/icons-vue';
 import {formatTime} from "@/utils/format";
 import QRCode from "qrcode";
 import ClipboardJS from "clipboard";
-import {setCacheControl} from "@/utils/http";
+import bgImage from '@/assets/od_info_bg.png'; // 背景图片
+
+const backgroundImageStyle = `background-image: url(${bgImage});background-size: 100% 100%;`;
+const backgroundYdImageStyle = `background-image: url(${bgImage});background-size: 100% 100%;border-radius: 10px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);top: -20px`;
 
 // 弹窗控制标记
 const dialogCountVisible = ref(true)
 const payVisible = ref(false)
 const payTypeVisible = ref(0)
+const tmH5Visible = ref(false)
 const copyInfoVisible = ref(false)
+const readInfoVisible = ref(false)
 const finishedVisible = ref(false)
 const timeoutVisible = ref(false)
 const exVisible = ref(false)
@@ -266,19 +663,51 @@ const onEnd = async () => {
   console.log('倒计时结束的回调函数');
 };
 
+// 识别card info
+// --------------- card --------------------
+// 输入的字符串
+const inputString = ref('');
+// 提取卡号和密码的正则表达式
+const cardNumberRegex = /卡号[：:](\d{16})/;
+const passwordRegex = /密码[：:](\d{16})/;
+
+// 使用 ref 来存储匹配到的卡号和密码
+const cardNumber = ref(null);
+const password = ref(null);
+
+// 监听输入的字符串变化，进行匹配
+watchEffect(() => {
+  // 重置匹配结果
+  cardNumber.value = null;
+  password.value = null;
+
+  // 匹配卡号
+  const matchCardNumber = inputString.value.match(cardNumberRegex);
+  if (matchCardNumber) {
+    cardNumber.value = matchCardNumber[1];
+  }
+
+  // 匹配密码
+  const matchPassword = inputString.value.match(passwordRegex);
+  if (matchPassword) {
+    password.value = matchPassword[1];
+  }
+});
+// --------------- card --------------------
+
 // 复制
-const copyInfo = async (payData) => {
-  let copyInfo = `${payData.account}`
+const copyInfo = async () => {
+  let copyInfo = `${payData.value.account}`
   console.log("copyInfo", copyInfo)
   const clipboard = new ClipboardJS('.btn-copy', {
     text: () => copyInfo
   });
 
   clipboard.on('success', () => {
-    ElMessage({
-      type: 'success',
-      message: '复制成功'
-    })
+    showCopyModal.value = true
+    setTimeout(() => {
+      showCopyModal.value = false
+    }, 300)
     copyInfoVisible.value = true
     setTimeout(() => {
       copyInfoVisible.value = false
@@ -296,42 +725,91 @@ const copyInfo = async (payData) => {
 
 };
 
-const openPay = async (payData) => {
-  const clipboard = new ClipboardJS('.btn-copy', {
-    text: () => payData.account
+const dialogYd1000Visible = ref(false)
+const dialogYd1100Visible = ref(false)
+const dialogYd2000Visible = ref(false)
+const dialogYd3000Visible = ref(false)
+
+const closeYdDialog = async () => {
+  dialogYd1000Visible.value = false
+  dialogYd1100Visible.value = false
+  dialogYd2000Visible.value = false
+  dialogYd3000Visible.value = false
+}
+
+const openYdVisible = async () => {
+  let cid = payData.value.channel_code;
+  if (cid >= 3000 && cid < 3099) {
+    dialogYd3000Visible.value = true
+  } else if (cid >= 2000 && cid < 2099) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd2000Visible.value = true
+  } else if (cid >= 1100 && cid < 1199) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd1100Visible.value = true
+  } else if (cid >= 1000 && cid < 1099) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd1000Visible.value = true
+  } else {
+
+  }
+}
+
+const openPay = async () => {
+  let copyInfo = `${payData.value.account}`
+  const clipboardX = new ClipboardJS('.btn-copy', {
+    text: () => copyInfo
   });
 
-  clipboard.on('success', () => {
-    ElMessage({
-      type: 'success',
-      message: '复制成功'
-    })
-    clipboard.destroy(); // 销毁 ClipboardJS 实例
+  clipboardX.on('success', () => {
+    console.log('复制成功',copyInfo)
+
+    // 等待200毫秒后跳转
+    setTimeout(() => {
+      // window.location.href = payData.value.resource_url;
+      window.open(payData.value.resource_url, '_blank')
+    }, 100);
+
+    clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
 
-  clipboard.on('error', () => {
+  clipboardX.on('error', () => {
     ElMessage({
       type: 'error',
       message: '复制异常'
     })
-    clipboard.destroy(); // 销毁 ClipboardJS 实例
+    console.log('复制异常',copyInfo)
+
+    clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
 
-  location.href = payData.resource_url;
 };
 
 // 添加一个空变量作为定时器的 ID
 let timerId = null;
-let count = 1;
+let timerExp = null;
+let timerYD = null;
 
 onMounted(() => {
   // 启动倒计时
   fireCD();
   // 启动定时器，每秒钟请求一次 HTTP 接口
-  timerId = setInterval(queryOrder, 1000);
-  calculateCountdown();
+  // timerId = setInterval(queryOrder, 1000);
+  startCountdownQryOrder();
 
-  setCacheControl(180) // 设置缓存时间为180秒
+  // setCacheControl(180) // 设置缓存时间为180秒
 });
 
 onUnmounted(() => {
@@ -341,28 +819,35 @@ onUnmounted(() => {
 
 const payData = ref({
   money: 0,
-  expTime: 0,
+  exp_time: 0,
+  channel_code: 0,
   account: '',
   order_id: '',
   resource_url: '',
   status: 0,
+  ext: '',
 })
 
 const reqCnt = ref(0)
 
-const queryOrder = async () => {
+const queryOrder = async (timerId) => {
   try {
     const orderId = route.query.orderId;
     console.log(orderId)
     const result = await queryOrderSimple({order_id: orderId}); // 发送 HTTP 请求
     let nowTime = new Date().getTime();
-    let resExp = new Date(result.data?.expTime).getTime();
+    let resExp = new Date(result.data?.exp_time).getTime();
     console.log(nowTime)
     console.log(resExp)
     payData.value = result.data
+    console.log(payData.value)
     const content = result.data.resource_url;
-    if(content){
-      clearInterval(timerId); // 如果状态发生变化，则停止定时器
+    const account = result.data.account;
+    if (content && account) {
+      console.log("qry time id ", timerId)
+      clearInterval(timerId);
+      startCountdownExp();
+      // 如果状态发生变化，则停止定时器
       dialogCountVisible.value = false;
 
       if (result.code === 7) {
@@ -371,18 +856,21 @@ const queryOrder = async () => {
       } else if (result.code === 0) {
 
         payTypeVisible.value = Number(result.data.channel_code);
-
-          if (content){
-            QRCode.toDataURL(content)
-                .then((dataUrl) => {
-                  qrcodeUrl.value = dataUrl
-                })
-                .catch((error) => {
-                  console.error('Failed to generate QR code:', error);
-                });
-          } else {
-            // 付款码异常
-          }
+        //如果 payData.value.resource_url 中包含 main.m.taobao.com
+        if (content.includes('main.m.taobao.com')) {
+          tmH5Visible.value = true;
+        }
+        if (content) {
+          QRCode.toDataURL(content)
+              .then((dataUrl) => {
+                qrcodeUrl.value = dataUrl
+              })
+              .catch((error) => {
+                console.error('Failed to generate QR code:', error);
+              });
+        } else {
+          // 付款码异常
+        }
 
         if (result.data.status === 1) {
           finishedVisible.value = true;
@@ -394,18 +882,18 @@ const queryOrder = async () => {
           timeoutVisible.value = true;
         }
       }
-    }else if (result.data?.status === 0) {
+    } else if (result.data?.status === 0) {
       dialogCountVisible.value = false;
       clearInterval(timerId);
       exVisible.value = true;
-    }else if (result.data?.status === 2 && resExp < nowTime) {
+    } else if (result.data?.status === 2 && resExp < nowTime) {
       dialogCountVisible.value = false;
       clearInterval(timerId);
       exVisible.value = true;
       console.log('超时')
-    }else if (reqCnt.value < 10){
+    } else if (reqCnt.value < 10) {
       reqCnt.value++
-    }else {
+    } else {
       dialogCountVisible.value = false;
       clearInterval(timerId);
       exVisible.value = true;
@@ -423,14 +911,129 @@ const queryOrder = async () => {
 const countdowns = ref([]);
 
 // 计算倒计时
-const calculateCountdown = () => {
-  setInterval(() => {
+// const calculateCountdown = () => {
+//   setInterval(() => {
+//     const currentTime = new Date();
+//     const timeLimit = new Date(payData.value.exp_time);
+//     const timeDiffInSeconds = (timeLimit - currentTime) / 1000;
+//     countdowns.value[0] = timeDiffInSeconds > 0 ? Math.floor(timeDiffInSeconds) : -1;
+//   }, 1000);
+// };
+
+// 引导倒计时
+const countdownTime = ref(3);
+
+const countdown = (countdownTimeRef, timerRef) => {
+  countdownTimeRef.value--;
+
+  // 监听倒计时时间变化，可以在这里执行倒计时结束后的操作
+  watch(countdownTimeRef, (newVal) => {
+    if (newVal === 0) {
+      // 在此处执行倒计时结束后的操作
+      console.log(`倒计时结束 - ${countdownTimeRef.value}`);
+      countdownTime.value = 3;
+      // 清除定时器
+      clearInterval(timerRef);
+    }
+  });
+};
+
+const startCountdown = () => {
+  timerYD = setInterval(() => countdown(countdownTime, timerYD), 1000);
+};
+
+const countdownTimeQryOrder = ref(20);
+const countdownQryOrder = (countdownTimeRef, timerRef) => {
+  countdownTimeRef.value--;
+
+  // 监听倒计时时间变化，可以在这里执行倒计时结束后的操作
+  watch(countdownTimeRef, (newVal) => {
+    console.log(newVal)
+    queryOrder(timerRef)
+    if (newVal === 0) {
+      // 在此处执行倒计时结束后的操作
+      console.log(`倒计时结束 - ${countdownTimeRef.value}`);
+      // 清除定时器
+      clearInterval(timerRef);
+    }
+  });
+};
+
+const startCountdownQryOrder = () => {
+  timerId = setInterval(() => countdownQryOrder(countdownTimeQryOrder, timerId), 1000);
+};
+
+const startCountdownExp = () => {
+  timerExp = setInterval(() => {
     const currentTime = new Date();
-    const timeLimit = new Date(payData.value.expTime);
+    const timeLimit = new Date(payData.value.exp_time);
     const timeDiffInSeconds = (timeLimit - currentTime) / 1000;
     countdowns.value[0] = timeDiffInSeconds > 0 ? Math.floor(timeDiffInSeconds) : -1;
+    // console.log('timeLimit', timeLimit);
+    // console.log('timeDiffInSeconds', timeDiffInSeconds);
+    // console.log(timerExp)
+    if (timeDiffInSeconds < 0) {
+      clearInterval(timerExp);
+    }
   }, 1000);
 };
+
+// 在组件销毁前清除定时器
+onBeforeUnmount(() => {
+  clearInterval(timerYD);
+});
+
+// card info
+const dialogCardVisible = ref(false)
+
+const openCardVisible = async () => {
+  dialogCardVisible.value = true
+}
+const closeCardVisible = () => {
+  dialogCardVisible.value = false
+}
+
+//modal提示
+// 控制是否显示模态框
+const showCopyModal = ref(false);
+const showSubmitCardModal = ref(false);
+const showSubmitErrModal = ref(false);
+const showSubmitErrInfo = ref();
+const showCardModal = ref(false);
+const submitCardInfo = async () => {
+  let c = String(cardNumber.value)
+  let p = String(password.value)
+  if (c && p) {
+    payData.value.ext = c + "_" + p
+    const cbRes = await cbExt({...payData.value})
+    await closeCardVisible()
+    if (cbRes.code === 0){
+      showSubmitCardModal.value = true;
+      // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+      setTimeout(() => {
+        showSubmitCardModal.value = false;
+      }, 2000);
+    }else if (cbRes.code === 7){
+      showSubmitErrInfo.value = cbRes.msg;
+      showSubmitErrModal.value = true;
+      // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+      setTimeout(() => {
+        showSubmitErrModal.value = false;
+      }, 2000);
+    }
+  }else {
+    await warnCardInfo();
+  }
+}
+const warnCardInfo = () => {
+  // 显示模态框
+  showCardModal.value = true;
+
+  // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+  setTimeout(() => {
+    showCardModal.value = false;
+  }, 1000);
+}
 
 
 </script>
@@ -494,7 +1097,19 @@ h1 {
   right: 5%;
   height: 200px;
   background-color: #f2f2f2;
-  border-radius: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.p_content_yd_inner {
+  text-align: center;
+  color: #333;
+  top: 320px;
+  left: 5%;
+  right: 5%;
+  height: 200px;
+  background-color: #f2f2f2;
+  border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -522,6 +1137,40 @@ h1 {
   font-size: 22px;
   color: #e7dfdf;
   background: linear-gradient(to right, #064954, #125280, #1247c9);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.yd_p_content_button_qr {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  left: 5%;
+  right: 5%;
+}
+
+.yd_read_p_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #a5abb4, rgba(122, 129, 140, 0.99), #a5abb4);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.yd_p_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(90deg, #5498ff 1%, #00d9d0 100%);
   margin-top: 6px;
   width: 80%;
   border-radius: 12px;
@@ -667,4 +1316,146 @@ h1 {
   height: 180px;
 }
 
+.p_content_card_info_inner {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 380px;
+  left: 5%;
+  right: 5%;
+  height: 270px;
+  background-color: #f2f2f2;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.p_content_card_info_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 340px;
+  left: 5%;
+  right: 5%;
+}
+
+.p_content_card_submit_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 240px;
+  left: 5%;
+  right: 5%;
+}
+
+.medicine-jw-bag {
+  background: rgba(215, 197, 197, 0.1);
+  border: 1px solid rgba(59, 28, 23, 0.99);
+  margin-top: 6px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 100px;
+}
+
+.medicine-jw-card-info-bag {
+  background: rgba(220, 200, 200, 0.1);
+  border: 2px dashed rgba(59, 28, 23, 0.5);
+  margin-top: 8px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 50px;
+}
+
+.medicine-jw-card-info-submit-bag {
+  background: rgba(220, 200, 200, 0.1);
+  border: 1px dashed rgba(59, 28, 23, 0.5);
+  margin-top: 8px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 120px;
+}
+
+textarea {
+  resize: none;
+  border: none;
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  font-size: 16px;
+  line-height: 1.5;
+  outline: none;
+  overflow: auto;
+}
+/* 设置 placeholder 文字样式 */
+textarea::placeholder {
+  color: #c4bdbd; /* 设置灰色提示文字颜色 */
+}
+.result-container {
+  border-radius: 5px;
+}
+
+.result-container p {
+  margin: 5px 0;
+}
+
+.p_submit_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #e8731f, #d54d11, #c91258);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.p_submit_success_button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 22px;
+  color: #e7dfdf;
+  background: linear-gradient(to right, #064954, #2c9a12, #075cbd);
+  margin-top: 6px;
+  width: 80%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 透明黑色背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #111111;
+  color: #FFFFFF;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.modal-content p {
+  margin: 0;
+}
 </style>

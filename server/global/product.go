@@ -21,6 +21,7 @@ func TxContains(target string) bool {
 		"1007": true,
 		"1008": true,
 		"1009": true,
+		"1101": true,
 	}
 	_, found := set[target]
 	return found

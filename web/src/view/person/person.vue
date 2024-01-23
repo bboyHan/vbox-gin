@@ -156,7 +156,7 @@
       v-model="showPassword"
       title="修改密码"
       width="360px"
-      @close="clearPassword"
+      :draggable="true" @close="clearPassword"
     >
       <el-form
         ref="modifyPwdForm"
