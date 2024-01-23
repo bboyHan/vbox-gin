@@ -77,23 +77,34 @@
         @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="日期" width="180">
+        <el-table-column align="left" label="天" prop="dt" width="120" />
+        <!-- <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+        </el-table-column> -->
+        <!-- <el-table-column align="left" label="用户id" prop="uid" width="120" /> -->
+        <el-table-column align="left" label="用户名" prop="username" width="150" >
+          <template #default="scope">
+            <!-- {{ scope.row.username }} -->
+            <el-button type="text"  @click="getAccDetails(scope.row)">
+                
+                <el-icon style="margin-right: 5px">
+                  <InfoFilled/>
+                </el-icon>
+                {{ scope.row.username }}
+              </el-button>
+          </template>
         </el-table-column>
-        <el-table-column align="left" label="用户id" prop="uid" width="120" />
-        <el-table-column align="left" label="用户名" prop="username" width="120" />
-        <el-table-column align="left" label="账号ID" prop="acId" width="120" />
-        <el-table-column align="left" label="通道账户名" prop="acAccount" width="120" />
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="120" />
-        <el-table-column align="left" label="通道code" prop="channelCode" width="120" />
+        <!-- <el-table-column align="left" label="账号ID" prop="acId" width="120" /> -->
+        <el-table-column align="left" label="通道账户名" prop="acAccount" width="150" />
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="150" />
+        <el-table-column align="left" label="通道code" prop="channelCode" width="100" />
         <el-table-column align="left" label="产品ID" prop="productId" width="120" />
-        <el-table-column align="left" label="产品名称" prop="productName" width="120" />
-        <el-table-column align="left" label="订单量" prop="orderQuantify" width="120" />
+        <el-table-column align="left" label="产品名称" prop="productName" width="150" />
+        <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
         <el-table-column align="left" label="成交率" prop="ratio" width="120" />
         <el-table-column align="left" label="成交金额" prop="income" width="120" />
-        <el-table-column align="left" label="天" prop="dt" width="120" />
-        <el-table-column align="left" label="操作" min-width="120">
+        <!-- <el-table-column align="left" label="操作" min-width="120">
             <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
                 <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
@@ -102,7 +113,7 @@
             <el-button type="primary" link icon="edit" class="table-button" @click="updateBdaChaccIndexDFunc(scope.row)">变更</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
-        </el-table-column>
+        </el-table-column> -->
         </el-table>
         <div class="gva-pagination">
             <el-pagination
@@ -116,6 +127,10 @@
             />
         </div>
     </div>
+
+    <!-- <el-dialog v-model="accDetailShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow" title="查看详情" destroy-on-close> -->
+
+    <!-- </el-dialog> -->
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :title="type==='create'?'添加':'修改'" destroy-on-close>
       <el-scrollbar height="500px">
           <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
@@ -168,8 +183,284 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :before-close="closeDetailShow" title="查看详情" destroy-on-close>
-      <el-scrollbar height="550px">
+    <el-dialog v-model="detailShow" style="width: 1400px" lock-scroll :before-close="closeDetailShow" :title="`账户数据看板 - 用户: ${formData.username}`"  destroy-on-close>
+ <!-- 成单统计 -->
+    <el-row :gutter="24">
+        <el-col :span="24" :xs="24">
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>近三日该用户账户数据概览</h2></div>
+        </el-col>
+
+        <el-col :span="8" :xs="24">
+          <CenterCard title="两天前" :custom-style="order1CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">通道数</div>
+                    <div class="value">{{ cardData1.channelCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">账户数</div>
+                    <div class="value">{{ cardData1.acidCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单数</div>
+                    <div class="value">{{ cardData1.okOrderCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单金额</div>
+                    <div class="value">{{ cardData1.okIncome }}</div>
+                  </span>
+<!--                  <span>
+                    <div class="label">待付金额</div>
+                    <div class="value">{{ formatMoney(nearOneHourRate.x4) }}</div>
+                  </span>-->
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <el-col :span="8" :xs="24">
+          <CenterCard title="昨日" :custom-style="order2CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">通道数</div>
+                    <div class="value">{{ cardData2.channelCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">账户数</div>
+                    <div class="value">{{ cardData2.acidCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单数</div>
+                    <div class="value">{{ cardData2.okOrderCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单金额</div>
+                    <div class="value">{{ cardData2.okIncome }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <el-col :span="8" :xs="24">
+          <CenterCard title="今日" :custom-style="order3CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <Order :channel-code="searchInfo.cid"/>-->
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">通道数</div>
+                    <div class="value">{{ cardData3.channelCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">账户数</div>
+                    <div class="value">{{ cardData3.acidCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单数</div>
+                    <div class="value">{{ cardData3.okOrderCnt }}</div>
+                  </span>
+                  <span>
+                    <div class="label">成单金额</div>
+                    <div class="value">{{ cardData3.okIncome }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col>
+
+        <!-- <el-col :span="6" :xs="24">
+          <CenterCard title="今日待付金额（含失效单）" :custom-style="order4CustomStyle">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <div class="acc-container">
+                <div class="indicator">
+                  <span>
+                    <div class="label">待付金额</div>
+                    <div class="value">{{ formatMoney(10) }}</div>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </CenterCard>
+        </el-col> -->
+    </el-row>
+
+
+<!--   趋势图   -->
+<el-row :gutter="24">
+        <el-col :span="24" :xs="24">
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户今日成单</h2></div>
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近1小时实时成单(金额)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
+              <!--                          interval="5m" keyword="sum" format="HH:mm" unit="元"/>-->
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="元"/>
+            </template>
+          </CenterCard>
+          <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近1小时实时成单(数量)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="笔"/>
+            </template>
+          </CenterCard>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="24">
+        <el-col :span="24" :xs="24">
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个通道各个账户今日成单</h2></div>
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近1小时实时成单(金额)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
+              <!--                          interval="5m" keyword="sum" format="HH:mm" unit="元"/>-->
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="元"/>
+            </template>
+          </CenterCard>
+          <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近1小时实时成单(数量)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="笔"/>
+            </template>
+          </CenterCard>
+        </el-col>
+      </el-row>
+
+    
+<el-row :gutter="24">
+        <el-col :span="24" :xs="24">
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户近一周成单</h2></div>
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近一个月成单(金额)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
+              <!--                          interval="5m" keyword="sum" format="HH:mm" unit="元"/>-->
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="元"/>
+            </template>
+          </CenterCard>
+          <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <CenterCard title="近一个月成单(数量)">
+            <template #action>
+              <span class="gvaIcon-prompt" style="color: #999" />
+            </template>
+            <template #body>
+              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="笔"/>
+            </template>
+          </CenterCard>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="24">
+        <el-col :span="24" :xs="24">
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户近一周成单详情</h2></div>
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <div class="gva-search-box">
+            <el-form ref="elSearchFormRef" :inline="true" :model="formData" class="demo-form-inline"  @keyup.enter="onSubmitAcid">
+              <el-form-item label="通道账户">
+                    <el-select
+                    v-model="formData.acId"
+                    placeholder="请选择通道账号"
+                    filterable
+                    clearable
+                    style="width: 100%"
+                    @change="handleAccChange"
+                >
+                  <el-option
+                      v-for="item in accList"
+                      :key="item.acAccount"
+                      :label="formatJoin(' -- 备注： ', item.acAccount, item.acRemark)"
+                      :value="item.acId"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" icon="search" @click="onSubmitAcid">查询</el-button>
+                <el-button icon="refresh" @click="onResetAcid">重置</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </el-col>
+        <el-col :span="24" :xs="24">
+        <el-table
+        ref="multipleTable"
+        style="width: 100%"
+        tooltip-effect="dark"
+        :data="tableData"
+        row-key="ID"
+        @selection-change="handleSelectionChange"
+        >
+        <!-- <el-table-column type="selection" width="55" /> -->
+        <el-table-column align="left" label="天" prop="dt" width="120" />
+        <!-- <el-table-column align="left" label="日期" width="180">
+            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+        </el-table-column> -->
+        <!-- <el-table-column align="left" label="用户id" prop="uid" width="120" /> -->
+        <el-table-column align="left" label="用户名" prop="username" width="150" >
+         
+        </el-table-column>
+        <!-- <el-table-column align="left" label="账号ID" prop="acId" width="120" /> -->
+        <el-table-column align="left" label="通道账户名" prop="acAccount" width="150" />
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="150" />
+        <el-table-column align="left" label="通道code" prop="channelCode" width="100" />
+        <el-table-column align="left" label="产品ID" prop="productId" width="120" />
+        <el-table-column align="left" label="产品名称" prop="productName" width="150" />
+        <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
+        <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
+        <el-table-column align="left" label="成交率" prop="ratio" width="120" />
+        <el-table-column align="left" label="成交金额" prop="income" width="120" />
+
+        </el-table>
+      </el-col>
+      </el-row>
+
+      <!-- <el-scrollbar height="550px">
         <el-descriptions column="1" border>
                 <el-descriptions-item label="用户id">
                         {{ formData.uid }}
@@ -211,7 +502,7 @@
                         {{ formData.dt }}
                 </el-descriptions-item>
         </el-descriptions>
-      </el-scrollbar>
+      </el-scrollbar> -->
     </el-dialog>
   </div>
 </template>
@@ -223,13 +514,19 @@ import {
   deleteBdaChaccIndexDByIds,
   updateBdaChaccIndexD,
   findBdaChaccIndexD,
-  getBdaChaccIndexDList
+  getBdaChaccIndexDList,
+  getBdaChaccIndexDUesrOverview
 } from '@/api/bdaChaccIndexD'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import {calculatePercentage, formatMoney} from '@/utils/format';
+import {getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
+
+import CenterCard from '../centerCard.vue'
+import lineCharts from '../lineCharts.vue'
 
 defineOptions({
     name: 'BdaChaccIndexD'
@@ -424,16 +721,62 @@ const detailShow = ref(false)
 // 打开详情弹窗
 const openDetailShow = () => {
   detailShow.value = true
+  console.log('row==>' + JSON.stringify(formData.value))
+  getDetails(formData)
 }
+
+const cardList = ref([])
+const cardData1 = ref({
+        uid: 0,
+        acidCnt: 0,
+        channelCnt: 0,
+        okOrderCnt: 0,
+        okIncome: 0,
+        dt: '',
+        })
+const cardData2 = ref({
+        uid: 0,
+        acidCnt: 0,
+        channelCnt: 0,
+        okOrderCnt: 0,
+        okIncome: 0,
+        dt: '',
+})
+const cardData3 = ref({
+        uid: 0,
+        acidCnt: 0,
+        channelCnt: 0,
+        okOrderCnt: 0,
+        okIncome: 0,
+        dt: '',
+})
 
 
 // 打开详情
 const getDetails = async (row) => {
   // 打开弹窗
-  const res = await findBdaChaccIndexD({ ID: row.ID })
+  // const res = await findBdaChaccIndexD({ ID: row.ID })
+  // if (res.code === 0) {
+  //   formData.value = res.data.rebdaChaccIndexD
+  //   openDetailShow()
+  // }
+  console.log('getDetails ==>' + JSON.stringify(row.value))
+  const res = await getBdaChaccIndexDUesrOverview(row.value)
+  console.log('getDetails res ==>' + JSON.stringify(res))
   if (res.code === 0) {
-    formData.value = res.data.rebdaChaccIndexD
-    openDetailShow()
+    cardList.value = res.data.list
+    if (cardList.value.length >= 1) {
+      cardData1.value = cardList.value[0];
+    }
+
+    if (cardList.value.length >= 2) {
+      cardData2.value = cardList.value[1];
+    }
+
+    if (cardList.value.length >= 3) {
+      cardData3.value = cardList.value[2];
+    }
+
   }
 }
 
@@ -511,8 +854,178 @@ const enterDialog = async () => {
       })
 }
 
+
+
+// ----
+const getAccDetails = async (row) => {
+  console.log(row)
+  // 打开弹窗
+  const res = await findBdaChaccIndexD({ ID: row.ID })
+  if (res.code === 0) {
+    formData.value = res.data.rebdaChaccIndexD
+    openDetailShow()
+  }
+  // openDetailShow()
+  // 打开弹窗
+  // const res = await findChannelAccount({acId: row.acId})
+  // if (res.code === 0) {
+  //   formAccData.value = res.data.revca
+  //   openAccDetailShow()
+  // }
+  getAccShowTableData()
+}
+
+
+
+// --趋势图
+// 获取当前时间
+let localTime = new Date();
+// 获取当前时区相对于UTC的偏移量（分钟）
+let offset = localTime.getTimezoneOffset();
+// 计算东八区相对于UTC的偏移量（分钟）
+let easternOffset = 8 * 60;
+// let easternOffset = 0;
+// 计算东八区当前时间
+// let endTime = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000);
+
+// 获取当前时间的分钟数
+let currentMinute = localTime.getMinutes();
+// 计算所在的分钟数分组
+let adjustedMinute = Math.ceil(currentMinute / 5) * 5;
+
+// 设置分钟数为分组的结束值，秒和毫秒都设置为0
+localTime.setMinutes(adjustedMinute, 0, 0);
+// 前一个小时
+const startTimeOneHour = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000 - 60 * 60 * 1000);
+const endTimeOneHour = new Date(localTime.getTime() + (easternOffset + offset) * 60 * 1000);
+
+const nearOneHourSum = ref()
+
+const getAccShowTableData = async() => {
+let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: 3000, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
+nearOneHourSum.value = nearOneHourSumResult
+}
+
+const order1CustomStyle = ref({
+  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  color: '#FFF',
+  height: '150px',
+})
+const order2CustomStyle = ref({
+  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  color: '#FFF',
+  height: '150px',
+})
+const order3CustomStyle = ref({
+  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  color: '#FFF',
+  height: '150px',
+})
+const order4CustomStyle = ref({
+  background: 'linear-gradient(to right, #22111a, #606266)',
+  color: '#FFF',
+  height: '150px',
+})
+
+//------ 账户筛选
+
+// ------- 获取通道账号 -------
+const accList = ref([])
+const acIdList = ref([])
+const sysUserAcId = ref('')
+const selectCid = ref('')
+const handleAccChange = (value) => {
+  // console.log(value)
+  // getACCChannelAccountByAcid()
+  getALlChannelAccount()
+
+}
+// 获取唯一通道账号
+const getACCChannelAccountByAcid = async () => {
+  const res = await getChannelAccountList({acId: formData.value.acId, page: 1, pageSize: 999})
+  acIdList.value = res.data.list
+  // console.log(JSON.stringify(accList))
+  formData.value.acAccount = acIdList.value[0].acAccount
+  formData.value.acRemark = acIdList.value[0].acRemark
+  console.log(JSON.stringify(formData.value))
+  return res
+}
+
+
+// 获取通道账号
+const getALlChannelAccount = async (cid) => {
+  const res = await getChannelAccountList({cid: cid, sysStatus: 1, status: 1, page: 1, pageSize: 999})
+  accList.value = res.data.list
+}
+
+// 搜索
+const onSubmitAcid = () => {
+  console.log("searchInfo.value",searchInfo.value)
+  elSearchFormRef.value?.validate(async(valid) => {
+    if (!valid) return
+    console.log("elSearchFormRef.value",elSearchFormRef.value)
+    getTableData()
+  })
+}
+
+
+const setOptionsAcid = async () =>{
+  channelCodeOptions.value = []
+  setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
+}
+
+// 重置
+const onResetAcid = () => {
+  searchInfo.value = {}
+  getTableData()
+}
+
 </script>
 
-<style>
+
+<style lang="scss" scoped>
+
+.data-center-box{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 4fr;
+  column-gap: 10px;
+}
+
+.acc-container{
+  color: #FFFFFF;
+}
+.indicator {
+  display: flex;
+  justify-content: space-around; // 使子元素水平居中展开
+  padding: 15px;
+  border-radius: 8px; // 添加圆角
+}
+
+.indicator span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px; // 调整间距
+
+  &:not(:last-child) {
+    border-right: 2px solid #fff; // 白色边框
+    margin-right: 15px; // 调整间距
+  }
+}
+
+.label {
+  color: #F5F5F5;
+  font-size: 14px;
+}
+
+.value {
+  color: #FFFFFF;
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 5px; // 调整间距
+
+}
 
 </style>
+

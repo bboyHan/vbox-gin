@@ -213,7 +213,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexDByH
 }
 
 func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() (err error) {
-	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
 
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
 	var uids []int
@@ -221,18 +221,19 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() 
 	if err != nil {
 		return
 	}
+	fmt.Println("uids=", uids)
 	var chIds []string
 	err = db.Select("distinct channel_code").Pluck("channel_code", &chIds).Error
 	if err != nil {
 		return
 	}
-
+	fmt.Println("chIds=", chIds)
 	var shops []string
 	err = db.Select("distinct resource_url").Pluck("resource_url", &shops).Error
 	if err != nil {
 		return
 	}
-
+	fmt.Println("shops=", shops)
 	for _, uid := range uids {
 		for _, chId := range chIds {
 			for _, shop := range shops {
@@ -289,17 +290,26 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() 
 					return err
 				}
 				var vcs vbox.ChannelShop
-				err = global.GVA_DB.Where("cid = ? and shop_remark = ?", chId, shop).First(&vcs).Error
+
 				if err != nil {
 					return err
 				}
+				shopRemark := ""
+				if shop != "" {
+					err = global.GVA_DB.Where("cid = ? and shop_remark = ?", chId, shop).First(&vcs).Error
+					if err != nil {
+						return err
+					}
+					shopRemark = vcs.ShopRemark
+				}
+
 				chCode := vcp.ChannelCode
 
 				entity := vbox.BdaChShopIndexD{
 					Uid:             &uid,
 					Username:        userInfo.Username,
 					Cid:             chId,
-					ShopRemark:      vcs.ShopRemark,
+					ShopRemark:      shopRemark,
 					ChannelCode:     chCode,
 					ProductId:       vcp.ProductId,
 					ProductName:     vcp.ProductName,
@@ -325,7 +335,7 @@ func GetUsersShopChVboxPayOrderInfoList(id int, chId string, shop string, dt str
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.PayOrder{})
 	var vpos []vbox.PayOrder
-	err = db.Where("uid = ? and resource_url = ? and channel_code = ? and DATE(created_at) = ?", id, shop, chId, dt).Find(&vpos).Error
+	err = db.Where("created_by = ? and resource_url = ? and channel_code = ? and DATE(created_at) = ?", id, shop, chId, dt).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"gorm.io/gorm"
 	"log"
 	"strconv"
@@ -71,7 +72,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexD(id uint) (
 // Author [piexlmax](https://github.com/piexlmax)
 func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoList(info vboxReq.BdaChaccIndexDSearch) (list []vbox.BdaChaccIndexD, total int64, err error) {
 	fmt.Println("统计开始")
-	bdaChaccIndexDService.CronVboxBdaChaccIndexD()
+	//bdaChaccIndexDService.CronVboxBdaChaccIndexD()
 	fmt.Println("统计结束")
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
@@ -354,6 +355,54 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexD() (er
 	return err
 }
 
+func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDUesrOverview(res vboxReq.BdaChIndexDSearch) (list []vboxResp.ChaAccUserCardResp, total int64, err error) {
+	querySql := `
+		SELECT
+			t1.uid,
+			COALESCE(acid_cnt,0) as acidCnt,
+			COALESCE(channel_cnt,0) as channelCnt,
+			COALESCE(ok_order_cnt,0) as okOrderCnt,
+			COALESCE(ok_income,0) as okIncome
+		FROM
+		(
+			SELECT 
+				created_by as uid,
+				count(DISTINCT ac_id) as acid_cnt,
+				count(DISTINCT channel_code) as channel_cnt 
+			from vbox_pay_order 
+			where DATE_FORMAT(created_at, '%Y-%m-%d')= ?
+			and created_by = ?
+			GROUP BY created_by
+		)t1
+		LEFT JOIN
+		(
+		SELECT 
+			created_by as uid,
+			count(order_id) as ok_order_cnt,
+			sum(money) as ok_income
+		from vbox_pay_order 
+		where DATE_FORMAT(created_at, '%Y-%m-%d')= ?
+		and created_by = ?
+		and order_status =1
+		GROUP BY created_by
+		)t2
+		on t1.uid=t2.uid
+`
+	dt := time.Now().AddDate(0, 0, -0).Format("2006-01-02")
+	dt_1 := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	dt_2 := time.Now().AddDate(0, 0, -2).Format("2006-01-02")
+	fmt.Println(dt, "统计开始")
+
+	item, err := getChaAccUserCardResp(querySql, dt, *res.Uid)
+	list = append(list, item)
+	item_1, err := getChaAccUserCardResp(querySql, dt_1, *res.Uid)
+	list = append(list, item_1)
+	item_2, err := getChaAccUserCardResp(querySql, dt_2, *res.Uid)
+	list = append(list, item_2)
+
+	return list, 3, err
+}
+
 func GetUsersAccChVboxPayOrderInfoList(id int, chId string, accId string, dt string) (list []vbox.PayOrder, total int64, err error) {
 	// 创建db
 	db := global.GVA_DB.Model(&vbox.PayOrder{})
@@ -362,4 +411,42 @@ func GetUsersAccChVboxPayOrderInfoList(id int, chId string, accId string, dt str
 	err = db.Where("created_by = ? and ac_id = ? and channel_code = ? and DATE(created_at) = ?", id, accId, chId, dt).Find(&vpos).Error
 	total = int64(len(vpos))
 	return vpos, total, err
+}
+
+func getChaAccUserCardResp(querySql string, dt string, uid int) (res vboxResp.ChaAccUserCardResp, err error) {
+	fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
+	db := global.GVA_DB.Model(&vboxResp.ChaAccUserCardResp{})
+	rows, err := db.Raw(querySql, dt, uid, dt, uid).Rows()
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println(rows.Next())
+	defer rows.Close()
+	// 如果有下一行数据，继续循环
+	for rows.Next() {
+		fmt.Println("--->,,")
+		// 遍历查询结果并将值映射到结构体中
+		var item vboxResp.ChaAccUserCardResp
+		err := rows.Scan(&item.Uid, &item.AcidCnt, &item.ChannelCnt, &item.OkOrderCnt, &item.OkIncome)
+		if err != nil {
+			panic(err)
+		}
+		item.Dt = dt
+		fmt.Println("--->", item)
+		return item, err
+
+	}
+
+	defaultItem := vboxResp.ChaAccUserCardResp{
+		Uid:        uid,
+		AcidCnt:    0,
+		ChannelCnt: 0,
+		OkOrderCnt: 0,
+		OkIncome:   0,
+		Dt:         dt,
+	}
+	return defaultItem, err
+
+	// 打印查询结果
+	//fmt.Println(list)
 }

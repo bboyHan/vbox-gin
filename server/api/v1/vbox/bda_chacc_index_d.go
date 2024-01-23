@@ -1,6 +1,7 @@
 package vbox
 
 import (
+	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -191,5 +192,33 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) CronVboxBdaChaccIndexDByHand(c *gin.
 		response.FailWithMessage("获取失败", c)
 	} else {
 		response.OkWithMessage("调度成功", c)
+	}
+}
+
+// GetBdaChaccIndexDUesrOverview 获取用户近三天成单数成单金额通道数店铺数-天更新列表
+// @Tags BdaChaccIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.BdaChaccIndexDSearch true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChaccIndexD/getBdaChaccIndexDUesrOverview [get]
+func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDUesrOverview(c *gin.Context) {
+	var res vboxReq.BdaChIndexDSearch
+	err := c.ShouldBindQuery(&res)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	fmt.Println(res.Uid)
+	if list, total, err := bdaChaccIndexDService.GetBdaChaccIndexDUesrOverview(res); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:  list,
+			Total: total,
+		}, "获取成功", c)
 	}
 }
