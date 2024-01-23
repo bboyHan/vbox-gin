@@ -48,10 +48,11 @@
           border
           @selection-change="handleSelectionChange"
       >
+        <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
         <el-table-column align="center" label="账号ID" prop="acId" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
-              <el-button type="text" link @click="getAccDetails(scope.row)">
+              <el-button type="info" link @click="getAccDetails(scope.row)">
                 {{ scope.row.acId }}
               </el-button>
               <el-button type="primary" link @click="openOrderHisShow(scope.row)">
@@ -68,12 +69,14 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+        <el-table-column align="center" label="订单ID" prop="orderId" width="240"/>
         <el-table-column align="center" label="金额" prop="money" width="120"/>
         <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
           <template #default="scope">
-            <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-              {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+            <el-button style="width: 90px"
+                       :color="formatPayedColor(scope.row.orderStatus, scope.row.acId, scope.row.platId)"
+                       @click="openSubmitCard(scope.row)">
+              {{ formatPayed(scope.row.orderStatus, scope.row.acId, scope.row.platId) }}
             </el-button>
           </template>
         </el-table-column>
@@ -87,7 +90,7 @@
         <el-table-column align="center" label="创建时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="操作">
+        <el-table-column align="left" label="操作" width="260">
           <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
               <el-icon style="margin-right: 5px">
@@ -100,6 +103,13 @@
                 <Position/>
               </el-icon>
               补单
+            </el-button>
+            <el-button v-if="Number(scope.row.channelCode) === 1101" type="primary" link class="table-button"
+                       @click="openSubmitCard(scope.row)">
+              <el-icon style="margin-right: 5px">
+                <Notification/>
+              </el-icon>
+              核对
             </el-button>
           </template>
         </el-table-column>
@@ -121,7 +131,7 @@
         <el-table-column align="center" label="账号ID" prop="acId" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
-              <el-button type="text" link @click="getAccDetails(scope.row)">
+              <el-button type="info" link @click="getAccDetails(scope.row)">
                 {{ scope.row.acId }}
               </el-button>
               <el-button type="primary" link @click="openOrderHisShow(scope.row)">
@@ -142,8 +152,10 @@
         <el-table-column align="center" label="金额" prop="money" width="80"/>
         <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
           <template #default="scope">
-            <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-              {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+            <el-button style="width: 90px"
+                       :color="formatPayedColor(scope.row.orderStatus, scope.row.acId, scope.row.platId)"
+                       @click="openSubmitCard(scope.row)">
+              {{ formatPayed(scope.row.orderStatus, scope.row.acId, scope.row.platId) }}
             </el-button>
           </template>
         </el-table-column>
@@ -183,6 +195,9 @@
             </el-button>
           </template>
         </el-table-column>
+        <el-table-column align="center" label="过期时间" width="180">
+          <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
+        </el-table-column>
         <el-table-column align="center" label="付方ID" prop="pAccount" width="160">
           <template #default="scope">
             {{ scope.row.pAccount }}
@@ -208,7 +223,8 @@
     </div>
 
     <!-- 订单查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" :draggable="true" lock-scroll :before-close="closeDetailShow" title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" :draggable="true" lock-scroll :before-close="closeDetailShow"
+               title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -225,6 +241,7 @@
           <el-descriptions-item label="订单状态">{{ formatBoolean(formData.orderStatus) }}</el-descriptions-item>
           <el-descriptions-item label="回调状态">{{ formatBoolean(formData.cbStatus) }}</el-descriptions-item>
           <el-descriptions-item label="回调时间">{{ formatDate(formData.cbTime) }}</el-descriptions-item>
+          <el-descriptions-item label="过期时间">{{ formatDate(formData.expTime) }}</el-descriptions-item>
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
@@ -256,7 +273,8 @@
     </el-dialog>
 
     <!-- 账号查看详情 -->
-    <el-dialog v-model="detailAccShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow" :draggable="true"
+    <el-dialog v-model="detailAccShow" style="width: 800px" lock-scroll :before-close="closeAccDetailShow"
+               :draggable="true"
                title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="6" border>
@@ -285,7 +303,8 @@
     </el-dialog>
 
     <!-- 指定账户官方充值详情 -->
-    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow" :draggable="true"
+    <el-dialog v-model="orderHisVisible" style="width: 1100px" lock-scroll :before-close="closeOrderHisShow"
+               :draggable="true"
                title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHisTableData" row-key="ID" style="width: 100%">
@@ -305,6 +324,29 @@
           </el-table-column>
         </el-table>
       </el-scrollbar>
+    </el-dialog>
+
+    <!--  核对  -->
+    <el-dialog v-model="dialogCardSubmitVisible" :before-close="closeSubmitCard" title="核对" :draggable="true"
+               destroy-on-close style="width: 850px">
+      <el-row :gutter="10">
+        <el-col :span="24">
+          <el-descriptions column="6" border>
+            <el-descriptions-item label="账户" :span="3">{{ cardSubmitForm.x1 }}</el-descriptions-item>
+            <el-descriptions-item label="卡号" :span="3">{{ cardSubmitForm.x3 }}</el-descriptions-item>
+            <el-descriptions-item label="金额" :span="3">{{ cardSubmitForm.x2 }}</el-descriptions-item>
+            <el-descriptions-item label="密码" :span="3">{{ cardSubmitForm.x4 }}</el-descriptions-item>
+            <el-descriptions-item label="充值页面" :span="6">
+              <el-button type="primary" @click="openWindowExt(extUrl)">新窗口打开</el-button>
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-col>
+        <!--        <el-col :span="24">-->
+        <!--          <div style="height: 1000px">-->
+        <!--            <iframe :src="extUrl" width="100%" height="100%"></iframe>-->
+        <!--          </div>-->
+        <!--        </el-col>-->
+      </el-row>
     </el-dialog>
   </div>
 </template>
@@ -336,7 +378,7 @@ import {
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive} from 'vue'
-import {Eleme, InfoFilled, Position, Search} from "@element-plus/icons-vue";
+import {Eleme, InfoFilled, Notification, Position, Search} from "@element-plus/icons-vue";
 
 defineOptions({
   name: 'PayOrder'
@@ -665,6 +707,60 @@ const queryAccOrderHisFunc = async (row) => {
   }
 }
 // ------ 账户充值记录 ---------
+
+// ------ 打开三方页面 ---------
+const dialogCardSubmitVisible = ref(false)
+const cardSubmitForm = ref({x1: '', x2: '', x3: '', x4: ''})
+const extUrl = ref()
+
+const openWindowExt = (extUrl) => {
+  window.open(extUrl, '_blank')
+}
+
+const openSubmitCard = (row) => {
+  cardSubmitForm.value = row
+  console.log("row", row)
+  let cid = Number(row.channelCode);
+  let money = Number(row.money);
+  if (cid === 1101) {
+    console.log("露一手")
+    dialogCardSubmitVisible.value = true;
+    let c = row.platId.split("_");
+    cardSubmitForm.value.x1 = row.acAccount
+    cardSubmitForm.value.x2 = money
+    cardSubmitForm.value.x3 = c[0]
+    cardSubmitForm.value.x4 = c[1]
+
+    switch (money) {
+      case 10:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG010CZ"
+        break
+      case 20:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG020CZ"
+        break
+      case 30:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG030CZ"
+        break
+      case 50:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG050CZ"
+        break
+      case 100:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG100CZ"
+        break
+      case 200:
+        extUrl.value = "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG200CZ"
+        break
+      default:
+        extUrl.value = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG`
+    }
+  }
+}
+
+const closeSubmitCard = () => {
+  dialogCardSubmitVisible.value = false
+  cardSubmitForm.value = {}
+}
+// ------ 打开三方页面 ---------
 </script>
 
 <style>

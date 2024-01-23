@@ -15,7 +15,7 @@ type PayOrder struct {
 	EventId     string     `json:"eventId" form:"eventId" gorm:"column:event_id;comment:事件关联ID;size:32;"`                                            //账号ID
 	EventType   int        `json:"eventType" form:"eventType" gorm:"column:event_type;comment:事件类型（1-商铺关联，2-付码关联）;size:2;"`                          //账号ID
 	AcId        string     `json:"acId" form:"acId" gorm:"column:ac_id;comment:账号ID;size:32;"`                                                       //账号ID
-	AcAccount   string     `json:"AcAccount" form:"AcAccount" gorm:"column:ac_account;comment:通道账号;size:128;"`                                       //通道账号
+	AcAccount   string     `json:"acAccount" form:"acAccount" gorm:"column:ac_account;comment:通道账号;size:128;"`                                       //通道账号
 	ChannelCode string     `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道编码;size:32;"`                                  //通道编码
 	PlatId      string     `json:"platId" form:"platId" gorm:"column:plat_id;comment:平台id;size:256;"`                                                //平台id
 	PayIp       string     `json:"payIp" form:"payIp" gorm:"column:pay_ip;comment:客户ip;size:128;"`                                                   //客户ip

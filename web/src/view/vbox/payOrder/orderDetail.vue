@@ -557,6 +557,19 @@
       </div>
     </div>
 
+    <!-- 提示submit card模态框 -->
+    <div v-if="showSubmitCardModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">您已提交成功，等待客服核实</p>
+      </div>
+    </div>
+    <!-- 提示submit card err模态框 -->
+    <div v-if="showSubmitErrModal" class="modal">
+      <div class="modal-content">
+        <p style="font-size: 20px">{{ showSubmitErrInfo }}</p>
+      </div>
+    </div>
+
     <div v-show="notFoundVisible">
       <!-- 显示新的 div 的代码... -->
       <h1>订单不存在</h1>
@@ -584,7 +597,7 @@ export default {
 import {ElButton, ElMessage} from 'element-plus';
 import {onMounted, ref, onUnmounted, onBeforeUnmount, watch, watchEffect} from 'vue';
 import CountDown from 'vue-canvas-countdown';
-import {queryOrderSimple} from '@/api/payOrder';
+import {cbExt, queryOrderSimple} from '@/api/payOrder';
 import {useRoute} from 'vue-router';
 import {WarningFilled} from '@element-plus/icons-vue';
 import {formatTime} from "@/utils/format";
@@ -812,7 +825,7 @@ const payData = ref({
   order_id: '',
   resource_url: '',
   status: 0,
-  ext: 0,
+  ext: '',
 })
 
 const reqCnt = ref(0)
@@ -983,13 +996,31 @@ const closeCardVisible = () => {
 //modal提示
 // 控制是否显示模态框
 const showCopyModal = ref(false);
+const showSubmitCardModal = ref(false);
+const showSubmitErrModal = ref(false);
+const showSubmitErrInfo = ref();
 const showCardModal = ref(false);
 const submitCardInfo = async () => {
-  let c = cardNumber.value
-  let p = password.value
+  let c = String(cardNumber.value)
+  let p = String(password.value)
   if (c && p) {
     payData.value.ext = c + "_" + p
-    console.log('提交卡密', payData.value.ext)
+    const cbRes = await cbExt({...payData.value})
+    await closeCardVisible()
+    if (cbRes.code === 0){
+      showSubmitCardModal.value = true;
+      // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+      setTimeout(() => {
+        showSubmitCardModal.value = false;
+      }, 2000);
+    }else if (cbRes.code === 7){
+      showSubmitErrInfo.value = cbRes.msg;
+      showSubmitErrModal.value = true;
+      // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
+      setTimeout(() => {
+        showSubmitErrModal.value = false;
+      }, 2000);
+    }
   }else {
     await warnCardInfo();
   }

@@ -36,7 +36,9 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 	orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
 
 	cid := channelShop.Cid
-	for _, c := range channelShop.ChannelShopList {
+	for i := range channelShop.ChannelShopList {
+		// 获取当前元素的指针
+		c := &channelShop.ChannelShopList[i]
 		// 增加校验
 		if c.Money <= 0 {
 			return fmt.Errorf("传入的金额不合法")
@@ -54,6 +56,7 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		var flag bool
 		switch cid {
 		case "2001": //j3 tb
+		case "1101": //jw qb tb
 			flag = utils.ValidTBUrl(c.Address)
 			break
 		case "1001": //jd

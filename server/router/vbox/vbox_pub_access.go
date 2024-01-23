@@ -15,6 +15,7 @@ func (s *OrderRouter) InitPubAccessRouter(Router *gin.RouterGroup) {
 		orderRouter.POST("create", orderApi.CreateOrder2PayAcc)
 		orderRouter.POST("query", orderApi.QueryOrder2PayAcc)
 		orderRouter.GET("detail", orderApi.QueryOrderSimple)
+		orderRouter.POST("cbExt", orderApi.CallbackOrderExt)
 		orderRouter.POST("cb", orderApi.CallbackTestSimple)
 	}
 

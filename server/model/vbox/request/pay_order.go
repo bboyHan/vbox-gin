@@ -58,6 +58,17 @@ type CallBackReq struct {
 	OrderId     string `json:"orderId" form:"orderId" url:"orderId"`
 }
 
+// CallBackExtReq 结构体
+type CallBackExtReq struct {
+	ChannelCode string `json:"channel_code" form:"channel_code" url:"channel_code"`
+	Ext         string `json:"ext" form:"ext" url:"ext"`
+	PayIp       string `json:"pay_ip" form:"pay_ip" url:"pay_ip"`
+	UserAgent   string `json:"user_agent" form:"user_agent" url:"user_agent"`
+	PayRegion   string `json:"pay_region" form:"pay_region" url:"pay_region"`
+	PayDevice   string `json:"pay_device" form:"pay_device" url:"pay_device"`
+	OrderId     string `json:"order_id" form:"order_id" url:"order_id"`
+}
+
 type OrdersDtData struct {
 	ChannelCode string `json:"channelCode" form:"channelCode"`
 	Dt          string `json:"dt" form:"dt"`

@@ -184,7 +184,9 @@ func OrderWaitingTask() {
 						v.Obj.CreatedBy = vca.CreatedBy
 						v.Obj.AcId = vca.AcId
 						v.Obj.AcAccount = vca.AcAccount
-						v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
+						if cid != "1101" {
+							v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
+						}
 						v.Ctx.UserID = int(vca.CreatedBy)
 
 						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
@@ -952,6 +954,7 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 	var payUrl string
 	switch cid {
 	case "2001": //j3 tb
+	case "1101": //jw qb tb
 		payUrl, err = utils.HandleTBUrl(shop.Address)
 		if err != nil {
 			return "", err
@@ -1046,6 +1049,8 @@ func HandleEventType(chanID string) (int, error) {
 	chanCode, _ := strconv.Atoi(chanID)
 	if chanCode >= 1000 && chanCode <= 1099 {
 		return 1, nil
+	} else if chanCode >= 1100 && chanCode <= 1199 {
+		return 1, nil
 	} else if chanCode >= 2000 && chanCode <= 2099 {
 		return 1, nil
 	} else if chanCode >= 3000 && chanCode <= 3099 {
@@ -1059,6 +1064,9 @@ func HandleExpTime2Product(chanID string) (time.Duration, error) {
 
 	if global.TxContains(chanID) {
 		key = "1000"
+		if chanID == "1101" {
+			key = "1100"
+		}
 	} else if global.J3Contains(chanID) {
 		key = "2000"
 	} else if global.PcContains(chanID) {

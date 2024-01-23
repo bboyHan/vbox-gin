@@ -113,10 +113,13 @@ export const formatPayCodeColor = (status) => {
 }
 
 // 订单付款样式
-export const formatPayedColor = (status, acId) => {
+export const formatPayedColor = (status, acId, platID) => {
     if (status === 2 && acId === "") { //匹配账号未支付
         return '#a64406'
     } else if (status === 2 && acId !== "") { //未匹配账号的
+        if (platID !== "") {
+            return '#a8057a'
+        }
         return '#606266'
     } else if (status === 1) {
         return '#05811d'
@@ -129,9 +132,12 @@ export const formatPayedColor = (status, acId) => {
     }
 }
 
-export const formatPayed = (status, acId) => {
+export const formatPayed = (status, acId, platID) => {
     console.log(status + " --- " + acId)
     if (status === 2 && acId !== "") {
+        if (platID !== "") {
+            return '待核对'
+        }
         return '待支付'
     } else if (status === 2 && acId === "") {
         return '待取码'
@@ -234,7 +240,7 @@ export const formatUtcTimestamp = (utcTimestamp) => {
         const date = new Date(0) // 创建一个时间对象，并将其初始化为 1970 年 1 月 1 日 00:00:00 UTC 时间
         date.setUTCSeconds(utcTimestamp) // 将时间戳设置为 UTC 时间
         return formatTimeToStr(date, 'yyyy-MM-dd hh:mm:ss')
-    } else if (utcTimestamp === "0"){
+    } else if (utcTimestamp === "0") {
         return '-'
     } else {
         return '-'

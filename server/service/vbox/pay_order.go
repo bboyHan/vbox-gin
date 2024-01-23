@@ -11,6 +11,7 @@ import (
 	vboxRep "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
@@ -24,6 +25,73 @@ import (
 )
 
 type PayOrderService struct {
+}
+
+// CallbackOrderExt 客户端回补订单信息
+//
+//	p := &vboxReq.CallBackExtReq{
+//			OrderId:        "123",
+//			Ext:        "123",
+//		}
+func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq) (rep *vboxRep.OrderSimpleRes, err error) {
+	var order vbox.PayOrder
+	// 校验传入卡密合法性
+	if vpo.ChannelCode != "1101" {
+		return nil, errors.New("该订单类型，不支持卡密提交，请联系管理员")
+	}
+	if _, errX := product.ParseJWCardRecord(vpo.Ext); errX != nil {
+		return nil, errX
+	}
+
+	var jsonString []byte
+	key := fmt.Sprintf(global.PayOrderKey, vpo.OrderId)
+	rdRes, err := global.GVA_REDIS.Get(context.Background(), key).Bytes()
+	if err == redis.Nil { // redis中还没有的情况，查一下库，并且去匹配设备信息
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).First(&order).Error
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		fmt.Println("error:", err)
+	} else {
+		//fmt.Println("从缓存里拿result:", rdRes)
+		err = json.Unmarshal(rdRes, &order)
+	}
+
+	if order.PlatId == "" { //
+		global.GVA_LOG.Info("传入卡密", zap.Any("ext", vpo.Ext))
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).Update("plat_id", vpo.Ext).Error
+		if err != nil {
+			return nil, err
+		}
+		order.PlatId = vpo.Ext
+		//查出来了，设置一下redis
+		jsonString, err = json.Marshal(order)
+		if err != nil {
+			return nil, err
+		}
+		global.GVA_REDIS.Set(context.Background(), key, jsonString, 2*time.Second)
+	} else {
+		return nil, errors.New("该订单已提交过卡密，无法重复提交")
+	}
+
+	var ext string
+	if order.PlatId != "" {
+		ext = "_"
+	}
+
+	rep = &vboxRep.OrderSimpleRes{
+		OrderId:     order.OrderId,
+		Account:     order.AcAccount,
+		Money:       order.Money,
+		ResourceUrl: order.ResourceUrl,
+		Status:      order.OrderStatus,
+		ExpTime:     *order.ExpTime,
+		Ext:         ext,
+		ChannelCode: order.ChannelCode,
+	}
+
+	return rep, err
 }
 
 // QueryOrderSimple 查询QueryOrderSimple
@@ -108,6 +176,11 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 		err = json.Unmarshal(rdRes, &order)
 	}
 
+	var ext string
+	if order.PlatId != "" {
+		ext = "_"
+	}
+
 	rep = &vboxRep.OrderSimpleRes{
 		OrderId:     order.OrderId,
 		Account:     order.AcAccount,
@@ -115,6 +188,7 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 		ResourceUrl: order.ResourceUrl,
 		Status:      order.OrderStatus,
 		ExpTime:     *order.ExpTime,
+		Ext:         ext,
 		ChannelCode: order.ChannelCode,
 	}
 
@@ -773,6 +847,9 @@ func (vpoService *PayOrderService) HandleExpTime2Product(chanID string) (time.Du
 
 	if global.TxContains(chanID) {
 		key = "1000"
+		if chanID == "1101" {
+			key = "1100"
+		}
 	} else if global.J3Contains(chanID) {
 		key = "2000"
 	} else if global.PcContains(chanID) {
@@ -880,6 +957,7 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 	var payUrl string
 	switch cid {
 	case "2001": //j3 tb
+	case "1101": //jw qb tb
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleTBUrl(shop.Address)
 		if err != nil {
@@ -1308,6 +1386,8 @@ func (vpoService *PayOrderService) HandleEventType(chanID string) (int, error) {
 
 	chanCode, _ := strconv.Atoi(chanID)
 	if chanCode >= 1000 && chanCode <= 1099 {
+		return 1, nil
+	} else if chanCode >= 1100 && chanCode <= 1199 {
 		return 1, nil
 	} else if chanCode >= 2000 && chanCode <= 2099 {
 		return 1, nil

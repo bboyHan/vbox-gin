@@ -159,6 +159,37 @@ func (vpoApi *PayOrderApi) QueryOrderSimple(c *gin.Context) {
 	}
 }
 
+// CallbackOrderExt 客户端回补订单信息
+// @Tags VboxPayOrder
+// @Summary 查询QueryOrderSimple
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.VboxPayOrder true "查询QueryOrderSimple"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /base/cbExt [post]
+func (vpoApi *PayOrderApi) CallbackOrderExt(c *gin.Context) {
+	var vpo vboxReq.CallBackExtReq
+	err := c.ShouldBind(&vpo) // 可接收 from - json - xml
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	vpo.PayIp = c.ClientIP()
+	vpo.UserAgent = c.Request.UserAgent()
+	vpo.PayRegion, _ = utils.SearchIp2Region(vpo.PayIp)
+	vpo.PayDevice = utils.GetDeviceSimpleInfo(vpo.UserAgent)
+
+	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
+	if order, err := payOrderService.CallbackOrderExt(&vpo); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithDetailed(order, "查询成功", c)
+	}
+}
+
 // CallbackOrder2PayAcc 补单
 // @Tags VboxPayOrder
 // @Summary 补单

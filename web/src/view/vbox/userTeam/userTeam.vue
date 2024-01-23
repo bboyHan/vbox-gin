@@ -186,17 +186,15 @@
         <el-row :gutter="8">
           <el-col :span="12">
             <el-form-item label="（昨日）" prop="x5">
-              转账: {{ costRechargeForm.x5 }} / 充值: {{ costRechargeForm.x6 }}
+              转账: {{ costRechargeForm.x6 }} / 充值: {{ costRechargeForm.x5 }}
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="（今日）" prop="x6">
-              转账: {{ costRechargeForm.x7 }} / 充值: {{ costRechargeForm.x8 }}
+              转账: {{ costRechargeForm.x8 }} / 充值: {{ costRechargeForm.x7 }}
             </el-form-item>
           </el-col>
         </el-row>
-
-
       </el-form>
     </el-dialog>
 

@@ -308,6 +308,82 @@
       </template>
     </el-dialog>
 
+    <!--  创建 1100 -->
+    <el-dialog v-model="dialog1100FormVisible" :before-close="close1100Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="产码方式" prop="type">
+              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                <el-radio label="1">
+                  <template #default><span>引导</span></template>
+                </el-radio>
+                <el-radio label="2">
+                  <template #default><span>预产</span></template>
+                </el-radio>
+                <el-radio label="3">
+                  <template #default><span>原生</span></template>
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账号"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="报文" prop="token">
+          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="6"></el-col>
+          <el-col :span="12">
+            <warning-bar title="注：默认0，则无限额控制"/>
+          </el-col>
+          <el-col :span="6"></el-col>
+          <el-col :span="8">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="笔数限额" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态开关" prop="status">
+          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                     inactive-text="关闭"></el-switch>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="close1100Dialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!--  创建 2000 -->
     <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle"
                destroy-on-close>
@@ -941,8 +1017,8 @@
           <el-table-column align="center" label="金额" prop="money" width="120"/>
           <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
             <template #default="scope">
-              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-                {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId, scope.row.platId)">
+                {{ formatPayed(scope.row.orderStatus, scope.row.acId, scope.row.platId) }}
               </el-button>
             </template>
           </el-table-column>
@@ -999,8 +1075,8 @@
           <el-table-column align="left" label="金额" prop="money" width="120"/>
           <el-table-column align="left" label="订单状态" prop="orderStatus" width="120">
             <template #default="scope">
-              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId)">
-                {{ formatPayed(scope.row.orderStatus, scope.row.acId) }}
+              <el-button style="width: 90px" :color="formatPayedColor(scope.row.orderStatus, scope.row.acId, scope.row.platId)">
+                {{ formatPayed(scope.row.orderStatus, scope.row.acId, scope.row.platId) }}
               </el-button>
             </template>
           </el-table-column>
@@ -1186,6 +1262,10 @@ const queryAccOrderHisFunc = async (row, cid) => {
       orderHisTableData.value = res.data.list.WaterList
     }
   } else if (cid >= 1000 && cid <= 1099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  }else if (cid >= 1100 && cid <= 1199) {
     if (res.code === 0) {
       orderHisTableData.value = res.data.list.WaterList
     }
@@ -1711,6 +1791,7 @@ const typeTitle = ref('')
 // ca 更新
 const dialogUpd3000FormVisible = ref(false)
 const dialogUpd2000FormVisible = ref(false)
+const dialogUpd1100FormVisible = ref(false)
 const dialogUpd1000FormVisible = ref(false)
 const updateChannelAccountFunc = async (row) => {
   const res = await findChannelAccount({ID: row.ID})
@@ -1725,6 +1806,8 @@ const updateChannelAccountFunc = async (row) => {
       dialogUpd2000FormVisible.value = true
     } else if (cid >= 1000 && cid <= 1099) {
       dialogUpd1000FormVisible.value = true
+    }else if (cid >= 1100 && cid <= 1199) {
+      dialogUpd1100FormVisible.value = true
     }
   }
 }
@@ -1746,6 +1829,7 @@ const deleteChannelAccountFunc = async (row) => {
 
 // 弹窗控制标记
 const dialog1000FormVisible = ref(false)
+const dialog1100FormVisible = ref(false)
 const dialog2000FormVisible = ref(false)
 const dialog3000FormVisible = ref(false)
 
@@ -1854,6 +1938,23 @@ const close1000Dialog = () => {
   }
 }
 // 关闭弹窗
+const close1100Dialog = () => {
+  dialog1100FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
+// 关闭弹窗
 const close2000Dialog = () => {
   dialog2000FormVisible.value = false
   formData.value = {
@@ -1936,6 +2037,22 @@ const closeUpd1000Dialog = () => {
     uid: 0,
   }
 }
+const closeUpd1100Dialog = () => {
+  dialogUpd1100FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    uid: 0,
+  }
+}
 const closeUpdTokenDialog = () => {
   dialogTokenFormVisible.value = false
   formData.value = {
@@ -1955,6 +2072,7 @@ const closeUpdTokenDialog = () => {
 const closeDialog = () => {
   dialogTokenFormVisible.value = false
   dialog1000FormVisible.value = false
+  dialog1100FormVisible.value = false
   dialog2000FormVisible.value = false
   dialog3000FormVisible.value = false
   dialogUpd1000FormVisible.value = false
@@ -2177,6 +2295,8 @@ const openOrderHisShow = async (row) => {
   if (cid >= 3000 && cid <= 3099) {
     orderHisVisible.value = true;
   } else if (cid >= 1000 && cid <= 1099) {
+    orderHisVisible.value = true;
+  } else if (cid >= 1100 && cid <= 1199) {
     orderHisVisible.value = true;
   } else if (cid >= 2000 && cid <= 2099) {
     orderHis2000Visible.value = true;
@@ -2582,6 +2702,8 @@ const enterChanDialog = async () => {
       dialog3000FormVisible.value = true
     } else if (channelCode >= 1000 && channelCode < 1099) {
       dialog1000FormVisible.value = true
+    }  else if (channelCode >= 1100 && channelCode < 1199) {
+      dialog1100FormVisible.value = true
     } else if (channelCode >= 2000 && channelCode < 2099) {
       dialog2000FormVisible.value = true
     }

@@ -32,6 +32,9 @@ func ParseUrlContent(content string) (url string, err error) {
 
 	// 输出匹配结果
 	global.GVA_LOG.Info("解析url结果", zap.Any("url", url))
+	if url != "" {
+		return url, nil
+	}
 	return url, err
 
 }
