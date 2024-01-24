@@ -191,7 +191,7 @@
         </el-col>
 
         <el-col :span="8" :xs="24">
-          <CenterCard title="两天前" :custom-style="order1CustomStyle">
+          <CenterCard title="今日" :custom-style="order1CustomStyle">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -257,7 +257,7 @@
         </el-col>
 
         <el-col :span="8" :xs="24">
-          <CenterCard title="今日" :custom-style="order3CustomStyle">
+          <CenterCard title="两天前" :custom-style="order3CustomStyle">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -313,20 +313,20 @@
           <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户今日成单</h2></div>
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近1小时实时成单(金额)">
+          <CenterCard title="当日实时成单(金额)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
               <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
               <!--                          interval="5m" keyword="sum" format="HH:mm" unit="元"/>-->
-              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="元"/>
+              <StackedLineCharts :chart-data="todayIncomeSum" :uid=dialogUid unit="元"/>
             </template>
           </CenterCard>
           <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近1小时实时成单(数量)">
+          <CenterCard title="当日实时成单(数量)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -342,7 +342,7 @@
           <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个通道各个账户今日成单</h2></div>
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近1小时实时成单(金额)">
+          <CenterCard title="当日实时成单(金额)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -355,7 +355,7 @@
           <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近1小时实时成单(数量)">
+          <CenterCard title="当日实时成单(数量)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -372,7 +372,7 @@
           <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户近一周成单</h2></div>
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近一个月成单(金额)">
+          <CenterCard title="近一周成单(金额)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -385,7 +385,7 @@
           <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
         </el-col>
         <el-col :span="12" :xs="24">
-          <CenterCard title="近一个月成单(数量)">
+          <CenterCard title="近一周成单(数量)">
             <template #action>
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
@@ -524,9 +524,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import {calculatePercentage, formatMoney} from '@/utils/format';
 import {getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
+import {
+  getBdaChaccIndexToDayIncome
+} from "@/api/bdaChaccIndexD";
 
 import CenterCard from '../centerCard.vue'
 import lineCharts from '../lineCharts.vue'
+import StackedLineCharts from '../stackedLineCharts.vue'
 
 defineOptions({
     name: 'BdaChaccIndexD'
@@ -712,7 +716,7 @@ const deleteBdaChaccIndexDFunc = async (row) => {
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
-
+const dialogUid = ref(0)
 
 // 查看详情控制标记
 const detailShow = ref(false)
@@ -722,6 +726,7 @@ const detailShow = ref(false)
 const openDetailShow = () => {
   detailShow.value = true
   console.log('row==>' + JSON.stringify(formData.value))
+  dialogUid.value = formData.value.uid
   getDetails(formData)
 }
 
@@ -778,6 +783,8 @@ const getDetails = async (row) => {
     }
 
   }
+
+  getAccIncomeSumData(row)
 }
 
 
@@ -905,6 +912,16 @@ const getAccShowTableData = async() => {
 let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: 3000, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
 nearOneHourSum.value = nearOneHourSumResult
 }
+
+
+const todayIncomeSum = ref()
+const getAccIncomeSumData = async(row) => {
+  console.log('getAccIncomeSumData=',row.value)
+  let resData = await getBdaChaccIndexToDayIncome({uid : row.value.uid})
+  console.log('getAccIncomeSumData:', JSON.stringify(resData))
+  todayIncomeSum.value = resData
+}
+
 
 const order1CustomStyle = ref({
   background: 'linear-gradient(to right, #be2eba, #5b2ecc)',

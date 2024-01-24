@@ -8,3 +8,10 @@ type ChaAccUserCardResp struct {
 	OkIncome   uint   `json:"okIncome" form:"okIncome"`     //
 	Dt         string `json:"dt" form:"dt"`                 //
 }
+
+type UserDayIncomeLineChart struct {
+	Uid      int    `json:"uid" form:"uid"`
+	AcID     string `json:"acID" form:"AcID"`
+	OkIncome uint   `json:"okIncome" form:"okIncome"`
+	StepTime string `json:"stepTime" form:"stepTime"`
+}

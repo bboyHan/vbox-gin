@@ -181,7 +181,7 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDList(c *gin.Context
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /bdaChaccIndexD/CronVboxBdaChaccIndexDByHand [get]
 func (bdaChaccIndexDApi *BdaChaccIndexDApi) CronVboxBdaChaccIndexDByHand(c *gin.Context) {
-	var pageInfo vboxReq.BdaChIndexDSearch
+	var pageInfo vboxReq.BdaChaccIndexDSearch
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -205,7 +205,7 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) CronVboxBdaChaccIndexDByHand(c *gin.
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /bdaChaccIndexD/getBdaChaccIndexDUesrOverview [get]
 func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDUesrOverview(c *gin.Context) {
-	var res vboxReq.BdaChIndexDSearch
+	var res vboxReq.BdaChaccIndexDSearch
 	err := c.ShouldBindQuery(&res)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -220,5 +220,30 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDUesrOverview(c *gin
 			List:  list,
 			Total: total,
 		}, "获取成功", c)
+	}
+}
+
+// GetBdaChaccIndexToDayIncome 获取用户一天的实时账户收入
+// @Tags BdaChaccIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.BdaChaccIndexDSearch true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChaccIndexD/getBdaChaccIndexToDayIncome [get]
+func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexToDayIncome(c *gin.Context) {
+	var res vboxReq.BdaChaccIndexDSearch
+	err := c.ShouldBindQuery(&res)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	fmt.Println(res.Uid)
+	if echartsData, err := bdaChaccIndexDService.GetBdaChaccIndexToDayIncome(res); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"chartData": echartsData}, c)
 	}
 }
