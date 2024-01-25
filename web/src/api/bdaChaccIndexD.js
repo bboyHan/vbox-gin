@@ -130,3 +130,20 @@ export const getBdaChaccIndexToDayIncome = (params) => {
     params
   })
 }
+
+
+// @Tags BdaChaccIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChaccIndexD/getBdaChaccIndexToDayInOkCnt [get]
+export const getBdaChaccIndexToDayInOkCnt = (params) => {
+  return service({
+    url: '/bdaChaccIndexD/getBdaChaccIndexToDayInOkCnt',
+    method: 'get',
+    params
+  })
+}

@@ -29,9 +29,9 @@ const props = defineProps({
 
 let yData = []
 let xData = []
-const legendData = ref([]);
-const seriesData = ref([]);
-const xAxisData = ref([]);
+let legendData = [];
+let seriesData = [];
+let xAxisData = [];
 
 // let xData = get5MinNearlyOneHour()
 // let yData = [8710, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551,871, 4494, 1470, 4968, 53, 99, 7615, 3116, 9451, 2149, 8873, 6551]
@@ -57,7 +57,7 @@ const orderView = async () => {
   // let res = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: cid, startTime: startTime, endTime: endTime, interval:  interval, keyword: keyword, format: format})
   // console.log(res)
   let res = props.chartData
-  // console.log('getAccIncomeSumData lineCharts res:', JSON.stringify(res))
+  console.log('getAccIncomeSumData lineCharts res:', JSON.stringify(res))
   if (res.code === 0) {
     let resdata = res.data.chartData
     console.log('getAccIncomeSumData ---->:', JSON.stringify(resdata))
@@ -71,12 +71,12 @@ const orderView = async () => {
   //       xData.push(formatTimeStr2Date(resdata[i].x, format))
   //     }
   //   }
-    legendData.value = resdata.legendData
-    console.log('getAccIncomeSumData legendData:', legendData.value)
-    xAxisData.value = resdata.xAxisData
-    console.log('getAccIncomeSumData xAxisData:', xAxisData.value)
-    seriesData.value = resdata.seriesData
-    console.log('getAccIncomeSumData seriesData:', seriesData.value)
+    legendData = resdata.legendData
+    console.log('getAccIncomeSumData legendData:', legendData)
+    xAxisData = resdata.xAxisData
+    console.log('getAccIncomeSumData xAxisData:', xAxisData)
+    seriesData = resdata.seriesData
+    console.log('getAccIncomeSumData seriesData:', seriesData)
   }
   // // console.log('xData:', xData, 'yData', yData)
   initChart()
@@ -84,13 +84,13 @@ const orderView = async () => {
 orderView()
 
 
-const chart = ref(null)
-const echart = ref(null)
+let chart = null
+let echart = null
 const initChart = () => {
-  chart.value = echarts.init(echart.value)
+  chart = echarts.init(echart)
   setOptions()
   document.addEventListener('resize', () => {
-    chart.value?.resize()
+    chart?.resize()
   })
 }
 
@@ -106,11 +106,13 @@ const generateEChartsOptions = (legendData, xAxisData, seriesData) => {
     },
     legend: {
       data: legendData,
-      type: 'scroll'
+      type: 'scroll',
+    orient: 'vertical',
+      right: 10,
     },
     grid: {
       left: '3%',
-      right: '4%',
+      right: '17%',
       bottom: '7%',
       containLabel: true
     },
@@ -140,10 +142,10 @@ const generateEChartsOptions = (legendData, xAxisData, seriesData) => {
 //   { "name":"49971201","type":"line","stack":"Total","data": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] }
 // ];
 
-const options = generateEChartsOptions(legendData.value, xAxisData.value, seriesData.value);
+const options = generateEChartsOptions(legendData, xAxisData, seriesData);
 
 const setOptions = () => {
-  chart.value.setOption(options)
+  chart.setOption(options)
 }
 
 onMounted(() => {
@@ -156,17 +158,17 @@ onMounted(() => {
   watch(props, (newVal, oldVal) => {
     console.log("发生了。。", newVal, oldVal)
     orderView()
-    chart.value.resize()
+    chart.resize()
     console.log("resize了")
   })
 })
 
 onUnmounted(() => {
-  if (!chart.value) {
+  if (!chart) {
     return
   }
-  chart.value.dispose()
-  chart.value = null
+  chart.dispose()
+  chart = null
 })
 </script>
 <style lang="scss" scoped>
