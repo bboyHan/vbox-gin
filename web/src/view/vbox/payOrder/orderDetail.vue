@@ -42,7 +42,10 @@
                 <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
               </el-col>
               <el-col>
-                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+<!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
+              </el-col>
+              <el-col>
+                <p v-if="Number(payData.channel_code) === 1003" style="color: red;margin-right: 20px;margin-left: 20px">充值时必须滑动选择【王者荣耀】粘贴账号付款即可到账！</p>
               </el-col>
               <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
@@ -99,7 +102,12 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <div v-if="Number(payData.channel_code) === 1003">
+                <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">② 点击付款,右滑选"王者荣耀"</button>
+              </div>
+              <div v-else>
+                <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              </div>
             </el-col>
           </el-row>
         </div>
@@ -437,7 +445,12 @@
                     <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                   </div>
                   <div v-else>
-                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                    <div v-if="Number(payData.channel_code) === 1003">
+                      <button class="btn-copy yd_p_button" @click="openPay" style="font-size: 16px">点此支付,右滑选"王者荣耀"</button>
+                    </div>
+                    <div v-else>
+                      <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                    </div>
                   </div>
                 </el-col>
               </el-row>
@@ -476,6 +489,7 @@
         </template>
       </el-dialog>
 
+<!--   引导步骤2000   -->
       <el-dialog width="360px" v-model="dialogYd2000Visible" :draggable="true" :before-close="closeYdDialog"
                  :style="backgroundYdImageStyle"
                  top="5vh" destroy-on-close>
@@ -542,6 +556,66 @@
         </template>
       </el-dialog>
     </div>
+
+    <!--   步骤指导4000   -->
+    <el-dialog width="360px" v-model="dialogYd4000Visible" :draggable="true" :before-close="closeYdDialog"
+               :style="backgroundYdImageStyle"
+               top="5vh" destroy-on-close>
+      <div style="padding: 0; margin: -20px 0 0;">
+        <div>
+          <div v-if="Number(payData.channel_code) === 4001">
+            <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_sdo_tb.png">
+          </div>
+        </div>
+        <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                </div>
+                <div class="medicine-bag">
+                  <span>{{ payData.account }}</span>
+                </div>
+                <div class="copy-tip">
+                  <span>长按框内</span>
+                  <span class="jtone"></span>
+                  <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
+                  <span class="jtthree"></span>
+                  <span>打开跳转</span>
+                </div>
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <div class="yd_p_content_button_qr">
+            <el-row :gutter="12">
+              <el-col>
+                <div v-if="readInfoVisible">
+                  <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
 
     <!-- 提示card模态框 -->
     <div v-if="showCardModal" class="modal">
@@ -729,12 +803,14 @@ const dialogYd1000Visible = ref(false)
 const dialogYd1100Visible = ref(false)
 const dialogYd2000Visible = ref(false)
 const dialogYd3000Visible = ref(false)
+const dialogYd4000Visible = ref(false)
 
 const closeYdDialog = async () => {
   dialogYd1000Visible.value = false
   dialogYd1100Visible.value = false
   dialogYd2000Visible.value = false
   dialogYd3000Visible.value = false
+  dialogYd4000Visible.value = false
 }
 
 const openYdVisible = async () => {
@@ -762,6 +838,13 @@ const openYdVisible = async () => {
       readInfoVisible.value = false
     }, 3000)
     dialogYd1000Visible.value = true
+  }else if (cid >= 4000 && cid < 4099) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd4000Visible.value = true
   } else {
 
   }

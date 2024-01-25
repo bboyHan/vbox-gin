@@ -957,41 +957,47 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 	var payUrl string
 	switch cid {
 	case "2001": //j3 tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "4001": //sdo tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
 	case "1101": //jw qb tb
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleTBUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
-		break
 	case "1001": //jd
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleJDUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
-		break
 	case "1002": //jd
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleDYUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
-		break
 	case "1003": //jym
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleAlipayUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
-		break
 	case "1004": //zfb
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleAlipayUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
-		break
 	default:
 		payUrl = shop.Address
 	}

@@ -34,9 +34,9 @@ func ParseUrlContent(content string) (url string, err error) {
 	global.GVA_LOG.Info("解析url结果", zap.Any("url", url))
 	if url != "" {
 		return url, nil
+	} else {
+		return "", fmt.Errorf("解析url失败")
 	}
-	return url, err
-
 }
 
 // ValidAlipayUrl 查找Alipay url合法性

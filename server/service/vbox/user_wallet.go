@@ -70,7 +70,6 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 
 			return nil
 		})
-		break
 	// Type: 2 划转 -> 入库（1条-本用户扣减，1条-转用户加分）
 	case global.WalletTransferType:
 
@@ -115,9 +114,7 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 			}
 			return nil
 		})
-		break
 	case global.WalletOrderType: // 2- 订单积分扣费
-		break
 	default:
 		return errors.New("不支持的充值类型")
 	}

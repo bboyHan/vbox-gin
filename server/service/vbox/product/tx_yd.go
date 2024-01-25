@@ -287,8 +287,8 @@ func Records(rawURL string, openID string, openKey string, period time.Duration)
 	return &records
 }
 
-// Classifier 计算不同类型 - 不同金额 - 记录集合
-func Classifier(payments []product.Payment) map[string]map[string][]string {
+// ClassifierTx 计算不同类型 - 不同金额 - 记录集合
+func ClassifierTx(payments []product.Payment) map[string]map[string][]string {
 	// 使用map存储不同充值类型下的支付金额和充值账号ID集合（去重）
 	paymentsByTypeAndAmount := make(map[string]map[string][]string)
 	for _, payment := range payments {

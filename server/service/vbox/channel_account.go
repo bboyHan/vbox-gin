@@ -164,6 +164,8 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		var channelCode string
 		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
+		} else if global.SdoContains(vca.Cid) {
+			channelCode = "sdo_proxy"
 		} else if global.J3Contains(vca.Cid) {
 			channelCode = "j3_proxy"
 		}
@@ -214,18 +216,8 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		var accRecords []j3.J3AccountRecord
 		for _, mem := range list {
 			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
-			// 映射到J3AccountRecord 中
 			keyMem := strings.Split(mem, "_")
 			money, _ := strconv.Atoi(keyMem[2])
-			//nowTimeStr := keyMem[3]
-			//checkTimeStr := keyMem[5]
-			//var nowTime, checkTime time.Time
-			//nowUnix, _ := strconv.ParseInt(nowTimeStr, 10, 64)
-			//if checkTimeStr != "0" {
-			//	checkUnix, _ := strconv.ParseInt(checkTimeStr, 10, 64)
-			//	checkTime = time.Unix(checkUnix, 0)
-			//}
-			//nowTime = time.Unix(nowUnix, 0)
 
 			accRecord := j3.J3AccountRecord{
 				OrderID:    keyMem[0],
@@ -244,6 +236,12 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			List:          accRecords,
 		}
 		return ret, nil
+	} else if global.SdoContains(vca.Cid) {
+		records, err := product.QrySdoRecords(*vca)
+		if err != nil {
+			return nil, err
+		}
+		return records, nil
 	} else if global.PcContains(vca.Cid) {
 		openID, openKey, err := product.Secret(vca.Token)
 		if err != nil {
@@ -278,6 +276,11 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		_, _, errX := product.Secret(token)
 		if errX != nil {
 			return errX
+		}
+	} else if global.SdoContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
 		}
 	} else if global.J3Contains(vca.Cid) {
 		parsedURL, errX := url.Parse(token)

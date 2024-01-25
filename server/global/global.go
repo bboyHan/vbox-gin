@@ -49,11 +49,13 @@ const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
 
-	ChanOrgAccFilter       = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
-	ChanOrgQBAccZSet       = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号
-	ChanOrgQBAccZSetPrefix = "vb_acc_qb_set:org_%d:chan_%s:money_*"     // 同组织通道下可用账号
-	ChanOrgJ3AccZSet       = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
-	ChanOrgShopAddrZSet    = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
+	ChanOrgAccFilter        = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
+	ChanOrgQBAccZSet        = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号
+	ChanOrgSdoAccZSet       = "vb_acc_sdo_set:org_%d:chan_%s:money_%v"   // 同组织通道下可用账号
+	ChanOrgQBAccZSetPrefix  = "vb_acc_qb_set:org_%d:chan_%s:money_*"     // 同组织通道下可用账号
+	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
+	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
+	ChanOrgShopAddrZSet     = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
 	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
@@ -68,14 +70,16 @@ const (
 	PcAccWaiting     = "vb_acc_waiting_pc:acid_%s"  // 预产类-等待开启的账户(冷却中)
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
-	YdQBAccWaiting = "vb_acc_qb_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
+	YdQBAccWaiting  = "vb_acc_qb_waiting_yd:acid_%s:money_%v"  // 引导类-等待开启的账户(冷却中)
+	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
 )
 
 const (
-	ProductRecordQBPrefix = "product_record:qb:proxy" // QB查询
+	ProductRecordQBPrefix  = "product_record:qb:proxy"  // QB查询
+	ProductRecordSdoPrefix = "product_record:sdo:proxy" // sdo 查询
 )
 
 const (

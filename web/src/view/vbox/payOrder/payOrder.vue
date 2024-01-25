@@ -116,16 +116,7 @@
       </el-table>
 
       <!--   详情版   -->
-      <el-table
-          v-else
-          ref="multipleTable"
-          style="width: 100%"
-          tooltip-effect="dark"
-          :data="tableData"
-          row-key="ID"
-          border
-          @selection-change="handleSelectionChange"
-      >
+      <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID" border @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
         <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
         <el-table-column align="center" label="账号ID" prop="acId" width="180">

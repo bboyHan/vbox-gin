@@ -15,6 +15,7 @@ import (
 	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"go.uber.org/zap"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -74,27 +75,43 @@ func OrderCallbackTask() {
 				if err != nil {
 					global.GVA_LOG.Info("MqOrder Callback Task..." + err.Error())
 				}
-				global.GVA_LOG.Info("收到一条需要进行发起回调的订单消息", zap.Any("order ID", v.Obj.OrderId))
+				orderId := v.Obj.OrderId
+				global.GVA_LOG.Info("收到一条需要进行发起回调的订单消息", zap.Any("order ID", orderId))
 
 				//1. 筛选匹配是哪个产品
 
+				if err != nil {
+					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", orderId), zap.Error(err))
+
+					_ = msg.Reject(false)
+					continue
+				}
+
 				//1.0 核查商户
 				var vpa vbox.PayAccount
-				var count int64
-				count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
-				if count == 0 {
-					if err != nil {
-						global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+				if strings.Contains(v.Obj.PAccount, "TEST") {
+					global.GVA_LOG.Info("测试单，商户检测跳过", zap.Any("入参商户", v.Obj.PAccount))
+					vpa = vbox.PayAccount{
+						PAccount: v.Obj.PAccount,
+						Uid:      v.Obj.CreatedBy,
 					}
-					global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
-
-					err = global.GVA_DB.Table("vbox_pay_account").
-						Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
-					jsonStr, _ := json.Marshal(vpa)
-					global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
 				} else {
-					jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
-					err = json.Unmarshal(jsonStr, &vpa)
+					var count int64
+					count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Result()
+					if count == 0 {
+						if err != nil {
+							global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+						}
+						global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", v.Obj.PAccount))
+
+						err = global.GVA_DB.Table("vbox_pay_account").
+							Where("p_account = ?", v.Obj.PAccount).First(&vpa).Error
+						jsonStr, _ := json.Marshal(vpa)
+						global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+v.Obj.PAccount, jsonStr, 10*time.Minute)
+					} else {
+						jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+v.Obj.PAccount).Bytes()
+						err = json.Unmarshal(jsonStr, &vpa)
+					}
 				}
 
 				notifyUrl := v.Obj.NotifyUrl
@@ -104,10 +121,10 @@ func OrderCallbackTask() {
 					"Authorization": "Bearer token",
 				}
 				var payUrl string
-				payUrl, err = HandlePayUrl2PAcc(v.Obj.OrderId)
+				payUrl, err = HandlePayUrl2PAcc(orderId)
 
 				signBody := &vboxRep.Order2PayAccountRes{
-					OrderId:   v.Obj.OrderId,
+					OrderId:   orderId,
 					Money:     v.Obj.Money,
 					Status:    1,
 					NotifyUrl: notifyUrl,
@@ -196,32 +213,34 @@ func OrderCallbackTask() {
 					}
 				}
 
-				if err != nil {
-					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(err))
-
-					_ = msg.Reject(false)
-					continue
-				}
-
 				// 4.入库wallet
 				var c int64
-				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&c)
+				global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", orderId).Count(&c)
 
 				if c == 0 {
 					wallet := vbox.UserWallet{
 						Uid:       v.Obj.CreatedBy,
 						CreatedBy: v.Obj.CreatedBy,
 						Type:      global.WalletOrderType,
-						EventId:   v.Obj.OrderId,
+						EventId:   orderId,
 						Recharge:  -v.Obj.Money,
-						Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.ChannelCode, v.Obj.OrderId),
+						Remark:    fmt.Sprintf(global.WalletEventOrderCost, v.Obj.Money, v.Obj.ChannelCode, orderId),
 					}
 
 					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
 				}
 
+				key := fmt.Sprintf(global.PayOrderKey, orderId)
+				var order vbox.PayOrder
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).First(&order).Error
+
+				global.GVA_LOG.Info("最新订单信息", zap.Any("orderId", orderId), zap.Any("订单状态", order.OrderStatus))
+				//查出来了，设置一下redis
+				jsonString, _ := json.Marshal(order)
+				global.GVA_REDIS.Set(context.Background(), key, jsonString, 10*time.Second)
+
 				_ = msg.Ack(true)
-				global.GVA_LOG.Info("订单完成，回调完成", zap.Any("对应单号", v.Obj.OrderId))
+				global.GVA_LOG.Info("订单完成，回调完成", zap.Any("对应单号", orderId))
 
 			}
 			wg.Done()

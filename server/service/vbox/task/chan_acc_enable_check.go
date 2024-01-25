@@ -151,7 +151,7 @@ func ChanAccEnableCheckTask() {
 							global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
 							_ = msg.Reject(false)
 							continue
-						} else { // redis查出来了，直接比一下
+						} else {                               // redis查出来了，直接比一下
 							if dailyUsed >= v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 
 								//入库操作记录
@@ -205,7 +205,7 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Reject(false)
 
 							continue
-						} else { // redis查出来了，直接比一下
+						} else {                               // redis查出来了，直接比一下
 							if totalUsed >= v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
 								//入库操作记录
@@ -414,6 +414,58 @@ func ChanAccEnableCheckTask() {
 							}
 						}
 
+					} else if global.SdoContains(cid) { //sdo
+
+						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgTmp[0], cid)
+						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
+
+						if len(moneyList) >= len(keys) {
+							for _, money := range moneyList {
+								moneyTmp := money
+								go func() {
+									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
+									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+									if ttl > 0 { //该账号正在冷却中
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+										cdTime := ttl
+										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+									} else {
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
+										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+									}
+								}()
+							}
+						} else {
+							for _, key := range keys {
+								keyTmp := key
+								go func() {
+									money := strings.Split(keyTmp, ":")[3]
+									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, money)
+									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
+									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+									if ttl > 0 { //该账号正在冷却中
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+										cdTime := ttl
+										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+									} else {
+										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
+										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+									}
+								}()
+							}
+						}
+
 					} else if global.J3Contains(cid) { //J3
 
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
@@ -559,8 +611,56 @@ func ChanAccEnableCheckTask() {
 							}
 						}
 
-					}
-					if global.J3Contains(cid) {
+					} else if global.SdoContains(cid) {
+
+						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgTmp[0], cid)
+						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
+
+						if len(moneyList) >= len(keys) {
+							for _, money := range moneyList {
+								moneyTmp := money
+								go func() {
+									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
+									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+									//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+									if ttl > 0 { //该账号正在冷却中，直接处理删掉
+										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
+										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+										global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+									} else {
+										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
+										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+									}
+								}()
+
+							}
+						} else {
+
+							for _, key := range keys {
+								keyTmp := key
+								go func() {
+									money := strings.Split(keyTmp, ":")[3]
+									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, money)
+									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
+									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+									if ttl > 0 { //该账号正在冷却中，直接处理删掉
+										//global.GVA_REDIS.Del(context.Background(), waitAccYdKey)
+										global.GVA_LOG.Info("关闭过程校验..账号在冷却中,把账号ttl key干掉", zap.Any("waitMsg", waitMsg))
+									} else {
+										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
+										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+									}
+								}()
+							}
+						}
+
+					} else if global.J3Contains(cid) {
 
 						waitAccYdKey := fmt.Sprintf(global.YdJ3AccWaiting, acId)
 						waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
@@ -576,8 +676,7 @@ func ChanAccEnableCheckTask() {
 							global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 
-					}
-					if global.PcContains(cid) { //QB直付，查一下有没有还没关闭的预产，处理掉
+					} else if global.PcContains(cid) { //QB直付，查一下有没有还没关闭的预产，处理掉
 						var pcDBList []vbox.ChannelPayCode
 						global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("ac_id = ? and code_status in (2,4)", acId).Find(&pcDBList)
 						if len(pcDBList) == 0 {

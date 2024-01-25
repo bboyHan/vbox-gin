@@ -56,21 +56,19 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		var flag bool
 		switch cid {
 		case "2001": //j3 tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "4001": //sdo tb
+			flag = utils.ValidTBUrl(c.Address)
 		case "1101": //jw qb tb
 			flag = utils.ValidTBUrl(c.Address)
-			break
 		case "1001": //jd
 			flag = utils.ValidJDUrl(c.Address)
-			break
 		case "1002": //dy
 			flag = utils.ValidDYUrl(c.Address)
-			break
 		case "1003": //jym
 			flag = utils.ValidAlipayUrl(c.Address)
-			break
 		case "1004": //zfb
 			flag = utils.ValidAlipayUrl(c.Address)
-			break
 		}
 		if !flag {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)

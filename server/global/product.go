@@ -65,6 +65,23 @@ func PcContains(target string) bool {
 	return found
 }
 
+func SdoContains(target string) bool {
+	set := map[string]bool{
+		"4000": true,
+		"4001": true,
+		"4002": true,
+		"4003": true,
+		"4004": true,
+		"4005": true,
+		"4006": true,
+		"4007": true,
+		"4008": true,
+		"4009": true,
+	}
+	_, found := set[target]
+	return found
+}
+
 func ISPContains(target string) bool {
 	//写一个函数判断是否包含 yidong|liantong|dianxin,包含返回true，反之false
 	if target == "yidong" || target == "liantong" || target == "dianxin" {
