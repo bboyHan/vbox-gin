@@ -247,3 +247,28 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexToDayIncome(c *gin.C
 		response.OkWithData(gin.H{"chartData": echartsData}, c)
 	}
 }
+
+// GetBdaChaccIndexToDayIncome 获取用户一天的实时账户收入
+// @Tags BdaChaccIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.BdaChaccIndexDSearch true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChaccIndexD/getBdaChaccIndexToDayInOkCnt [get]
+func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexToDayInOkCnt(c *gin.Context) {
+	var res vboxReq.BdaChaccIndexDSearch
+	err := c.ShouldBindQuery(&res)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	fmt.Println(res.Uid)
+	if echartsData, err := bdaChaccIndexDService.GetBdaChaccIndexToDayOkCnt(res); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"chartData": echartsData}, c)
+	}
+}
