@@ -49,7 +49,7 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
-        <el-table-column align="center" label="账号ID" prop="acId" width="180">
+        <el-table-column align="center" label="通道账号" prop="acAccount" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
               <el-button type="info" link @click="getAccDetails(scope.row)">
@@ -268,8 +268,8 @@
                :draggable="true"
                title="查看详情" destroy-on-close>
       <el-scrollbar height="550px">
-        <el-descriptions column="6" border>
-          <el-descriptions-item label="用户id" :span="6">{{ formAccData.uid }}</el-descriptions-item>
+        <el-descriptions :column="6" border>
+          <el-descriptions-item label="用户归属" :span="6">{{ formAccData.username }}</el-descriptions-item>
           <el-descriptions-item label="账户ID" :span="6">{{ formAccData.acId }}</el-descriptions-item>
           <el-descriptions-item label="账户备注" :span="6">{{ formAccData.acRemark }}</el-descriptions-item>
           <el-descriptions-item label="通道账户" :span="3">{{ formAccData.acAccount }}</el-descriptions-item>
@@ -639,7 +639,7 @@ const formAccData = ref({
   totalLimit: 0,
   status: 0,
   sysStatus: 0,
-  uid: 0,
+  username: 0,
 })
 const detailAccShow = ref(false)
 // 打开详情弹窗

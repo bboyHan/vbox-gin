@@ -65,6 +65,22 @@ export const getPayOrderList = (params) => {
 }
 
 // @Tags PayOrder
+// @Summary 获取订单acc统计展示数据
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "获取订单acc统计展示数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/getPayOrderList [get]
+export const getOrderAccOverview = (params) => {
+  return service({
+    url: '/payOrder/getOrderAccOverview',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags PayOrder
 // @Summary getPayOrderRate
 // @Security ApiKeyAuth
 // @accept application/json

@@ -27,8 +27,50 @@ import (
 type PayOrderService struct {
 }
 
-// CallbackOrderExt 客户端回补订单信息
+// QryOrderAccOverview QryOrderAccOverview
 //
+//	p := &vboxReq.CallBackExtReq{
+//			OrderId:        "123",
+//			Ext:        "123",
+//		}
+func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSearch, ids []uint) (ov []vboxRep.OrderAccRes, err error) {
+	db := global.GVA_DB.Table("vbox_pay_order").Model(&vboxRep.OrderAccRes{})
+	if info.ChannelCode != "" {
+		db = db.Where("channel_code =?", info.ChannelCode)
+	}
+	if info.AcId != "" {
+		db = db.Where("ac_id =?", info.AcId)
+	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account =?", info.AcAccount)
+	}
+	if info.ToUid != 0 {
+		err = db.Select(
+			`created_by,ac_id,ac_account,channel_code,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
+			Where("created_by = ?", info.ToUid).Group("created_by, ac_id ,channel_code").Find(&ov).Error
+		if err != nil {
+			return
+		}
+	} else {
+		err = db.Select(
+			`created_by,ac_id,ac_account,channel_code,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
+			Where("created_by in ?", ids).Group("created_by, ac_id ,channel_code").Find(&ov).Error
+		if err != nil {
+			return
+		}
+	}
+
+	return ov, nil
+}
+
 //	p := &vboxReq.CallBackExtReq{
 //			OrderId:        "123",
 //			Ext:        "123",
@@ -1111,7 +1153,7 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 		} else if info.Keyword == "cnt" {
 			err = db.Select(
 				"IFNULL(COUNT(CASE WHEN order_status = 1 THEN 1 ELSE NULL END), 0) AS x1,"+
-					"IFNULL(COUNT(*) AS, 0) x2").Where("created_by in ?", ids).Find(&ov).Error
+					"IFNULL(COUNT(*), 0) AS x2").Where("created_by in ?", ids).Find(&ov).Error
 			if err != nil {
 				return
 			}

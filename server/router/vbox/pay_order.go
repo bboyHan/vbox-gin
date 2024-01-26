@@ -16,6 +16,7 @@ func (s *PayOrderRouter) InitPayOrderRouter(Router *gin.RouterGroup) {
 		payOrderRouterWithoutRecord.GET("findPayOrder", payOrderApi.FindPayOrder)                           // 根据ID获取订单
 		payOrderRouterWithoutRecord.GET("getPayOrderList", payOrderApi.GetPayOrderList)                     // 获取订单列表
 		payOrderRouterWithoutRecord.GET("getPayOrderOverview", payOrderApi.GetPayOrderOverview)             // 获取订单统计展示数据
+		payOrderRouterWithoutRecord.GET("getOrderAccOverview", payOrderApi.QryOrderAccOverview)             // 获取订单acc统计展示数据
 		payOrderRouterWithoutRecord.GET("getPayOrderRate", payOrderApi.GetPayOrderRate)                     // 获取订单统计展示数据
 		payOrderRouterWithoutRecord.GET("getPayOrderListByDt", payOrderApi.GetPayOrderListByDt)             // 获取某天订单列表
 		payOrderRouterWithoutRecord.GET("getPayOrderListLatestHour", payOrderApi.GetPayOrderListLatestHour) // 获取最近一小时订单列表

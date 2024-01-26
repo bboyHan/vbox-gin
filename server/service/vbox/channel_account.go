@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	j3 "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
@@ -15,6 +16,7 @@ import (
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -260,9 +262,54 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 }
 
 // CountAcc 查询可用通道的 当前等待取用的账号个数
-func (vcaService *ChannelAccountService) CountAcc(ids []uint) (res []vboxResp.ChannelAccountUnused, err error) {
-	err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
-		Group("cid").Order("id desc").Find(&res).Error
+func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res []vboxResp.ChannelAccountUnused, err error) {
+	accCntKey := fmt.Sprintf(global.ChanAccOrgCountUnused, orgId)
+	cm := global.GVA_REDIS.Exists(context.Background(), accCntKey).Val()
+
+	if cm == 0 {
+		err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
+			Group("cid").Order("id desc").Find(&res).Error
+		for _, ele := range res {
+			keyMem := fmt.Sprintf("%s_%d", ele.Cid, ele.Total)
+			global.GVA_REDIS.SAdd(context.Background(), accCntKey, keyMem)
+		}
+		global.GVA_REDIS.Expire(context.Background(), accCntKey, 25*time.Second)
+	} else {
+		cidTotalList := global.GVA_REDIS.SMembers(context.Background(), accCntKey).Val()
+		for _, ele := range cidTotalList {
+			split := strings.Split(ele, "_")
+			cid := split[0]
+			total, _ := strconv.Atoi(split[1])
+			v := vboxResp.ChannelAccountUnused{
+				Cid:   cid,
+				Total: uint(total),
+			}
+			res = append(res, v)
+		}
+	}
+
+	for i := range res {
+		v := &res[i]
+		cid := v.Cid
+		if global.TxContains(cid) {
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
+			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+			var accQueueList []vboxResp.AccQueue
+			for _, money := range moneyList {
+				cntKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgId, cid, money)
+				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+				accQueue := vboxResp.AccQueue{
+					Money:  money,
+					Unused: cnt,
+				}
+				accQueueList = append(accQueueList, accQueue)
+			}
+			v.List = accQueueList
+		}
+	}
+
+	global.GVA_LOG.Info("当前等待取用的账号个数", zap.Any("res", res))
+
 	return res, err
 }
 
@@ -317,6 +364,7 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 			global.GVA_LOG.Warn("账号已存在，不允许重复添加，请核实", zap.Any("ac_account", vca.AcAccount))
 			return errors.New("账号已存在，不允许重复添加，请核查")
 		}
+		vca.AcAccount = utils.Trim(vca.AcAccount)
 	}
 
 	err = global.GVA_DB.Create(vca).Error
@@ -600,12 +648,18 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.ChannelAccount, err error) {
 	err = global.GVA_DB.Unscoped().Where("id = ?", id).First(&vca).Error
+	var sysUser sysModel.SysUser
+	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
+	vca.Username = sysUser.Username
 	return
 }
 
 // GetChannelAccountByAcId 根据AcId获取通道账号记录
 func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (vca vbox.ChannelAccount, err error) {
 	err = global.GVA_DB.Unscoped().Where("ac_id = ?", acId).First(&vca).Error
+	var sysUser sysModel.SysUser
+	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
+	vca.Username = sysUser.Username
 	return
 }
 

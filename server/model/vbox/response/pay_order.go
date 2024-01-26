@@ -63,3 +63,12 @@ type OrderStatisRes struct {
 	Money       int    `json:"money" form:"money" url:"money"`
 	CntNums     int    `json:"cnt_nums" form:"cnt_nums" `
 }
+
+// OrderAccRes 结构体
+type OrderAccRes struct {
+	DataRateOverView
+	AcAccount   string `json:"acAccount" form:"acAccount" url:"acAccount"`
+	AcId        string `json:"acId" form:"acId" url:"acId"`
+	ChannelCode string `json:"channelCode" form:"channelCode" url:"channelCode"`
+	CreatedBy   uint   `json:"createdBy" form:"createdBy" url:"createdBy"`
+}

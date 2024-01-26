@@ -73,6 +73,7 @@ func OrderConfirmTask() {
 			}
 
 			for msg := range deliveries {
+
 				//err = handler(msg.Body)
 				v := request.PayOrderAndCtx{}
 				err := json.Unmarshal(msg.Body, &v)
@@ -84,6 +85,27 @@ func OrderConfirmTask() {
 					continue
 				}
 				global.GVA_LOG.Info("收到需要查询付款状态的订单消息", zap.Any("orderId", v.Obj.OrderId))
+
+				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, v.Obj.OrderId)
+				// 检查消息是否已经被处理过
+				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+
+				if exists {
+					// 消息已经被处理过，直接返回
+					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
+					// 消息已经处理过，不再处理
+					_ = msg.Ack(false)
+					continue
+				}
+				// 将消息ID添加到已处理集合
+				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
 
 				// 直接先查一下单，如果已经补单过，则直接跳过
 				var odDB vbox.PayOrder
@@ -150,7 +172,7 @@ func OrderConfirmTask() {
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -196,7 +218,7 @@ func OrderConfirmTask() {
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -251,7 +273,7 @@ func OrderConfirmTask() {
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -328,7 +350,7 @@ func OrderConfirmTask() {
 							global.GVA_LOG.Info("未对账成功，当前余额为", zap.Any("nowBalance", nowBalance), zap.Any("hisBalance", hisBalance), zap.Any("money", money))
 							// 重新丢回去 下一个20s再查一次
 							marshal, _ := json.Marshal(v)
-							err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+							err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 							_ = msg.Ack(true)
 							continue
 						}
@@ -350,7 +372,7 @@ func OrderConfirmTask() {
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -415,7 +437,7 @@ func OrderConfirmTask() {
 
 				// 重新丢回去 下一个20s再查一次
 				marshal, err := json.Marshal(v)
-				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 20*time.Second)
+				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 			}
 			wg.Done()
 		}(i + 1)

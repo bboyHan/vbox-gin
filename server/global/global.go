@@ -27,13 +27,15 @@ const (
 	ChanAccCountUsed  = "chan_acc_count_used:ac_id:%s"
 	ChanAccCountLimit = "chan_acc_count_limit:ac_id:%s"
 
+	ChanAccOrgCountUnused = "chan_acc_count_unused:org_%d"
+
 	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
 	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
-	AccQryJ3ShopEx         = "当前组织无商铺地址匹配，请核查商铺信息，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryShopEx           = "当前组织无商铺地址匹配，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 
 	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
@@ -48,6 +50,9 @@ const (
 const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
+
+	MsgFilterKey = "vb_msg_filter_set"                 // 同组织通道下可用账号（过滤器）
+	MsgFilterMem = "vb_msg_filter:msgID_%s:orderID_%s" // 同组织通道下可用账号（过滤器）
 
 	ChanOrgAccFilter        = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
 	ChanOrgQBAccZSet        = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号

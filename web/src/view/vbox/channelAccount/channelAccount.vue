@@ -67,15 +67,29 @@
             </el-button>
           </template>
         </el-popover>
+        <el-button type="primary" icon="wallet" @click="showCostOrderAcc('')">核算</el-button>
+
       </div>
       <div class="gva-btn-list">
-        <el-row :gutter="8">
+        <el-row :gutter="12">
           <span v-for="item in countItem">
             <el-col :span="12">
-              <el-button>
-                  【通道ID：{{ item.cid }}】<el-icon class="is-loading" style="margin-right: 2px"><Loading/> </el-icon>
-                  已开启 <span style="color: red"><b>{{ item.total }} </b></span> 个
-              </el-button>
+              <el-popover trigger="hover" placement="right-end" width="450" >
+                <el-row>
+                  <el-col :span="24">团队可取用池子实况（剩余）：</el-col>
+                  <el-col v-for="ele in item.list" :span="6">
+                  <span>{{ ele.money }}元(<span style="color: red;">{{ ele.unused }}</span>个)</span>
+                  </el-col>
+                </el-row>
+                <div style="text-align: right; margin-top: 8px;">
+                </div>
+                <template #reference>
+                  <el-button>
+                        【通道ID：{{ item.cid }}】<el-icon class="is-loading" style="margin-right: 2px"><Loading/> </el-icon>
+                        已开启 <span style="color: red"><b>{{ item.total }} </b></span> 个
+                    </el-button>
+                </template>
+              </el-popover>
             </el-col>
           </span>
         </el-row>
@@ -83,7 +97,13 @@
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="ID" prop="acId" width="120"/>
+        <el-table-column align="left" label="ID" prop="acId" width="120">
+          <template #default="scope">
+            {{ scope.row.acId }}
+            <el-button type="primary" link icon="wallet-filled" class="table-button" style="margin-left: 5px"
+                       @click="showCostOrderAcc(scope.row)"></el-button>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
         <el-table-column align="left" label="账户备注" prop="acRemark" width="160"/>
         <el-table-column align="left" label="通道账户" prop="acAccount" width="160"/>
@@ -863,7 +883,7 @@
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions :column="6" border>
-          <el-descriptions-item label="用户id" :span="6">{{ formData.CreatedBy }}</el-descriptions-item>
+          <el-descriptions-item label="用户归属" :span="6">{{ formData.username }}</el-descriptions-item>
           <el-descriptions-item label="账户ID" :span="6">{{ formData.acId }}</el-descriptions-item>
           <el-descriptions-item label="账户备注" :span="6">{{ formData.acRemark }}</el-descriptions-item>
           <el-descriptions-item label="通道账户" :span="3">{{ formData.acAccount }}</el-descriptions-item>
@@ -1141,6 +1161,53 @@
       </template>
     </el-dialog>
 
+    <!-- 获取订单acc统计数据 -->
+    <el-dialog v-model="showCostOrderAccVisible" :title="showCostOrderAccTitle" :draggable="true" width="1000px" @close="closeCostOrderAcc">
+      <div class="gva-search-box">
+        <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">
+          <el-form-item label="通道账户名" prop="acId">
+            <el-input v-model="searchAccInfo.acAccount" placeholder="搜索通道账户"/>
+          </el-form-item>
+          <el-form-item label="通道账户ID" prop="acAccount">
+            <el-input v-model="searchAccInfo.acId" placeholder="搜索通道账户ID"/>
+          </el-form-item>
+          <el-form-item label="通道ID" prop="cid">
+            <el-input v-model.number="searchAccInfo.channelCode" placeholder="搜索通道ID"/>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" icon="search" @click="onAccSubmit">查询</el-button>
+            <el-button icon="refresh" @click="onAccReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="gva-table-box">
+        <el-scrollbar>
+          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true"
+                    show-summary>
+            <el-table-column align="center" label="通道ID" width="80">
+              <template #default="{row}">
+                {{ String(row.channelCode) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="账号ID" width="90">
+              <template #default="{row}">
+                {{ String(row.acId) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="通道账号" width="160">
+              <template #default="{row}">
+                {{ String(row.acAccount) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" sortable label="3日前" prop="x1" width="120"/>
+            <el-table-column align="center" sortable label="2日前" prop="x2" width="120"/>
+            <el-table-column align="center" sortable label="昨日" prop="x3" width="120"/>
+            <el-table-column align="center" sortable label="今日" prop="x4" width="120"/>
+          </el-table>
+        </el-scrollbar>
+      </div>
+    </el-dialog>
+
     <!-- 查询指定账户订单 -->
     <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow"
                :draggable="true"
@@ -1371,7 +1438,7 @@ import {
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
 import WarningBar from "@/components/warningBar/warningBar.vue";
-import {Delete, Edit, Eleme, InfoFilled, Loading, Plus, Position, Select} from "@element-plus/icons-vue";
+import {Delete, Edit, Eleme, InfoFilled, Loading, Plus, Position, Search, Select} from "@element-plus/icons-vue";
 import {
   batchCreateChannelPayCode,
   createChannelPayCode,
@@ -1382,7 +1449,7 @@ import dayjs from "dayjs";
 import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import provinces from "@/assets/json/provinces.json";
-import {callback2Pa, findPayOrder, getPayOrderList} from "@/api/payOrder";
+import {callback2Pa, findPayOrder, getOrderAccOverview, getPayOrderList} from "@/api/payOrder";
 
 defineOptions({
   name: 'ChannelAccount'
@@ -1620,7 +1687,7 @@ const formData = ref({
   status: 0,
   sysStatus: 0,
   cbStatus: 0,
-  uid: 0,
+  username: '',
 })
 
 // 验证规则
@@ -2901,6 +2968,71 @@ const enterChanDialog = async () => {
     }
   });
 }
+
+
+// ---------- 消费历史 ----------
+// const searchAccInfo = ref({})
+const searchAccInfo = ref({
+  toUid: '',
+  username: '',
+  acId: '',
+  acAccount: '',
+  channelCode: '',
+})
+// 重置
+const onAccReset = () => {
+  searchAccInfo.value = {}
+  getAccTableData()
+}
+
+const getAccTableData = async () => {
+  console.log(searchAccInfo.value)
+  const voRes = await getOrderAccOverview({...searchAccInfo.value});
+  console.log(voRes.data)
+  if (voRes.code === 0) {
+    showCostOrderAccTitle.value = `订单核算(用户归属:${searchAccInfo.value.username})`
+    costOrderAccTable.value = voRes.data.list;
+  }
+}
+
+// 搜索
+const onAccSubmit = async () => {
+  getAccTableData()
+}
+
+const showCostOrderAccVisible = ref(false)
+const showCostOrderAccTitle= ref()
+let costOrderAccTable =ref([]);
+const showCostOrderAcc = async(row) => {
+  if(row != ''){
+    searchAccInfo.value.toUid = row.CreatedBy
+    const res = await findChannelAccount({ID: row.ID})
+    if (res.code === 0) {
+      formData.value = res.data.revca
+    }
+    searchAccInfo.value.username = formData.value.username
+    searchAccInfo.value.acAccount = row.acAccount
+    searchAccInfo.value.acId = row.acId
+  }
+  costOrderAccTable.value = [];
+  const voRes = await getOrderAccOverview({...searchAccInfo.value});
+  console.log(voRes.data)
+  if (voRes.code === 0) {
+    if(row != ''){
+      showCostOrderAccTitle.value = `订单核算(用户归属:${searchAccInfo.value.username})`
+    }else {
+      showCostOrderAccTitle.value = `订单核算`
+    }
+    costOrderAccTable.value = voRes.data.list;
+    showCostOrderAccVisible.value = true
+    searchAccInfo.value = {}
+  }
+}
+const closeCostOrderAcc = () => {
+  showCostOrderAccVisible.value = false
+  costOrderAccTable.value = [];
+}
+// ---------- 消费历史 ---------
 </script>
 
 <style scoped>

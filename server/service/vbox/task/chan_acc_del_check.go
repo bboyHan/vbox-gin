@@ -82,6 +82,27 @@ func ChanAccDelCheckTask() {
 
 				global.GVA_LOG.Info("收到一条需要处理的账号【删除】", zap.Any("v", v))
 
+				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, acId)
+				// 检查消息是否已经被处理过
+				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+
+				if exists {
+					// 消息已经被处理过，直接返回
+					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
+					// 消息已经处理过，不再处理
+					_ = msg.Ack(false)
+					continue
+				}
+				// 将消息ID添加到已处理集合
+				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
+
 				//2.
 				if global.TxContains(cid) { //QB引导，
 

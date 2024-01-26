@@ -49,7 +49,7 @@ func OrderCallbackTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 10
+	consumerCount := 20
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -78,7 +78,37 @@ func OrderCallbackTask() {
 				orderId := v.Obj.OrderId
 				global.GVA_LOG.Info("收到一条需要进行发起回调的订单消息", zap.Any("order ID", orderId))
 
-				//1. 筛选匹配是哪个产品
+				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, v.Obj.OrderId)
+				// 检查消息是否已经被处理过
+				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+
+				if exists {
+					// 消息已经被处理过，直接返回
+					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
+					// 消息已经处理过，不再处理
+					_ = msg.Ack(false)
+					continue
+				}
+				// 将消息ID添加到已处理集合
+				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
+
+				//1. 先直接设置订单状态
+				key := fmt.Sprintf(global.PayOrderKey, orderId)
+				var order vbox.PayOrder
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).First(&order).Error
+
+				global.GVA_LOG.Info("最新订单信息", zap.Any("orderId", orderId), zap.Any("订单状态", order.OrderStatus))
+				//查出来了，设置一下redis
+				order.OrderStatus = 1
+				jsonString, _ := json.Marshal(order)
+				global.GVA_REDIS.Set(context.Background(), key, jsonString, 10*time.Second)
 
 				if err != nil {
 					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", orderId), zap.Error(err))
@@ -117,8 +147,7 @@ func OrderCallbackTask() {
 				notifyUrl := v.Obj.NotifyUrl
 				client := vbHttp.NewHTTPClient()
 				var headers = map[string]string{
-					"Content-Type":  "application/json",
-					"Authorization": "Bearer token",
+					"Content-Type": "application/json",
 				}
 				var payUrl string
 				payUrl, err = HandlePayUrl2PAcc(orderId)
@@ -144,6 +173,7 @@ func OrderCallbackTask() {
 					Sign:      signBody.Sign,
 				}
 
+				global.GVA_LOG.Info("请求地址", zap.Any("notifyUrl", notifyUrl))
 				global.GVA_LOG.Info("请求body", zap.Any("notifyBody", notifyBody))
 
 				var options = &vbHttp.RequestOptions{
@@ -229,15 +259,6 @@ func OrderCallbackTask() {
 
 					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
 				}
-
-				key := fmt.Sprintf(global.PayOrderKey, orderId)
-				var order vbox.PayOrder
-				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).First(&order).Error
-
-				global.GVA_LOG.Info("最新订单信息", zap.Any("orderId", orderId), zap.Any("订单状态", order.OrderStatus))
-				//查出来了，设置一下redis
-				jsonString, _ := json.Marshal(order)
-				global.GVA_REDIS.Set(context.Background(), key, jsonString, 10*time.Second)
 
 				_ = msg.Ack(true)
 				global.GVA_LOG.Info("订单完成，回调完成", zap.Any("对应单号", orderId))

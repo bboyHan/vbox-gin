@@ -55,7 +55,9 @@ func (vcaApi *ChannelAccountApi) QueryAccOrderHis(c *gin.Context) {
 // CountAcc ChannelAccount当前开启数
 func (vcaApi *ChannelAccountApi) CountAcc(c *gin.Context) {
 	ids := utils2.GetUserIDS(c)
-	if res, err := vcaService.CountAcc(ids); err != nil {
+	selfId := utils.GetUserID(c)
+	orgTmp := utils2.GetSelfOrg(selfId)
+	if res, err := vcaService.CountAcc(ids, orgTmp[0]); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage("查询失败", c)
 	} else {

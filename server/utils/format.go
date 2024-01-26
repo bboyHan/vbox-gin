@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"regexp"
+	"strconv"
+)
 
 func ConvertStringSliceToUintSlice(strSlice []string) ([]uint, error) {
 	uintSlice := make([]uint, 0, len(strSlice))
@@ -12,4 +15,9 @@ func ConvertStringSliceToUintSlice(strSlice []string) ([]uint, error) {
 		uintSlice = append(uintSlice, uint(num))
 	}
 	return uintSlice, nil
+}
+
+func Trim(str string) string {
+	regex := regexp.MustCompile(`\s+`)
+	return regex.ReplaceAllString(str, "")
 }

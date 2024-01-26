@@ -43,10 +43,11 @@
             <el-table-column type="selection" width="55" />
             <el-table-column prop="sysUser.username" label="用户名" width="120" />
             <el-table-column align="center" prop="x9" label="积分" width="90" />
-            <el-table-column label="操作列" min-width="490">
+            <el-table-column label="操作列" min-width="560">
               <template #default="{row}">
                   <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet" @click="showOperateRecharge(row)"> 充值 </el-button>
                   <el-button link type="primary" icon="wallet-filled" @click="showCostRecharge(row)"> 结算 </el-button>
+                  <el-button link type="primary" icon="wallet" @click="showCostOrderAcc(row)"> 核对 </el-button>
                   <el-button link type="primary" icon="switch" @click="showRecharge(row)"> 积分划转 </el-button>
                   <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(row)"> 重置密码 </el-button>
                   <el-button type="primary" link icon="lock" @click="getAuthCaptcha(row)"> 安全码 </el-button>
@@ -129,6 +130,53 @@
           <el-button type="primary" @click="resetAuthCaptcha">确 定</el-button>
         </div>
       </template>
+    </el-dialog>
+
+    <!-- 获取订单acc统计数据 -->
+    <el-dialog v-model="showCostOrderAccVisible" :title="showCostOrderAccTitle" :draggable="true" width="1000px" @close="closeCostOrderAcc">
+      <div class="gva-search-box">
+        <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">
+          <el-form-item label="通道账户名" prop="acId">
+            <el-input v-model="searchAccInfo.acAccount" placeholder="搜索通道账户"/>
+          </el-form-item>
+          <el-form-item label="通道账户ID" prop="acAccount">
+            <el-input v-model="searchAccInfo.acId" placeholder="搜索通道账户ID"/>
+          </el-form-item>
+          <el-form-item label="通道ID" prop="cid">
+            <el-input v-model.number="searchAccInfo.channelCode" placeholder="搜索通道ID"/>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" icon="search" @click="onAccSubmit">查询</el-button>
+            <el-button icon="refresh" @click="onAccReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="gva-table-box">
+        <el-scrollbar>
+          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true"
+                    show-summary>
+            <el-table-column align="center" label="通道ID" width="80">
+              <template #default="{row}">
+                {{ String(row.channelCode) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="账号ID" width="90">
+              <template #default="{row}">
+                {{ String(row.acId) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="通道账号" width="160">
+              <template #default="{row}">
+                {{ String(row.acAccount) }}
+              </template>
+            </el-table-column>
+            <el-table-column align="center" sortable label="3日前" prop="x1" width="120"/>
+            <el-table-column align="center" sortable label="2日前" prop="x2" width="120"/>
+            <el-table-column align="center" sortable label="昨日" prop="x3" width="120"/>
+            <el-table-column align="center" sortable label="今日" prop="x4" width="120"/>
+          </el-table>
+        </el-scrollbar>
+      </div>
     </el-dialog>
 
     <!-- 积分结算 -->
@@ -273,6 +321,7 @@ import {getUserWalletCostOV, getUserWalletOverview, getUserWalletSelf, transferU
 import { useBtnAuth } from '@/utils/btnAuth'
 import {reactive, ref} from "vue";
 import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
+import {getOrderAccOverview} from "@/api/payOrder";
 
 const walletCustomStyle = ref({
   background: 'linear-gradient(to right, #22111a, #606266)',
@@ -555,6 +604,57 @@ const getAuthCaptcha = (row) => {
 };
 // ---------- 重置防爆码 end ----------
 
+// ---------- 消费历史 ----------
+// const searchAccInfo = ref({})
+const searchAccInfo = ref({
+  toUid: '',
+  username: '',
+  acId: '',
+  acAccount: '',
+  channelCode: '',
+})
+// 重置
+const onAccReset = () => {
+  searchAccInfo.value = {}
+  getAccTableData()
+}
+
+const getAccTableData = async () => {
+  console.log(searchAccInfo.value)
+  const voRes = await getOrderAccOverview({...searchAccInfo.value});
+  console.log(voRes.data)
+  if (voRes.code === 0) {
+    showCostOrderAccTitle.value = `订单核算(用户归属:${searchAccInfo.value.username})`
+    costOrderAccTable.value = voRes.data.list;
+  }
+}
+
+// 搜索
+const onAccSubmit = async () => {
+  getAccTableData()
+}
+
+const showCostOrderAccVisible = ref(false)
+const showCostOrderAccTitle= ref()
+let costOrderAccTable =ref([]);
+const showCostOrderAcc = async(row) => {
+  searchAccInfo.value.toUid = row.sysUser.ID
+  searchAccInfo.value.username = row.sysUser.username
+  costOrderAccTable.value = [];
+  const voRes = await getOrderAccOverview({...searchAccInfo.value});
+  console.log(voRes.data)
+  if (voRes.code === 0) {
+    showCostOrderAccTitle.value = `订单核算(用户归属:${searchAccInfo.value.username})`
+    costOrderAccTable.value = voRes.data.list;
+    showCostOrderAccVisible.value = true
+  }
+}
+const closeCostOrderAcc = () => {
+  showCostOrderAccVisible.value = false
+  costOrderAccTable.value = [];
+}
+// ---------- 消费历史 ----------
+
 // ---------- 消费结算 ----------
 const showCostRechargeVisible = ref(false)
 let costRechargeForm =ref({});
@@ -565,10 +665,8 @@ const showCostRecharge = async(row) => {
   if (voRes.code === 0) {
     costRechargeForm.value = voRes.data[0];
     costRechargeForm.value.username = row.sysUser.username
-    showCostRechargeVisible.value = true
     console.log(costRechargeForm.value)
     showCostRechargeVisible.value = true
-
   }
 }
 const closeCostRecharge = () => {

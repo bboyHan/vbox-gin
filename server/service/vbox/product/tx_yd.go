@@ -24,8 +24,7 @@ import (
 
 // 创建 HTTP 客户端实例
 var headers = map[string]string{
-	"Content-Type":  "application/json",
-	"Authorization": "Bearer token",
+	"Content-Type": "application/json",
 }
 
 var options = &vbHttp.RequestOptions{
@@ -271,15 +270,16 @@ func Records(rawURL string, openID string, openKey string, period time.Duration)
 	client := vbHttp.NewHTTPClient()
 
 	resp, err := client.Get(newURL, options)
+	global.GVA_LOG.Info("Records newURL:  ->", zap.String("newURL", newURL), zap.Any("resp", string(resp.Body)))
 	if err != nil {
-		global.GVA_LOG.Error("err:  ->", zap.Error(err))
+		global.GVA_LOG.Error("err:  ->", zap.Error(err), zap.Any("resp", string(resp.Body)))
 		return nil
 	}
 
 	var records product.Records
 	err = json.Unmarshal(resp.Body, &records)
 	if err != nil {
-		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err), zap.Any("resp", string(resp.Body)))
 		return nil
 	}
 	//fmt.Print(records)

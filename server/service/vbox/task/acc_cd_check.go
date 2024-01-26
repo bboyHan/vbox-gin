@@ -89,6 +89,27 @@ func AccCDCheckTask() {
 
 				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
 
+				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, acID)
+				// 检查消息是否已经被处理过
+				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+
+				if exists {
+					// 消息已经被处理过，直接返回
+					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
+					// 消息已经处理过，不再处理
+					_ = msg.Ack(false)
+					continue
+				}
+				// 将消息ID添加到已处理集合
+				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
+
 				var accDB vbox.ChannelAccount
 				if errQ := global.GVA_DB.Debug().First(&accDB, ID).Error; errQ != nil {
 					global.GVA_LOG.Error("查找异常", zap.Error(errQ), zap.Any("ID", ID), zap.Any("acID", acID), zap.Any("acAccount", acAccount), zap.Any("money", money))
@@ -278,8 +299,15 @@ func AccCDCheckTask() {
 						} else if global.PcContains(cid) { // wx qb
 						}
 						waitMsg := v
-						err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
-						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("ttl", ttl))
+
+						if ttl < 5 { //小于5秒的数据，缓冲 1s再发
+							ttl += 1
+							err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
+							global.GVA_LOG.Info("多缓冲1s")
+						} else {
+							err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
+						}
+						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("msg", waitMsg), zap.Any("ttl", ttl))
 					}
 				}
 

@@ -137,9 +137,9 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
 		}
 
-		orgTmp := utils2.GetSelfOrg(channelShop.CreatedBy)
+		orgTmpX := utils2.GetSelfOrg(channelShop.CreatedBy)
 
-		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], channelShop.Cid)
+		moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmpX[0], channelShop.Cid)
 		createBy := channelShop.CreatedBy
 		waitMsg := fmt.Sprintf("%s-%d", moneyKey, createBy)
 		err = ch.Publish(task.ChanAccShopUpdCheckExchange, task.ChanAccShopUpdCheckKey, []byte(waitMsg))

@@ -86,6 +86,27 @@ func OrderWaitingTask() {
 				}
 				global.GVA_LOG.Info("收到一条需要进行匹配的订单消息", zap.Any("order ID", v.Obj.OrderId), zap.Any("order", v))
 
+				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, v.Obj.OrderId)
+				// 检查消息是否已经被处理过
+				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+
+				if exists {
+					// 消息已经被处理过，直接返回
+					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
+					// 消息已经处理过，不再处理
+					_ = msg.Ack(false)
+					continue
+				}
+				// 将消息ID添加到已处理集合
+				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
+				if errR != nil {
+					global.GVA_LOG.Error("redis ex", zap.Error(errR))
+				}
+				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
+
 				//1. 筛选匹配是哪个产品
 
 				//1.0 核查商户
@@ -868,11 +889,11 @@ func OrderWaitingTask() {
 					// 设置一个冷却时间
 					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
 					if ttl > 0 {
-						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
 						cdTime = ttl
+						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("accWaitYdKey", accWaitYdKey), zap.Any("ttl", cdTime))
 					} else {
 						cdTime += 180 * time.Second
-						global.GVA_LOG.Info("当前添加的账号新一轮冷却", zap.Any("ttl", cdTime))
+						global.GVA_LOG.Info("当前添加的账号新一轮冷却", zap.Any("accWaitYdKey", accWaitYdKey), zap.Any("ttl", cdTime))
 					}
 					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
 

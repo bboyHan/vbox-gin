@@ -11,6 +11,7 @@ type PayOrderSearch struct {
 	StartCreatedAt time.Time `json:"startCreatedAt" form:"startCreatedAt"`
 	EndCreatedAt   time.Time `json:"endCreatedAt" form:"endCreatedAt"`
 	Interval       string    `json:"interval" form:"interval"`
+	ToUid          uint      `json:"toUid" form:"toUid" url:"toUid"`
 	request.PageInfo
 }
 
