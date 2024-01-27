@@ -337,7 +337,7 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="24">
+      <!-- <el-row :gutter="24">
         <el-col :span="24" :xs="24">
           <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个通道各个账户今日成单</h2></div>
         </el-col>
@@ -361,7 +361,7 @@
             </template>
           </CenterCard>
         </el-col>
-      </el-row>
+      </el-row> -->
 
     
 <el-row :gutter="24">
@@ -374,7 +374,7 @@
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
-              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="元"/>
+              <StackedLineCharts :chart-data="nearWeekIncomeSum" :uid=dialogUid unit="元"/>
             </template>
           </CenterCard>
         </el-col>
@@ -384,7 +384,7 @@
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
-              <lineCharts :chart-data="nearOneHourSum" format="HH:mm" unit="笔"/>
+              <StackedLineCharts :chart-data="nearWeekOkPayCnt" :uid=dialogUid unit="笔"/>
             </template>
           </CenterCard>
         </el-col>
@@ -426,7 +426,7 @@
         ref="multipleTable"
         style="width: 100%"
         tooltip-effect="dark"
-        :data="tableData"
+        :data="viewTableData"
         row-key="ID"
         @selection-change="handleSelectionChange"
         >
@@ -451,6 +451,17 @@
         <el-table-column align="left" label="成交金额" prop="income" width="120" />
 
         </el-table>
+        <div class="gva-pagination">
+            <el-pagination
+            layout="total, sizes, prev, pager, next, jumper"
+            :current-page="viewPage"
+            :page-size="viewPageSize"
+            :page-sizes="[10, 30, 50, 100]"
+            :total="viewTotal"
+            @current-change="viewHandleCurrentChange"
+            @size-change="viewHandleSizeChange"
+            />
+        </div>
       </el-col>
       </el-row>
 
@@ -511,7 +522,9 @@ import {
   getBdaChaccIndexDList,
   getBdaChaccIndexDUesrOverview,
   getBdaChaccIndexToDayIncome,
-  getBdaChaccIndexToDayInOkCnt
+  getBdaChaccIndexToDayInOkCnt,
+  getBdaChaccIndexToWeekIncome,
+  getBdaChaccIndexToWeekInOkCnt
 } from '@/api/bdaChaccIndexD'
 
 // 全量引入格式化工具 请按需保留
@@ -753,6 +766,9 @@ const cardData3 = ref({
 const todayOkPayCnt = ref()
 
 const todayIncomeSum = ref()
+const nearWeekIncomeSum = ref()
+const nearWeekOkPayCnt = ref()
+
 const getAccIncomeSumData = async(row) => {
   console.log('getAccIncomeSumData=',row.value)
   let resData = await getBdaChaccIndexToDayIncome({uid : row.value.uid})
@@ -765,7 +781,7 @@ const getAccIncomeSumData = async(row) => {
 const getDetails = async (row) => {
 
   let resData = await getBdaChaccIndexToDayIncome({uid : row.value.uid})
-  console.log('getAccIncomeSumData:', JSON.stringify(resData))
+  // console.log('getBdaChaccIndexToDayIncome:', JSON.stringify(resData))
   if (resData.code === 0) {
     todayIncomeSum.value = resData
   }else{
@@ -773,12 +789,25 @@ const getDetails = async (row) => {
   }
 
   let resCntData = await getBdaChaccIndexToDayInOkCnt({uid : row.value.uid})
-  console.log('getAccIncomeSumData:', JSON.stringify(resCntData))
+  // console.log('getBdaChaccIndexToDayInOkCnt:', JSON.stringify(resCntData))
   if (resCntData.code === 0) {
     todayOkPayCnt.value = resCntData
   }else{
     todayOkPayCnt.value = defaultShow
   }
+
+  let resWeekIncomeData = await getBdaChaccIndexToWeekIncome({uid : row.value.uid})
+  // console.log('getBdaChaccIndexToWeekIncome:', JSON.stringify(resCntData))
+  if (resWeekIncomeData.code === 0) {
+    nearWeekIncomeSum.value = resWeekIncomeData
+  }
+  
+  let resWeekOkCntData = await getBdaChaccIndexToWeekInOkCnt({uid : row.value.uid})
+  // console.log('getBdaChaccIndexToWeekInOkCnt:', JSON.stringify(resCntData))
+  if (resWeekOkCntData.code === 0) {
+    nearWeekOkPayCnt.value = resWeekOkCntData
+  }
+  
 
   // 打开弹窗
   // const res = await findBdaChaccIndexD({ ID: row.ID })
@@ -786,9 +815,9 @@ const getDetails = async (row) => {
   //   formData.value = res.data.rebdaChaccIndexD
   //   openDetailShow()
   // }
-  console.log('getDetails ==>' + JSON.stringify(row.value))
+  // console.log('getDetails ==>' + JSON.stringify(row.value))
   const res = await getBdaChaccIndexDUesrOverview(row.value)
-  console.log('getDetails res ==>' + JSON.stringify(res))
+  // console.log('getDetails res ==>' + JSON.stringify(res))
   if (res.code === 0) {
     cardList.value = res.data.list
     if (cardList.value.length >= 1) {
@@ -805,7 +834,7 @@ const getDetails = async (row) => {
 
   }
 
-
+  getViewTableData(row)
   // getAccIncomeSumData(row)
 }
 
@@ -1013,6 +1042,61 @@ const onResetAcid = () => {
   getTableData()
 }
 
+
+
+
+
+
+// =========== view表格控制部分 ===========
+const viewPage = ref(1)
+const viewTotal = ref(0)
+const viewPageSize = ref(10)
+const viewTableData = ref([])
+const viewSearchInfo = ref({})
+
+// 重置
+const viewOnReset = () => {
+  viewSearchInfo.value = {}
+  getViewTableData()
+}
+
+// 搜索
+const viewOnSubmit = () => {
+  elSearchFormRef.value?.validate(async(valid) => {
+    if (!valid) return
+    viewPage.value = 1
+    viewPageSize.value = 10
+    getViewTableData()
+  })
+}
+
+// 分页
+const viewHandleSizeChange = (val) => {
+  viewPageSize.value = val
+  getViewTableData()
+}
+
+// 修改页面容量
+const viewHandleCurrentChange = (val) => {
+  viewPage.value = val
+  getViewTableData()
+}
+
+// 查询
+const getViewTableData = async(row) => {
+  viewSearchInfo.value.uid = row.value.uid
+  const table = await getBdaChaccIndexDList({ page: viewPage.value, pageSize: viewPageSize.value, ...viewSearchInfo.value })
+  if (table.code === 0) {
+    viewTableData.value = table.data.list
+    viewTotal.value = table.data.total
+    viewPage.value = table.data.page
+    viewPageSize.value = table.data.pageSize
+  }
+}
+
+// getTableData()
+
+// ============== 表格控制部分结束 ===============
 </script>
 
 

@@ -453,7 +453,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 	sTime := now.Add(-6 * time.Hour).Format("2006-01-02 15:04:05")
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at >= ? and created_by= ? ", sTime, uid)
 	var accIds []string
-	err = db.Select("distinct ac_id").Pluck("ac_id", &accIds).Error
+	err = db.Select("distinct ac_id").Where("order_status=1").Pluck("ac_id", &accIds).Error
 	fmt.Println("accIds=", accIds)
 	if err != nil {
 		return
@@ -507,10 +507,11 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 		// 处理每个 accId 对应的 incomes 数组
 		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:  accId,
-			Type:  "line",
-			Stack: "Total",
-			Data:  incomes,
+			Name:   accId,
+			Type:   "line",
+			Stack:  "Total",
+			Smooth: true,
+			Data:   incomes,
 		}
 		seriesData = append(seriesData, incomesEntity)
 	}
@@ -574,7 +575,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 	sTime := now.Add(-6 * time.Hour).Format("2006-01-02 15:04:05")
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("created_at >= ? and created_by= ? ", sTime, uid)
 	var accIds []string
-	err = db.Select("distinct ac_id").Pluck("ac_id", &accIds).Error
+	err = db.Select("distinct ac_id").Where("order_status=1").Pluck("ac_id", &accIds).Error
 	fmt.Println("accIds=", accIds)
 	if err != nil {
 		return
@@ -628,10 +629,224 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 		// 处理每个 accId 对应的 incomes 数组
 		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:  accId,
-			Type:  "line",
-			Stack: "Total",
-			Data:  incomes,
+			Name:   accId,
+			Type:   "line",
+			Stack:  "Total",
+			Smooth: true,
+			Data:   incomes,
+		}
+		seriesData = append(seriesData, incomesEntity)
+	}
+
+	entity := vboxResp.ChartData{
+		LegendData: accIds,
+		XAxisData:  timeData,
+		SeriesData: seriesData,
+	}
+	fmt.Printf(" entity: %v\n", entity)
+	return entity, err
+}
+
+func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekIncome(res vboxReq.BdaChaccIndexDSearch) (data vboxResp.ChartData, err error) {
+	querySql := `
+			SELECT
+			 uid,
+			 ac_id as acId,
+			 sum(if(order_status =1,money,0)) as okIncome,
+			 step_time as stepTime
+			FROM(
+					SELECT
+							created_by as uid,
+							ac_id,
+							order_status,
+							money,
+						    DATE_FORMAT(created_at, '%Y-%m-%d') AS step_time	
+					from vbox_pay_order 
+					where DATE_FORMAT(created_at, '%Y-%m-%d') >= ?
+					and created_by = ? 
+			)t 
+			GROUP BY uid,ac_id,step_time
+		`
+	uid := res.Uid
+	// 生成一个包含 24 小时每 5 分钟一个时间点的切片
+	var timeData []string
+	// 当前时间
+	now := time.Now()
+	sTime := now.AddDate(0, 0, -6).Format("2006-01-02")
+
+	for i := 6; i >= 0; i-- {
+		t := time.Now().AddDate(0, 0, -i)
+		timeData = append(timeData, t.Format("2006-01-02"))
+	}
+
+	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') >= ? and created_by= ? ", sTime, uid)
+	var accIds []string
+	err = db.Select("distinct ac_id").Where("order_status=1").Pluck("ac_id", &accIds).Error
+	fmt.Println("accIds=", accIds)
+	if err != nil {
+		return
+	}
+	//
+	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
+	rows, err := db.Raw(querySql, sTime, uid).Rows()
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println(rows.Next())
+	defer rows.Close()
+	// 创建一个 map 用于存储结果
+	incomeMap := make(map[string]uint)
+	// 如果有下一行数据，继续循环
+	for rows.Next() {
+		// 遍历查询结果并将值映射到结构体中
+		var item vboxResp.UserDayIncomeLineChart
+		err := rows.Scan(&item.Uid, &item.AcID, &item.OkIncome, &item.StepTime)
+		if err != nil {
+			panic(err)
+		}
+		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
+		key := item.StepTime + "-" + item.AcID
+		fmt.Println("key---->", key)
+		incomeMap[key] = item.OkIncome
+
+		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+	}
+
+	var seriesData []vboxResp.SeriesItem
+
+	for _, accId := range accIds {
+		var incomes []int
+		// 内层循环
+		for _, time := range timeData {
+			fmt.Printf(time + "-" + accId + "\n")
+			// 构建 key
+			key := time + "-" + accId
+			// 在 incomeMap 中查找 key
+			if val, ok := incomeMap[key]; ok {
+				fmt.Println("ok---->", ok)
+				// 找到，将值存入数组
+				incomes = append(incomes, int(val))
+			} else {
+				// 没找到，存入默认值 0
+				incomes = append(incomes, 0)
+			}
+		}
+
+		// 处理每个 accId 对应的 incomes 数组
+		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		incomesEntity := vboxResp.SeriesItem{
+			Name:   accId,
+			Type:   "line",
+			Stack:  "Total",
+			Smooth: true,
+			Data:   incomes,
+		}
+		seriesData = append(seriesData, incomesEntity)
+	}
+
+	entity := vboxResp.ChartData{
+		LegendData: accIds,
+		XAxisData:  timeData,
+		SeriesData: seriesData,
+	}
+	fmt.Printf(" entity: %v\n", entity)
+	return entity, err
+}
+
+func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekOkCnt(res vboxReq.BdaChaccIndexDSearch) (data vboxResp.ChartData, err error) {
+
+	querySql := `
+			SELECT
+			 uid,
+			 ac_id as acId,
+			 sum(if(order_status =1,1,0)) as okIncome,
+			 step_time as stepTime
+			FROM(
+					SELECT
+							created_by as uid,
+							ac_id,
+							order_status,
+							money,
+						    DATE_FORMAT(created_at, '%Y-%m-%d') AS step_time	
+					from vbox_pay_order 
+					where DATE_FORMAT(created_at, '%Y-%m-%d') >= ?
+					and created_by = ? 
+			)t 
+			GROUP BY uid,ac_id,step_time
+		`
+	uid := res.Uid
+	// 生成一个包含 24 小时每 5 分钟一个时间点的切片
+	var timeData []string
+	// 当前时间
+	now := time.Now()
+	sTime := now.AddDate(0, 0, -6).Format("2006-01-02")
+
+	for i := 6; i >= 0; i-- {
+		t := time.Now().AddDate(0, 0, -i)
+		timeData = append(timeData, t.Format("2006-01-02"))
+	}
+
+	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') >= ? and created_by= ? ", sTime, uid)
+	var accIds []string
+	err = db.Select("distinct ac_id").Where("order_status=1").Pluck("ac_id", &accIds).Error
+	fmt.Println("accIds=", accIds)
+	if err != nil {
+		return
+	}
+	//
+	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
+	rows, err := db.Raw(querySql, sTime, uid).Rows()
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println(rows.Next())
+	defer rows.Close()
+	// 创建一个 map 用于存储结果
+	incomeMap := make(map[string]uint)
+	// 如果有下一行数据，继续循环
+	for rows.Next() {
+		// 遍历查询结果并将值映射到结构体中
+		var item vboxResp.UserDayIncomeLineChart
+		err := rows.Scan(&item.Uid, &item.AcID, &item.OkIncome, &item.StepTime)
+		if err != nil {
+			panic(err)
+		}
+		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
+		key := item.StepTime + "-" + item.AcID
+		fmt.Println("key---->", key)
+		incomeMap[key] = item.OkIncome
+
+		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+	}
+
+	var seriesData []vboxResp.SeriesItem
+
+	for _, accId := range accIds {
+		var incomes []int
+		// 内层循环
+		for _, time := range timeData {
+			fmt.Printf(time + "-" + accId + "\n")
+			// 构建 key
+			key := time + "-" + accId
+			// 在 incomeMap 中查找 key
+			if val, ok := incomeMap[key]; ok {
+				fmt.Println("ok---->", ok)
+				// 找到，将值存入数组
+				incomes = append(incomes, int(val))
+			} else {
+				// 没找到，存入默认值 0
+				incomes = append(incomes, 0)
+			}
+		}
+
+		// 处理每个 accId 对应的 incomes 数组
+		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		incomesEntity := vboxResp.SeriesItem{
+			Name:   accId,
+			Type:   "line",
+			Stack:  "Total",
+			Smooth: true,
+			Data:   incomes,
 		}
 		seriesData = append(seriesData, incomesEntity)
 	}

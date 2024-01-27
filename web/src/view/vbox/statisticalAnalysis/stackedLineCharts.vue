@@ -57,10 +57,10 @@ const orderView = async () => {
   // let res = await getPayOrderOverview({ page: 1, pageSize: 9999, channelCode: cid, startTime: startTime, endTime: endTime, interval:  interval, keyword: keyword, format: format})
   // console.log(res)
   let res = props.chartData
-  console.log('getAccIncomeSumData lineCharts res:', JSON.stringify(res))
+  // console.log('getAccIncomeSumData lineCharts res:', JSON.stringify(res))
   if (res.code === 0) {
     let resdata = res.data.chartData
-    console.log('getAccIncomeSumData ---->:', JSON.stringify(resdata))
+    // console.log('getAccIncomeSumData ---->:', JSON.stringify(resdata))
   //   // console.log('list res:', resdata)
   //   if(resdata == null){
   //       yData.push(0)
@@ -72,11 +72,11 @@ const orderView = async () => {
   //     }
   //   }
     legendData = resdata.legendData
-    console.log('getAccIncomeSumData legendData:', legendData)
+    // console.log('getAccIncomeSumData legendData:', legendData)
     xAxisData = resdata.xAxisData
-    console.log('getAccIncomeSumData xAxisData:', xAxisData)
+    // console.log('getAccIncomeSumData xAxisData:', xAxisData)
     seriesData = resdata.seriesData
-    console.log('getAccIncomeSumData seriesData:', seriesData)
+    // console.log('getAccIncomeSumData seriesData:', seriesData)
   }
   // // console.log('xData:', xData, 'yData', yData)
   initChart()
@@ -112,7 +112,7 @@ const generateEChartsOptions = (legendData, xAxisData, seriesData) => {
     },
     grid: {
       left: '3%',
-      right: '17%',
+      right: '18%',
       bottom: '7%',
       containLabel: true
     },
