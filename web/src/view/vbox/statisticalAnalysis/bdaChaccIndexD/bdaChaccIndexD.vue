@@ -2,7 +2,7 @@
   <div>
     <div class="gva-search-box">
       <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
-      <el-form-item label="创建日期" prop="createdAt">
+      <!-- <el-form-item label="创建日期" prop="createdAt">
       <template #label>
         <span>
           创建日期
@@ -14,32 +14,32 @@
       <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始日期" :disabled-date="time=> searchInfo.endCreatedAt ? time.getTime() > searchInfo.endCreatedAt.getTime() : false"></el-date-picker>
        —
       <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束日期" :disabled-date="time=> searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker>
-      </el-form-item>
-        <el-form-item label="用户id" prop="uid">
+      </el-form-item> -->
+        <!-- <el-form-item label="用户id" prop="uid">
             
              <el-input v-model.number="searchInfo.uid" placeholder="搜索条件" />
 
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="用户名" prop="username">
          <el-input v-model="searchInfo.username" placeholder="搜索条件" />
 
         </el-form-item>
-        <el-form-item label="账号ID" prop="acId">
-         <el-input v-model="searchInfo.acId" placeholder="搜索条件" />
+        <el-form-item label="账号名" prop="acAccount">
+         <el-input v-model="searchInfo.acAccount" placeholder="搜索条件" />
 
         </el-form-item>
-        <el-form-item label="账户备注" prop="acRemark">
+        <!-- <el-form-item label="账户备注" prop="acRemark">
          <el-input v-model="searchInfo.acRemark" placeholder="搜索条件" />
 
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="通道code" prop="channelCode">
          <el-input v-model="searchInfo.channelCode" placeholder="搜索条件" />
 
         </el-form-item>
-        <el-form-item label="产品ID" prop="productId">
+        <!-- <el-form-item label="产品ID" prop="productId">
          <el-input v-model="searchInfo.productId" placeholder="搜索条件" />
 
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="产品名称" prop="productName">
          <el-input v-model="searchInfo.productName" placeholder="搜索条件" />
 
@@ -77,12 +77,12 @@
         @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="天" prop="dt" width="120" />
+        <el-table-column align="left" label="天" prop="dt" width="150" />
         <!-- <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column> -->
         <!-- <el-table-column align="left" label="用户id" prop="uid" width="120" /> -->
-        <el-table-column align="left" label="用户名" prop="username" width="150" >
+        <el-table-column align="left" label="用户名" prop="username" width="180" >
           <template #default="scope">
             <!-- {{ scope.row.username }} -->
             <el-button type="text"  @click="getAccDetails(scope.row)">
@@ -95,11 +95,11 @@
           </template>
         </el-table-column>
         <!-- <el-table-column align="left" label="账号ID" prop="acId" width="120" /> -->
-        <el-table-column align="left" label="通道账户名" prop="acAccount" width="150" />
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="150" />
-        <el-table-column align="left" label="通道code" prop="channelCode" width="100" />
-        <el-table-column align="left" label="产品ID" prop="productId" width="120" />
-        <el-table-column align="left" label="产品名称" prop="productName" width="150" />
+        <el-table-column align="left" label="通道账户名" prop="acAccount" width="180" />
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="180" />
+        <el-table-column align="left" label="通道code" prop="channelCode" width="150" />
+        <!-- <el-table-column align="left" label="产品ID" prop="productId" width="120" /> -->
+        <el-table-column align="left" label="产品名称" prop="productName" width="180" />
         <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
         <el-table-column align="left" label="成交率" prop="ratio" width="120" />
@@ -320,7 +320,7 @@
             <template #body>
               <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
               <!--                          interval="5m" keyword="sum" format="HH:mm" unit="元"/>-->
-              <StackedLineCharts :chart-data="todayIncomeSum" :uid=dialogUid unit="元"/>
+              <StackedLineCharts :chartData="todayIncomeSum" :uid=dialogUid unit="元"/>
             </template>
           </CenterCard>
           <!--          <CenterCard title="近1小时实时成单(数量)" style="grid-column-start: span 2;">-->
@@ -331,7 +331,7 @@
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
-              <StackedLineCharts :chart-data="todayOkPayCnt" :uid=dialogUid unit="笔"/>
+              <StackedLineCharts :chartData="todayOkPayCnt" :uid=dialogUid unit="笔"/>
             </template>
           </CenterCard>
         </el-col>
@@ -374,7 +374,7 @@
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
-              <StackedLineCharts :chart-data="nearWeekIncomeSum" :uid=dialogUid unit="元"/>
+              <StackedLineCharts :chartData="nearWeekIncomeSum" :uid=dialogUid unit="元"/>
             </template>
           </CenterCard>
         </el-col>
@@ -384,7 +384,7 @@
               <span class="gvaIcon-prompt" style="color: #999" />
             </template>
             <template #body>
-              <StackedLineCharts :chart-data="nearWeekOkPayCnt" :uid=dialogUid unit="笔"/>
+              <StackedLineCharts :chartData="nearWeekOkPayCnt" :uid=dialogUid unit="笔"/>
             </template>
           </CenterCard>
         </el-col>
@@ -392,12 +392,12 @@
 
       <el-row :gutter="24">
         <el-col :span="24" :xs="24">
-          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户近一周成单详情</h2></div>
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>各个账户近一周(不含当天)成单详情</h2></div>
         </el-col>
-        <el-col :span="12" :xs="24">
+        <el-col :span="24" :xs="24">
           <div class="gva-search-box">
             <el-form ref="elSearchFormRef" :inline="true" :model="formData" class="demo-form-inline"  @keyup.enter="onSubmitAcid">
-              <el-form-item label="通道账户">
+              <!-- <el-form-item label="通道账户">
                     <el-select
                     v-model="formData.acId"
                     placeholder="请选择通道账号"
@@ -413,10 +413,26 @@
                       :value="item.acId"
                   />
                 </el-select>
+              </el-form-item> -->
+              <el-form-item label="账户名" prop="acAccount">
+              <el-input v-model="viewSearchInfo.acAccount" placeholder="搜索条件" />
               </el-form-item>
+
+              <el-form-item label="通道code" prop="channelCode">
+              <el-input v-model="viewSearchInfo.channelCode" placeholder="搜索条件" />
+              </el-form-item>
+          
+              <el-form-item label="产品名称" prop="productName">
+              <el-input v-model="viewSearchInfo.productName" placeholder="搜索条件" />
+              </el-form-item>
+
+              <el-form-item label="天" prop="dt">
+              <el-input v-model="viewSearchInfo.dt" placeholder="搜索条件" />
+              </el-form-item>
+              
               <el-form-item>
-                <el-button type="primary" icon="search" @click="onSubmitAcid">查询</el-button>
-                <el-button icon="refresh" @click="onResetAcid">重置</el-button>
+                <el-button type="primary" icon="search" @click="viewOnSubmit">查询</el-button>
+                <el-button icon="refresh" @click="viewOnReset">重置</el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -443,7 +459,7 @@
         <el-table-column align="left" label="通道账户名" prop="acAccount" width="150" />
         <el-table-column align="left" label="账户备注" prop="acRemark" width="150" />
         <el-table-column align="left" label="通道code" prop="channelCode" width="100" />
-        <el-table-column align="left" label="产品ID" prop="productId" width="120" />
+        <!-- <el-table-column align="left" label="产品ID" prop="productId" width="120" /> -->
         <el-table-column align="left" label="产品名称" prop="productName" width="150" />
         <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
@@ -520,6 +536,7 @@ import {
   updateBdaChaccIndexD,
   findBdaChaccIndexD,
   getBdaChaccIndexDList,
+  getBdaChaccIndexDListWeek,
   getBdaChaccIndexDUesrOverview,
   getBdaChaccIndexToDayIncome,
   getBdaChaccIndexToDayInOkCnt,
@@ -621,7 +638,7 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getBdaChaccIndexDList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const table = await getBdaChaccIndexDListWeek({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
     total.value = table.data.total
@@ -728,14 +745,14 @@ const dialogUid = ref(0)
 // 查看详情控制标记
 const detailShow = ref(false)
 
-
 // 打开详情弹窗
 const openDetailShow = () => {
+  getDetails(formData)
   detailShow.value = true
   console.log('row==>' + JSON.stringify(formData.value))
   dialogUid.value = formData.value.uid
   
-  getDetails(formData)
+  
 }
 
 const cardList = ref([])
@@ -834,7 +851,7 @@ const getDetails = async (row) => {
 
   }
 
-  getViewTableData(row)
+  getViewTableData()
   // getAccIncomeSumData(row)
 }
 
@@ -857,7 +874,8 @@ const closeDetailShow = () => {
           income: 0,
           dt: '',
           }
-          // todayIncomeSum.value = defaultShow
+   dialogUid.value = 0
+   viewSearchInfo.value = {}
 }
 
 
@@ -1083,9 +1101,9 @@ const viewHandleCurrentChange = (val) => {
 }
 
 // 查询
-const getViewTableData = async(row) => {
-  viewSearchInfo.value.uid = row.value.uid
-  const table = await getBdaChaccIndexDList({ page: viewPage.value, pageSize: viewPageSize.value, ...viewSearchInfo.value })
+const getViewTableData = async() => {
+  viewSearchInfo.value.uid = dialogUid.value 
+  const table = await getBdaChaccIndexDListWeek({ page: viewPage.value, pageSize: viewPageSize.value, ...viewSearchInfo.value })
   if (table.code === 0) {
     viewTableData.value = table.data.list
     viewTotal.value = table.data.total

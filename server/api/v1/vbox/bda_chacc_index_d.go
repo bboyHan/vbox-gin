@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
@@ -159,6 +160,27 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDList(c *gin.Context
 		return
 	}
 	if list, total, err := bdaChaccIndexDService.GetBdaChaccIndexDInfoList(pageInfo); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
+	}
+}
+
+func (bdaChaccIndexDApi *BdaChaccIndexDApi) GetBdaChaccIndexDListWeek(c *gin.Context) {
+	var pageInfo vboxReq.BdaChaccIndexDSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := bdaChaccIndexDService.GetBdaChaccIndexDInfoListWeek(pageInfo, ids); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

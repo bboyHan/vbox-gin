@@ -28,5 +28,6 @@ func (s *BdaChaccIndexDRouter) InitBdaChaccIndexDRouter(Router *gin.RouterGroup)
 		bdaChaccIndexDRouterWithoutRecord.GET("getBdaChaccIndexToDayInOkCnt", bdaChaccIndexDApi.GetBdaChaccIndexToDayInOkCnt)   // 获取用户通道粒度成率统计-天更新列表
 		bdaChaccIndexDRouterWithoutRecord.GET("getBdaChaccIndexToWeekIncome", bdaChaccIndexDApi.GetBdaChaccIndexToWeekIncome)   // 获取用户通道粒度成率统计-天更新列表
 		bdaChaccIndexDRouterWithoutRecord.GET("getBdaChaccIndexToWeekInOkCnt", bdaChaccIndexDApi.GetBdaChaccIndexToWeekInOkCnt) // 获取用户通道粒度成率统计-天更新列表
+		bdaChaccIndexDRouterWithoutRecord.GET("getBdaChaccIndexDListWeek", bdaChaccIndexDApi.GetBdaChaccIndexDListWeek)         // 获取用户通道粒度成率统计-天更新列表
 	}
 }

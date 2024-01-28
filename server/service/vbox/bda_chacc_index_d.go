@@ -92,6 +92,64 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoList(in
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
 	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account = ?", info.AcAccount)
+	}
+	if info.AcRemark != "" {
+		db = db.Where("ac_remark = ?", info.AcRemark)
+	}
+	if info.ChannelCode != "" {
+		db = db.Where("channel_code = ?", info.ChannelCode)
+	}
+	if info.ProductId != "" {
+		db = db.Where("product_id = ?", info.ProductId)
+	}
+	if info.ProductName != "" {
+		db = db.Where("product_name = ?", info.ProductName)
+	}
+	if info.Dt != "" {
+		db = db.Where("dt = ?", info.Dt)
+	}
+	err = db.Count(&total).Error
+	if err != nil {
+		return
+	}
+
+	if limit != 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+
+	err = db.Find(&bdaChaccIndexDs).Error
+	return bdaChaccIndexDs, total, err
+}
+
+// GetBdaChaccIndexDInfoList 分页获取用户通道粒度成率统计-天更新记录
+// Author [piexlmax](https://github.com/piexlmax)
+func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoListWeek(info vboxReq.BdaChaccIndexDSearch, ids []uint) (list []vbox.BdaChaccIndexD, total int64, err error) {
+	limit := info.PageSize
+	offset := info.PageSize * (info.Page - 1)
+
+	now := time.Now()
+	sTime := now.AddDate(0, 0, -6).Format("2006-01-02")
+	// 创建db
+	db := global.GVA_DB.Model(&vbox.BdaChaccIndexD{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') >= ? and created_by in ? ", sTime, ids).Order("dt desc")
+	var bdaChaccIndexDs []vbox.BdaChaccIndexD
+	// 如果有条件搜索 下方会自动创建搜索语句
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
+	}
+	if info.Uid != nil {
+		db = db.Where("uid = ?", info.Uid)
+	}
+	if info.Username != "" {
+		db = db.Where("user_name = ?", info.Username)
+	}
+	if info.AcId != "" {
+		db = db.Where("ac_id = ?", info.AcId)
+	}
+	if info.AcAccount != "" {
+		db = db.Where("ac_account = ?", info.AcAccount)
+	}
 	if info.AcRemark != "" {
 		db = db.Where("ac_remark = ?", info.AcRemark)
 	}
@@ -231,6 +289,16 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexDByHand
 
 func (bdaChaccIndexDService *BdaChaccIndexDService) CronVboxBdaChaccIndexD() (err error) {
 	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	// 删除符合条件的数据
+	result := global.GVA_DB.Where("dt = ?", dt).Delete(&vbox.BdaChaccIndexD{})
+	// 检查删除操作的错误
+	if result.Error != nil {
+		// 处理错误
+	} else {
+		// 输出受影响的行数
+		fmt.Println(result.RowsAffected)
+	}
+
 	fmt.Println(dt, "统计开始")
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
 	var uids []int
@@ -478,10 +546,10 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 		}
 		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
 		key := item.StepTime + "-" + item.AcID
-		fmt.Println("key---->", key)
+		//fmt.Println("key---->", key)
 		incomeMap[key] = item.OkIncome
 
-		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+		//fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
 	}
 
 	var seriesData []vboxResp.SeriesItem
@@ -490,12 +558,12 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 		var incomes []int
 		// 内层循环
 		for _, time := range timeData {
-			fmt.Printf(time + "-" + accId + "\n")
+			//fmt.Printf(time + "-" + accId + "\n")
 			// 构建 key
 			key := time + "-" + accId
 			// 在 incomeMap 中查找 key
 			if val, ok := incomeMap[key]; ok {
-				fmt.Println("ok---->", ok)
+				//fmt.Println("ok---->", ok)
 				// 找到，将值存入数组
 				incomes = append(incomes, int(val))
 			} else {
@@ -505,7 +573,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 		}
 
 		// 处理每个 accId 对应的 incomes 数组
-		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
 			Name:   accId,
 			Type:   "line",
@@ -521,7 +589,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayIncome(
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
-	fmt.Printf(" entity: %v\n", entity)
+	//fmt.Printf(" entity: %v\n", entity)
 	return entity, err
 }
 
@@ -600,10 +668,10 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 		}
 		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
 		key := item.StepTime + "-" + item.AcID
-		fmt.Println("key---->", key)
+		//fmt.Println("key---->", key)
 		incomeMap[key] = item.OkIncome
 
-		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+		//fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
 	}
 
 	var seriesData []vboxResp.SeriesItem
@@ -612,12 +680,12 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 		var incomes []int
 		// 内层循环
 		for _, time := range timeData {
-			fmt.Printf(time + "-" + accId + "\n")
+			//fmt.Printf(time + "-" + accId + "\n")
 			// 构建 key
 			key := time + "-" + accId
 			// 在 incomeMap 中查找 key
 			if val, ok := incomeMap[key]; ok {
-				fmt.Println("ok---->", ok)
+				//fmt.Println("ok---->", ok)
 				// 找到，将值存入数组
 				incomes = append(incomes, int(val))
 			} else {
@@ -627,7 +695,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 		}
 
 		// 处理每个 accId 对应的 incomes 数组
-		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
 			Name:   accId,
 			Type:   "line",
@@ -643,7 +711,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToDayOkCnt(r
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
-	fmt.Printf(" entity: %v\n", entity)
+	//fmt.Printf(" entity: %v\n", entity)
 	return entity, err
 }
 
@@ -706,10 +774,10 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekIncome
 		}
 		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
 		key := item.StepTime + "-" + item.AcID
-		fmt.Println("key---->", key)
+		//fmt.Println("key---->", key)
 		incomeMap[key] = item.OkIncome
 
-		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+		//fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
 	}
 
 	var seriesData []vboxResp.SeriesItem
@@ -718,12 +786,12 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekIncome
 		var incomes []int
 		// 内层循环
 		for _, time := range timeData {
-			fmt.Printf(time + "-" + accId + "\n")
+			//fmt.Printf(time + "-" + accId + "\n")
 			// 构建 key
 			key := time + "-" + accId
 			// 在 incomeMap 中查找 key
 			if val, ok := incomeMap[key]; ok {
-				fmt.Println("ok---->", ok)
+				//fmt.Println("ok---->", ok)
 				// 找到，将值存入数组
 				incomes = append(incomes, int(val))
 			} else {
@@ -733,7 +801,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekIncome
 		}
 
 		// 处理每个 accId 对应的 incomes 数组
-		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
 			Name:   accId,
 			Type:   "line",
@@ -749,7 +817,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekIncome
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
-	fmt.Printf(" entity: %v\n", entity)
+	//fmt.Printf(" entity: %v\n", entity)
 	return entity, err
 }
 
@@ -813,10 +881,10 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekOkCnt(
 		}
 		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
 		key := item.StepTime + "-" + item.AcID
-		fmt.Println("key---->", key)
+		//fmt.Println("key---->", key)
 		incomeMap[key] = item.OkIncome
 
-		fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
+		//fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
 	}
 
 	var seriesData []vboxResp.SeriesItem
@@ -825,12 +893,12 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekOkCnt(
 		var incomes []int
 		// 内层循环
 		for _, time := range timeData {
-			fmt.Printf(time + "-" + accId + "\n")
+			//fmt.Printf(time + "-" + accId + "\n")
 			// 构建 key
 			key := time + "-" + accId
 			// 在 incomeMap 中查找 key
 			if val, ok := incomeMap[key]; ok {
-				fmt.Println("ok---->", ok)
+				//fmt.Println("ok---->", ok)
 				// 找到，将值存入数组
 				incomes = append(incomes, int(val))
 			} else {
@@ -840,7 +908,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekOkCnt(
 		}
 
 		// 处理每个 accId 对应的 incomes 数组
-		fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
+		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
 			Name:   accId,
 			Type:   "line",
@@ -856,7 +924,7 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexToWeekOkCnt(
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
-	fmt.Printf(" entity: %v\n", entity)
+	//fmt.Printf(" entity: %v\n", entity)
 	return entity, err
 }
 
@@ -871,7 +939,7 @@ func GetUsersAccChVboxPayOrderInfoList(id int, chId string, accId string, dt str
 }
 
 func getChaAccUserCardResp(querySql string, dt string, uid int) (res vboxResp.ChaAccUserCardResp, err error) {
-	fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
+	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaAccUserCardResp{})
 	rows, err := db.Raw(querySql, dt, uid, dt, uid).Rows()
 	if err != nil {
@@ -881,7 +949,7 @@ func getChaAccUserCardResp(querySql string, dt string, uid int) (res vboxResp.Ch
 	defer rows.Close()
 	// 如果有下一行数据，继续循环
 	for rows.Next() {
-		fmt.Println("--->,,")
+		//fmt.Println("--->,,")
 		// 遍历查询结果并将值映射到结构体中
 		var item vboxResp.ChaAccUserCardResp
 		err := rows.Scan(&item.Uid, &item.AcidCnt, &item.ChannelCnt, &item.OkOrderCnt, &item.OkIncome)
@@ -889,7 +957,7 @@ func getChaAccUserCardResp(querySql string, dt string, uid int) (res vboxResp.Ch
 			panic(err)
 		}
 		item.Dt = dt
-		fmt.Println("--->", item)
+		//fmt.Println("--->", item)
 		return item, err
 
 	}
