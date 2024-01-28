@@ -12,8 +12,6 @@ import (
 
 func HandleShopMoneyAvailable() (err error) {
 	//自定义 通道账号可用检测
-	rdConn := global.GVA_REDIS.Conn()
-	defer rdConn.Close()
 	var idList []uint
 	// 拿出现在所有付方可用的账户
 	err = global.GVA_DB.Model(&vbox.PayAccount{}).Table("vbox_pay_account").
@@ -37,7 +35,7 @@ func HandleShopMoneyAvailable() (err error) {
 		}
 		// 获取当前组织所拥有的产品列表
 		key := fmt.Sprintf(global.OrgChanSet, orgIdTemp[0])
-		c, err := rdConn.Exists(context.Background(), key).Result()
+		c, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
 		if c == 0 {
 			var productIds []uint
 			if err != nil {
@@ -53,13 +51,13 @@ func HandleShopMoneyAvailable() (err error) {
 			}
 
 			for _, cid := range channelCodeList {
-				rdConn.SAdd(context.Background(), key, cid)
+				global.GVA_REDIS.SAdd(context.Background(), key, cid)
 			}
 			//jsonStr, _ := json.Marshal(channelCodeList)
 			//rdConn.Set(context.Background(), key, jsonStr, 10*time.Minute)
-			rdConn.Expire(context.Background(), key, 1*time.Minute)
+			global.GVA_REDIS.Expire(context.Background(), key, 1*time.Minute)
 		} else {
-			cidList, _ := rdConn.SMembers(context.Background(), key).Result()
+			cidList, _ := global.GVA_REDIS.SMembers(context.Background(), key).Result()
 			channelCodeList = cidList
 		}
 
@@ -67,7 +65,7 @@ func HandleShopMoneyAvailable() (err error) {
 		for _, cid := range channelCodeList {
 			var moneyList []string
 			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgIdTemp[0], cid)
-			cm, err := rdConn.Exists(context.Background(), moneyKey).Result()
+			cm, err := global.GVA_REDIS.Exists(context.Background(), moneyKey).Result()
 
 			if cm == 0 {
 				if err != nil {
@@ -83,14 +81,14 @@ func HandleShopMoneyAvailable() (err error) {
 					continue
 				} else {
 					for _, m := range moneyList {
-						rdConn.SAdd(context.Background(), moneyKey, m)
+						global.GVA_REDIS.SAdd(context.Background(), moneyKey, m)
 					}
 					//jsonStr, _ := json.Marshal(moneyList)
 					//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
-					rdConn.Expire(context.Background(), moneyKey, 1*time.Minute)
+					global.GVA_REDIS.Expire(context.Background(), moneyKey, 1*time.Minute)
 				}
 			} else {
-				moneyMem, _ := rdConn.SMembers(context.Background(), moneyKey).Result()
+				moneyMem, _ := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Result()
 				moneyList = moneyMem
 			}
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -37,7 +38,42 @@ func Classifier(payments interface{}) map[string]map[string][]string {
 				paymentsByTypeAndAmount[showName][amount] = append(ids, provideID)
 			}
 		}
-		break
+	case []product.SdoDaoYuOrderRecord:
+		for _, payment := range payments.([]product.SdoDaoYuOrderRecord) {
+			orderAmount := strconv.FormatFloat(payment.OrderAmount, 'f', -1, 64)
+			parts := strings.Split(orderAmount, ".")
+
+			var intStrAmount string
+			if len(parts) > 0 {
+				intStrAmount = parts[0]
+			} else {
+				intStrAmount = orderAmount
+			}
+
+			appName := payment.AppName
+			accAndOrderID := fmt.Sprintf("%s_%s", payment.DisplayAccount, payment.OrderId)
+			if payment.PayStatus != 5 {
+				continue
+			}
+
+			// 检查是否存在对应的充值类型的map
+			if _, ok := paymentsByTypeAndAmount[appName]; !ok {
+				paymentsByTypeAndAmount[appName] = make(map[string][]string)
+			}
+
+			// 添加充值账号ID到对应的支付金额中（去重）
+			ids := paymentsByTypeAndAmount[appName][intStrAmount]
+			exists := false
+			for _, id := range ids {
+				if id == accAndOrderID {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				paymentsByTypeAndAmount[appName][intStrAmount] = append(ids, accAndOrderID)
+			}
+		}
 	case []product.SdoOrderRecord:
 		for _, payment := range payments.([]product.SdoOrderRecord) {
 			orderAmount := payment.OrderAmount
@@ -74,7 +110,6 @@ func Classifier(payments interface{}) map[string]map[string][]string {
 				paymentsByTypeAndAmount[appName][intStrAmount] = append(ids, accAndOrderID)
 			}
 		}
-		break
 	default:
 		// Handle other types or provide an error message
 		fmt.Println("Unsupported type:", reflect.TypeOf(v))

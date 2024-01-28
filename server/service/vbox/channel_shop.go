@@ -69,6 +69,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidAlipayUrl(c.Address)
 		case "1004": //zfb
 			flag = utils.ValidAlipayUrl(c.Address)
+		case "1005": //qb tb
+			flag = utils.ValidTBUrl(c.Address)
 		}
 		if !flag {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)

@@ -74,7 +74,7 @@
         <el-row :gutter="12">
           <span v-for="item in countItem">
             <el-col :span="12">
-              <el-popover trigger="hover" placement="right-end" width="450" >
+              <el-popover trigger="hover" placement="right-end" width="450">
                 <el-row>
                   <el-col :span="24">团队可取用池子实况（剩余）：</el-col>
                   <el-col v-for="ele in item.list" :span="6">
@@ -97,7 +97,7 @@
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
-        <el-table-column align="left" label="ID" prop="acId" width="120">
+        <el-table-column align="left" label="ID" prop="acId" width="140">
           <template #default="scope">
             {{ scope.row.acId }}
             <el-button type="primary" link icon="wallet-filled" class="table-button" style="margin-left: 5px"
@@ -210,43 +210,107 @@
       </div>
     </div>
 
-    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" :draggable="true"
-               destroy-on-close style="width: 400px">
-      <el-scrollbar height="100px">
-        <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
-          <el-row>
-            <el-col :span="24">
-              <el-form-item label="产码方式" prop="type" :required="true">
-                <el-radio-group v-model="formData.type" @change="handleChange">
-                  <el-radio label="1">
-                    <template #default><span>引导</span></template>
-                  </el-radio>
-                  <el-radio label="2">
-                    <template #default><span>预产</span></template>
-                  </el-radio>
-                  <el-radio label="3">
-                    <template #default><span>原生</span></template>
-                  </el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="24">
-              <el-form-item label="通道ID" prop="cid" :required="true">
-                <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
-                             style="width: 100%"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-scrollbar>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeChanDialog">取 消</el-button>
-          <el-button type="primary" @click="enterChanDialog">确 定</el-button>
+    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close style="width: 1000px">
+      <!--        <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
+                <el-row>
+                  <el-col :span="24">
+                    <el-form-item label="产码方式" prop="type" :required="true">
+                      <el-radio-group v-model="formData.type" @change="handleChange">
+                        <el-radio label="1">
+                          <template #default><span>引导</span></template>
+                        </el-radio>
+                        <el-radio label="2">
+                          <template #default><span>预产</span></template>
+                        </el-radio>
+                        <el-radio label="3">
+                          <template #default><span>原生</span></template>
+                        </el-radio>
+                      </el-radio-group>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-row>
+                  <el-col :span="24">
+                    <el-form-item label="通道ID" prop="cid" :required="true">
+                      <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
+                                   style="width: 100%"/>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </el-form>-->
+      <el-scrollbar height="700px">
+        <div>
+          <div>
+            <el-row :gutter="24">
+              <el-col :span="24" :xs="24">
+                <div v-for="(parent, index) in parentNodes" :key="index" class="card-container">
+                  <el-col :span="24" :xs="24">
+                    <div class="flex justify-between items-center flex-wrap"
+                         style="margin-left: 10px;margin-bottom: -30px"><h2>
+                      {{ parent.productName }}</h2></div>
+                    <el-divider></el-divider>
+                  </el-col>
+                  <el-row :gutter="12">
+                    <div v-if="parent.children && parent.children.length > 0"
+                         style="flex-wrap: wrap;  justify-content: center;display: flex;">
+                      <div v-for="(node, childIndex) in parent.children" :key="childIndex">
+                        <el-col class="card" :span="24" :xs="24">
+                          <div @click="handleProdClick(node)">
+                            <CenterCard title="" :custom-style="accCustomStyle">
+                              <template #action>
+                                <span class="gvaIcon-prompt" style="color: #999"></span>
+                              </template>
+                              <template #body>
+                                <div class="acc-container">
+                                  <div class="indicator">
+                                  <span>
+                                    <div class="label">编码</div>
+                                    <div class="value">{{ node.channelCode }}</div>
+                                  </span>
+                                    <span>
+                                    <div class="label">名称</div>
+                                    <div class="value">{{ node.productName }}</div>
+                                  </span>
+                                  </div>
+                                </div>
+                              </template>
+                            </CenterCard>
+                          </div>
+                        </el-col>
+                      </div>
+                    </div>
+                    <div v-else>
+                      <el-col class="card" :span="24" :xs="24">
+                        <div @click="handleProdClick(parent)">
+                          <CenterCard title="" :custom-style="accCustomStyle">
+                            <template #action>
+                              <span class="gvaIcon-prompt" style="color: #999"></span>
+                            </template>
+                            <template #body>
+                              <div class="acc-container">
+                                <div class="indicator">
+                                <span>
+                                  <div class="label">编码</div>
+                                  <div class="value">{{ parent.channelCode }}</div>
+                                </span>
+                                  <span>
+                                  <div class="label">名称</div>
+                                  <div class="value">{{ parent.productName }}</div>
+                                </span>
+                                </div>
+                              </div>
+                            </template>
+                          </CenterCard>
+                        </div>
+                      </el-col>
+                    </div>
+                  </el-row>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
         </div>
-      </template>
+      </el-scrollbar>
     </el-dialog>
 
     <!--  创建 1000 -->
@@ -256,17 +320,21 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="产码方式" prop="type">
-              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                <el-radio label="1">
-                  <template #default><span>引导</span></template>
-                </el-radio>
-                <el-radio label="2">
-                  <template #default><span>预产</span></template>
-                </el-radio>
-                <el-radio label="3">
-                  <template #default><span>原生</span></template>
-                </el-radio>
-              </el-radio-group>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
+              <!--
+                            <el-radio-group v-model="formData.type" @change="handleChange" disabled>
+                              <el-radio label="1">
+                                <template #default><span>引导</span></template>
+                              </el-radio>
+                              <el-radio label="2">
+                                <template #default><span>预产</span></template>
+                              </el-radio>
+                              <el-radio label="3">
+                                <template #default><span>原生</span></template>
+                              </el-radio>
+                            </el-radio-group>-->
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -319,6 +387,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="returnPreStep">上一步</el-button>
           <el-button @click="close1000Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -331,18 +400,10 @@
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="产码方式" prop="type">
-              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                <el-radio label="1">
-                  <template #default><span>引导</span></template>
-                </el-radio>
-                <el-radio label="2">
-                  <template #default><span>预产</span></template>
-                </el-radio>
-                <el-radio label="3">
-                  <template #default><span>原生</span></template>
-                </el-radio>
-              </el-radio-group>
+            <el-form-item label="产码方式" prop="type" disabled>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -407,18 +468,10 @@
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule2000" label-width="80px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="产码方式" prop="type">
-              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                <el-radio label="1">
-                  <template #default><span>引导</span></template>
-                </el-radio>
-                <el-radio label="2">
-                  <template #default><span>预产</span></template>
-                </el-radio>
-                <el-radio label="3">
-                  <template #default><span>原生</span></template>
-                </el-radio>
-              </el-radio-group>
+            <el-form-item label="产码方式" prop="type" disabled>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -479,18 +532,10 @@
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="产码方式" prop="type">
-              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                <el-radio label="1">
-                  <template #default><span>引导</span></template>
-                </el-radio>
-                <el-radio label="2">
-                  <template #default><span>预产</span></template>
-                </el-radio>
-                <el-radio label="3">
-                  <template #default><span>原生</span></template>
-                </el-radio>
-              </el-radio-group>
+            <el-form-item label="产码方式" prop="type" disabled>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -555,18 +600,10 @@
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="产码方式" prop="type">
-              <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                <el-radio label="1">
-                  <template #default><span>引导</span></template>
-                </el-radio>
-                <el-radio label="2">
-                  <template #default><span>预产</span></template>
-                </el-radio>
-                <el-radio label="3">
-                  <template #default><span>原生</span></template>
-                </el-radio>
-              </el-radio-group>
+            <el-form-item label="产码方式" prop="type" disabled>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -588,7 +625,9 @@
           </el-col>
         </el-row>
         <el-form-item label="报文" prop="token">
-          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+          <el-input v-model="formData.token" type="textarea" :clearable="true"
+                    placeholder="输入示例：https://yaoshi.sdo.com/apipool?system_deviceId=83241004891122-40caee54f545f373&sequence=7&isHttp=0&netFlag=WIFI&method=txz_bs_mixed.dqOrder.list&ticket=cFFHWkDhsIx112NhvcX09FFaDUm3p%2F4Pk146eTWCS7IdU34mtVVI8rgoCVXnJmTJ9kfSiHkT0BP8SXK1sdeLempgKsItWc2F3FPn3BMsa6stXomxFjDNyaOieJADp3NapOnjl9Qnh7n9zi%2BavTlWAxE45Y9R38iCZz6x98tLMu0%3D&txzDeviceId=861110048918892&sndaId=1122890350&maxCount=10&version=a.9.4.8&timestampMs=-1"/>
+          />
         </el-form-item>
         <el-row>
           <el-col :span="6"></el-col>
@@ -969,23 +1008,18 @@
                title="查看充值详情" destroy-on-close>
       <el-scrollbar height="550px">
         <el-table tooltip-effect="dark" :data="orderHis4000TableData" row-key="ID" style="width: 100%">
-          <el-table-column align="left" label="创建时间" prop="PayTime" width="160">
-            <template #default="scope">
-              {{ formatDate(scope.row.OrderTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column align="left" label="充值类型" prop="productName" width="80"/>
+          <el-table-column align="left" label="充值类型" prop="payProductName" width="80"/>
           <el-table-column align="left" label="渠道" prop="appName" width="100"/>
           <el-table-column align="left" label="上游订单" prop="orderId" width="280"/>
-          <el-table-column align="left" label="充值账号" prop="inputPayUser" width="120"/>
-          <el-table-column align="left" label="金额" prop="PayAmt" width="100">
+          <el-table-column align="left" label="充值账号" prop="displayAccount" width="120"/>
+          <el-table-column align="left" label="金额" prop="orderAmount" width="100">
             <template #default="scope">
               {{ Number(scope.row.orderAmount) }}
             </template>
           </el-table-column>
-          <el-table-column align="left" label="核对时间" prop="PayTime" width="160">
+          <el-table-column align="left" label="时间" prop="PayTime" width="160">
             <template #default="scope">
-              {{ formatDate(scope.row.StateTime) }}
+              {{ formatUtcTimestamp(scope.row.timestampMs / 1000) }}
             </template>
           </el-table-column>
         </el-table>
@@ -1162,7 +1196,8 @@
     </el-dialog>
 
     <!-- 获取订单acc统计数据 -->
-    <el-dialog v-model="showCostOrderAccVisible" :title="showCostOrderAccTitle" :draggable="true" width="1000px" @close="closeCostOrderAcc">
+    <el-dialog v-model="showCostOrderAccVisible" :title="showCostOrderAccTitle" :draggable="true" width="1000px"
+               @close="closeCostOrderAcc">
       <div class="gva-search-box">
         <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">
           <el-form-item label="通道账户名" prop="acId">
@@ -1433,7 +1468,7 @@ import {
   formatHandNotify,
   formatCDStatusColor,
   formatCDStatus,
-  formatRegionCode
+  formatRegionCode, formatProdType
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
@@ -1450,6 +1485,7 @@ import utcPlugin from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import provinces from "@/assets/json/provinces.json";
 import {callback2Pa, findPayOrder, getOrderAccOverview, getPayOrderList} from "@/api/payOrder";
+import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
 
 defineOptions({
   name: 'ChannelAccount'
@@ -1882,11 +1918,15 @@ const handleCurrentChange = (val) => {
 const getTableData = async () => {
   const table = await getChannelAccountList({page: page.value, pageSize: pageSize.value, ...searchInfo.value})
   const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value})
+
   await countAccFunc()
 
   if (table.code === 0) {
     tableData.value = table.data.list
     vcpTableData.value = vcpTable.data.list
+    //card select
+    parentNodes.value = getParentNodes(vcpTableData.value);
+
     total.value = table.data.total
     page.value = table.data.page
     pageSize.value = table.data.pageSize
@@ -2537,7 +2577,7 @@ const closeOrderHis2000Show = () => {
 }
 const closeOrderHis4000Show = () => {
   orderHis4000Visible.value = false
-  orderHis4000TableData.value = {}
+  orderHis4000TableData.value = []
 }
 const closePayCodeOverviewShow = () => {
   payCodeOverviewVisible.value = false
@@ -3001,10 +3041,10 @@ const onAccSubmit = async () => {
 }
 
 const showCostOrderAccVisible = ref(false)
-const showCostOrderAccTitle= ref()
-let costOrderAccTable =ref([]);
-const showCostOrderAcc = async(row) => {
-  if(row != ''){
+const showCostOrderAccTitle = ref()
+let costOrderAccTable = ref([]);
+const showCostOrderAcc = async (row) => {
+  if (row != '') {
     searchAccInfo.value.toUid = row.CreatedBy
     const res = await findChannelAccount({ID: row.ID})
     if (res.code === 0) {
@@ -3018,9 +3058,9 @@ const showCostOrderAcc = async(row) => {
   const voRes = await getOrderAccOverview({...searchAccInfo.value});
   console.log(voRes.data)
   if (voRes.code === 0) {
-    if(row != ''){
+    if (row != '') {
       showCostOrderAccTitle.value = `订单核算(用户归属:${searchAccInfo.value.username})`
-    }else {
+    } else {
       showCostOrderAccTitle.value = `订单核算`
     }
     costOrderAccTable.value = voRes.data.list;
@@ -3033,9 +3073,258 @@ const closeCostOrderAcc = () => {
   costOrderAccTable.value = [];
 }
 // ---------- 消费历史 ---------
+
+// ---------- 通道卡片 ---------
+const list = [
+  {
+    "ID": 1,
+    "CreatedAt": "2023-10-19T11:16:21.534+08:00",
+    "UpdatedAt": "2023-10-19T11:16:21.534+08:00",
+    "parentId": "0",
+    "channelCode": "1000",
+    "productId": "qb_yd",
+    "productName": "QB引导",
+    "ext": "",
+    "type": 1,
+    "payType": "app",
+    "children": [
+      {
+        "ID": 2,
+        "CreatedAt": "2023-10-19T15:48:01.036+08:00",
+        "UpdatedAt": "2023-10-19T15:48:01.036+08:00",
+        "parentId": "1000",
+        "channelCode": "1001",
+        "productId": "qb_jd",
+        "productName": "QB京东",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      },
+      {
+        "ID": 3,
+        "CreatedAt": "2023-10-19T16:03:06.657+08:00",
+        "UpdatedAt": "2023-10-19T16:03:06.657+08:00",
+        "parentId": "1000",
+        "channelCode": "1002",
+        "productId": "qb_dy",
+        "productName": "QB抖音",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      },
+      {
+        "ID": 4,
+        "CreatedAt": "2023-10-19T16:08:03.396+08:00",
+        "UpdatedAt": "2023-10-19T16:08:03.396+08:00",
+        "parentId": "1000",
+        "channelCode": "1003",
+        "productId": "qb_jym",
+        "productName": "QB交易猫",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      },
+      {
+        "ID": 8,
+        "CreatedAt": "2023-10-19T16:08:03.396+08:00",
+        "UpdatedAt": "2023-10-19T16:08:03.396+08:00",
+        "parentId": "1000",
+        "channelCode": "1004",
+        "productId": "qb_zfb",
+        "productName": "QB支付宝",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      },
+      {
+        "ID": 9,
+        "CreatedAt": "2024-01-23T14:52:41.593+08:00",
+        "UpdatedAt": "2024-01-23T14:52:41.593+08:00",
+        "parentId": "1000",
+        "channelCode": "1101",
+        "productId": "qb_jw",
+        "productName": "QB骏网",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      },
+      {
+        "ID": 12,
+        "CreatedAt": "2024-01-27T15:06:38.558+08:00",
+        "UpdatedAt": "2024-01-27T15:06:38.558+08:00",
+        "parentId": "1000",
+        "channelCode": "1005",
+        "productId": "qb_tb",
+        "productName": "QB淘宝",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      }
+    ],
+    "CreatedBy": 1,
+    "UpdatedBy": 0,
+    "DeletedBy": 0
+  },
+  {
+    "ID": 5,
+    "CreatedAt": "2023-10-22T02:19:00.174+08:00",
+    "UpdatedAt": "2023-10-22T02:19:00.174+08:00",
+    "parentId": "0",
+    "channelCode": "2000",
+    "productId": "jx3_yd",
+    "productName": "剑三引导",
+    "ext": "",
+    "type": 1,
+    "payType": "app",
+    "children": [
+      {
+        "ID": 6,
+        "CreatedAt": "2023-10-22T02:21:22.7+08:00",
+        "UpdatedAt": "2023-10-22T02:21:22.7+08:00",
+        "parentId": "2000",
+        "channelCode": "2001",
+        "productId": "jx3_tb",
+        "productName": "J3淘宝",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      }
+    ],
+    "CreatedBy": 1,
+    "UpdatedBy": 0,
+    "DeletedBy": 0
+  },
+  {
+    "ID": 7,
+    "CreatedAt": "2023-12-05T10:02:43.495+08:00",
+    "UpdatedAt": "2023-12-05T10:02:43.495+08:00",
+    "parentId": "0",
+    "channelCode": "3000",
+    "productId": "qb_wx",
+    "productName": "QB微信扫码",
+    "ext": "",
+    "type": 2,
+    "payType": "wechat",
+    "children": null,
+    "CreatedBy": 1,
+    "UpdatedBy": 0,
+    "DeletedBy": 0
+  },
+  {
+    "ID": 10,
+    "CreatedAt": "2024-01-24T21:42:11.385+08:00",
+    "UpdatedAt": "2024-01-24T21:42:11.385+08:00",
+    "parentId": "0",
+    "channelCode": "4000",
+    "productId": "sdo",
+    "productName": "盛趣点券",
+    "ext": "",
+    "type": 1,
+    "payType": "app",
+    "children": [
+      {
+        "ID": 11,
+        "CreatedAt": "2024-01-24T21:43:27.588+08:00",
+        "UpdatedAt": "2024-01-24T21:43:27.588+08:00",
+        "parentId": "4000",
+        "channelCode": "4001",
+        "productId": "sdo_tb",
+        "productName": "淘宝",
+        "ext": "",
+        "type": 1,
+        "payType": "app",
+        "children": null,
+        "CreatedBy": 1,
+        "UpdatedBy": 0,
+        "DeletedBy": 0
+      }
+    ],
+    "CreatedBy": 1,
+    "UpdatedBy": 0,
+    "DeletedBy": 0
+  }
+]
+// 获取所有父节点
+// const parentNodes = getParentNodes(list);
+const parentNodes = ref([])
+
+function getParentNodes(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    if (node.parentId === "0") {
+      result.push(node);
+    }
+  }
+  return result;
+}
+
+function shouldShowParent(node) {
+  return !(node.children && node.children.length > 0);
+}
+
+function handleProdClick(node) {
+  console.log(node)
+  formData.value.cid = node.channelCode
+
+  dialogChanFormVisible.value = false
+  let channelCode = Number(formData.value.cid);
+  console.log(formData.value)
+
+  if (channelCode >= 3000 && channelCode < 3099) {
+    formData.value.type = 2
+    dialog3000FormVisible.value = true
+  } else if (channelCode >= 1000 && channelCode < 1099) {
+    formData.value.type = 1
+    dialog1000FormVisible.value = true
+  } else if (channelCode >= 1100 && channelCode < 1199) {
+    formData.value.type = 1
+    dialog1100FormVisible.value = true
+  } else if (channelCode >= 2000 && channelCode < 2099) {
+    formData.value.type = 1
+    dialog2000FormVisible.value = true
+  } else if (channelCode >= 4000 && channelCode < 4099) {
+    formData.value.type = 1
+    dialog4000FormVisible.value = true
+  }
+}
+
+const accCustomStyle = ref({
+  background: 'linear-gradient(to right, #3498db, #2ecc71)',
+  color: '#FFF',
+  height: '150px',
+})
+// ---------- 通道卡片 ---------
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .region-card-container {
   display: flex;
   flex-wrap: wrap;
@@ -3110,5 +3399,61 @@ const closeCostOrderAcc = () => {
   padding-top: 5px;
   font-size: 18px;
   font-weight: bold;
+}
+
+.tab {
+  margin-bottom: 20px;
+}
+
+.tab h2 {
+  cursor: pointer;
+  padding: 10px;
+  background-color: #ccc;
+  margin: 0;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  width: 260px;
+}
+
+.indicator {
+  display: flex;
+  justify-content: space-around; // 使子元素水平居中展开
+  padding: 15px;
+  border-radius: 8px; // 添加圆角
+}
+
+.indicator span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px; // 调整间距
+
+  &:not(:last-child) {
+    border-right: 2px solid #fff; // 白色边框
+    margin-right: 10px; // 调整间距
+  }
+}
+
+.acc-container {
+  color: #FFFFFF;
+}
+
+.label {
+  color: #F5F5F5;
+  font-size: 16px;
+}
+
+.value {
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 15px; // 调整间距
 }
 </style>

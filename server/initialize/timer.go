@@ -39,7 +39,7 @@ func Timer() {
 		//	fmt.Println("add timer error:", err)
 		//}
 
-		_, err = global.GVA_Timer.AddTaskByFunc("handleOrderCallCheck", "@every 1m", func() {
+		_, err = global.GVA_Timer.AddTaskByFunc("handleOrderCallCheck", "@every 60s", func() {
 			err = task.HandleOrderCallCheck()
 			if err != nil {
 				fmt.Println("timer error:", err)

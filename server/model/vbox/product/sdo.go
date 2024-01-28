@@ -67,13 +67,13 @@ func (o *SdoOrderRecord) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	orderTime, err := time.Parse(customTimeLayout, aux.OrderTime)
+	orderTime, err := time.Parse(customTimeLayout, aux.OrderTimeStr)
 	if err != nil {
 		return err
 	}
 	o.OrderTime = orderTime
 
-	stateTime, err := time.Parse(customTimeLayout, aux.StateTime)
+	stateTime, err := time.Parse(customTimeLayout, aux.StateTimeStr)
 	if err != nil {
 		return err
 	}

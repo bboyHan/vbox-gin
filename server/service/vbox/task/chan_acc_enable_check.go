@@ -331,6 +331,34 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Reject(false)
 							continue
 						}
+					} else if global.SdoContains(cid) { //sdo
+						_, errQ := product.QrySdoDaoYuRecords(v.Obj)
+						if errQ != nil {
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
+							}
+
+							errR := operationRecordService.CreateSysOperationRecord(record)
+							if errR != nil {
+								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+							}
+
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0)
+							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+
+						}
 					} else if global.PcContains(cid) { //QB直付
 						errQ := product.QryQQRecords(v.Obj)
 						if errQ != nil {
@@ -652,8 +680,15 @@ func ChanAccEnableCheckTask() {
 					global.GVA_LOG.Info("收到一条需要处理的账号【关闭】", zap.Any("v", v))
 
 					if global.TxContains(cid) {
-						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
-						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						var moneyList []string
+						userIDs := utils2.GetUsersByOrgIds(orgTmp)
+
+						if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+							Where("cid = ? and created_by in ?", cid, userIDs).Scan(&moneyList).Error; err != nil {
+							global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
+							_ = msg.Ack(true)
+							continue
+						}
 						/*pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
@@ -718,9 +753,17 @@ func ChanAccEnableCheckTask() {
 
 						}
 					} else if global.SdoContains(cid) {
+						var moneyList []string
+						userIDs := utils2.GetUsersByOrgIds(orgTmp)
 
-						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
-						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+							Where("cid = ? and created_by in ?", cid, userIDs).Scan(&moneyList).Error; err != nil {
+							global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
+							_ = msg.Ack(true)
+							continue
+						}
+						/*moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()*/
 						/*pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgTmp[0], cid)
 						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 

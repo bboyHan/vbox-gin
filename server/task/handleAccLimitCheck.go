@@ -142,6 +142,32 @@ func HandleAccLimitCheck() (err error) {
 							}
 						}
 					}
+				} else if global.SdoContains(cid) {
+					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
+					orgID := orgTmp[0]
+					pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgID, cid)
+					var keys []string
+					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+					for _, key := range keys {
+						resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+							Min:    "0",
+							Max:    "0",
+							Offset: 0,
+							Count:  -1,
+						}).Val()
+
+						for _, waitMem := range resWaitTmpList {
+							if strings.Contains(waitMem, accDBTmp.AcAccount) {
+								//	把超限的码全部处理掉
+								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+									Update("status", 0).Update("sys_status", 0)
+							}
+						}
+					}
 				} else if global.J3Contains(cid) {
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]

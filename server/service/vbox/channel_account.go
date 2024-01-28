@@ -239,7 +239,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		}
 		return ret, nil
 	} else if global.SdoContains(vca.Cid) {
-		records, err := product.QrySdoRecords(*vca)
+		records, err := product.QrySdoDaoYuRecords(*vca)
 		if err != nil {
 			return nil, err
 		}
@@ -304,6 +304,30 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res [
 				}
 				accQueueList = append(accQueueList, accQueue)
 			}
+			v.List = accQueueList
+		} else if global.SdoContains(cid) {
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
+			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+			var accQueueList []vboxResp.AccQueue
+			for _, money := range moneyList {
+				cntKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgId, cid, money)
+				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+				accQueue := vboxResp.AccQueue{
+					Money:  money,
+					Unused: cnt,
+				}
+				accQueueList = append(accQueueList, accQueue)
+			}
+			v.List = accQueueList
+		} else if global.J3Contains(cid) {
+			var accQueueList []vboxResp.AccQueue
+			cntKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgId, cid)
+			cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+			accQueue := vboxResp.AccQueue{
+				Money:  "default",
+				Unused: cnt,
+			}
+			accQueueList = append(accQueueList, accQueue)
 			v.List = accQueueList
 		}
 	}
@@ -617,6 +641,17 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		_, _, errX := product.Secret(token)
 		if errX != nil {
 			return errX
+		}
+	} else if global.SdoContains(vca.Cid) {
+		parsedURL, errX := url.Parse(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("无效的 URL:", zap.Error(errX))
+			return errors.New("无效的URL")
+		}
+		query := parsedURL.Query()
+		sndaId := query.Get("sndaId")
+		if sndaId == "" {
+			return errors.New("账号信息不完整")
 		}
 	} else if global.J3Contains(vca.Cid) {
 		parsedURL, errX := url.Parse(token)

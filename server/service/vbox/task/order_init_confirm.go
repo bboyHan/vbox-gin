@@ -212,7 +212,7 @@ func OrderConfirmTask() {
 				} else if global.SdoContains(chanID) {
 
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
-					records, errQ := product.QrySdoRecordBetween(vca, odCreatedTime, *expTime)
+					records, errQ := product.QrySdoDaoYuRecordBetween(vca, odCreatedTime, *expTime)
 					if errQ != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
@@ -223,12 +223,16 @@ func OrderConfirmTask() {
 						continue
 					}
 					rdMap := product.Classifier(records)
+					global.GVA_LOG.Info("筛后的map", zap.Any("map", rdMap), zap.Any("records", records))
 					if vm, ok := rdMap["彩虹岛"]; !ok {
-						global.GVA_LOG.Info("还没有Sdo的充值记录")
+						global.GVA_LOG.Info("还没有Sdo的充值记录，空空如也")
 					} else {
-						if rd, ok2 := vm[string(rune(money))]; !ok2 {
+						runStr := string(rune(money))
+						formatMoney := strconv.FormatInt(int64(money), 10)
+						//打印两个 money转化
+						global.GVA_LOG.Info("money", zap.Any("runStr", runStr), zap.Any("formatMoney", formatMoney))
+						if rd, ok2 := vm[formatMoney]; !ok2 {
 							global.GVA_LOG.Info("还没有Sdo的充值记录")
-
 						} else { // 证明这种金额的，充上了
 							var flag bool
 							var platID string

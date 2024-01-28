@@ -2,6 +2,19 @@ import {formatTimeToStr} from '@/utils/date'
 import {getDict} from '@/utils/dictionary'
 import {codeToText} from 'element-china-area-data';
 
+// 格式化产品类型
+export const formatProdType = (type) => {
+    let opMsg = '';
+    if (type === 1) {
+        opMsg = '引导'
+    } else if (type === 2) {
+        opMsg = '预产'
+    } else if (type === 3) {
+        opMsg = '原生'
+    }
+    return opMsg
+}
+
 // 格式化运营商
 export const formatOPDesc = (operator) => {
     let opMsg = '';

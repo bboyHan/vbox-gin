@@ -270,7 +270,7 @@ func Records(rawURL string, openID string, openKey string, period time.Duration)
 	client := vbHttp.NewHTTPClient()
 
 	resp, err := client.Get(newURL, options)
-	global.GVA_LOG.Info("Records newURL:  ->", zap.String("newURL", newURL), zap.Any("resp", string(resp.Body)))
+	//global.GVA_LOG.Info("Records newURL:  ->", zap.String("newURL", newURL), zap.Any("resp", string(resp.Body)))
 	if err != nil {
 		global.GVA_LOG.Error("err:  ->", zap.Error(err), zap.Any("resp", string(resp.Body)))
 		return nil

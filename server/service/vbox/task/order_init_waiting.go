@@ -1100,6 +1100,11 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
+	case "1005": //qb tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
 	default:
 		payUrl = shop.Address
 	}
@@ -1167,6 +1172,8 @@ func HandleEventType(chanID string) (int, error) {
 		return 1, nil
 	} else if chanCode >= 1100 && chanCode <= 1199 {
 		return 1, nil
+	} else if chanCode >= 4000 && chanCode <= 4099 {
+		return 1, nil
 	} else if chanCode >= 2000 && chanCode <= 2099 {
 		return 1, nil
 	} else if chanCode >= 3000 && chanCode <= 3099 {
@@ -1187,6 +1194,8 @@ func HandleExpTime2Product(chanID string) (time.Duration, error) {
 		key = "2000"
 	} else if global.PcContains(chanID) {
 		key = "3000"
+	} else if global.SdoContains(chanID) {
+		key = "4000"
 	}
 
 	var expTimeStr string

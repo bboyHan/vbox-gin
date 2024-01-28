@@ -12,14 +12,15 @@
         <el-form-item label="通道账号" prop="acAccount">
           <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
         </el-form-item>
-        <el-form-item label="通道编码" prop="cid">
-          <el-input v-model="searchInfo.cid" placeholder="搜索通道编码"/>
+        <el-form-item label="通道编码" prop="channelCode">
+          <el-input v-model="searchInfo.channelCode" placeholder="搜索通道编码"/>
         </el-form-item>
         <el-form-item label="订单状态" prop="orderStatus">
           <el-select v-model="searchInfo.orderStatus" placeholder="选择状态">
             <el-option label="已支付" value="1"/>
             <el-option label="未支付" value="2"/>
             <el-option label="超时" value="3"/>
+            <el-option label="失败" value="0"/>
           </el-select>
         </el-form-item>
         <el-form-item label="回调状态" prop="cbStatus">
@@ -49,11 +50,11 @@
           @selection-change="handleSelectionChange"
       >
         <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
-        <el-table-column align="center" label="通道账号" prop="acAccount" width="180">
+        <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
               <el-button type="info" link @click="getAccDetails(scope.row)">
-                {{ scope.row.acId }}
+                {{ scope.row.acAccount }}
               </el-button>
               <el-button type="primary" link @click="openOrderHisShow(scope.row)">
                 <el-icon style="margin-right: 1px">
@@ -119,11 +120,11 @@
       <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID" border @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
         <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
-        <el-table-column align="center" label="账号ID" prop="acId" width="180">
+        <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
           <template #default="scope">
             <div v-if="isPendingAcc(scope.row)">
               <el-button type="info" link @click="getAccDetails(scope.row)">
-                {{ scope.row.acId }}
+                {{ scope.row.acAccount }}
               </el-button>
               <el-button type="primary" link @click="openOrderHisShow(scope.row)">
                 <el-icon style="margin-right: 1px">
@@ -311,6 +312,66 @@
           <el-table-column align="left" label="充值时间" prop="PayTime" width="160">
             <template #default="scope">
               {{ formatUtcTimestamp(scope.row.PayTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!-- 查看充值详情 2000 -->
+    <el-dialog v-model="orderHis2000Visible" style="width: 1100px" :draggable="true" lock-scroll
+               :before-close="closeOrderHis2000Show"
+               title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-descriptions :column="4" border style="background-color: #a5abb4">
+          <el-descriptions-item label="名称">{{ orderHis2000Info.gameName }}</el-descriptions-item>
+          <el-descriptions-item label="账号">{{ orderHis2000Info.account }}</el-descriptions-item>
+          <el-descriptions-item label="区域">{{ orderHis2000Info.zoneName }}</el-descriptions-item>
+          <el-descriptions-item label="积分">{{ orderHis2000Info.leftCoins }}</el-descriptions-item>
+        </el-descriptions>
+        <el-table tooltip-effect="dark" :data="orderHis2000List" row-key="ID" style="width: 100%">
+          <el-table-column align="center" label="账号" prop="acAccount" width="220"/>
+          <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+          <el-table-column align="center" label="金额" prop="money" width="90"/>
+          <el-table-column align="center" label="首查积分" prop="hisBalance" width="90"/>
+          <el-table-column align="center" label="首查时间" prop="nowTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.nowTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="核准积分" prop="nowBalance" width="90">
+            <template #default="scope">
+              <div v-if="Number(scope.row.nowBalance) === 0">-</div>
+              <div v-else>{{ Number(scope.row.nowBalance) }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="核准时间" prop="checkTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.checkTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!-- 查看充值详情 4000 -->
+    <el-dialog v-model="orderHis4000Visible" style="width: 1100px" :draggable="true" lock-scroll
+               :before-close="closeOrderHis4000Show"
+               title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-table tooltip-effect="dark" :data="orderHis4000TableData" row-key="ID" style="width: 100%">
+          <el-table-column align="left" label="充值类型" prop="payProductName" width="80"/>
+          <el-table-column align="left" label="渠道" prop="appName" width="100"/>
+          <el-table-column align="left" label="上游订单" prop="orderId" width="280"/>
+          <el-table-column align="left" label="充值账号" prop="displayAccount" width="120"/>
+          <el-table-column align="left" label="金额" prop="orderAmount" width="100">
+            <template #default="scope">
+              {{ Number(scope.row.orderAmount) }}
+            </template>
+          </el-table-column>
+          <el-table-column align="left" label="时间" prop="PayTime" width="160">
+            <template #default="scope">
+              {{ formatUtcTimestamp(scope.row.timestampMs / 1000) }}
             </template>
           </el-table-column>
         </el-table>
@@ -676,16 +737,42 @@ const closeAccDetailShow = () => {
 
 // ------ 账户充值记录 ---------
 const orderHisVisible = ref(false)
+const orderHis2000Visible = ref(false)
+const orderHis4000Visible = ref(false)
 const orderHisTableData = ref([])
+const orderHis4000TableData = ref([])
+const orderHis2000Info = ref([])
+const orderHis2000List = ref([])
 const openOrderHisShow = async (row) => {
-  orderHisVisible.value = true
+  // orderHisVisible.value = true
   let req = {...row}
   console.log(req)
+  let cid = req.channelCode
+  if (cid >= 3000 && cid <= 3099) {
+    orderHisVisible.value = true;
+  } else if (cid >= 1000 && cid <= 1099) {
+    orderHisVisible.value = true;
+  } else if (cid >= 1100 && cid <= 1199) {
+    orderHisVisible.value = true;
+  } else if (cid >= 2000 && cid <= 2099) {
+    orderHis2000Visible.value = true;
+  } else if (cid >= 4000 && cid <= 4099) {
+    orderHis4000Visible.value = true;
+  }
   await queryAccOrderHisFunc(req)
 }
 const closeOrderHisShow = () => {
   orderHisVisible.value = false
   orderHisTableData.value = []
+}
+const closeOrderHis2000Show = () => {
+  orderHis2000Visible.value = false
+  orderHis2000List.value = []
+  orderHis2000Info.value = {}
+}
+const closeOrderHis4000Show = () => {
+  orderHis4000Visible.value = false
+  orderHis4000TableData.value = []
 }
 const queryAccOrderHisFunc = async (row) => {
   const req = {...row}
@@ -693,8 +780,28 @@ const queryAccOrderHisFunc = async (row) => {
 
   let res = await queryAccOrderHis(resAcc.data.revca)
   console.log(res.data)
-  if (res.code === 0) {
-    orderHisTableData.value = res.data.list.WaterList
+  let cid = resAcc.data.revca.cid
+  if (cid >= 3000 && cid <= 3099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 1000 && cid <= 1099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 1100 && cid <= 1199) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 4000 && cid <= 4099) {
+    if (res.code === 0) {
+      orderHis4000TableData.value = res.data.list
+    }
+  } else if (cid >= 2000 && cid <= 2099) {
+    if (res.code === 0) {
+      orderHis2000Info.value = res.data.list.info
+      orderHis2000List.value = res.data.list.list
+    }
   }
 }
 // ------ 账户充值记录 ---------

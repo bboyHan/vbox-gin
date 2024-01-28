@@ -237,7 +237,7 @@ timer:
     with_seconds: false
 zap:
     level: info
-    prefix: '[vbox-server]'
+    prefix: '[vb]'
     format: console
     director: log
     encode-level: LowercaseColorLevelEncoder
