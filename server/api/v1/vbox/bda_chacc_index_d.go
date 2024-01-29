@@ -209,11 +209,17 @@ func (bdaChaccIndexDApi *BdaChaccIndexDApi) CronVboxBdaChaccIndexDByHand(c *gin.
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := bdaChaccIndexDService.CronVboxBdaChaccIndexDByHand(pageInfo.Dt); err != nil {
+	ids := utils2.GetUserIDS(c)
+	if list, total, err := bdaChaccIndexDService.CronVboxBdaChaccIndexDByHand(pageInfo.Dt, ids); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
-		response.OkWithMessage("调度成功", c)
+		response.OkWithDetailed(response.PageResult{
+			List:     list,
+			Total:    total,
+			Page:     pageInfo.Page,
+			PageSize: pageInfo.PageSize,
+		}, "获取成功", c)
 	}
 }
 

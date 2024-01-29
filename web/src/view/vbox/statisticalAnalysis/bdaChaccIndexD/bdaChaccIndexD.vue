@@ -56,7 +56,7 @@
     </div>
     <div class="gva-table-box">
         <div class="gva-btn-list">
-            <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+            <!-- <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" :disabled="!multipleSelection.length" placement="top" width="160">
             <p>确定要删除吗？</p>
             <div style="text-align: right; margin-top: 8px;">
@@ -66,8 +66,13 @@
             <template #reference>
                 <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
             </template>
-            </el-popover>
+            </el-popover> -->
+            <!-- <el-form-item>
+              <el-button size="mini" type="primary" icon="refresh" @click="getTableDataHis">历史数据</el-button>
+              <el-button size="mini" type="primary" icon="refresh" @click="getTableDataToday">当天数据</el-button>
+            </el-form-item> -->
         </div>
+        <!--  历史数据 -->
         <el-table
         ref="multipleTable"
         style="width: 100%"
@@ -481,49 +486,7 @@
       </el-col>
       </el-row>
 
-      <!-- <el-scrollbar height="550px">
-        <el-descriptions column="1" border>
-                <el-descriptions-item label="用户id">
-                        {{ formData.uid }}
-                </el-descriptions-item>
-                <el-descriptions-item label="用户名">
-                        {{ formData.username }}
-                </el-descriptions-item>
-                <el-descriptions-item label="账号ID">
-                        {{ formData.acId }}
-                </el-descriptions-item>
-                <el-descriptions-item label="通道账户名">
-                        {{ formData.acAccount }}
-                </el-descriptions-item>
-                <el-descriptions-item label="账户备注">
-                        {{ formData.acRemark }}
-                </el-descriptions-item>
-                <el-descriptions-item label="通道code">
-                        {{ formData.channelCode }}
-                </el-descriptions-item>
-                <el-descriptions-item label="产品ID">
-                        {{ formData.productId }}
-                </el-descriptions-item>
-                <el-descriptions-item label="产品名称">
-                        {{ formData.productName }}
-                </el-descriptions-item>
-                <el-descriptions-item label="订单量">
-                        {{ formData.orderQuantify }}
-                </el-descriptions-item>
-                <el-descriptions-item label="成功订单量">
-                        {{ formData.okOrderQuantify }}
-                </el-descriptions-item>
-                <el-descriptions-item label="成交率">
-                        {{ formData.ratio }}
-                </el-descriptions-item>
-                <el-descriptions-item label="成交金额">
-                        {{ formData.income }}
-                </el-descriptions-item>
-                <el-descriptions-item label="天">
-                        {{ formData.dt }}
-                </el-descriptions-item>
-        </el-descriptions>
-      </el-scrollbar> -->
+  
     </el-dialog>
   </div>
 </template>
@@ -541,7 +504,8 @@ import {
   getBdaChaccIndexToDayIncome,
   getBdaChaccIndexToDayInOkCnt,
   getBdaChaccIndexToWeekIncome,
-  getBdaChaccIndexToWeekInOkCnt
+  getBdaChaccIndexToWeekInOkCnt,
+  cronVboxBdaChaccIndexDByHand
 } from '@/api/bdaChaccIndexD'
 
 // 全量引入格式化工具 请按需保留
@@ -635,6 +599,7 @@ const handleCurrentChange = (val) => {
   page.value = val
   getTableData()
 }
+
 
 // 查询
 const getTableData = async() => {
@@ -937,11 +902,14 @@ const enterDialog = async () => {
 const getAccDetails = async (row) => {
   console.log(row)
   // 打开弹窗
-  const res = await findBdaChaccIndexD({ ID: row.ID })
-  if (res.code === 0) {
-    formData.value = res.data.rebdaChaccIndexD
-    openDetailShow()
-  }
+  // const res = await findBdaChaccIndexD({ ID: row.ID })
+  // if (res.code === 0) {
+  //   formData.value = res.data.rebdaChaccIndexD
+  //   // openDetailShow()
+  // }
+  formData.value.uid = row.uid
+  formData.value.username = row.username
+  openDetailShow()
   // openDetailShow()
   // 打开弹窗
   // const res = await findChannelAccount({acId: row.acId})
@@ -1112,7 +1080,7 @@ const getViewTableData = async() => {
   }
 }
 
-// getTableData()
+
 
 // ============== 表格控制部分结束 ===============
 </script>
