@@ -1105,6 +1105,11 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
+	case "1006": //qb tb
+		payUrl, err = utils.HandleXCXUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
 	default:
 		payUrl = shop.Address
 	}

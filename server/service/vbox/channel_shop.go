@@ -46,12 +46,16 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		if c.Address == "" {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)
 		} else {
-			//	如果是口令地址，则先解析url
-			addr, errA := utils.ParseUrlContent(c.Address)
-			if errA != nil {
-				return fmt.Errorf("传入的地址不合法, %s", c.Address)
+			if cid == "1006" {
+				global.GVA_LOG.Info("跳过解析http url合法性校验")
+			} else {
+				//	如果是口令地址，则先解析url
+				addr, errA := utils.ParseUrlContent(c.Address)
+				if errA != nil {
+					return fmt.Errorf("传入的地址不合法, %s", c.Address)
+				}
+				c.Address = addr
 			}
-			c.Address = addr
 		}
 		var flag bool
 		switch cid {
@@ -71,6 +75,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidAlipayUrl(c.Address)
 		case "1005": //qb tb
 			flag = utils.ValidTBUrl(c.Address)
+		case "1006": //wx xcx
+			flag = utils.ValidXCXUrl(c.Address)
 		}
 		if !flag {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)

@@ -156,6 +156,38 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	}
 }
 
+// TransferChannelForAcc 通道转移
+// @Tags ChannelAccount
+// @Summary 创建通道账号
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.ChannelAccount true "通道转移"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
+// @Router /vca/transferChannelForAcc [post]
+func (vcaApi *ChannelAccountApi) TransferChannelForAcc(c *gin.Context) {
+	var vca vbox.ChannelAccount
+	err := c.ShouldBindJSON(&vca)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	verify := utils.Rules{
+		"ID":  {utils.NotEmpty()},
+		"Cid": {utils.NotEmpty()},
+	}
+	if err := utils.Verify(vca, verify); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := vcaService.TransferChannelForAcc(&vca, c); err != nil {
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("创建成功", c)
+	}
+}
+
 // DeleteChannelAccount 删除通道账号
 // @Tags ChannelAccount
 // @Summary 删除通道账号

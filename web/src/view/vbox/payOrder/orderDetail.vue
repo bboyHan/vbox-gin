@@ -42,10 +42,14 @@
                 <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
               </el-col>
               <el-col>
-<!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
+                <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
               </el-col>
               <el-col>
-                <p v-if="Number(payData.channel_code) === 1003" style="color: red;margin-right: 20px;margin-left: 20px">充值时必须滑动选择【王者荣耀】粘贴账号付款即可到账！</p>
+                <p v-if="Number(payData.channel_code) === 1003" style="color: red;margin-right: 20px;margin-left: 20px">
+                  充值时必须<b style="color: blue;">滑动选择【王者荣耀】并粘贴账号</b>付款即可到账！</p>
+                <p v-else-if="Number(payData.channel_code) === 1006"
+                   style="color: red;margin-right: 20px;margin-left: 20px">
+                  点击<b style="color: blue;">【一键复制】</b>跳转微信，打开任意<b style="color: blue;">【聊天窗口】</b>粘贴发送复制内容，再根据提示步骤操作支付！</p>
               </el-col>
               <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
@@ -80,7 +84,16 @@
                 <div class="medicine-bag">
                   <span>{{ payData.account }}</span>
                 </div>
-                <div class="copy-tip">
+                <div v-if="Number(payData.channel_code) === 1006" class="copy-tip">
+                  <span>点复制</span>
+                  <span class="jtone"></span>
+                  <span>跳转微信</span>
+                  <span class="jttwo"></span>
+                  <span>聊天粘贴</span>
+                  <span class="jtthree"></span>
+                  <span>提示支付</span>
+                </div>
+                <div v-else class="copy-tip">
                   <span>长按框内</span>
                   <span class="jtone"></span>
                   <span>复制</span>
@@ -103,7 +116,9 @@
           <el-row :gutter="12">
             <el-col :span="24">
               <div v-if="Number(payData.channel_code) === 1003">
-                <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">② 点击付款,右滑选"王者荣耀"</button>
+                <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">②
+                  点击付款,右滑选"王者荣耀"
+                </button>
               </div>
               <div v-else>
                 <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
@@ -169,8 +184,10 @@
                   <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
                   <div class="medicine-jw-card-info-bag">
                     <div v-if="cardNumber && password" class="result-container">
-                      <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b style="color: blue;font-size: 16px"> {{ cardNumber }}</b></p>
-                      <p><strong style="padding-right: 10px;font-size: 14px">密码:</strong><b style="color: blue;font-size: 16px"> {{ password }}</b></p>
+                      <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b
+                          style="color: blue;font-size: 16px"> {{ cardNumber }}</b></p>
+                      <p><strong style="padding-right: 10px;font-size: 14px">密码:</strong><b
+                          style="color: blue;font-size: 16px"> {{ password }}</b></p>
                     </div>
                     <div v-else>
                       <p style="color: #c4bdbd;">未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
@@ -194,7 +211,6 @@
             </el-col>
           </el-row>
         </div>
-
       </div>
 
       <!--   2000 引导   -->
@@ -226,7 +242,6 @@
                 </div>
               </el-col>
               <el-col :span="24">
-
               </el-col>
             </el-row>
           </div>
@@ -378,7 +393,6 @@
                 </div>
               </el-col>
               <el-col :span="24">
-
               </el-col>
             </el-row>
           </div>
@@ -417,7 +431,7 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-                <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
             </el-col>
           </el-row>
         </div>
@@ -431,8 +445,11 @@
             <div class="medicine-jw-card-info-submit-bag">
               <div v-if="cardNumber && password" class="result-container">
                 <p style="padding: 5px"><strong style="color: red">核对确认，提交后不可修改！</strong></p>
-                <p style="padding: 5px"><strong>卡号:</strong><b style="color: blue;font-size: 20px"> {{ cardNumber }}</b></p>
-                <p style="padding: 5px"><strong>密码:</strong><b style="color: blue;font-size: 20px"> {{ password }}</b></p>
+                <p style="padding: 5px"><strong>卡号:</strong><b style="color: blue;font-size: 20px"> {{
+                    cardNumber
+                  }}</b></p>
+                <p style="padding: 5px"><strong>密码:</strong><b style="color: blue;font-size: 20px"> {{ password }}</b>
+                </p>
               </div>
               <div v-else>
                 <p>未识别到卡号和密码，请核对是否包含16位卡号和16位密码</p>
@@ -481,6 +498,10 @@
               <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
                    src="@/assets/yd_qb_tb.png">
             </div>
+            <div v-else-if="Number(payData.channel_code) === 1006">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_qb_wx.png">
+            </div>
           </div>
           <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
             <el-row>
@@ -494,7 +515,16 @@
                   <div class="medicine-bag">
                     <span>{{ payData.account }}</span>
                   </div>
-                  <div class="copy-tip">
+                  <div v-if="Number(payData.channel_code) === 1006" class="copy-tip">
+                    <span>点复制</span>
+                    <span class="jtone"></span>
+                    <span>跳微信</span>
+                    <span class="jttwo"></span>
+                    <span>聊天粘贴</span>
+                    <span class="jtthree"></span>
+                    <span>看步骤</span>
+                  </div>
+                  <div v-else class="copy-tip">
                     <span>长按框内</span>
                     <span class="jtone"></span>
                     <span>复制</span>
@@ -503,6 +533,7 @@
                     <span class="jtthree"></span>
                     <span>打开跳转</span>
                   </div>
+
                   <div v-if="!copyInfoVisible">
                     <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                   </div>
@@ -524,7 +555,9 @@
                   </div>
                   <div v-else>
                     <div v-if="Number(payData.channel_code) === 1003">
-                      <button class="btn-copy yd_p_button" @click="openPay" style="font-size: 16px">点此支付,右滑选"王者荣耀"</button>
+                      <button class="btn-copy yd_p_button" @click="openPay" style="font-size: 16px">
+                        点此支付,右滑选"王者荣耀"
+                      </button>
                     </div>
                     <div v-else>
                       <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
@@ -567,7 +600,7 @@
         </template>
       </el-dialog>
 
-<!--   引导步骤2000   -->
+      <!--   引导步骤2000   -->
       <el-dialog width="360px" v-model="dialogYd2000Visible" :draggable="true" :before-close="closeYdDialog"
                  :style="backgroundYdImageStyle"
                  top="5vh" destroy-on-close>
@@ -642,7 +675,8 @@
       <div style="padding: 0; margin: -20px 0 0;">
         <div>
           <div v-if="Number(payData.channel_code) === 4001">
-            <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);" src="@/assets/yd_sdo_tb.png">
+            <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                 src="@/assets/yd_sdo_tb.png">
           </div>
         </div>
         <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
@@ -849,7 +883,23 @@ watchEffect(() => {
 
 // 复制
 const copyInfo = async () => {
-  let copyInfo = `${payData.value.account}`
+  let cid = Number(payData.value.channel_code);
+  let copyInfo = ''
+  if (cid === 1006) {
+    copyInfo = `【支付步骤】
+-----
+【如有历史账号记录，请先清除！】
+【选择指定金额，核对粘贴指定账号再支付！】
+
+1、指定金额：${payData.value.money}元
+2、复制账号：${payData.value.account}
+3、点击跳转下面地址：
+
+ #小程序://腾讯充值/5I6C76SFkEcMeIj
+ `
+  } else {
+    copyInfo = `${payData.value.account}`
+  }
   console.log("copyInfo", copyInfo)
   const clipboard = new ClipboardJS('.btn-copy', {
     text: () => copyInfo
@@ -916,7 +966,7 @@ const openYdVisible = async () => {
       readInfoVisible.value = false
     }, 3000)
     dialogYd1000Visible.value = true
-  }else if (cid >= 4000 && cid < 4099) {
+  } else if (cid >= 4000 && cid < 4099) {
     startCountdown()
     readInfoVisible.value = true
     setTimeout(() => {
@@ -929,13 +979,32 @@ const openYdVisible = async () => {
 }
 
 const openPay = async () => {
-  let copyInfo = `${payData.value.account}`
+  let cid = Number(payData.value.channel_code);
+  let copyInfo = ''
+  if (cid === 1006) {
+    copyInfo = `【支付步骤】
+-----
+【如有历史账号记录，请先清除！】
+【选择指定金额，核对粘贴指定账号再支付！】
+
+1、指定金额：${payData.value.money}元
+2、复制账号：${payData.value.account}
+3、点击跳转下面地址：
+
+ #小程序://腾讯充值/5I6C76SFkEcMeIj
+ `
+    payData.value.resource_url = "weixin://"
+  } else {
+    copyInfo = `${payData.value.account}`
+  }
+  console.log("copyInfo", copyInfo)
+
   const clipboardX = new ClipboardJS('.btn-copy', {
     text: () => copyInfo
   });
 
   clipboardX.on('success', () => {
-    console.log('复制成功',copyInfo)
+    console.log('复制成功', copyInfo)
 
     // 等待200毫秒后跳转
     setTimeout(() => {
@@ -951,7 +1020,7 @@ const openPay = async () => {
       type: 'error',
       message: '复制异常'
     })
-    console.log('复制异常',copyInfo)
+    console.log('复制异常', copyInfo)
 
     clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
@@ -1168,13 +1237,13 @@ const submitCardInfo = async () => {
     payData.value.ext = c + "_" + p
     const cbRes = await cbExt({...payData.value})
     await closeCardVisible()
-    if (cbRes.code === 0){
+    if (cbRes.code === 0) {
       showSubmitCardModal.value = true;
       // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
       setTimeout(() => {
         showSubmitCardModal.value = false;
       }, 2000);
-    }else if (cbRes.code === 7){
+    } else if (cbRes.code === 7) {
       showSubmitErrInfo.value = cbRes.msg;
       showSubmitErrModal.value = true;
       // 设置一段时间后隐藏模态框（例如，3秒后隐藏）
@@ -1182,7 +1251,7 @@ const submitCardInfo = async () => {
         showSubmitErrModal.value = false;
       }, 2000);
     }
-  }else {
+  } else {
     await warnCardInfo();
   }
 }
@@ -1558,10 +1627,12 @@ textarea {
   outline: none;
   overflow: auto;
 }
+
 /* 设置 placeholder 文字样式 */
 textarea::placeholder {
   color: #c4bdbd; /* 设置灰色提示文字颜色 */
 }
+
 .result-container {
   border-radius: 5px;
 }

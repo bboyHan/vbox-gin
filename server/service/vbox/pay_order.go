@@ -1066,6 +1066,12 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 		if err != nil {
 			return "", err
 		}
+	case "1006": //wx xcx
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleXCXUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
 	default:
 		payUrl = shop.Address
 	}

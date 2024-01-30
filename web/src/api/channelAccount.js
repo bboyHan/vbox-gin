@@ -129,6 +129,22 @@ export const updateChannelAccount = (data) => {
 }
 
 // @Tags ChannelAccount
+// @Summary 通道转移
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelAccount true "通道转移"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
+// @Router /vca/updateChannelAccount [put]
+export const transferChannelForAcc = (data) => {
+  return service({
+    url: '/vca/transferChannelForAcc',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags ChannelAccount
 // @Summary 用id查询通道账号
 // @Security ApiKeyAuth
 // @accept application/json

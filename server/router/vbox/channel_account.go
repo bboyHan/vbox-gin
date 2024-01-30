@@ -16,6 +16,7 @@ func (s *ChannelAccountRouter) InitChannelAccountRouter(Router *gin.RouterGroup)
 	var vcaApi = v1.ApiGroupApp.VboxApiGroup.ChannelAccountApi
 	{
 		vcaRouter.POST("createChannelAccount", vcaApi.CreateChannelAccount)             // 新建通道账号
+		vcaRouter.POST("transferChannelForAcc", vcaApi.TransferChannelForAcc)           // 通道转移
 		vcaRouter.DELETE("deleteChannelAccount", vcaApi.DeleteChannelAccount)           // 删除通道账号
 		vcaRouter.DELETE("deleteChannelAccountByIds", vcaApi.DeleteChannelAccountByIds) // 批量删除通道账号
 		vcaRouter.PUT("updateChannelAccount", vcaApi.UpdateChannelAccount)              // 更新通道账号

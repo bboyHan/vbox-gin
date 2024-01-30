@@ -1,6 +1,5 @@
 package main
 
-//
 //import (
 //	"fmt"
 //	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
@@ -20,19 +19,20 @@ package main
 //	if err != nil {
 //		//global.GVA_LOG.Error("err:  ->", zap.Error(err))
 //	}
-//	htmlBody := string(resp.Body)
-//	//respHeaders := resp.Headers
+//	//htmlBody := string(resp.Body)
+//	respHeaders := resp.Headers
 //	//loc := respHeaders["Location"]
-//	fmt.Printf("%s", htmlBody)
+//	//fmt.Printf("%s", htmlBody)
+//	fmt.Printf("%s", respHeaders)
 //
 //	//if strings.Contains(htmlBody, "v.douyin.com") {
 //	//	// 先请求一次,获取 html body
 //	//
-//	re = regexp.MustCompile(`<input[^>]*id="__VIEWSTATE"[^>]*value="([^"]+)"`)
-//	match := re.FindStringSubmatch(htmlBody)
-//	if match != nil && len(match) > 1 {
-//		tmpUrl := match[1]
-//		fmt.Printf("%s", tmpUrl)
-//	}
+//	//re = regexp.MustCompile(`<input[^>]*id="__VIEWSTATE"[^>]*value="([^"]+)"`)
+//	//match := re.FindStringSubmatch(htmlBody)
+//	//if match != nil && len(match) > 1 {
+//	//	tmpUrl := match[1]
+//	//	fmt.Printf("%s", tmpUrl)
+//	//}
 //
 //}

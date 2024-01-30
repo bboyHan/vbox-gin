@@ -53,8 +53,8 @@
         :data="tableData"
         row-key="ID"
       >
-        <el-table-column align="left" label="ID" prop="eventId" width="180" />
-        <el-table-column align="left" label="用户名" prop="username" width="120" />
+        <el-table-column align="left" label="ID" prop="eventId" width="220" />
+<!--        <el-table-column align="left" label="用户名" prop="username" width="120" />-->
         <el-table-column align="left" label="积分" prop="recharge" width="120" />
         <el-table-column align="left" label="事件类型" prop="type" width="120">
           <template #default="scope">
@@ -65,7 +65,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="说明" prop="remark" width="420" />
+        <el-table-column align="left" label="说明" prop="remark" width="480" />
         <el-table-column align="left" label="日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
@@ -138,6 +138,7 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import CenterCard from "@/view/vbox/dashboard/dataCenterComponents/centerCard.vue";
+import {InfoFilled} from "@element-plus/icons-vue";
 
 defineOptions({
     name: 'UserWallet'

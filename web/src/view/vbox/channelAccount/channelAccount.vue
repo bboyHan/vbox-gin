@@ -68,7 +68,6 @@
           </template>
         </el-popover>
         <el-button type="primary" icon="wallet" @click="showCostOrderAcc('')">核算</el-button>
-
       </div>
       <div class="gva-btn-list">
         <el-row :gutter="12">
@@ -94,14 +93,32 @@
           </span>
         </el-row>
       </div>
+
+      <div class="gva-btn-list">
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <p><span style="color: blue;">【注意】</span>同类型通道，原则上不允许创建相同账号，<span style="color: red;">如在同一时间段产生同金额的订单，会对多个通道中的相同账号，均认定为“支付成功”</span>，请谨慎操作!
+            </p>
+          </el-col>
+          <el-col :span="24">
+            <p><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!
+            </p>
+          </el-col>
+        </el-row>
+      </div>
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
         <el-table-column align="left" label="ID" prop="acId" width="140">
           <template #default="scope">
             {{ scope.row.acId }}
-            <el-button type="primary" link icon="wallet-filled" class="table-button" style="margin-left: 5px"
-                       @click="showCostOrderAcc(scope.row)"></el-button>
+            <el-popover placement="top" width="300">
+              <p><span style="color: blue;">【核算查询】</span>查询该账号近日订单统计情况!</p>
+              <template #reference>
+                <el-button type="primary" link icon="wallet-filled" class="table-button" style="margin-left: 5px"
+                           @click="showCostOrderAcc(scope.row)"></el-button>
+              </template>
+            </el-popover>
           </template>
         </el-table-column>
         <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
@@ -165,22 +182,37 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="操作" width="120">
+        <el-table-column align="center" label="操作" width="160">
           <template #default="scope">
-            <div v-if="Number(scope.row.cid) === 3000">
-              <el-row>
-                <el-col :span="24">
-                  <el-button type="primary" link class="table-button" @click="createByChannelPayCodeFunc(scope.row)">
-                    产码
-                  </el-button>
-                  <el-button type="primary" link icon="info-filled" class="table-button"
-                             @click="openPayCodeOverviewShow(scope.row)"></el-button>
-                </el-col>
-              </el-row>
-            </div>
-            <div v-else>
-              <span>非预产通道</span>
-            </div>
+            <el-row :gutter="12">
+              <el-col :span="16">
+                <span v-if="Number(scope.row.cid) === 3000">
+                  <el-row>
+                    <el-col :span="24">
+                      <el-button type="primary" link class="table-button"
+                                 @click="createByChannelPayCodeFunc(scope.row)">
+                        产码
+                      </el-button>
+                      <el-button type="primary" link icon="info-filled" class="table-button"
+                                 @click="openPayCodeOverviewShow(scope.row)"></el-button>
+                    </el-col>
+                  </el-row>
+                </span>
+                <span v-else>
+                  <span>非预产通道</span>
+                </span>
+              </el-col>
+              <el-col :span="8">
+                <el-popover placement="top" width="240">
+                  <p><span style="color: blue;">【通道转移】</span>（用于同类型通道切换通道编码使用，不允许跨类型迁移）<span
+                      style="color: red;">注意：转移后，将进行旧资源池清理工作</span>，请谨慎操作!</p>
+                  <template #reference>
+                    <el-button type="primary" link icon="chrome-filled" class="table-button"
+                               @click="transferAccFunc(scope.row)"></el-button>
+                  </template>
+                </el-popover>
+              </el-col>
+            </el-row>
           </template>
         </el-table-column>
         <el-table-column align="center" label="操作" width="120">
@@ -210,7 +242,8 @@
       </div>
     </div>
 
-    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close style="width: 1000px">
+    <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close
+               style="width: 1000px">
       <!--        <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
                 <el-row>
                   <el-col :span="24">
@@ -627,7 +660,6 @@
         <el-form-item label="报文" prop="token">
           <el-input v-model="formData.token" type="textarea" :clearable="true"
                     placeholder="输入示例：https://yaoshi.sdo.com/apipool?system_deviceId=83241004891122-40caee54f545f373&sequence=7&isHttp=0&netFlag=WIFI&method=txz_bs_mixed.dqOrder.list&ticket=cFFHWkDhsIx112NhvcX09FFaDUm3p%2F4Pk146eTWCS7IdU34mtVVI8rgoCVXnJmTJ9kfSiHkT0BP8SXK1sdeLempgKsItWc2F3FPn3BMsa6stXomxFjDNyaOieJADp3NapOnjl9Qnh7n9zi%2BavTlWAxE45Y9R38iCZz6x98tLMu0%3D&txzDeviceId=861110048918892&sndaId=1122890350&maxCount=10&version=a.9.4.8&timestampMs=-1"/>
-          />
         </el-form-item>
         <el-row>
           <el-col :span="6"></el-col>
@@ -1425,6 +1457,46 @@
         </div>
       </template>
     </el-dialog>
+
+    <!--  通道转移 -->
+    <el-dialog v-model="dialogTransferFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle"
+               destroy-on-close style="width: 600px">
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" readonly disabled/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" readonly disabled/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="通道ID" prop="cid" :required="true">
+              <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
+                           style="width: 100%"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1439,7 +1511,7 @@ import {
   queryAccOrderHis,
   countAcc,
   switchEnableCA,
-  switchEnableCAByIds,
+  switchEnableCAByIds, transferChannelForAcc,
 } from '@/api/channelAccount'
 import {
   getChannelProductSelf
@@ -1757,7 +1829,7 @@ const rule = reactive({
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
     }],
-  type: [{
+  /*type: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
@@ -1766,7 +1838,7 @@ const rule = reactive({
       whitespace: true,
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
-    }],
+    }],*/
 })
 // 验证规则
 const rule2000 = reactive({
@@ -1789,7 +1861,7 @@ const rule2000 = reactive({
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
     }],
-  type: [{
+  /*type: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
@@ -1798,7 +1870,7 @@ const rule2000 = reactive({
       whitespace: true,
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
-    }],
+    }],*/
 })
 const chanRule = reactive({
   cid: [{
@@ -1811,7 +1883,7 @@ const chanRule = reactive({
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
     }],
-  type: [{
+  /*type: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
@@ -1820,7 +1892,7 @@ const chanRule = reactive({
       whitespace: true,
       message: '不能只输入空格',
       trigger: ['input', 'blur'],
-    }],
+    }],*/
 })
 
 // 验证规则
@@ -1834,6 +1906,7 @@ const pcRule = reactive({
   location: [{required: true, message: '请选择省或者省市', trigger: ['input', 'blur'],}],
   money: [{validator: checkMoney, trigger: 'blur'}]
 })
+
 const cascaderRules = reactive({
   acAccount: [
     {required: true, message: '请选择', trigger: ['input', 'blur', 'change'],}
@@ -1968,7 +2041,7 @@ const setRegionOptions = (ChannelCodeData, optionsData, disabled) => {
         label: item.name,
         children: []
       }
-      setChannelCodeOptions(
+      setRegionOptions(
           item.children,
           option.children,
       )
@@ -2367,6 +2440,7 @@ const closeDialog = () => {
   dialogUpd2000FormVisible.value = false
   dialogUpd3000FormVisible.value = false
   dialogUpd4000FormVisible.value = false
+  dialogTransferFormVisible.value = false
 
   formData.value = {
     acId: '',
@@ -2394,6 +2468,10 @@ const enterDialog = async () => {
         break
       case 'update':
         res = await updateChannelAccount(formData.value)
+        break
+      case 'transfer':
+        console.log("我tm要转移了", formData.value)
+        res = await transferChannelForAcc(formData.value)
         break
       default:
         res = await createChannelAccount(formData.value)
@@ -3075,203 +3153,6 @@ const closeCostOrderAcc = () => {
 // ---------- 消费历史 ---------
 
 // ---------- 通道卡片 ---------
-const list = [
-  {
-    "ID": 1,
-    "CreatedAt": "2023-10-19T11:16:21.534+08:00",
-    "UpdatedAt": "2023-10-19T11:16:21.534+08:00",
-    "parentId": "0",
-    "channelCode": "1000",
-    "productId": "qb_yd",
-    "productName": "QB引导",
-    "ext": "",
-    "type": 1,
-    "payType": "app",
-    "children": [
-      {
-        "ID": 2,
-        "CreatedAt": "2023-10-19T15:48:01.036+08:00",
-        "UpdatedAt": "2023-10-19T15:48:01.036+08:00",
-        "parentId": "1000",
-        "channelCode": "1001",
-        "productId": "qb_jd",
-        "productName": "QB京东",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      },
-      {
-        "ID": 3,
-        "CreatedAt": "2023-10-19T16:03:06.657+08:00",
-        "UpdatedAt": "2023-10-19T16:03:06.657+08:00",
-        "parentId": "1000",
-        "channelCode": "1002",
-        "productId": "qb_dy",
-        "productName": "QB抖音",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      },
-      {
-        "ID": 4,
-        "CreatedAt": "2023-10-19T16:08:03.396+08:00",
-        "UpdatedAt": "2023-10-19T16:08:03.396+08:00",
-        "parentId": "1000",
-        "channelCode": "1003",
-        "productId": "qb_jym",
-        "productName": "QB交易猫",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      },
-      {
-        "ID": 8,
-        "CreatedAt": "2023-10-19T16:08:03.396+08:00",
-        "UpdatedAt": "2023-10-19T16:08:03.396+08:00",
-        "parentId": "1000",
-        "channelCode": "1004",
-        "productId": "qb_zfb",
-        "productName": "QB支付宝",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      },
-      {
-        "ID": 9,
-        "CreatedAt": "2024-01-23T14:52:41.593+08:00",
-        "UpdatedAt": "2024-01-23T14:52:41.593+08:00",
-        "parentId": "1000",
-        "channelCode": "1101",
-        "productId": "qb_jw",
-        "productName": "QB骏网",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      },
-      {
-        "ID": 12,
-        "CreatedAt": "2024-01-27T15:06:38.558+08:00",
-        "UpdatedAt": "2024-01-27T15:06:38.558+08:00",
-        "parentId": "1000",
-        "channelCode": "1005",
-        "productId": "qb_tb",
-        "productName": "QB淘宝",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      }
-    ],
-    "CreatedBy": 1,
-    "UpdatedBy": 0,
-    "DeletedBy": 0
-  },
-  {
-    "ID": 5,
-    "CreatedAt": "2023-10-22T02:19:00.174+08:00",
-    "UpdatedAt": "2023-10-22T02:19:00.174+08:00",
-    "parentId": "0",
-    "channelCode": "2000",
-    "productId": "jx3_yd",
-    "productName": "剑三引导",
-    "ext": "",
-    "type": 1,
-    "payType": "app",
-    "children": [
-      {
-        "ID": 6,
-        "CreatedAt": "2023-10-22T02:21:22.7+08:00",
-        "UpdatedAt": "2023-10-22T02:21:22.7+08:00",
-        "parentId": "2000",
-        "channelCode": "2001",
-        "productId": "jx3_tb",
-        "productName": "J3淘宝",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      }
-    ],
-    "CreatedBy": 1,
-    "UpdatedBy": 0,
-    "DeletedBy": 0
-  },
-  {
-    "ID": 7,
-    "CreatedAt": "2023-12-05T10:02:43.495+08:00",
-    "UpdatedAt": "2023-12-05T10:02:43.495+08:00",
-    "parentId": "0",
-    "channelCode": "3000",
-    "productId": "qb_wx",
-    "productName": "QB微信扫码",
-    "ext": "",
-    "type": 2,
-    "payType": "wechat",
-    "children": null,
-    "CreatedBy": 1,
-    "UpdatedBy": 0,
-    "DeletedBy": 0
-  },
-  {
-    "ID": 10,
-    "CreatedAt": "2024-01-24T21:42:11.385+08:00",
-    "UpdatedAt": "2024-01-24T21:42:11.385+08:00",
-    "parentId": "0",
-    "channelCode": "4000",
-    "productId": "sdo",
-    "productName": "盛趣点券",
-    "ext": "",
-    "type": 1,
-    "payType": "app",
-    "children": [
-      {
-        "ID": 11,
-        "CreatedAt": "2024-01-24T21:43:27.588+08:00",
-        "UpdatedAt": "2024-01-24T21:43:27.588+08:00",
-        "parentId": "4000",
-        "channelCode": "4001",
-        "productId": "sdo_tb",
-        "productName": "淘宝",
-        "ext": "",
-        "type": 1,
-        "payType": "app",
-        "children": null,
-        "CreatedBy": 1,
-        "UpdatedBy": 0,
-        "DeletedBy": 0
-      }
-    ],
-    "CreatedBy": 1,
-    "UpdatedBy": 0,
-    "DeletedBy": 0
-  }
-]
 // 获取所有父节点
 // const parentNodes = getParentNodes(list);
 const parentNodes = ref([])
@@ -3322,6 +3203,84 @@ const accCustomStyle = ref({
   height: '150px',
 })
 // ---------- 通道卡片 ---------
+
+// ---------- 通道转移 ---------
+const dialogTransferFormVisible = ref(false)
+
+const transferAccFunc = async (row) => {
+  const res = await findChannelAccount({ID: row.ID})
+  typeTitle.value = '通道转移'
+  type.value = 'transfer'
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, type: formData.value.type})
+
+  if (vcpTable.code === 0) {
+    let retList = vcpTable.data.list
+    // console.log(retList)
+    let cidNum = Number(row.cid);
+    let prodList = []
+    let cidFilter;
+    if (cidNum >= 3000 && cidNum < 3099) {
+      cidFilter = 3000
+    } else if (cidNum >= 1000 && cidNum < 1099) {
+      cidFilter = 1000
+    } else if (cidNum >= 1100 && cidNum < 1199) {
+      cidFilter = 1000
+    } else if (cidNum >= 2000 && cidNum < 2099) {
+      cidFilter = 2000
+    } else if (cidNum >= 4000 && cidNum < 4099) {
+      cidFilter = 4000
+    }
+    for (let i = 0; i < retList.length; i++) {
+      if (cidFilter === Number(retList[i].channelCode)) {
+        prodList.push(retList[i])
+      }
+    }
+    console.log(prodList)
+    vcpTableData.value = prodList
+    channelCodeOptions.value = []
+    setTransferOptions(vcpTableData.value, channelCodeOptions.value, cidNum)
+    console.log(channelCodeOptions.value)
+  }
+
+  if (res.code === 0) {
+    formData.value = res.data.revca
+    console.log("转移前", formData.value)
+    dialogTransferFormVisible.value = true
+  }
+}
+
+
+const setTransferOptions = (ChannelCodeData, optionsData, cidNum) => {
+  ChannelCodeData &&
+  ChannelCodeData.forEach(item => {
+    let flag = false
+    if (Number(item.channelCode) === cidNum) {
+      flag = true
+    }
+    if (item.children && item.children.length) {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+        disabled: flag,
+        children: []
+      }
+      setTransferOptions(
+          item.children,
+          option.children,
+          cidNum
+      )
+      optionsData.push(option)
+    } else {
+      const option = {
+        value: item.channelCode + '',
+        label: item.productName,
+        disabled: flag,
+      }
+      optionsData.push(option)
+    }
+  })
+}
+// ---------- 通道转移 ---------
 </script>
 
 <style lang="scss" scoped>

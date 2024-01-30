@@ -132,6 +132,15 @@ func ValidTBUrl(requestString string) bool {
 	return true
 }
 
+// ValidXCXUrl 校验微信小程序合法性
+func ValidXCXUrl(requestString string) bool {
+	if strings.Contains(requestString, "#小程序://") {
+	} else {
+		return false
+	}
+	return true
+}
+
 // HandleDYUrl 处理dy url
 func HandleDYUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
@@ -167,7 +176,17 @@ func HandleDYUrl(requestString string) (payUrl string, err error) {
 	return payUrl, nil
 }
 
-// HandleTBUrl 处理tb url
+// HandleXCXUrl 处理wx xcx
+func HandleXCXUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	if strings.Contains(requestString, "#小程序://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", requestString))
+	} else {
+		return "", fmt.Errorf("不合法的TB链接")
+	}
+	return payUrl, nil
+}
 func HandleTBUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 

@@ -337,6 +337,111 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res [
 	return res, err
 }
 
+// TransferChannelForAcc 账号通道转移
+func (vcaService *ChannelAccountService) TransferChannelForAcc(vca *vbox.ChannelAccount, c *gin.Context) (err error) {
+	var accDB vbox.ChannelAccount
+	if err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).First(&accDB).Error; err != nil {
+		global.GVA_LOG.Error("查询失败", zap.Error(err))
+		return
+	}
+	sourceCid := accDB.Cid
+	if sourceCid == vca.Cid {
+		return fmt.Errorf("已在当前通道【%s】中，无需转移", sourceCid)
+	}
+	var flag bool
+	if global.TxContains(vca.Cid) && global.TxContains(sourceCid) {
+		flag = true
+	} else if global.SdoContains(vca.Cid) && global.SdoContains(sourceCid) {
+		flag = true
+	} else if global.J3Contains(vca.Cid) && global.J3Contains(sourceCid) {
+		flag = true
+	} else if global.PcContains(vca.Cid) && global.PcContains(sourceCid) {
+		flag = true
+	}
+	if !flag {
+		return fmt.Errorf("不支持的通道转移操作")
+	}
+
+	// 发一条清理旧通道资源的
+	go func() {
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		body := http2.DoGinContextBody(c)
+		oldAccTmp := accDB
+		oldAccTmp.Status = 0
+		oc := vboxReq.ChanAccAndCtx{
+			Obj: oldAccTmp,
+			Ctx: vboxReq.Context{
+				Body:      string(body),
+				ClientIP:  c.ClientIP(),
+				Method:    c.Request.Method,
+				UrlPath:   c.Request.URL.Path,
+				UserAgent: c.Request.UserAgent(),
+				UserID:    int(oldAccTmp.CreatedBy),
+			},
+		}
+		marshal, err := json.Marshal(oc)
+
+		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+
+		global.GVA_LOG.Info("转移通道清理旧资源", zap.Any("旧cid", oldAccTmp.Cid), zap.Any("新cid", vca.Cid))
+	}()
+
+	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("cid", vca.Cid).Error
+	if err != nil {
+		return err
+	}
+
+	// 新资源发起资源开启，如果账号状态为开启
+	if accDB.Status == 1 {
+		go func() {
+			var vcaDB vbox.ChannelAccount
+			err = global.GVA_DB.Model(vbox.ChannelAccount{}).Where("id =?", vca.ID).First(&vcaDB).Error
+
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			body := http2.DoGinContextBody(c)
+
+			oc := vboxReq.ChanAccAndCtx{
+				Obj: vcaDB,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  c.ClientIP(),
+					Method:    c.Request.Method,
+					UrlPath:   c.Request.URL.Path,
+					UserAgent: c.Request.UserAgent(),
+					UserID:    int(vcaDB.CreatedBy),
+				},
+			}
+			marshal, err := json.Marshal(oc)
+
+			global.GVA_LOG.Info("转移通道创建新资源", zap.Any("新cid", vcaDB.Cid))
+
+			err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+		}()
+	}
+
+	return err
+}
+
 // CreateChannelAccount 创建通道账号记录
 // Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelAccount, c *gin.Context) (err error) {
@@ -380,13 +485,13 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		return errors.New("账号信息不完整")
 	} else {
 		var count int64
-		if err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_account = ?", vca.AcAccount).Count(&count).Error; err != nil {
+		if err = global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Where("ac_account = ? and cid = ?", vca.AcAccount, vca.Cid).Count(&count).Error; err != nil {
 			global.GVA_LOG.Warn("系统查询异常", zap.Error(err))
 			return errors.New("系统查询异常，请重试或联系管理员")
 		}
 		if count > 0 {
-			global.GVA_LOG.Warn("账号已存在，不允许重复添加，请核实", zap.Any("ac_account", vca.AcAccount))
-			return errors.New("账号已存在，不允许重复添加，请核查")
+			global.GVA_LOG.Warn("账号在当前通道已存在，不允许重复添加，请核实", zap.Any("ac_account", vca.AcAccount))
+			return errors.New("账号在当前通道已存在，不允许重复添加，请核查")
 		}
 		vca.AcAccount = utils.Trim(vca.AcAccount)
 	}
