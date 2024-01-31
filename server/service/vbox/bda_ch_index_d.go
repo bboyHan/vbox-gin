@@ -71,7 +71,7 @@ func (bdaChIndexDService *BdaChIndexDService) GetBdaChIndexD(id uint) (bdaChInde
 // Author [piexlmax](https://github.com/piexlmax)
 func (bdaChIndexDService *BdaChIndexDService) GetBdaChIndexDInfoList(info vboxReq.BdaChIndexDSearch) (list []vbox.BdaChIndexD, total int64, err error) {
 	fmt.Println("统计开始")
-	bdaChIndexDService.CronVboxBdaChIndexD()
+	//bdaChIndexDService.CronVboxBdaChIndexD()
 	fmt.Println("统计结束")
 
 	limit := info.PageSize

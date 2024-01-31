@@ -117,7 +117,7 @@ onMounted(() => {
     setTimeout(() => {
       orderView()
       initChart()
-    }, 1000)
+    }, 2000)
   })
 
   watch(props.chartData, (newVal, oldVal) => {

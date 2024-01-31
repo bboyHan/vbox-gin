@@ -107,7 +107,11 @@
         <el-table-column align="left" label="产品名称" prop="productName" width="180" />
         <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
-        <el-table-column align="left" label="成交率" prop="ratio" width="120" />
+        <el-table-column align="left" label="成交率" prop="ratio" width="120" >
+          <template #default="scope">
+            <span>{{scope.row.ratio}}%</span>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="成交金额" prop="income" width="120" />
         <!-- <el-table-column align="left" label="操作" min-width="120">
             <template #default="scope">
@@ -468,7 +472,11 @@
         <el-table-column align="left" label="产品名称" prop="productName" width="150" />
         <el-table-column align="left" label="订单量" prop="orderQuantify" width="100" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
-        <el-table-column align="left" label="成交率" prop="ratio" width="120" />
+        <el-table-column align="left" label="成交率" prop="ratio" width="120" >
+          <template #default="scope">
+            <span>{{scope.row.ratio}}%</span>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="成交金额" prop="income" width="120" />
 
         </el-table>

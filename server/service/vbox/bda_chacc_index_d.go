@@ -87,16 +87,16 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoList(in
 		db = db.Where("uid = ?", info.Uid)
 	}
 	if info.Username != "" {
-		db = db.Where("user_name = ?", info.Username)
+		db = db.Where("username LIKE ?", "%"+info.Username+"%")
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
 	}
 	if info.AcAccount != "" {
-		db = db.Where("ac_account = ?", info.AcAccount)
+		db = db.Where("ac_account LIKE ?", "%"+info.AcAccount+"%")
 	}
 	if info.AcRemark != "" {
-		db = db.Where("ac_remark = ?", info.AcRemark)
+		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
 	}
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code = ?", info.ChannelCode)
@@ -142,16 +142,16 @@ func (bdaChaccIndexDService *BdaChaccIndexDService) GetBdaChaccIndexDInfoListWee
 		db = db.Where("uid = ?", info.Uid)
 	}
 	if info.Username != "" {
-		db = db.Where("user_name = ?", info.Username)
+		db = db.Where("username LIKE ?", "%"+info.Username+"%")
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
 	}
 	if info.AcAccount != "" {
-		db = db.Where("ac_account = ?", info.AcAccount)
+		db = db.Where("ac_account LIKE ?", "%"+info.AcAccount+"%")
 	}
 	if info.AcRemark != "" {
-		db = db.Where("ac_remark = ?", info.AcRemark)
+		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
 	}
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code = ?", info.ChannelCode)

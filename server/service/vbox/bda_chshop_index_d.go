@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"gorm.io/gorm"
 	"log"
 	"strconv"
@@ -71,7 +72,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexD(id uint
 // Author [piexlmax](https://github.com/piexlmax)
 func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexDInfoList(info vboxReq.BdaChShopIndexDSearch) (list []vbox.BdaChShopIndexD, total int64, err error) {
 	fmt.Println("统计开始")
-	bdaChshopIndexDService.CronVboxBdaChShopIndexD()
+	//bdaChshopIndexDService.CronVboxBdaChShopIndexD()
 	fmt.Println("统计结束")
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
@@ -213,121 +214,225 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexDByH
 }
 
 func (bdaChshopIndexDService *BdaChShopIndexDService) CronVboxBdaChShopIndexD() (err error) {
-	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
 
+	querySql := `
+
+			SELECT
+				a.uid as uid,
+				a.channel_code as channelCode,
+				a.shop_id as shopId,
+				step_time as stepTime,
+				b.shop_remark as shopRemark,
+				c.product_id as productId,
+				c.product_name as productName,
+				d.username as username,
+				a.cnt as orderQuantify,
+				a.ok_cnt as okOrderQuantify,
+				ROUND((100.0 * a.ok_cnt/a.cnt),2) as ratio,
+				a.ok_income as okIncome
+			FROM
+			(
+				SELECT
+				 uid,
+				 channel_code,
+				 shop_id,
+				 step_time,
+				 sum(if (order_status =1,money,0)) as ok_income,
+				 count(*) as cnt,
+				 sum(if(order_status=1,1,0)) as ok_cnt
+				FROM(
+						SELECT
+							created_by as uid,
+							channel_code,
+							order_status,
+							SUBSTRING_INDEX(event_id, '_', 1) as shop_id,
+							money,
+							DATE_FORMAT(created_at, '%Y-%m-%d') AS step_time	
+					from vbox_pay_order 
+					where DATE_FORMAT(created_at, '%Y-%m-%d') = ?
+					and event_type = 1
+				)aa
+				GROUP BY uid,channel_code,shop_id
+			)a 
+			left join (
+			SELECT DISTINCT cid,shop_remark,product_id  as shop_id
+			FROM vbox_channel_shop where address !='' ORDER BY product_id
+			) b
+			on a.channel_code = b.cid  
+			and a.shop_id=b.shop_id
+			left join (
+			SELECT DISTINCT channel_code,product_id,product_name 
+			FROM vbox_channel_product where channel_code !=''
+			) c
+			on a.channel_code = c.channel_code  
+			left join (
+			SELECT DISTINCT id,username
+			FROM sys_users where username !=''
+			) d
+			on a.uid = d.id  
+
+`
+	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 	db := global.GVA_DB.Model(&vbox.PayOrder{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
-	var uids []int
-	err = db.Select("distinct created_by").Pluck("created_by", &uids).Error
+
+	rows, err := db.Raw(querySql, dt).Rows()
 	if err != nil {
-		return
+		panic(err)
 	}
-	fmt.Println("uids=", uids)
-	var chIds []string
-	err = db.Select("distinct channel_code").Pluck("channel_code", &chIds).Error
-	if err != nil {
-		return
-	}
-	fmt.Println("chIds=", chIds)
-	var shops []string
-	err = db.Select("distinct resource_url").Pluck("resource_url", &shops).Error
-	if err != nil {
-		return
-	}
-	fmt.Println("shops=", shops)
-	for _, uid := range uids {
-		for _, chId := range chIds {
-			for _, shop := range shops {
-
-				yInfoList, yOrderTotal, err := GetUsersShopChVboxPayOrderInfoList(uid, chId, shop, dt)
-				if err != nil {
-					return err
-				}
-				yGroupedCounts := make(map[string]int16)
-				yOkGroupedCounts := make(map[string]int16)
-				yOkGroupedCosts := make(map[string]int)
-
-				for _, order := range yInfoList {
-					uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode + "-" + order.ResourceUrl
-					yGroupedCounts[uid]++
-					if order.OrderStatus == 1 {
-						yOkGroupedCounts[uid]++
-						yOkGroupedCosts[uid] += order.Money
-					}
-				}
-
-				yOrderQuantify := yOrderTotal
-				yOkOrderQuantify := 0
-				yOkRate := 0
-				yInCome := 0
-				// 判断 tGroupedCounts 中是否包含指定的 uid 键
-				key := strconv.Itoa(uid) + "-" + chId + "-" + shop
-				_, yContainsUID := yGroupedCounts[key]
-				_, yOkContainsUID := yOkGroupedCounts[key]
-
-				if yContainsUID {
-
-					yOrderQuantify = int64(yGroupedCounts[key])
-					if yOkContainsUID {
-						yOkOrderQuantify = int(yOkGroupedCounts[key])
-					}
-
-					if yOrderQuantify > 0 {
-						result := float64(yOkOrderQuantify) / float64(yOrderQuantify)
-						yOkRate = int(result * 100)
-						yInCome = yOkGroupedCosts[key]
-					}
-
-				}
-
-				var userInfo system.SysUser
-				err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
-				if err != nil {
-					return err
-				}
-				var vcp vbox.ChannelProduct
-				err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
-				if err != nil {
-					return err
-				}
-				var vcs vbox.ChannelShop
-
-				if err != nil {
-					return err
-				}
-				shopRemark := ""
-				if shop != "" {
-					err = global.GVA_DB.Where("cid = ? and shop_remark = ?", chId, shop).First(&vcs).Error
-					if err != nil {
-						return err
-					}
-					shopRemark = vcs.ShopRemark
-				}
-
-				chCode := vcp.ChannelCode
-
-				entity := vbox.BdaChShopIndexD{
-					Uid:             &uid,
-					Username:        userInfo.Username,
-					Cid:             chId,
-					ShopRemark:      shopRemark,
-					ChannelCode:     chCode,
-					ProductId:       vcp.ProductId,
-					ProductName:     vcp.ProductName,
-					OrderQuantify:   int(yOrderQuantify),
-					OkOrderQuantify: yOkOrderQuantify,
-					Ratio:           float64(yOkRate),
-					Income:          yInCome,
-					Dt:              dt,
-					CreatedBy:       uint(uid),
-					UpdatedBy:       1,
-					DeletedBy:       1,
-				}
-				//fmt.Println(entity.Dt)
-				log.Println("统计 ch shop 结果=", entity)
-				err = global.GVA_DB.Save(&entity).Error
-			}
+	//fmt.Println(rows.Next())
+	defer rows.Close()
+	for rows.Next() {
+		// 遍历查询结果并将值映射到结构体中
+		var item vboxResp.ChShopTableResp
+		err := rows.Scan(&item.UID, &item.ChannelCode, &item.ShopId, &item.StepTime, &item.ShopRemark,
+			&item.ProductID, &item.ProductName, &item.Username, &item.OrderQuantify, &item.OkOrderQuantify, &item.Ratio, &item.OkIncome)
+		if err != nil {
+			panic(err)
 		}
+		// 将 acId + '-' + stepTime 作为 key 存入 map，okIncome 作为 value
+		entity := vbox.BdaChShopIndexD{
+			Uid:             &item.UID,
+			Username:        item.Username,
+			Cid:             item.ChannelCode,
+			ShopRemark:      item.ShopRemark,
+			ChannelCode:     item.ChannelCode,
+			ProductId:       item.ProductID,
+			ProductName:     item.ProductName,
+			OrderQuantify:   item.OrderQuantify,
+			OkOrderQuantify: item.OkOrderQuantify,
+			Ratio:           item.Ratio,
+			Income:          item.OkIncome,
+			Dt:              dt,
+			CreatedBy:       uint(item.UID),
+			UpdatedBy:       1,
+			DeletedBy:       1,
+		}
+		//fmt.Println(entity.Dt)
+		log.Println("统计 ch shop 结果=", entity)
+		err = global.GVA_DB.Save(&entity).Error
+		//fmt.Printf("---> UID: %d, AcID: %d, OkIncome: %f, StepTime: %s\n", item.Uid, item.AcID, item.OkIncome, item.StepTime)
 	}
+
+	//var uids []int
+	//err = db.Select("distinct created_by").Pluck("created_by", &uids).Error
+	//if err != nil {
+	//	return
+	//}
+	//fmt.Println("uids=", uids)
+	//var chIds []string
+	//err = db.Select("distinct channel_code").Pluck("channel_code", &chIds).Error
+	//if err != nil {
+	//	return
+	//}
+	//fmt.Println("chIds=", chIds)
+	//var addUrls []string
+	//err = db.Select("distinct resource_url").Pluck("resource_url", &addUrls).Error
+	//if err != nil {
+	//	return
+	//}
+	//fmt.Println("addUrls=", addUrls)
+	//var shops []string
+	//var vcsp vbox.ChannelShop
+	//vcspDb := global.GVA_DB.Model(&vcsp).Where("address is not null and address != '' and address in ? ", addUrls)
+	//err = vcspDb.Select("distinct shop_remark").Pluck("shop_remark", &shops).Error
+	//if err != nil {
+	//	return
+	//}
+	//fmt.Println("shops=", shops)
+	//for _, uid := range uids {
+	//	for _, chId := range chIds {
+	//		for _, shop := range shops {
+	//
+	//			yInfoList, yOrderTotal, err := GetUsersShopChVboxPayOrderInfoList(uid, chId, shop, dt)
+	//			if err != nil {
+	//				return err
+	//			}
+	//			yGroupedCounts := make(map[string]int16)
+	//			yOkGroupedCounts := make(map[string]int16)
+	//			yOkGroupedCosts := make(map[string]int)
+	//
+	//			for _, order := range yInfoList {
+	//				uid := strconv.Itoa(int(order.CreatedBy)) + "-" + order.ChannelCode + "-" + order.ResourceUrl
+	//				yGroupedCounts[uid]++
+	//				if order.OrderStatus == 1 {
+	//					yOkGroupedCounts[uid]++
+	//					yOkGroupedCosts[uid] += order.Money
+	//				}
+	//			}
+	//
+	//			yOrderQuantify := yOrderTotal
+	//			yOkOrderQuantify := 0
+	//			yOkRate := 0
+	//			yInCome := 0
+	//			// 判断 tGroupedCounts 中是否包含指定的 uid 键
+	//			key := strconv.Itoa(uid) + "-" + chId + "-" + shop
+	//			_, yContainsUID := yGroupedCounts[key]
+	//			_, yOkContainsUID := yOkGroupedCounts[key]
+	//
+	//			if yContainsUID {
+	//
+	//				yOrderQuantify = int64(yGroupedCounts[key])
+	//				if yOkContainsUID {
+	//					yOkOrderQuantify = int(yOkGroupedCounts[key])
+	//				}
+	//
+	//				if yOrderQuantify > 0 {
+	//					result := float64(yOkOrderQuantify) / float64(yOrderQuantify)
+	//					yOkRate = int(result * 100)
+	//					yInCome = yOkGroupedCosts[key]
+	//				}
+	//
+	//			}
+	//
+	//			var userInfo system.SysUser
+	//			err = global.GVA_DB.Where("`id` = ?", uid).First(&userInfo).Error
+	//			if err != nil {
+	//				return err
+	//			}
+	//			var vcp vbox.ChannelProduct
+	//			err = global.GVA_DB.Where("channel_code = ?", chId).First(&vcp).Error
+	//			if err != nil {
+	//				return err
+	//			}
+	//			var vcs vbox.ChannelShop
+	//
+	//			if err != nil {
+	//				return err
+	//			}
+	//			shopRemark := ""
+	//			if shop != "" {
+	//				err = global.GVA_DB.Where("cid is not null and cid != '' and cid = ? and shop_remark = ?", chId, shop).First(&vcs).Error
+	//				if err != nil {
+	//					return err
+	//				}
+	//				shopRemark = vcs.ShopRemark
+	//			}
+	//
+	//			chCode := vcp.ChannelCode
+	//
+	//			entity := vbox.BdaChShopIndexD{
+	//				Uid:             &uid,
+	//				Username:        userInfo.Username,
+	//				Cid:             chId,
+	//				ShopRemark:      shopRemark,
+	//				ChannelCode:     chCode,
+	//				ProductId:       vcp.ProductId,
+	//				ProductName:     vcp.ProductName,
+	//				OrderQuantify:   int(yOrderQuantify),
+	//				OkOrderQuantify: yOkOrderQuantify,
+	//				Ratio:           float64(yOkRate),
+	//				Income:          yInCome,
+	//				Dt:              dt,
+	//				CreatedBy:       uint(uid),
+	//				UpdatedBy:       1,
+	//				DeletedBy:       1,
+	//			}
+	//			//fmt.Println(entity.Dt)
+	//			log.Println("统计 ch shop 结果=", entity)
+	//			err = global.GVA_DB.Save(&entity).Error
+	//		}
+	//	}
+	//}
 	return err
 }
 

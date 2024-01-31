@@ -57,22 +57,26 @@
         @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="日期" width="180">
+        <!-- <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="用户id" prop="uid" width="120" />
-        <el-table-column align="left" label="用户名" prop="username" width="120" />
-        <el-table-column align="left" label="通道ID" prop="cid" width="120" />
-        <el-table-column align="left" label="店铺备注" prop="shopRemark" width="120" />
+        <el-table-column align="left" label="用户id" prop="uid" width="120" /> -->
+        <el-table-column align="left" label="天" prop="dt" width="120" />
+        <el-table-column align="left" label="用户名" prop="username" width="150" />
+        <!-- <el-table-column align="left" label="通道ID" prop="cid" width="120" /> -->
+        <el-table-column align="left" label="店铺备注" prop="shopRemark" width="150" />
         <el-table-column align="left" label="通道code" prop="channelCode" width="120" />
-        <el-table-column align="left" label="产品ID" prop="productId" width="120" />
-        <el-table-column align="left" label="产品名称" prop="productName" width="120" />
+        <el-table-column align="left" label="产品ID" prop="productId" width="150" />
+        <el-table-column align="left" label="产品名称" prop="productName" width="180" />
         <el-table-column align="left" label="订单量" prop="orderQuantify" width="120" />
         <el-table-column align="left" label="成功订单量" prop="okOrderQuantify" width="120" />
-        <el-table-column align="left" label="成交率" prop="ratio" width="120" />
+        <el-table-column align="left" label="成交率" prop="ratio" width="150" >
+          <template #default="scope">
+            <span>{{scope.row.ratio}}%</span>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="成交金额" prop="income" width="120" />
-        <el-table-column align="left" label="天" prop="dt" width="120" />
-        <el-table-column align="left" label="操作" min-width="120">
+        <!-- <el-table-column align="left" label="操作" min-width="120">
             <template #default="scope">
             <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
                 <el-icon style="margin-right: 5px"><InfoFilled /></el-icon>
@@ -81,7 +85,7 @@
             <el-button type="primary" link icon="edit" class="table-button" @click="updateBdaChShopIndexDFunc(scope.row)">变更</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
-        </el-table-column>
+        </el-table-column> -->
         </el-table>
         <div class="gva-pagination">
             <el-pagination
