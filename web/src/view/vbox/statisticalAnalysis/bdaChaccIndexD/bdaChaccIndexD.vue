@@ -988,31 +988,31 @@ const order4CustomStyle = ref({
 // ------- 获取通道账号 -------
 const accList = ref([])
 const acIdList = ref([])
-const sysUserAcId = ref('')
-const selectCid = ref('')
-const handleAccChange = (value) => {
-  // console.log(value)
-  // getACCChannelAccountByAcid()
-  getALlChannelAccount()
+// const sysUserAcId = ref('')
+// const selectCid = ref('')
+// const handleAccChange = (value) => {
+//   // console.log(value)
+//   // getACCChannelAccountByAcid()
+//   getALlChannelAccount()
 
-}
-// 获取唯一通道账号
-const getACCChannelAccountByAcid = async () => {
-  const res = await getChannelAccountList({acId: formData.value.acId, page: 1, pageSize: 999})
-  acIdList.value = res.data.list
-  // console.log(JSON.stringify(accList))
-  formData.value.acAccount = acIdList.value[0].acAccount
-  formData.value.acRemark = acIdList.value[0].acRemark
-  console.log(JSON.stringify(formData.value))
-  return res
-}
+// }
+// // 获取唯一通道账号
+// const getACCChannelAccountByAcid = async () => {
+//   const res = await getChannelAccountList({acId: formData.value.acId, page: 1, pageSize: 999})
+//   acIdList.value = res.data.list
+//   // console.log(JSON.stringify(accList))
+//   formData.value.acAccount = acIdList.value[0].acAccount
+//   formData.value.acRemark = acIdList.value[0].acRemark
+//   console.log(JSON.stringify(formData.value))
+//   return res
+// }
 
 
-// 获取通道账号
-const getALlChannelAccount = async (cid) => {
-  const res = await getChannelAccountList({cid: cid, sysStatus: 1, status: 1, page: 1, pageSize: 999})
-  accList.value = res.data.list
-}
+// // 获取通道账号
+// const getALlChannelAccount = async (cid) => {
+//   const res = await getChannelAccountList({cid: cid, sysStatus: 1, status: 1, page: 1, pageSize: 999})
+//   accList.value = res.data.list
+// }
 
 // 搜索
 const onSubmitAcid = () => {
@@ -1025,16 +1025,16 @@ const onSubmitAcid = () => {
 }
 
 
-const setOptionsAcid = async () =>{
-  channelCodeOptions.value = []
-  setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
-}
+// const setOptionsAcid = async () =>{
+//   channelCodeOptions.value = []
+//   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
+// }
 
-// 重置
-const onResetAcid = () => {
-  searchInfo.value = {}
-  getTableData()
-}
+// // 重置
+// const onResetAcid = () => {
+//   searchInfo.value = {}
+//   getTableData()
+// }
 
 
 

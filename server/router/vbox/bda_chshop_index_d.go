@@ -21,8 +21,14 @@ func (s *BdaChShopIndexDRouter) InitBdaChShopIndexDRouter(Router *gin.RouterGrou
 		bdaChshopIndexDRouter.PUT("updateBdaChShopIndexD", bdaChshopIndexDApi.UpdateBdaChShopIndexD)              // 更新用户通道店铺成率统计-天更新
 	}
 	{
-		bdaChshopIndexDRouterWithoutRecord.GET("findBdaChShopIndexD", bdaChshopIndexDApi.FindBdaChShopIndexD)                     // 根据ID获取用户通道店铺成率统计-天更新
-		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDList", bdaChshopIndexDApi.GetBdaChShopIndexDList)               // 获取用户通道店铺成率统计-天更新列表
-		bdaChshopIndexDRouterWithoutRecord.GET("cronVboxBdaChShopIndexDByHand", bdaChshopIndexDApi.CronVboxBdaChShopIndexDByHand) // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("findBdaChShopIndexD", bdaChshopIndexDApi.FindBdaChShopIndexD)                       // 根据ID获取用户通道店铺成率统计-天更新
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDList", bdaChshopIndexDApi.GetBdaChShopIndexDList)                 // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("cronVboxBdaChShopIndexDByHand", bdaChshopIndexDApi.CronVboxBdaChShopIndexDByHand)   // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDListWeek", bdaChshopIndexDApi.GetBdaChShopIndexDListWeek)         // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexToDayIncome", bdaChshopIndexDApi.GetBdaChShopIndexToDayIncome)     // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexToDayInOkCnt", bdaChshopIndexDApi.GetBdaChShopIndexToDayInOkCnt)   // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexToWeekIncome", bdaChshopIndexDApi.GetBdaChShopIndexToWeekIncome)   // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexToWeekInOkCnt", bdaChshopIndexDApi.GetBdaChShopIndexToWeekInOkCnt) // 获取用户通道店铺成率统计-天更新列表
+		bdaChshopIndexDRouterWithoutRecord.GET("getBdaChShopIndexDUesrOverview", bdaChshopIndexDApi.GetBdaChShopIndexDUesrOverview) // 获取用户通道店铺成率统计-天更新列表
 	}
 }

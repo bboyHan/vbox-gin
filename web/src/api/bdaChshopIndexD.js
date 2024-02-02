@@ -95,3 +95,106 @@ export const getBdaChShopIndexDList = (params) => {
     params
   })
 }
+
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道店铺成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道店铺成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexDListWeek [get]
+export const getBdaChShopIndexDListWeek = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexDListWeek',
+    method: 'get',
+    params
+  })
+}
+
+
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexDUesrOverview [get]
+export const getBdaChShopIndexDUesrOverview = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexDUesrOverview',
+    method: 'get',
+    params
+  })
+}
+
+
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexToDayIncome [get]
+export const getBdaChShopIndexToDayIncome = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexToDayIncome',
+    method: 'get',
+    params
+  })
+}
+
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexToDayInOkCnt [get]
+export const getBdaChShopIndexToDayInOkCnt = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexToDayInOkCnt',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexToWeekIncome [get]
+export const getBdaChShopIndexToWeekIncome = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexToWeekIncome',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags BdaChShopIndexD
+// @Summary 分页获取用户通道粒度成率统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取用户通道粒度成率统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChshopIndexD/getBdaChShopIndexToWeekInOkCnt [get]
+export const getBdaChShopIndexToWeekInOkCnt = (params) => {
+  return service({
+    url: '/bdaChshopIndexD/getBdaChShopIndexToWeekInOkCnt',
+    method: 'get',
+    params
+  })
+}
+
