@@ -151,6 +151,16 @@ func ChanAccDelCheckTask() {
 						}
 					}*/
 
+				} else if global.DnfContains(cid) { //dnf引导，
+					for _, money := range moneyList {
+						moneyTmp := money
+						go func() {
+							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
+							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}()
+					}
 				} else if global.SdoContains(cid) { //sdo引导，
 
 					/*moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)

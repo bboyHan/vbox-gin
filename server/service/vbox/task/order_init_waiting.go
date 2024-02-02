@@ -232,6 +232,79 @@ func OrderWaitingTask() {
 						continue
 					}
 
+				} else if global.DnfContains(cid) {
+					accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgID, cid, money)
+					tmpKey = accKey
+					var resList []string
+					resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  1,
+					}).Result()
+
+					if err != nil {
+						global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						continue
+					}
+					if resList != nil && len(resList) > 0 {
+						accTmp := resList[0]
+						tmpMem = accTmp
+						// 2.1 把账号设置为已用
+						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
+							Score:  1,
+							Member: accTmp,
+						})
+
+						// 2.2 把可用的账号给出来继续往下执行建单步骤
+						split := strings.Split(accTmp, "_")
+						ID = split[0]
+						accID = split[1]
+						acAccount = split[2]
+
+						var vca vbox.ChannelAccount
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
+						if err != nil {
+							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
+
+							_ = msg.Ack(true)
+							continue
+						}
+						v.Obj.CreatedBy = vca.CreatedBy
+						v.Obj.AcId = vca.AcId
+						v.Obj.AcAccount = vca.AcAccount
+
+						v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
+
+						v.Ctx.UserID = int(vca.CreatedBy)
+
+						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
+
+					} else {
+						global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", money))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourceAccNotEnough, cid, money),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						continue
+					}
 				} else if global.SdoContains(cid) {
 					accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgID, cid, money)
 					tmpKey = accKey
@@ -378,7 +451,7 @@ func OrderWaitingTask() {
 						balance := j3Record.LeftCoins
 						J3AccBalanceKey := fmt.Sprintf(global.J3AccBalanceZSet, vca.AcId)
 						nowTimeUnix := v.Obj.CreatedAt.Unix()
-						keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, balance, 0, 0)
+						keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, balance, 0, 0)
 
 						global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
 							Score:  float64(nowTimeUnix),
@@ -778,7 +851,11 @@ func OrderWaitingTask() {
 								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 							}
 
-							if global.TxContains(cid) {
+							if global.TxContains(cid) || global.DnfContains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.SdoContains(cid) {
 								// 回滚上面匹配的取用
 								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
 								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
@@ -812,7 +889,11 @@ func OrderWaitingTask() {
 								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 							}
 
-							if global.TxContains(cid) {
+							if global.TxContains(cid) || global.DnfContains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.SdoContains(cid) {
 								// 回滚上面匹配的取用
 								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
 								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
@@ -871,7 +952,7 @@ func OrderWaitingTask() {
 				global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
 
 				//3. 匹配账号后，更新订单信息（账号信息，订单支付链接处理）
-				errQ = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+				errQ = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 35*time.Second)
 
 				if errQ != nil {
 					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(errQ))
@@ -900,6 +981,24 @@ func OrderWaitingTask() {
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
 					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 
+				} else if global.DnfContains(cid) {
+					//	2.3 取用的账号进入CD 冷却
+					accWaitYdKey := fmt.Sprintf(global.YdDnfAccWaiting, accID, money)
+					accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+
+					// 设置一个冷却时间
+					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
+					if ttl > 0 {
+						cdTime = ttl
+						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("accWaitYdKey", accWaitYdKey), zap.Any("ttl", cdTime))
+					} else {
+						cdTime += 180 * time.Second
+						global.GVA_LOG.Info("当前添加的账号新一轮冷却", zap.Any("accWaitYdKey", accWaitYdKey), zap.Any("ttl", cdTime))
+					}
+					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
+
+					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 				} else if global.SdoContains(cid) {
 
 					//	2.3 取用的账号进入CD 冷却
@@ -1065,21 +1164,6 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 
 	var payUrl string
 	switch cid {
-	case "2001": //j3 tb
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
-	case "4001": //sdo tb
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
-	case "1101": //jw qb tb
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
 	case "1001": //jd
 		payUrl, err = utils.HandleJDUrl(shop.Address)
 		if err != nil {
@@ -1105,11 +1189,45 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
-	case "1006": //qb tb
+	case "1006": //qb xcx
 		payUrl, err = utils.HandleXCXUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
+	case "1007": //qb xcx
+		payUrl, err = utils.HandlePddUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "1101": //jun ka qb tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "1201": //dnf tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "1202": //dnf jd
+		payUrl, err = utils.HandleJDUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "2001": //j3 tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "4001": //sdo tb
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
 	default:
 		payUrl = shop.Address
 	}
@@ -1177,6 +1295,8 @@ func HandleEventType(chanID string) (int, error) {
 		return 1, nil
 	} else if chanCode >= 1100 && chanCode <= 1199 {
 		return 1, nil
+	} else if chanCode >= 1200 && chanCode <= 1299 {
+		return 1, nil
 	} else if chanCode >= 4000 && chanCode <= 4099 {
 		return 1, nil
 	} else if chanCode >= 2000 && chanCode <= 2099 {
@@ -1195,6 +1315,8 @@ func HandleExpTime2Product(chanID string) (time.Duration, error) {
 		if chanID == "1101" {
 			key = "1100"
 		}
+	} else if global.DnfContains(chanID) {
+		key = "1200"
 	} else if global.J3Contains(chanID) {
 		key = "2000"
 	} else if global.PcContains(chanID) {

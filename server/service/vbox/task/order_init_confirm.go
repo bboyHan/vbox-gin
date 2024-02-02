@@ -162,14 +162,62 @@ func OrderConfirmTask() {
 				odCreatedTime := *odDB.CreatedAt
 				if global.TxContains(chanID) {
 
+					//global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
+					//处理查询的起始时间（提前2分半钟）
+					startTime := odCreatedTime.Add(-150 * time.Second)
+					//global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
+					records, errX := product.QryQQRecordsBetween(vca, startTime, *expTime)
+					if errX != nil {
+						// 查单有问题，直接订单要置为超时，消息置为处理完毕
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
+						// 重新丢回去 下一个20s再查一次
+						marshal, _ := json.Marshal(v)
+						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 29*time.Second)
+						_ = msg.Ack(true)
+						continue
+					}
+					rdMap := product.Classifier(records.WaterList)
+					if vm, ok := rdMap["Q币"]; !ok {
+						global.GVA_LOG.Info("还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
+					} else {
+						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
+							global.GVA_LOG.Info("还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
+
+						} else { // 证明这种金额的，充上了
+							if utils.Contains(rd, vca.AcAccount) {
+								//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
+								if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).Error; err != nil {
+									global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+									_ = msg.Reject(false)
+									continue
+								}
+								_ = msg.Ack(true)
+								global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("orderId", v.Obj.OrderId))
+
+								// 同时把订单 redis信息也设置一下缓存信息
+								v.Obj.OrderStatus = 1
+								odKey := fmt.Sprintf(global.PayOrderKey, v.Obj.OrderId)
+								jsonString, _ := json.Marshal(v.Obj)
+								global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
+
+								// 并且发起一个回调通知的消息
+								marshal, _ := json.Marshal(v)
+								err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+								global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
+
+								continue
+							}
+						}
+					}
+				} else if global.DnfContains(chanID) {
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
 					//处理查询的起始时间（提前2分半钟）
 					startTime := odCreatedTime.Add(-150 * time.Second)
 					global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
-					records, errQ := product.QryQQRecordsBetween(vca, startTime, *expTime)
-					if errQ != nil {
+					records, errX := product.QryQQRecordsBetween(vca, startTime, *expTime)
+					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
-						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
 						// 重新丢回去 下一个20s再查一次
 						marshal, _ := json.Marshal(v)
 						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
@@ -177,11 +225,11 @@ func OrderConfirmTask() {
 						continue
 					}
 					rdMap := product.Classifier(records.WaterList)
-					if vm, ok := rdMap["Q币"]; !ok {
-						global.GVA_LOG.Info("还没有QB的充值记录")
+					if vm, ok := rdMap["DNF"]; !ok {
+						global.GVA_LOG.Info("还没有Dnf的充值记录")
 					} else {
 						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
-							global.GVA_LOG.Info("还没有QB的充值记录")
+							global.GVA_LOG.Info("还没有Dnf的充值记录")
 
 						} else { // 证明这种金额的，充上了
 							if utils.Contains(rd, vca.AcAccount) {
@@ -287,7 +335,7 @@ func OrderConfirmTask() {
 					nowTimeUnix := odDB.CreatedAt.Unix()
 					//对账时间
 					checkTime := time.Now().Unix()
-					valMembers, err := global.GVA_REDIS.ZRangeByScore(context.Background(), J3AccBalanceKey, &redis.ZRangeBy{
+					valMembers, errZ := global.GVA_REDIS.ZRangeByScore(context.Background(), J3AccBalanceKey, &redis.ZRangeBy{
 						Min:    strconv.FormatInt(nowTimeUnix, 10),
 						Max:    strconv.FormatInt(nowTimeUnix, 10),
 						Offset: 0,
@@ -295,12 +343,12 @@ func OrderConfirmTask() {
 					}).Result()
 					if len(valMembers) > 0 {
 						mem := valMembers[0]
-						split := strings.Split(mem, "_")
+						split := strings.Split(mem, ",")
 						hisBalance, _ := strconv.Atoi(split[4])
 						if hisBalance+money*100 == nowBalance { // 充值成功的情况
 
-							keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
-							delMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+							keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+							delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
 							global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
 								Score:  float64(nowTimeUnix),
 								Member: keyMem,
@@ -361,7 +409,7 @@ func OrderConfirmTask() {
 
 					} else {
 						// 异常情况处理
-						global.GVA_LOG.Error("订单匹配消息查redis数据异常", zap.Error(err), zap.Any("valMembers", valMembers))
+						global.GVA_LOG.Error("订单匹配消息查redis数据异常", zap.Error(errZ), zap.Any("valMembers", valMembers))
 						// 如果解析消息失败，则直接丢弃消息
 						_ = msg.Reject(false)
 						continue
@@ -382,10 +430,10 @@ func OrderConfirmTask() {
 					}
 					rdMap := product.Classifier(records.WaterList)
 					if vm, ok := rdMap["Q币"]; !ok {
-						global.GVA_LOG.Info("还没有QB的充值记录")
+						global.GVA_LOG.Info("还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 					} else {
 						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
-							global.GVA_LOG.Info("还没有QB的充值记录")
+							global.GVA_LOG.Info("还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 
 						} else { // 证明这种金额的，充上了
 							if utils.Contains(rd, vca.AcAccount) {

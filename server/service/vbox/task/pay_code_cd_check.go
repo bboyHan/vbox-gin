@@ -127,9 +127,14 @@ func PayCodeCDCheckTask() {
 							// 获取今天的时间范围
 							startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
 							endOfDay := startOfDay.Add(24 * time.Hour)
+							// 获取本地时区
+							loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+							startOfDay = startOfDay.In(loc)
+							endOfDay = endOfDay.In(loc)
 
-							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
+							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 								Where("ac_id = ?", accDB.AcId).
+								Where("channel_code = ?", accDB.Cid).
 								Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
 
 							if err != nil {
@@ -157,6 +162,7 @@ func PayCodeCDCheckTask() {
 
 							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
 								Where("ac_id = ?", accDB.AcId).
+								Where("channel_code = ?", accDB.Cid).
 								Where("order_status = ?", 1).Scan(&totalSum).Error
 
 							if err != nil {

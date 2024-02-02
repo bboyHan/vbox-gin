@@ -116,6 +116,7 @@ func OrderCallbackTask() {
 					_ = msg.Reject(false)
 					continue
 				}
+				nowTime := time.Now()
 
 				//1.0 核查商户
 				var vpa vbox.PayAccount
@@ -204,11 +205,18 @@ func OrderCallbackTask() {
 						global.GVA_LOG.Error("record 入库失败..." + err.Error())
 					}
 
+					//3. 更新回调失败的状态
+					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
+						Update("cb_status", 0).Update("cb_time", nowTime).Error; errD != nil {
+						global.GVA_LOG.Error("更新订单异常", zap.Error(errD))
+						_ = msg.Reject(false)
+						continue
+					}
+
 					continue
 				}
 				global.GVA_LOG.Info("回调响应消息", zap.Any("状态码", response.StatusCode), zap.Any("响应内容", string(response.Body)))
 
-				nowTime := time.Now()
 				if v.Obj.HandStatus == 3 {
 					//3. 更新回调成功的状态
 					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).

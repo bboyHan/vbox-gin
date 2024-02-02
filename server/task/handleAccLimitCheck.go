@@ -49,9 +49,14 @@ func HandleAccLimitCheck() (err error) {
 				// 获取今天的时间范围
 				startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
 				endOfDay := startOfDay.Add(24 * time.Hour)
+				// 获取本地时区
+				loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+				startOfDay = startOfDay.In(loc)
+				endOfDay = endOfDay.In(loc)
 
-				err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
+				err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 					Where("ac_id = ?", accDBTmp.AcId).
+					Where("channel_code = ?", accDBTmp.Cid).
 					Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
 
 				if dailySum >= accDBTmp.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
@@ -70,6 +75,7 @@ func HandleAccLimitCheck() (err error) {
 
 				err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
 					Where("ac_id = ?", accDBTmp.AcId).
+					Where("channel_code = ?", accDBTmp.Cid).
 					Where("order_status = ?", 1).Scan(&totalSum).Error
 
 				if err != nil {
@@ -94,7 +100,7 @@ func HandleAccLimitCheck() (err error) {
 
 				var count int64
 
-				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("ac_id = ? and order_status = ?", accDBTmp.AcId, 1).Count(&count).Error
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("channel_code = ? and ac_id = ? and order_status = ?", accDBTmp.Cid, accDBTmp.AcId, 1).Count(&count).Error
 
 				if err != nil {
 					global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
@@ -120,6 +126,32 @@ func HandleAccLimitCheck() (err error) {
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
 					pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
+					var keys []string
+					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+					for _, key := range keys {
+						resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+							Min:    "0",
+							Max:    "0",
+							Offset: 0,
+							Count:  -1,
+						}).Val()
+
+						for _, waitMem := range resWaitTmpList {
+							if strings.Contains(waitMem, accDBTmp.AcAccount) {
+								//	把超限的码全部处理掉
+								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+									Update("status", 0).Update("sys_status", 0)
+							}
+						}
+					}
+				} else if global.DnfContains(cid) {
+					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
+					orgID := orgTmp[0]
+					pattern := fmt.Sprintf(global.ChanOrgDnfAccZSetPrefix, orgID, cid)
 					var keys []string
 					keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
 

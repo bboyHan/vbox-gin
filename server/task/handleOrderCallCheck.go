@@ -13,12 +13,30 @@ import (
 )
 
 func HandleOrderCallCheck() (err error) {
+	//
+	//// 获取今天的时间范围
+	//defaultOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+	//startOfDay := defaultOfDay.Add(24 * time.Hour)
+	//endOfDay := defaultOfDay.Add(-24 * time.Hour)
+	//// 获取本地时区
+	//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+	//startOfDay = startOfDay.In(loc)
+	//endOfDay = endOfDay.In(loc)
 
 	var orderDBList []vbox.PayOrder
 	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
-		Where("order_status = ? and cb_status = ?", 1, 0).Find(&orderDBList)
+		Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
 
-	//global.GVA_LOG.Info("根据开启的商户列表，开始检测可用账号情况")
+	if len(orderDBList) == 0 {
+		return nil
+	} else {
+		//查出来有订单已支付，未回调
+		global.GVA_LOG.Info("查出来有订单已支付，未回调，当前情况", zap.Any("len", len(orderDBList)))
+		global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Table("vbox_pay_order").
+			Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
+
+		global.GVA_LOG.Info("查出来有订单已支付，未回调，再debug查一遍看看", zap.Any("len", len(orderDBList)))
+	}
 
 	for _, orderDB := range orderDBList {
 		orderDBTmp := orderDB

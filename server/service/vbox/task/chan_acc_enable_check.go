@@ -124,113 +124,95 @@ func ChanAccEnableCheckTask() {
 					// 2. 查询账号是否有超 金额限制，或者笔数限制
 					// 2.1 日限制
 					if v.Obj.DailyLimit > 0 {
-						dailyKey := fmt.Sprintf(global.ChanAccDailyUsed, acId)
-						dailyUsed, err := global.GVA_REDIS.Get(context.Background(), dailyKey).Int()
-						if err == redis.Nil { // redis中无，查一下库
-							var dailySum int
-							// 获取今天的时间范围
-							startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-							endOfDay := startOfDay.Add(24 * time.Hour)
 
-							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
-								Where("ac_id = ?", acId).
-								Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+						var dailySum int
+						// 获取今天的时间范围
+						startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+						endOfDay := startOfDay.Add(24 * time.Hour)
+						// 获取本地时区
+						loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+						startOfDay = startOfDay.In(loc)
+						endOfDay = endOfDay.In(loc)
 
-							if err != nil {
-								global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
-								_ = msg.Reject(false)
-								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-									Update("sys_status", 0).Error
-								continue
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+							Where("ac_id = ?", acId).
+							Where("channel_code = ?", cid).
+							Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+
+						if err != nil {
+							global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
+							_ = msg.Reject(false)
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+							continue
+						}
+
+						if dailySum >= v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
+
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccDailyLimitNotEnough, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
 							}
 
-							// 查完算一下并且给redis赋值设置一下
-							global.GVA_REDIS.Set(context.Background(), dailyKey, dailySum, 1*time.Minute)
+							err = operationRecordService.CreateSysOperationRecord(record)
+							if err != nil {
+								global.GVA_LOG.Error("当前账号日消耗已经超限额情况下，record 入库失败..." + err.Error())
+							}
 
-						} else if err != nil {
-							global.GVA_LOG.Error("当前账号计算日消耗差redis错误，直接丢了..." + err.Error())
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+
+							global.GVA_LOG.Info("当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
-						} else { // redis查出来了，直接比一下
-							if dailyUsed >= v.Obj.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
-
-								//入库操作记录
-								record := sysModel.SysOperationRecord{
-									Ip:      v.Ctx.ClientIP,
-									Method:  v.Ctx.Method,
-									Path:    v.Ctx.UrlPath,
-									Agent:   v.Ctx.UserAgent,
-									Status:  500,
-									Latency: time.Since(now),
-									Resp:    fmt.Sprintf(global.AccDailyLimitNotEnough, acId, v.Obj.AcAccount),
-									UserID:  v.Ctx.UserID,
-								}
-
-								err = operationRecordService.CreateSysOperationRecord(record)
-								if err != nil {
-									global.GVA_LOG.Error("当前账号日消耗已经超限额情况下，record 入库失败..." + err.Error())
-								}
-
-								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-									Update("sys_status", 0).Error
-
-								global.GVA_LOG.Info("当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
-								_ = msg.Reject(false)
-								continue
-							}
 						}
 					}
 					// 2.2 总限制
 					if v.Obj.TotalLimit > 0 {
-						totalKey := fmt.Sprintf(global.ChanAccTotalUsed, acId)
-						totalUsed, err := global.GVA_REDIS.Get(context.Background(), totalKey).Int()
-						if err == redis.Nil { // redis中无，查一下库
-							var totalSum int
+						var totalSum int
 
-							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
-								Where("ac_id = ?", acId).
-								Where("order_status = ?", 1).Scan(&totalSum).Error
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+							Where("ac_id = ?", acId).
+							Where("channel_code = ?", cid).
+							Where("order_status = ?", 1).Scan(&totalSum).Error
 
-							if err != nil {
-								global.GVA_LOG.Error("当前账号计算总消耗查mysql错误，直接丢了..." + err.Error())
-								_ = msg.Reject(false)
-								continue
-							}
-
-							// 查完算一下并且给redis赋值设置一下
-							global.GVA_REDIS.Set(context.Background(), totalKey, totalSum, 1*time.Minute)
-
-						} else if err != nil {
-							global.GVA_LOG.Error("当前账号计算总消耗差redis错误，直接丢了..." + err.Error())
+						if err != nil {
+							global.GVA_LOG.Error("当前账号计算总消耗查mysql错误，直接丢了..." + err.Error())
 							_ = msg.Reject(false)
-
 							continue
-						} else { // redis查出来了，直接比一下
-							if totalUsed >= v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
+						}
 
-								//入库操作记录
-								record := sysModel.SysOperationRecord{
-									Ip:      v.Ctx.ClientIP,
-									Method:  v.Ctx.Method,
-									Path:    v.Ctx.UrlPath,
-									Agent:   v.Ctx.UserAgent,
-									Status:  500,
-									Latency: time.Since(now),
-									Resp:    fmt.Sprintf(global.AccTotalLimitNotEnough, acId, v.Obj.AcAccount),
-									UserID:  v.Ctx.UserID,
-								}
+						if totalSum >= v.Obj.TotalLimit { // 如果总消费已经超了，不允许开启了，直接结束
 
-								err = operationRecordService.CreateSysOperationRecord(record)
-								if err != nil {
-									global.GVA_LOG.Error("当前账号总消耗已经超限额情况下，record 入库失败..." + err.Error())
-								}
-
-								err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-									Update("sys_status", 0).Error
-								global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
-								_ = msg.Reject(false)
-								continue
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccTotalLimitNotEnough, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
 							}
+
+							err = operationRecordService.CreateSysOperationRecord(record)
+							if err != nil {
+								global.GVA_LOG.Error("当前账号总消耗已经超限额情况下，record 入库失败..." + err.Error())
+							}
+
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+							global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
 						}
 					}
 					// 2.3 笔数限制
@@ -238,7 +220,9 @@ func ChanAccEnableCheckTask() {
 
 						var count int64
 
-						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ? and order_status = ?", acId, 1).Count(&count).Error
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).
+							Where("channel_code = ?", cid).
+							Where("ac_id = ? and order_status = ?", acId, 1).Count(&count).Error
 
 						if err != nil {
 							global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
@@ -273,7 +257,7 @@ func ChanAccEnableCheckTask() {
 					}
 
 					// 3. 筛选匹配是哪个产品，查一下对应产品的账户是否能够正常官方使用
-					if global.TxContains(cid) { //腾讯
+					if global.TxContains(cid) || global.DnfContains(cid) || global.PcContains(cid) { //腾讯
 
 						errQ := product.QryQQRecords(v.Obj)
 						if errQ != nil {
@@ -333,34 +317,6 @@ func ChanAccEnableCheckTask() {
 						}
 					} else if global.SdoContains(cid) { //sdo
 						_, errQ := product.QrySdoDaoYuRecords(v.Obj)
-						if errQ != nil {
-							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
-							}
-
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
-							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
-
-						}
-					} else if global.PcContains(cid) { //QB直付
-						errQ := product.QryQQRecords(v.Obj)
 						if errQ != nil {
 							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
 							//入库操作记录
@@ -486,6 +442,55 @@ func ChanAccEnableCheckTask() {
 							}
 						}*/
 
+					} else if global.DnfContains(cid) { //dnf
+						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+
+						if len(moneyList) < 1 {
+							global.GVA_LOG.Error("商铺没有匹配资源...")
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
+							}
+
+							errR := operationRecordService.CreateSysOperationRecord(record)
+							if errR != nil {
+								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+							}
+
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0)
+							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
+						for _, money := range moneyList {
+							moneyTmp := money
+							go func() {
+								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+								if ttl > 0 { //该账号正在冷却中
+									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+									cdTime := ttl
+									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+								} else {
+									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+									accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
+									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+								}
+							}()
+						}
 					} else if global.SdoContains(cid) { //sdo
 
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
@@ -677,7 +682,7 @@ func ChanAccEnableCheckTask() {
 					global.GVA_LOG.Info("校验没啥问题，更新账号sys_status = 1", zap.Any("id", v.Obj.ID))
 
 				} else {
-					global.GVA_LOG.Info("收到一条需要处理的账号【关闭】", zap.Any("v", v))
+					global.GVA_LOG.Info("收到一条需要处理的账号【关闭】", zap.Any("ID", v.Obj.ID), zap.Any("cid", v.Obj.Cid), zap.Any("acId", v.Obj.AcId), zap.Any("acAccount", v.Obj.AcAccount))
 
 					if global.TxContains(cid) {
 						var moneyList []string
@@ -746,6 +751,36 @@ func ChanAccEnableCheckTask() {
 									global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
 								} else {
 									accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
+									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+								}
+							}()
+
+						}
+					} else if global.DnfContains(cid) {
+						var moneyList []string
+						userIDs := utils2.GetUsersByOrgIds(orgTmp)
+
+						if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+							Where("cid = ? and created_by in ?", cid, userIDs).Scan(&moneyList).Error; err != nil {
+							global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
+							_ = msg.Ack(true)
+							continue
+						}
+
+						for _, money := range moneyList {
+							moneyTmp := money
+							go func() {
+								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+								if ttl > 0 { //该账号正在冷却中，直接处理删掉
+									accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
+									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+									global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
+								} else {
+									accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
 									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}

@@ -748,11 +748,13 @@ const openOrderHisShow = async (row) => {
   let req = {...row}
   console.log(req)
   let cid = req.channelCode
-  if (cid >= 3000 && cid <= 3099) {
-    orderHisVisible.value = true;
-  } else if (cid >= 1000 && cid <= 1099) {
+  if (cid >= 1000 && cid <= 1099) {
     orderHisVisible.value = true;
   } else if (cid >= 1100 && cid <= 1199) {
+    orderHisVisible.value = true;
+  } else if (cid >= 1200 && cid <= 1299) {
+    orderHisVisible.value = true;
+  } else if (cid >= 3000 && cid <= 3099) {
     orderHisVisible.value = true;
   } else if (cid >= 2000 && cid <= 2099) {
     orderHis2000Visible.value = true;

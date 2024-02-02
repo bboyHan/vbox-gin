@@ -164,7 +164,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		} else if global.SdoContains(vca.Cid) {
 			channelCode = "sdo_proxy"
@@ -185,7 +185,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
 	}
 
-	if global.TxContains(vca.Cid) { // tx系
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
 
 		openID, openKey, err := product.Secret(vca.Token)
 		if err != nil {
@@ -218,7 +218,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		var accRecords []j3.J3AccountRecord
 		for _, mem := range list {
 			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
-			keyMem := strings.Split(mem, "_")
+			keyMem := strings.Split(mem, ",")
 			money, _ := strconv.Atoi(keyMem[2])
 
 			accRecord := j3.J3AccountRecord{
@@ -243,18 +243,6 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		if err != nil {
 			return nil, err
 		}
-		return records, nil
-	} else if global.PcContains(vca.Cid) {
-		openID, openKey, err := product.Secret(vca.Token)
-		if err != nil {
-			return nil, err
-		}
-		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
-
-		if records.Ret != 0 {
-			return nil, fmt.Errorf("该账号ck存在异常，请核查")
-		}
-		//classifier := product.Classifier(records.WaterList)
 		return records, nil
 	}
 
@@ -297,6 +285,20 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res [
 			var accQueueList []vboxResp.AccQueue
 			for _, money := range moneyList {
 				cntKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgId, cid, money)
+				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+				accQueue := vboxResp.AccQueue{
+					Money:  money,
+					Unused: cnt,
+				}
+				accQueueList = append(accQueueList, accQueue)
+			}
+			v.List = accQueueList
+		} else if global.DnfContains(cid) {
+			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
+			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+			var accQueueList []vboxResp.AccQueue
+			for _, money := range moneyList {
+				cntKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgId, cid, money)
 				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
 				accQueue := vboxResp.AccQueue{
 					Money:  money,
@@ -350,6 +352,8 @@ func (vcaService *ChannelAccountService) TransferChannelForAcc(vca *vbox.Channel
 	}
 	var flag bool
 	if global.TxContains(vca.Cid) && global.TxContains(sourceCid) {
+		flag = true
+	} else if global.DnfContains(vca.Cid) && global.DnfContains(sourceCid) {
 		flag = true
 	} else if global.SdoContains(vca.Cid) && global.SdoContains(sourceCid) {
 		flag = true
@@ -448,7 +452,7 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 	vca.AcId = rand_string.RandomInt(8)
 	token := vca.Token
 	//增加校验
-	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) {
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) {
 		_, _, errX := product.Secret(token)
 		if errX != nil {
 			return errX
@@ -742,7 +746,7 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccountByIds(upd vbo
 func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAccount) (err error) {
 	token := vca.Token
 	//增加校验
-	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) {
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) {
 		_, _, errX := product.Secret(token)
 		if errX != nil {
 			return errX

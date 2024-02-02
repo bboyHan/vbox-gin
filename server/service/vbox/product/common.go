@@ -19,6 +19,9 @@ func Classifier(payments interface{}) map[string]map[string][]string {
 			amount := payment.PayAmt
 			showName := payment.ShowName
 			provideID := payment.ProvideID
+			if strings.Contains(showName, "DNF") {
+				showName = "DNF"
+			}
 
 			// 检查是否存在对应的充值类型的map
 			if _, ok := paymentsByTypeAndAmount[showName]; !ok {

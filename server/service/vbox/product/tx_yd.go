@@ -38,9 +38,7 @@ func QryQQRecordsByID(vca vbox.ChannelAccount, orderID string) (*product.Records
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) { // tx系
-			channelCode = "qb_proxy"
-		} else if global.PcContains(vca.Cid) {
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		}
 
@@ -112,6 +110,9 @@ func RecordsByID(rawURL string, openID string, openKey string, orderID string, p
 	if err != nil {
 		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
 		return nil
+	} else if records.Ret != 0 {
+		global.GVA_LOG.Error("官方查单异常:  ->", zap.Any("resp body", string(resp.Body)))
+		return nil
 	}
 	//fmt.Print(records)
 
@@ -124,9 +125,7 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) { // tx系
-			channelCode = "qb_proxy"
-		} else if global.PcContains(vca.Cid) {
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		}
 
@@ -164,7 +163,7 @@ func QryQQRecords(vca vbox.ChannelAccount) error {
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
 	if c == 0 {
 		var channelCode string
-		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) { // tx系
+		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
 			channelCode = "qb_proxy"
 		}
 
@@ -223,7 +222,7 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 	newURL := u.String()
 	client := vbHttp.NewHTTPClient()
 
-	global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
+	//global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
 
 	resp, err := client.Get(newURL, options)
 	if err != nil {
@@ -235,6 +234,9 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 	err = json.Unmarshal(resp.Body, &records)
 	if err != nil {
 		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		return nil
+	} else if records.Ret != 0 {
+		global.GVA_LOG.Error("官方查单异常:  ->", zap.Any("openID", openID), zap.Any("resp body", string(resp.Body)))
 		return nil
 	}
 	//fmt.Print(records)
@@ -279,7 +281,10 @@ func Records(rawURL string, openID string, openKey string, period time.Duration)
 	var records product.Records
 	err = json.Unmarshal(resp.Body, &records)
 	if err != nil {
-		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err), zap.Any("resp", string(resp.Body)))
+		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
+		return nil
+	} else if records.Ret != 0 {
+		global.GVA_LOG.Error("官方查单异常:  ->", zap.Any("openID", openID), zap.Any("resp body", string(resp.Body)))
 		return nil
 	}
 	//fmt.Print(records)

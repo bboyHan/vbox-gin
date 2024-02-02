@@ -7,21 +7,41 @@ import (
 	"time"
 )
 
-// tx
+// tx qb
 
 func TxContains(target string) bool {
 	set := map[string]bool{
 		"1000": true,
-		"1001": true,
-		"1002": true,
-		"1003": true,
-		"1004": true,
-		"1005": true,
-		"1006": true,
-		"1007": true,
+		"1001": true, //qb jd
+		"1002": true, //qb dy
+		"1003": true, //qb jym
+		"1004": true, //qb zfb
+		"1005": true, //qb tb
+		"1006": true, //qb wx xcx
+		"1007": true, //qb mt
 		"1008": true,
 		"1009": true,
-		"1101": true,
+
+		"1101": true, // jun ka
+	}
+	_, found := set[target]
+	return found
+}
+
+// tx dnf
+
+func DnfContains(target string) bool {
+	set := map[string]bool{
+		"1200": true,
+		"1201": true, //dnf jd
+		"1202": true, //dnf tb
+		"1203": true, //dnf jym
+		"1204": true, //dnf zfb
+		"1205": true, //dnf tb
+		"1206": true, //dnf wx xcx
+		"1207": true, //dnf mt
+		"1208": true,
+		"1209": true,
 	}
 	_, found := set[target]
 	return found

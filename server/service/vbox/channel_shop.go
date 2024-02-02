@@ -59,12 +59,7 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		}
 		var flag bool
 		switch cid {
-		case "2001": //j3 tb
-			flag = utils.ValidTBUrl(c.Address)
-		case "4001": //sdo tb
-			flag = utils.ValidTBUrl(c.Address)
-		case "1101": //jw qb tb
-			flag = utils.ValidTBUrl(c.Address)
+
 		case "1001": //jd
 			flag = utils.ValidJDUrl(c.Address)
 		case "1002": //dy
@@ -77,6 +72,21 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidTBUrl(c.Address)
 		case "1006": //wx xcx
 			flag = utils.ValidXCXUrl(c.Address)
+		case "1007": //qb pdd
+			flag = utils.ValidPddUrl(c.Address)
+
+		case "1101": //jw qb tb
+			flag = utils.ValidTBUrl(c.Address)
+
+		case "1201": //dnf tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "1202": //dnf jd
+			flag = utils.ValidJDUrl(c.Address)
+
+		case "2001": //j3 tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "4001": //sdo tb
+			flag = utils.ValidTBUrl(c.Address)
 		}
 		if !flag {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)

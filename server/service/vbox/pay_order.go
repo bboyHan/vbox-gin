@@ -492,6 +492,15 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			return nil, fmt.Errorf("当前组织无资源可用")
 		}
 
+	} else if global.DnfContains(cid) {
+		accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgID, cid, money)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
+		} else {
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
+		}
 	} else if global.SdoContains(cid) {
 		accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgID, cid, money)
 		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
@@ -732,6 +741,15 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest)
 			return nil, fmt.Errorf("当前组织无资源可用")
 		}
 
+	} else if global.DnfContains(cid) {
+		accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgID, cid, money)
+		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
+		if accCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("accCount", accCount))
+		} else {
+			fmt.Printf("当前组织无账号可用, org : %d", orgID)
+			return nil, fmt.Errorf("当前组织无资源可用")
+		}
 	} else if global.SdoContains(cid) {
 		accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgID, cid, money)
 		accCount := global.GVA_REDIS.ZCount(context.Background(), accKey, "0", "0").Val()
@@ -910,6 +928,8 @@ func (vpoService *PayOrderService) HandleExpTime2Product(chanID string) (time.Du
 		if chanID == "1101" {
 			key = "1100"
 		}
+	} else if global.DnfContains(chanID) {
+		key = "1200"
 	} else if global.J3Contains(chanID) {
 		key = "2000"
 	} else if global.PcContains(chanID) {
@@ -1018,24 +1038,6 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 
 	var payUrl string
 	switch cid {
-	case "2001": //j3 tb
-		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
-	case "4001": //sdo tb
-		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
-	case "1101": //jw qb tb
-		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
-		payUrl, err = utils.HandleTBUrl(shop.Address)
-		if err != nil {
-			return "", err
-		}
 	case "1001": //jd
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleJDUrl(shop.Address)
@@ -1069,6 +1071,45 @@ func (vpoService *PayOrderService) HandleResourceUrl2chShop(eventID string) (add
 	case "1006": //wx xcx
 		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
 		payUrl, err = utils.HandleXCXUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "1007": //qb pdd
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandlePddUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "1101": //jw qb tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "1201": //dnf tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "1202": //dnf jd
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleJDUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+
+	case "2001": //j3 tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
+	case "4001": //sdo tb
+		global.GVA_LOG.Info("到这一步匹配", zap.Any("cid", cid), zap.Any("payUrl", shop.Address))
+		payUrl, err = utils.HandleTBUrl(shop.Address)
 		if err != nil {
 			return "", err
 		}
@@ -1468,6 +1509,8 @@ func (vpoService *PayOrderService) HandleEventType(chanID string) (int, error) {
 	if chanCode >= 1000 && chanCode <= 1099 {
 		return 1, nil
 	} else if chanCode >= 1100 && chanCode <= 1199 {
+		return 1, nil
+	} else if chanCode >= 1200 && chanCode <= 1299 {
 		return 1, nil
 	} else if chanCode >= 4000 && chanCode <= 4099 {
 		return 1, nil

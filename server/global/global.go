@@ -56,8 +56,10 @@ const (
 
 	ChanOrgAccFilter        = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
 	ChanOrgQBAccZSet        = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号
+	ChanOrgDnfAccZSet       = "vb_acc_dnf_set:org_%d:chan_%s:money_%v"   // 同组织通道下可用账号
 	ChanOrgSdoAccZSet       = "vb_acc_sdo_set:org_%d:chan_%s:money_%v"   // 同组织通道下可用账号
 	ChanOrgQBAccZSetPrefix  = "vb_acc_qb_set:org_%d:chan_%s:money_*"     // 同组织通道下可用账号
+	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
 	ChanOrgShopAddrZSet     = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
@@ -76,6 +78,7 @@ const (
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
 	YdQBAccWaiting  = "vb_acc_qb_waiting_yd:acid_%s:money_%v"  // 引导类-等待开启的账户(冷却中)
+	YdDnfAccWaiting = "vb_acc_dnf_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)

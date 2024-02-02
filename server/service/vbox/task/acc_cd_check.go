@@ -146,9 +146,14 @@ func AccCDCheckTask() {
 					// 获取今天的时间范围
 					startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
 					endOfDay := startOfDay.Add(24 * time.Hour)
+					// 获取本地时区
+					loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+					startOfDay = startOfDay.In(loc)
+					endOfDay = endOfDay.In(loc)
 
-					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("sum(money) as dailySum").
+					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 						Where("ac_id = ?", accDB.AcId).
+						Where("channel_code = ?", accDB.Cid).
 						Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
 
 					if err != nil {
@@ -222,6 +227,7 @@ func AccCDCheckTask() {
 
 				cid := accDB.Cid
 				if ttl <= 0 { //冷却结束，直接置为已用
+
 					// 更新账号为正常状态
 					global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
 
@@ -230,9 +236,19 @@ func AccCDCheckTask() {
 					if global.TxContains(cid) { // 引导
 						accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
 
-						if flag { // 表示超限了，删掉处理
+						if flag || accDB.Status == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
+					} else if global.DnfContains(cid) { // dnf 引导
+						accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, money)
+
+						if flag || accDB.Status == 0 { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -240,9 +256,9 @@ func AccCDCheckTask() {
 					} else if global.SdoContains(cid) { // sdo 引导
 						accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
 
-						if flag { // 表示超限了，删掉处理
+						if flag || accDB.Status == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -250,9 +266,9 @@ func AccCDCheckTask() {
 					} else if global.J3Contains(cid) { // 剑三引导
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 
-						if flag { // 表示超限了，删掉处理
+						if flag || accDB.Status == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
@@ -264,7 +280,7 @@ func AccCDCheckTask() {
 					_ = msg.Ack(true)
 					continue
 				} else { //仍然处于冷却状态，重新丢回ck check mq
-					if flag { // 表示超限了，删掉处理
+					if flag || accDB.Status == 0 { // 表示超限或者当前账号已经关闭，删掉处理
 
 						// 更新账号为正常状态
 						global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 1)
@@ -274,17 +290,22 @@ func AccCDCheckTask() {
 						if global.TxContains(cid) { // 引导
 							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+						} else if global.DnfContains(cid) { // dnf 引导
+							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, money)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.SdoContains(cid) { // sdo 引导
 							accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.J3Contains(cid) { // 剑三引导
 							accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限了，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.PcContains(cid) { // wx qb
 							global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))
@@ -292,6 +313,7 @@ func AccCDCheckTask() {
 
 					} else {
 						if global.TxContains(cid) { // 引导
+						} else if global.DnfContains(cid) { // dnf引导
 						} else if global.SdoContains(cid) { // sdo引导
 						} else if global.J3Contains(cid) { // 剑三引导
 							// 更新账号为冷却状态

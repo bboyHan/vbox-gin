@@ -169,15 +169,18 @@ qiniu:
     use-https: false
     use-cdn-domains: false
 rabbitmq:
-    addr: 60.204.145.173
-    port: "8083"
+#    addr: 60.204.145.173
+#    port: "8083"
+    addr: 62.234.218.227
+    port: "5672"
     password: Vbox123qwe
     username: admin
-    poolSize: 20
-    retryReConnDelay: 3
+    poolSize: 30
+    retryReConnDelay: 1
 redis:
 #    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
-    addr: 60.204.145.173:10818
+#    addr: 60.204.145.173:10818
+    addr: 62.234.218.227:6379
     password: Vbox123qwe
 #    password: ""
     db: 0
@@ -211,7 +214,7 @@ system:
     timer-task: false
 mq-task:
     order-wait: false
-    order-confirm: false
+    order-confirm: true
     order-callback: false
     acc-enable-check: false
     pay-code-cd-check: false

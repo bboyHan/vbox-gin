@@ -141,6 +141,16 @@ func ValidXCXUrl(requestString string) bool {
 	return true
 }
 
+// ValidPddUrl 校验PDD合法性
+func ValidPddUrl(requestString string) bool {
+	if strings.Contains(requestString, "pingduoduo://") {
+	} else if strings.Contains(requestString, "mobile.yangkeduo.com") {
+	} else {
+		return false
+	}
+	return true
+}
+
 // HandleDYUrl 处理dy url
 func HandleDYUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
@@ -181,12 +191,28 @@ func HandleXCXUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 	if strings.Contains(requestString, "#小程序://") {
 		payUrl = requestString
-		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", requestString))
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
 	} else {
 		return "", fmt.Errorf("不合法的TB链接")
 	}
 	return payUrl, nil
 }
+
+// HandlePddUrl 处理pdd url
+func HandlePddUrl(requestString string) (payUrl string, err error) {
+	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	if strings.Contains(requestString, "pingduoduo://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
+	} else if strings.Contains(requestString, "mobile.yangkeduo.com") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
+	} else {
+		return "", fmt.Errorf("不合法的PDD链接")
+	}
+	return payUrl, nil
+}
+
 func HandleTBUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 

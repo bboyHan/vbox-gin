@@ -16,7 +16,7 @@ type SysOperationRecord struct {
 	Status       int           `json:"status" form:"status" gorm:"column:status;comment:请求状态"`                       // 请求状态
 	Latency      time.Duration `json:"latency" form:"latency" gorm:"column:latency;comment:延迟" swaggertype:"string"` // 延迟
 	Agent        string        `json:"agent" form:"agent" gorm:"column:agent;comment:代理;type:longtext;"`             // 代理
-	ErrorMessage string        `json:"error_message" form:"error_message" gorm:"column:error_message;comment:错误信息"`  // 错误信息
+	ErrorMessage string        `json:"error_message" form:"error_message" gorm:"type:text;column:error_message;comment:错误信息"`  // 错误信息
 	Body         string        `json:"body" form:"body" gorm:"type:text;column:body;comment:请求Body"`                 // 请求Body
 	Resp         string        `json:"resp" form:"resp" gorm:"type:text;column:resp;comment:响应Body"`                 // 响应Body
 	UserID       int           `json:"user_id" form:"user_id" gorm:"column:user_id;comment:用户id"`                    // 用户id

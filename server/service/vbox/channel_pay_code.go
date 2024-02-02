@@ -666,6 +666,8 @@ func HandleExpTime2Product(chanID string) (time.Duration, error) {
 		if chanID == "1101" {
 			key = "1100"
 		}
+	} else if global.DnfContains(chanID) {
+		key = "1200"
 	} else if global.J3Contains(chanID) {
 		key = "2000"
 	} else if global.PcContains(chanID) {
