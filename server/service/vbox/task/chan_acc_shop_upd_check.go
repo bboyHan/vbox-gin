@@ -446,7 +446,7 @@ func ChanAccShopUpdCheckTask() {
 							acId := acDBTmp.AcId
 							acAccount := acDBTmp.AcAccount
 							waitAccYdKey := fmt.Sprintf(global.YdJ3AccWaiting, acId)
-							waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
+							waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 							waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 							ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 							if ttl > 0 { //该账号正在冷却中

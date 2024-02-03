@@ -111,7 +111,7 @@ func OrderCallbackTask() {
 				global.GVA_REDIS.Set(context.Background(), key, jsonString, 10*time.Second)
 
 				if err != nil {
-					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", orderId), zap.Error(err))
+					global.GVA_LOG.Error("订单回调消费异常，消息丢弃", zap.Any("对应单号", orderId), zap.Error(err))
 
 					_ = msg.Reject(false)
 					continue

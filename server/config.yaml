@@ -120,12 +120,13 @@ mssql:
     log-zap: false
 mysql:
     prefix: ""
-    port: "3306"
+    port: "10995"
     config: charset=utf8mb4&parseTime=True&loc=Local
     db-name: vbox_system
     username: vbox_admin
     password: Vbox123qwe
-    path: rm-cn-lbj3k08et0006bto.rwlb.rds.aliyuncs.com
+    path: 62.234.218.227
+#    path: rm-cn-lbj3k08et0006bto.rwlb.rds.aliyuncs.com
     engine: ""
     log-mode: error
     max-idle-conns: 10
@@ -214,7 +215,7 @@ system:
     timer-task: false
 mq-task:
     order-wait: false
-    order-confirm: true
+    order-confirm: false
     order-callback: false
     acc-enable-check: false
     pay-code-cd-check: false

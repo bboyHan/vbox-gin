@@ -193,7 +193,7 @@ func ChanAccDelCheckTask() {
 						moneyTmp := money
 						go func() {
 							accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
-							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+							waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}()
@@ -202,7 +202,7 @@ func ChanAccDelCheckTask() {
 				} else if global.J3Contains(cid) { //QB引导，
 
 					accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
-					waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
+					waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 

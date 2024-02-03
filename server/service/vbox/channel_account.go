@@ -192,6 +192,9 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			return nil, err
 		}
 		records := product.Records(urlQ, openID, openKey, 24*30*time.Hour)
+		if records == nil {
+			return nil, fmt.Errorf("该账号ck存在异常，请核查")
+		}
 
 		if records.Ret != 0 {
 			return nil, fmt.Errorf("该账号ck存在异常，请核查")

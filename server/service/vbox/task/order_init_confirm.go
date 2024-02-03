@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/redis/go-redis/v9"
@@ -29,6 +32,8 @@ const (
 
 // OrderConfirmTask 处理查单（如果单子支付成功，发起回调通知的消息）
 func OrderConfirmTask() {
+	var operationRecordService system.OperationRecordService
+
 	// 示例：发送消息
 	conn, err := mq.MQ.ConnPool.GetConnection()
 	if err != nil {
@@ -67,9 +72,9 @@ func OrderConfirmTask() {
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
 			// 说明：执行查单回调处理
-			deliveries, err := ch.Consume(OrderConfirmDeadQueue, "", false, false, false, false, nil)
-			if err != nil {
-				global.GVA_LOG.Error("mq 消费者异常， err", zap.Error(err), zap.Any("queue", OrderConfirmDeadQueue))
+			deliveries, errC := ch.Consume(OrderConfirmDeadQueue, "", false, false, false, false, nil)
+			if errC != nil {
+				global.GVA_LOG.Error("mq 消费者异常， err", zap.Error(errC), zap.Any("queue", OrderConfirmDeadQueue))
 			}
 
 			for msg := range deliveries {
@@ -137,9 +142,9 @@ func OrderConfirmTask() {
 				expTime := v.Obj.ExpTime
 				duration := expTime.Sub(nowTime)
 				if duration > 0 {
-					global.GVA_LOG.Info("该订单还没过期，继续查")
+					global.GVA_LOG.Info("该订单还没过期，继续查", zap.Any("orderID", v.Obj.OrderId))
 				} else {
-					global.GVA_LOG.Info("该订单已经过期")
+					global.GVA_LOG.Info("该订单已经过期", zap.Any("orderID", v.Obj.OrderId))
 					//过期了， 更新成过期状态，消息丢掉
 					if err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 3).Error; err != nil {
 						global.GVA_LOG.Error("更新订单异常", zap.Error(err))
@@ -170,9 +175,54 @@ func OrderConfirmTask() {
 					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
-						// 重新丢回去 下一个20s再查一次
-						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 29*time.Second)
+
+						if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+							global.GVA_LOG.Error("更新订单异常", zap.Error(errX))
+							_ = msg.Reject(false)
+							continue
+						}
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(time.Now()),
+							Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+							Update("sys_status", 0).Error
+
+						vca.Status = 0
+						oc := vboxReq.ChanAccAndCtx{
+							Obj: vca,
+							Ctx: vboxReq.Context{
+								Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+								ClientIP:  "127.0.0.1",
+								Method:    "POST",
+								UrlPath:   "/vca/switchEnable",
+								UserAgent: "",
+								UserID:    int(vca.CreatedBy),
+							},
+						}
+						marshal, _ := json.Marshal(oc)
+
+						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
+						//// 重新丢回去 下一个20s再查一次
+						//marshal, _ := json.Marshal(v)
+						//err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 29*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -210,10 +260,10 @@ func OrderConfirmTask() {
 						}
 					}
 				} else if global.DnfContains(chanID) {
-					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
+					//global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
 					//处理查询的起始时间（提前2分半钟）
 					startTime := odCreatedTime.Add(-150 * time.Second)
-					global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
+					//global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
 					records, errX := product.QryQQRecordsBetween(vca, startTime, *expTime)
 					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
@@ -226,11 +276,10 @@ func OrderConfirmTask() {
 					}
 					rdMap := product.Classifier(records.WaterList)
 					if vm, ok := rdMap["DNF"]; !ok {
-						global.GVA_LOG.Info("还没有Dnf的充值记录")
+						global.GVA_LOG.Info("还没有Dnf的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 					} else {
 						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
-							global.GVA_LOG.Info("还没有Dnf的充值记录")
-
+							global.GVA_LOG.Info("还没有Dnf的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 						} else { // 证明这种金额的，充上了
 							if utils.Contains(rd, vca.AcAccount) {
 								//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）

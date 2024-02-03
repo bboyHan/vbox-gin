@@ -29,6 +29,8 @@ const (
 
 	ChanAccOrgCountUnused = "chan_acc_count_unused:org_%d"
 
+	AccQryEx = "系统关号,检测账号CK异常.无法正确查单. ID: %s, acc: %s"
+
 	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
 	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"

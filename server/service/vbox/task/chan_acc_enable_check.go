@@ -620,7 +620,7 @@ func ChanAccEnableCheckTask() {
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 						waitAccYdKey := fmt.Sprintf(global.YdJ3AccWaiting, acId)
 
-						waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 						if ttl > 0 { //该账号正在冷却中
@@ -847,7 +847,7 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func() {
 								waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中，直接处理删掉
@@ -865,7 +865,7 @@ func ChanAccEnableCheckTask() {
 					} else if global.J3Contains(cid) {
 
 						waitAccYdKey := fmt.Sprintf(global.YdJ3AccWaiting, acId)
-						waitAccMem := fmt.Sprintf("%v_%s_%s", ID, acId, acAccount)
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 						//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 						if ttl > 0 { //该账号正在冷却中，直接处理删掉

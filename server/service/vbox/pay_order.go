@@ -34,12 +34,18 @@ type PayOrderService struct {
 //			Ext:        "123",
 //		}
 func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSearch, ids []uint) (ov []vboxRep.OrderAccRes, err error) {
+	var acIDs []uint
 	db := global.GVA_DB.Table("vbox_pay_order").Model(&vboxRep.OrderAccRes{})
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code =?", info.ChannelCode)
 	}
-	if info.AcId != "" {
+	if info.AcRemark != "" {
+		global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Select("ac_id").Where("ac_remark like ?", "%"+info.AcRemark+"%").Scan(&acIDs)
+	}
+	if info.AcId != "" && len(acIDs) == 0 {
 		db = db.Where("ac_id =?", info.AcId)
+	} else if len(acIDs) > 0 {
+		db = db.Where("ac_id in ?", acIDs)
 	}
 	if info.AcAccount != "" {
 		db = db.Where("ac_account =?", info.AcAccount)

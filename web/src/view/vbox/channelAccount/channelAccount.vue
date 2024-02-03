@@ -104,6 +104,10 @@
             <p><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!
             </p>
           </el-col>
+          <el-col :span="24">
+            <p><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog" style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！
+            </p>
+          </el-col>
         </el-row>
       </div>
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
@@ -173,7 +177,7 @@
                 </el-button>
               </el-col>
               <el-col :span="8">
-                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统记录
+                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统核查
                 </el-button>
               </el-col>
               <el-col :span="8">
@@ -1419,10 +1423,13 @@
                @close="closeCostOrderAcc">
       <div class="gva-search-box">
         <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">
-          <el-form-item label="通道账户名" prop="acId">
+          <el-form-item label="账户名" prop="acId">
             <el-input v-model="searchAccInfo.acAccount" placeholder="搜索通道账户"/>
           </el-form-item>
-          <el-form-item label="通道账户ID" prop="acAccount">
+          <el-form-item label="账户备注" prop="acRemark">
+            <el-input v-model="searchAccInfo.acRemark" placeholder="搜索账户备注"/>
+          </el-form-item>
+          <el-form-item label="账户ID" prop="acAccount">
             <el-input v-model="searchAccInfo.acId" placeholder="搜索通道账户ID"/>
           </el-form-item>
           <el-form-item label="通道ID" prop="cid">
@@ -1813,7 +1820,7 @@ const queryAccOrderSysFunc = async (row) => {
   const req = {...row}
   console.log(req)
 
-  let res = await getPayOrderList({page: page.value, pageSize: pageSize.value, acId: req.acId})
+  let res = await getPayOrderList({page: page.value, pageSize: pageSize.value, acId: req.acId, orderStatus: 1})
   console.log(res.data)
   if (res.code === 0) {
     orderSysTableData.value = res.data.list
