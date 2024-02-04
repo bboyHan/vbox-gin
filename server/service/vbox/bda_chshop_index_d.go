@@ -137,7 +137,10 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexDInfoList
 		db = db.Where("cid = ?", info.Cid)
 	}
 	if info.ShopRemark != "" {
-		db = db.Where("shop_remark = ?", info.ShopRemark)
+		db = db.Where("shop_remark LIKE ?", "%"+info.ShopRemark+"%")
+	}
+	if info.ProductName != "" {
+		db = db.Where("product_name LIKE ?", "%"+info.ProductName+"%")
 	}
 	err = db.Count(&total).Error
 	if err != nil {
@@ -592,8 +595,26 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayInco
 	var accIds []string
 	err = db.Select("distinct SUBSTRING_INDEX(event_id, '_', 1) as shop_id").Where("order_status=1").Pluck("shop_id", &accIds).Error
 	fmt.Println("shopIds=", accIds)
+
+	var shopNames []vbox.ChannelShop
+	err = global.GVA_DB.Model(&vbox.ChannelShop{}).Select("DISTINCT product_id, shop_remark").
+		Where("product_id in ? ", accIds).Find(&shopNames).Error
+
 	if err != nil {
 		return
+	}
+	// 将查询结果存入 map 中
+	shopMap := make(map[string]string)
+	for _, shop := range shopNames {
+		fmt.Println("shop.ProductId" + shop.ProductId)
+		fmt.Println("shop.ShopRemark" + shop.ShopRemark)
+		shopMap[shop.ProductId] = shop.ShopRemark
+	}
+
+	var shops []string
+	for _, accId := range accIds {
+		// 在这里处理每个账户 ID
+		shops = append(shops, shopMap[accId])
 	}
 	//
 	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
@@ -644,7 +665,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayInco
 		// 处理每个 accId 对应的 incomes 数组
 		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:   accId,
+			Name:   shopMap[accId],
 			Type:   "line",
 			Stack:  "",
 			Smooth: true,
@@ -654,7 +675,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayInco
 	}
 
 	entity := vboxResp.ChartData{
-		LegendData: accIds,
+		LegendData: shops,
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
@@ -717,6 +738,26 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayOkCn
 	if err != nil {
 		return
 	}
+	var shopNames []vbox.ChannelShop
+	err = global.GVA_DB.Model(&vbox.ChannelShop{}).Select("DISTINCT product_id, shop_remark").
+		Where("product_id in ? ", accIds).Find(&shopNames).Error
+
+	if err != nil {
+		return
+	}
+	// 将查询结果存入 map 中
+	shopMap := make(map[string]string)
+	for _, shop := range shopNames {
+		fmt.Println("shop.ProductId" + shop.ProductId)
+		fmt.Println("shop.ShopRemark" + shop.ShopRemark)
+		shopMap[shop.ProductId] = shop.ShopRemark
+	}
+	var shops []string
+	for _, accId := range accIds {
+		// 在这里处理每个账户 ID
+		shops = append(shops, shopMap[accId])
+	}
+
 	//
 	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
 	rows, err := db.Raw(querySql, sTime, uid).Rows()
@@ -766,7 +807,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayOkCn
 		// 处理每个 accId 对应的 incomes 数组
 		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:   accId,
+			Name:   shopMap[accId],
 			Type:   "line",
 			Stack:  "",
 			Smooth: true,
@@ -776,7 +817,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToDayOkCn
 	}
 
 	entity := vboxResp.ChartData{
-		LegendData: accIds,
+		LegendData: shops,
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
@@ -822,6 +863,27 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToWeekInC
 	fmt.Println("accIds=", accIds)
 	if err != nil {
 		return
+	}
+
+	var shopNames []vbox.ChannelShop
+	err = global.GVA_DB.Model(&vbox.ChannelShop{}).Select("DISTINCT product_id, shop_remark").
+		Where("product_id in ? ", accIds).Find(&shopNames).Error
+
+	if err != nil {
+		return
+	}
+	// 将查询结果存入 map 中
+	shopMap := make(map[string]string)
+	for _, shop := range shopNames {
+		fmt.Println("shop.ProductId" + shop.ProductId)
+		fmt.Println("shop.ShopRemark" + shop.ShopRemark)
+		shopMap[shop.ProductId] = shop.ShopRemark
+	}
+
+	var shops []string
+	for _, accId := range accIds {
+		// 在这里处理每个账户 ID
+		shops = append(shops, shopMap[accId])
 	}
 	//
 	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
@@ -872,7 +934,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToWeekInC
 		// 处理每个 accId 对应的 incomes 数组
 		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:   accId,
+			Name:   shopMap[accId],
 			Type:   "line",
 			Stack:  "",
 			Smooth: true,
@@ -882,7 +944,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChShopIndexToWeekInC
 	}
 
 	entity := vboxResp.ChartData{
-		LegendData: accIds,
+		LegendData: shops,
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
@@ -929,6 +991,26 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChaShopIndexToWeekOk
 	fmt.Println("accIds=", accIds)
 	if err != nil {
 		return
+	}
+	var shopNames []vbox.ChannelShop
+	err = global.GVA_DB.Model(&vbox.ChannelShop{}).Select("DISTINCT product_id, shop_remark").
+		Where("product_id in ? ", accIds).Find(&shopNames).Error
+
+	if err != nil {
+		return
+	}
+	// 将查询结果存入 map 中
+	shopMap := make(map[string]string)
+	for _, shop := range shopNames {
+		fmt.Println("shop.ProductId" + shop.ProductId)
+		fmt.Println("shop.ShopRemark" + shop.ShopRemark)
+		shopMap[shop.ProductId] = shop.ShopRemark
+	}
+
+	var shops []string
+	for _, accId := range accIds {
+		// 在这里处理每个账户 ID
+		shops = append(shops, shopMap[accId])
 	}
 	//
 	//db := global.GVA_DB.Model(&vboxResp.UserDayIncomeLineChart{})
@@ -979,7 +1061,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChaShopIndexToWeekOk
 		// 处理每个 accId 对应的 incomes 数组
 		//fmt.Printf("AccID: %d, Incomes: %v\n", accId, incomes)
 		incomesEntity := vboxResp.SeriesItem{
-			Name:   accId,
+			Name:   shopMap[accId],
 			Type:   "line",
 			Stack:  "",
 			Smooth: true,
@@ -989,7 +1071,7 @@ func (bdaChshopIndexDService *BdaChShopIndexDService) GetBdaChaShopIndexToWeekOk
 	}
 
 	entity := vboxResp.ChartData{
-		LegendData: accIds,
+		LegendData: shops,
 		XAxisData:  timeData,
 		SeriesData: seriesData,
 	}
