@@ -108,6 +108,10 @@
             <p><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog" style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！
             </p>
           </el-col>
+          <el-col :span="24">
+            <p><span style="color: blue;">【限额说明】</span>针对添加通道账号的限额设置，包括<span style="color: blue;">"总额限制"、"日额限制"、"笔数限制"</span>，系统计算规则：当前账号进单的累计金额或累计笔数<span style="color: blue;">大于或等于限制时</span>，系统进行自动关号。<span style="color: red;text-decoration: underline;"><b>非精准控制，请知悉！</b></span>
+            </p>
+          </el-col>
         </el-row>
       </div>
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
@@ -169,19 +173,16 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查询" width="240">
+        <el-table-column align="center" label="查询" width="180">
           <template #default="scope">
             <el-row :gutter="12">
-              <el-col :span="8">
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">充值记录
+              <el-col :span="12">
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">官方记录
                 </el-button>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="12">
                 <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统核查
                 </el-button>
-              </el-col>
-              <el-col :span="8">
-                <el-button type="primary" link class="table-button" @click="goWorkLog">操作日志</el-button>
               </el-col>
             </el-row>
           </template>
@@ -424,7 +425,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="returnPreStep">上一步</el-button>
+          <el-button @click="returnPreStep(1000)">上一步</el-button>
           <el-button @click="close1000Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -493,6 +494,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="returnPreStep(1100)">上一步</el-button>
           <el-button @click="close1100Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -561,7 +563,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="returnPreStep">上一步</el-button>
+          <el-button @click="returnPreStep(1200)">上一步</el-button>
           <el-button @click="close1200Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -626,6 +628,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="returnPreStep(1200)">上一步</el-button>
           <el-button @click="closeDialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -694,6 +697,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="returnPreStep(3000)">上一步</el-button>
           <el-button @click="closeDialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -763,6 +767,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="returnPreStep(4000)">上一步</el-button>
           <el-button @click="closeDialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
@@ -1483,9 +1488,8 @@
       </div>
       <div class="gva-table-box">
         <!--   简约版   -->
-        <el-table v-if="isSimple" ref="multipleTable" style="width: 100%" tooltip-effect="dark"
-                  :data="orderSysTableData" row-key="ID" border @selection-change="handleSelectionChange">
-          <el-table-column align="center" label="账号ID" prop="acId" width="180"/>
+        <el-table v-if="isSimple" ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="orderSysTableData" row-key="ID" border>
+          <el-table-column align="center" label="账号" prop="acAccount" width="180"/>
           <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
           <el-table-column align="center" label="金额" prop="money" width="120"/>
           <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
@@ -1613,7 +1617,8 @@
         <el-descriptions-item label="付方ID">{{ sysFormData.pAccount }}</el-descriptions-item>
         <el-descriptions-item label="金额">{{ sysFormData.money }}</el-descriptions-item>
         <el-descriptions-item label="单价积分">{{ sysFormData.unitPrice }}</el-descriptions-item>
-        <el-descriptions-item label="账号ID">{{ sysFormData.acId }}</el-descriptions-item>
+        <el-descriptions-item label="ID">{{ sysFormData.acId }}</el-descriptions-item>
+        <el-descriptions-item label="账号">{{ sysFormData.acAccount }}</el-descriptions-item>
         <el-descriptions-item label="通道编码">{{ sysFormData.channelCode }}</el-descriptions-item>
         <el-descriptions-item label="平台ID">{{ sysFormData.platId }}</el-descriptions-item>
         <el-descriptions-item label="客户ip">{{ sysFormData.payIp }}</el-descriptions-item>
@@ -1657,8 +1662,8 @@
                destroy-on-close style="width: 600px">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
-          <el-col :span="12">
-            <el-form-item label="通道ID" prop="cid" disabled>
+          <el-col :span="24">
+            <el-form-item label="当前通道" prop="cid" disabled>
               <el-input v-model="formData.cid" readonly disabled></el-input>
             </el-form-item>
           </el-col>
@@ -1677,7 +1682,7 @@
         </el-row>
         <el-row>
           <el-col :span="24">
-            <el-form-item label="通道ID" prop="cid" :required="true">
+            <el-form-item label="转移通道" prop="cid" :required="true">
               <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
                            style="width: 100%"/>
             </el-form-item>
@@ -1850,6 +1855,7 @@ const closeSysDetailShow = () => {
     unitPrice: 0,
     uid: 0,
     acId: '',
+    acAccount: '',
     channelCode: '',
     platId: '',
     payIp: '',
@@ -1873,6 +1879,7 @@ const sysFormData = ref({
   unitPrice: 0,
   uid: 0,
   acId: '',
+  acAccount: '',
   channelCode: '',
   platId: '',
   payIp: '',
@@ -2364,7 +2371,24 @@ const dialog4000FormVisible = ref(false)
 
 // 系统查单补单
 const dialogSysFormVisible = ref(false)
-// 关闭弹窗
+// 上一步
+const returnPreStep = (cid) => {
+  dialogChanFormVisible.value = true
+  if(cid >= 1000 && cid <= 1099){
+    dialog1000FormVisible.value = false
+  }else if(cid >= 1100 && cid <= 1199){
+    dialog1100FormVisible.value = false
+  }else if(cid >= 1200 && cid <= 1299){
+    dialog1200FormVisible.value = false
+  }else if(cid >= 2000 && cid <= 2099){
+    dialog2000FormVisible.value = false
+  }else if(cid >= 3000 && cid <= 3099){
+    dialog3000FormVisible.value = false
+  }else if(cid >= 4000 && cid <= 4099){
+    dialog4000FormVisible.value = false
+  }
+}
+
 const closeSysDialog = () => {
   dialogSysFormVisible.value = false
   sysFormData.value = {
@@ -2375,6 +2399,7 @@ const closeSysDialog = () => {
     unitPrice: 0,
     uid: 0,
     acId: '',
+    acAccount: '',
     channelCode: '',
     platId: '',
     payIp: '',

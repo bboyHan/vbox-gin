@@ -78,7 +78,9 @@ func GetSelfOrg(id uint) []uint {
 
 		uniq := Uniq(orgId)
 
-		global.GVA_REDIS.SAdd(context.Background(), orgKey, uniq)
+		for _, orgID := range uniq {
+			global.GVA_REDIS.SAdd(context.Background(), orgKey, orgID)
+		}
 		global.GVA_REDIS.Expire(context.Background(), orgKey, 5*time.Minute)
 
 		return uniq

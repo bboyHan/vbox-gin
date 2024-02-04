@@ -460,6 +460,10 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		if errX != nil {
 			return errX
 		}
+		isNum := utils.IsNumeric(vca.AcAccount)
+		if !isNum {
+			return errors.New("QQ账号输入不合法")
+		}
 	} else if global.SdoContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
 		if !isCK {

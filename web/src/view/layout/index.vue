@@ -146,7 +146,7 @@
           </div>
         </router-view>
         <BottomInfo />
-        <setting />
+<!--        <setting />-->
         <CommandMenu ref="command" />
       </el-main>
     </el-container>

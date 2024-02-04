@@ -8,7 +8,7 @@
         <el-col :xs="24" :span="6">
           <CenterCard title="我的积分" :custom-style="walletCustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -27,14 +27,15 @@
     </div>
 
     <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule" @keyup.enter="onSubmit">
+      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
+               @keyup.enter="onSubmit">
         <el-form-item label="通道ID" prop="cid">
           <el-cascader
-            v-model="searchInfo.cid"
-            :options="channelCodeOptions"
-            :props="channelCodeProps"
-            @change="handleChange"
-            style="width: 100%"
+              v-model="searchInfo.cid"
+              :options="channelCodeOptions"
+              :props="channelCodeProps"
+              @change="handleChange"
+              style="width: 100%"
           />
         </el-form-item>
         <el-form-item>
@@ -53,7 +54,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="当前通道账号" :custom-style="accCustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" ></span>
+              <span class="gvaIcon-prompt" style="color: #999"></span>
             </template>
             <template #body>
               <!--              <ReclaimMileage :channel-code="searchInfo.cid" :acc-on="accOn" :acc-off="accOff" :acc-total="accTotal"/>-->
@@ -86,23 +87,24 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="近1小时成单" :custom-style="order1CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
               <div class="acc-container">
                 <div class="indicator">
+
                     <span>
                       <div class="label">总笔数</div>
                       <div class="value">{{ nearOneHourRate.x2 }}</div>
                     </span>
-                  <span>
+                    <span>
                       <div class="label">成单数</div>
                       <div class="value">{{ nearOneHourRate.x1 }}</div>
                     </span>
-                  <span>
+                    <span>
                       <div class="label">成率</div>
-                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }} % </div>
+                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }}% </div>
                     </span>
                 </div>
               </div>
@@ -113,23 +115,20 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="昨日成单" :custom-style="order2CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
               <div class="acc-container">
-                <div class="indicator">
-                  <span>
+                <div class="indicator"><span>
                     <div class="label">总笔数</div>
                     <div class="value">{{ nearYesterdayRate.x2 }}</div>
-                  </span>
-                  <span>
+                  </span><span>
                     <div class="label">成单数</div>
                     <div class="value">{{ nearYesterdayRate.x1 }}</div>
-                  </span>
-                  <span>
+                  </span><span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }}% </div>
                   </span>
                 </div>
               </div>
@@ -140,7 +139,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="今日成单" :custom-style="order3CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -149,14 +148,12 @@
                   <span>
                     <div class="label">总笔数</div>
                     <div class="value">{{ nearTodayRate.x2 }}</div>
-                  </span>
-                  <span>
+                  </span><span>
                     <div class="label">成单数</div>
                     <div class="value">{{ nearTodayRate.x1 }}</div>
-                  </span>
-                  <span>
+                  </span><span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }}% </div>
                   </span>
                 </div>
               </div>
@@ -168,7 +165,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="近1小时成单金额" :custom-style="order1CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -178,10 +175,10 @@
                     <div class="label">金额</div>
                     <div class="value">{{ formatMoney(nearOneHourRate.x3) }}</div>
                   </span>
-<!--                  <span>
-                    <div class="label">待付金额</div>
-                    <div class="value">{{ formatMoney(nearOneHourRate.x4) }}</div>
-                  </span>-->
+                  <!--                  <span>
+                                      <div class="label">待付金额</div>
+                                      <div class="value">{{ formatMoney(nearOneHourRate.x4) }}</div>
+                                    </span>-->
                 </div>
               </div>
             </template>
@@ -191,7 +188,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="昨日金额" :custom-style="order2CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -210,7 +207,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="今日金额" :custom-style="order3CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -229,7 +226,7 @@
         <el-col :span="6" :xs="24">
           <CenterCard title="今日待付金额（含失效单）" :custom-style="order4CustomStyle">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <Order :channel-code="searchInfo.cid"/>-->
@@ -237,7 +234,7 @@
                 <div class="indicator">
                   <span>
                     <div class="label">待付金额</div>
-                    <div class="value">{{ formatMoney(nearTodayRate.x4-nearTodayRate.x3) }}</div>
+                    <div class="value">{{ formatMoney(nearTodayRate.x4 - nearTodayRate.x3) }}</div>
                   </span>
                 </div>
               </div>
@@ -246,15 +243,16 @@
         </el-col>
       </el-row>
 
-<!--   趋势图   -->
+      <!--   趋势图   -->
       <el-row :gutter="24">
         <el-col :span="24" :xs="24">
-          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>近1小时实时成单</h2></div>
+          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>近1小时实时成单</h2>
+          </div>
         </el-col>
         <el-col :span="12" :xs="24">
           <CenterCard title="近1小时实时成单(金额)">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour"-->
@@ -267,7 +265,7 @@
         <el-col :span="12" :xs="24">
           <CenterCard title="近1小时实时成单(数量)">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
               <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeOneHour" :end-time="endTimeOneHour" interval="5m" keyword="cnt" format="HH:mm" unit="笔"/>-->
@@ -283,10 +281,10 @@
         <el-col :span="12" :xs="24">
           <CenterCard title="今日成单（金额）">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
-<!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeToday" :end-time="endTimeToday" interval="30m" keyword="sum" format="HH:mm" unit="元"/>-->
+              <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeToday" :end-time="endTimeToday" interval="30m" keyword="sum" format="HH:mm" unit="元"/>-->
               <lineCharts :chart-data="nearTodaySum" format="HH:mm" unit="元"/>
             </template>
           </CenterCard>
@@ -294,16 +292,15 @@
         <el-col :span="12" :xs="24">
           <CenterCard title="今日成单（数量）">
             <template #action>
-              <span class="gvaIcon-prompt" style="color: #999" />
+              <span class="gvaIcon-prompt" style="color: #999"/>
             </template>
             <template #body>
-<!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeToday" :end-time="endTimeToday" interval="30m" keyword="cnt" format="HH:mm" unit="笔"/>-->
+              <!--              <lineCharts :channel-code="searchInfo.cid" :start-time="startTimeToday" :end-time="endTimeToday" interval="30m" keyword="cnt" format="HH:mm" unit="笔"/>-->
               <lineCharts :chart-data="nearTodayCnt" format="HH:mm" unit="笔"/>
             </template>
           </CenterCard>
         </el-col>
       </el-row>
-
 
 
     </div>
@@ -363,7 +360,7 @@ const endTimeYesterday = new Date(zero24Time.getTime() + (easternOffset + offset
 const elSearchFormRef = ref()
 
 
-const setOptions = async () =>{
+const setOptions = async () => {
   channelCodeOptions.value = []
   setChannelCodeOptions(vcpTableData.value, channelCodeOptions.value, false)
 }
@@ -378,7 +375,7 @@ const isUpd = ref(false)
 const accCustomStyle = ref({
   background: 'linear-gradient(to right, #3498db, #2ecc71)',
   color: '#FFF',
-  height: '150px',
+  height: '140px',
 })
 const order1CustomStyle = ref({
   background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
@@ -411,10 +408,10 @@ const userBalance = ref(0)
 
 // 搜索
 const onSubmit = () => {
-  console.log("searchInfo.value",searchInfo.value)
-  elSearchFormRef.value?.validate(async(valid) => {
+  console.log("searchInfo.value", searchInfo.value)
+  elSearchFormRef.value?.validate(async (valid) => {
     if (!valid) return
-    console.log("elSearchFormRef.value",elSearchFormRef.value)
+    console.log("elSearchFormRef.value", elSearchFormRef.value)
     getTableData()
   })
 }
@@ -434,8 +431,8 @@ const channelCodeProps = {
 }
 
 const handleChange = (value) => {
-  
-  console.log('cid:',value)
+
+  console.log('cid:', value)
   searchInfo.value.cid = value
   // getTableData()
 }
@@ -473,9 +470,9 @@ const setAccSwitchView = async () => {
   let countOn = 0
   let countOff = 0
   for (let i = 0; i < re.length; i++) {
-    if (re[i].status === 1){
+    if (re[i].status === 1) {
       countOn++;
-    }else {
+    } else {
       countOff++;
     }
   }
@@ -495,10 +492,10 @@ const nearOneHourSum = ref()
 const nearTodayCnt = ref()
 const nearTodaySum = ref()
 
-const getTableData = async() => {
+const getTableData = async () => {
   await nextTick()
-  const vcpTable = await getChannelProductSelf({ page: 1, pageSize: 9999, ...searchInfo.value })
-  const table = await getChannelAccountList({ page: 1, pageSize: 9999, ...searchInfo.value })
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 9999, ...searchInfo.value})
+  const table = await getChannelAccountList({page: 1, pageSize: 9999, ...searchInfo.value})
   if (table.code === 0) {
     accTableData.value = table.data.list
     await setAccSwitchView()
@@ -507,13 +504,74 @@ const getTableData = async() => {
     vcpTableData.value = vcpTable.data.list
     setOptions()
   }
-  let nearOneHourRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), keyword: 'cas'})
-  let nearYesterdayRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeYesterday.getTime() / 1000), endTime: Math.floor(endTimeYesterday.getTime() / 1000), keyword: 'cas'})
-  let nearTodayRateResult = await getPayOrderRate({ page: 1, pageSize: 9999, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), keyword: 'cas'})
-  let nearOneHourCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword: 'cnt', format: 'HH:mm'})
-  let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
-  let nearTodayCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword: 'cnt', format: 'HH:mm'})
-  let nearTodaySumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword:'sum', format: 'HH:mm'})
+  let nearOneHourRateResult = await getPayOrderRate({
+    page: 1,
+    pageSize: 9999,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeOneHour.getTime() / 1000),
+    endTime: Math.floor(endTimeOneHour.getTime() / 1000),
+    keyword: 'cas'
+  })
+  let nearYesterdayRateResult = await getPayOrderRate({
+    page: 1,
+    pageSize: 9999,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeYesterday.getTime() / 1000),
+    endTime: Math.floor(endTimeYesterday.getTime() / 1000),
+    keyword: 'cas'
+  })
+  let nearTodayRateResult = await getPayOrderRate({
+    page: 1,
+    pageSize: 9999,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeToday.getTime() / 1000),
+    endTime: Math.floor(endTimeToday.getTime() / 1000),
+    keyword: 'cas'
+  })
+  let nearOneHourCntResult = await getPayOrderOverview({
+    page: 1,
+    pageSize: 9999,
+    orderStatus: 1,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeOneHour.getTime() / 1000),
+    endTime: Math.floor(endTimeOneHour.getTime() / 1000),
+    interval: '5m',
+    keyword: 'cnt',
+    format: 'HH:mm'
+  })
+  let nearOneHourSumResult = await getPayOrderOverview({
+    page: 1,
+    pageSize: 9999,
+    orderStatus: 1,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeOneHour.getTime() / 1000),
+    endTime: Math.floor(endTimeOneHour.getTime() / 1000),
+    interval: '5m',
+    keyword: 'sum',
+    format: 'HH:mm'
+  })
+  let nearTodayCntResult = await getPayOrderOverview({
+    page: 1,
+    pageSize: 9999,
+    orderStatus: 1,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeToday.getTime() / 1000),
+    endTime: Math.floor(endTimeToday.getTime() / 1000),
+    interval: '30m',
+    keyword: 'cnt',
+    format: 'HH:mm'
+  })
+  let nearTodaySumResult = await getPayOrderOverview({
+    page: 1,
+    pageSize: 9999,
+    orderStatus: 1,
+    channelCode: searchInfo.value.cid,
+    startTime: Math.floor(startTimeToday.getTime() / 1000),
+    endTime: Math.floor(endTimeToday.getTime() / 1000),
+    interval: '30m',
+    keyword: 'sum',
+    format: 'HH:mm'
+  })
   nearOneHourCnt.value = nearOneHourCntResult
   nearOneHourSum.value = nearOneHourSumResult
   nearTodayCnt.value = nearTodayCntResult
@@ -524,7 +582,7 @@ const getTableData = async() => {
   console.log(nearOneHourRate.value)
   console.log(nearTodayRate.value)
 
-  let balanceVal = await getUserWalletSelf({ ...searchInfo.value })
+  let balanceVal = await getUserWalletSelf({...searchInfo.value})
   userBalance.value = balanceVal.data.balance
 
 }
@@ -558,16 +616,17 @@ export default {
 
 <style lang="scss" scoped>
 
-.data-center-box{
+.data-center-box {
   width: 100%;
   display: grid;
   grid-template-columns: 2fr 4fr;
   column-gap: 10px;
 }
 
-.acc-container{
+.acc-container {
   color: #FFFFFF;
 }
+
 .indicator {
   display: flex;
   justify-content: space-around; // 使子元素水平居中展开
@@ -583,7 +642,7 @@ export default {
 
   &:not(:last-child) {
     border-right: 2px solid #fff; // 白色边框
-    margin-right: 15px; // 调整间距
+    margin-right: 10px; // 调整间距
   }
 }
 
@@ -597,7 +656,13 @@ export default {
   font-size: 30px;
   font-weight: bold;
   margin-top: 5px; // 调整间距
+}
 
+.value-small {
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 5px; // 调整间距
 }
 
 </style>

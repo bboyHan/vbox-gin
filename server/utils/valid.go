@@ -13,6 +13,14 @@ import (
 	"strings"
 )
 
+// IsNumeric 判断字符串是否为数值
+func IsNumeric(s string) bool {
+	// 编译正则表达式
+	// 这个正则表达式匹配整数、浮点数以及负数
+	re := regexp.MustCompile(`^\d+$`)
+	return re.MatchString(s)
+}
+
 // ParseUrlContent 识别url内容，如果含有多个，则返回第一个
 func ParseUrlContent(content string) (url string, err error) {
 	// 1.
@@ -52,6 +60,7 @@ func ValidAlipayUrl(requestString string) bool {
 // ValidJDUrl 查找JD url合法性
 func ValidJDUrl(requestString string) bool {
 	if strings.Contains(requestString, "openapp.jdmobile://") {
+	} else if strings.Contains(requestString, "3.cn") {
 	} else if strings.Contains(requestString, "m.jd.com") {
 	} else if strings.Contains(requestString, "item.jd.com") {
 	} else {
@@ -90,6 +99,9 @@ func HandleJDUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 
 	if strings.Contains(requestString, "openapp.jdmobile://") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "3.cn") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
 	} else if strings.Contains(requestString, "item.jd.com") {

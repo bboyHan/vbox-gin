@@ -268,9 +268,51 @@ func OrderConfirmTask() {
 					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
-						// 重新丢回去 下一个20s再查一次
-						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+
+						if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+							global.GVA_LOG.Error("更新订单异常", zap.Error(errX))
+							_ = msg.Reject(false)
+							continue
+						}
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(time.Now()),
+							Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+							Update("sys_status", 0).Error
+
+						vca.Status = 0
+						oc := vboxReq.ChanAccAndCtx{
+							Obj: vca,
+							Ctx: vboxReq.Context{
+								Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+								ClientIP:  "127.0.0.1",
+								Method:    "POST",
+								UrlPath:   "/vca/switchEnable",
+								UserAgent: "",
+								UserID:    int(vca.CreatedBy),
+							},
+						}
+						marshal, _ := json.Marshal(oc)
+
+						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
 						_ = msg.Ack(true)
 						continue
 					}
@@ -309,13 +351,55 @@ func OrderConfirmTask() {
 				} else if global.SdoContains(chanID) {
 
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
-					records, errQ := product.QrySdoDaoYuRecordBetween(vca, odCreatedTime, *expTime)
-					if errQ != nil {
+					records, errX := product.QrySdoDaoYuRecordBetween(vca, odCreatedTime, *expTime)
+					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
-						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQ))
-						// 重新丢回去 下一个20s再查一次
-						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
+
+						if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+							global.GVA_LOG.Error("更新订单异常", zap.Error(errX))
+							_ = msg.Reject(false)
+							continue
+						}
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(time.Now()),
+							Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+							Update("sys_status", 0).Error
+
+						vca.Status = 0
+						oc := vboxReq.ChanAccAndCtx{
+							Obj: vca,
+							Ctx: vboxReq.Context{
+								Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+								ClientIP:  "127.0.0.1",
+								Method:    "POST",
+								UrlPath:   "/vca/switchEnable",
+								UserAgent: "",
+								UserID:    int(vca.CreatedBy),
+							},
+						}
+						marshal, _ := json.Marshal(oc)
+
+						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
 						_ = msg.Ack(true)
 						continue
 					}
@@ -368,13 +452,55 @@ func OrderConfirmTask() {
 					}
 				} else if global.J3Contains(chanID) {
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
-					j3Record, errQy := product.QryJ3Record(vca)
-					if errQy != nil {
+					j3Record, errX := product.QryJ3Record(vca)
+					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
-						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
-						// 重新丢回去 下一个20s再查一次
-						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
+
+						if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+							global.GVA_LOG.Error("更新订单异常", zap.Error(errX))
+							_ = msg.Reject(false)
+							continue
+						}
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(time.Now()),
+							Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+							Update("sys_status", 0).Error
+
+						vca.Status = 0
+						oc := vboxReq.ChanAccAndCtx{
+							Obj: vca,
+							Ctx: vboxReq.Context{
+								Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+								ClientIP:  "127.0.0.1",
+								Method:    "POST",
+								UrlPath:   "/vca/switchEnable",
+								UserAgent: "",
+								UserID:    int(vca.CreatedBy),
+							},
+						}
+						marshal, _ := json.Marshal(oc)
+
+						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
 						_ = msg.Ack(true)
 						continue
 					}
@@ -471,9 +597,51 @@ func OrderConfirmTask() {
 					if errQy != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
-						// 重新丢回去 下一个20s再查一次
-						marshal, _ := json.Marshal(v)
-						err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+
+						if errQy = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+							global.GVA_LOG.Error("更新订单异常", zap.Error(errQy))
+							_ = msg.Reject(false)
+							continue
+						}
+
+						//入库操作记录
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(time.Now()),
+							Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+							UserID:  v.Ctx.UserID,
+						}
+
+						err = operationRecordService.CreateSysOperationRecord(record)
+						if err != nil {
+							global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+						}
+
+						err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+							Update("sys_status", 0).Error
+
+						vca.Status = 0
+						oc := vboxReq.ChanAccAndCtx{
+							Obj: vca,
+							Ctx: vboxReq.Context{
+								Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+								ClientIP:  "127.0.0.1",
+								Method:    "POST",
+								UrlPath:   "/vca/switchEnable",
+								UserAgent: "",
+								UserID:    int(vca.CreatedBy),
+							},
+						}
+						marshal, _ := json.Marshal(oc)
+
+						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
 						_ = msg.Ack(true)
 						continue
 					}

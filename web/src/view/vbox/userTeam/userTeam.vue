@@ -39,9 +39,8 @@
           </div>
         </div>
         <div class="table-body">
-          <el-table :data="userTable" @selection-change="handleSelectionChange">
-            <el-table-column type="selection" width="55" />
-            <el-table-column prop="sysUser.username" label="用户名" width="120" />
+          <el-table :data="userTable">
+            <el-table-column align="center" prop="sysUser.username" label="用户名" width="120" />
             <el-table-column align="center" prop="x9" label="积分" width="90" />
             <el-table-column label="操作列" min-width="560">
               <template #default="{row}">
@@ -557,6 +556,8 @@ const resetAuthCaptcha = () => {
       }).then((res) => {
         if (res.code === 0) {
           ElMessage.success('重置安全码成功！')
+          // 刷新页面
+          window.location.reload()
         }
         showQRCode.value = false
         showAuthCaptcha.value = false

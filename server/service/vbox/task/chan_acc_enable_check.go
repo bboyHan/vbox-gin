@@ -80,6 +80,11 @@ func ChanAccEnableCheckTask() {
 				}
 
 				orgTmp := utils2.GetSelfOrg(v.Obj.CreatedBy)
+				if len(orgTmp) == 0 {
+					global.GVA_LOG.Error("当前用户没有组织信息，无法开启账号", zap.Any("ID", v.Obj.ID), zap.Any("cid", v.Obj.Cid), zap.Any("acId", v.Obj.AcId), zap.Any("acAccount", v.Obj.AcAccount))
+					_ = msg.Reject(false)
+					continue
+				}
 				ID := v.Obj.ID
 				cid := v.Obj.Cid
 				acId := v.Obj.AcId
@@ -352,7 +357,7 @@ func ChanAccEnableCheckTask() {
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
 						//pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 						//keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
-						if len(moneyList) < 1 {
+						if moneyList == nil || len(moneyList) < 1 {
 							global.GVA_LOG.Error("商铺没有匹配资源...")
 							//入库操作记录
 							record := sysModel.SysOperationRecord{

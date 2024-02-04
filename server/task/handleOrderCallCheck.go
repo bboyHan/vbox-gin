@@ -27,16 +27,16 @@ func HandleOrderCallCheck() (err error) {
 	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
 		Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
 
-	if len(orderDBList) == 0 {
-		return nil
-	} else {
-		//查出来有订单已支付，未回调
-		global.GVA_LOG.Info("查出来有订单已支付，未回调，当前情况", zap.Any("len", len(orderDBList)))
-		global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Table("vbox_pay_order").
-			Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
-
-		global.GVA_LOG.Info("查出来有订单已支付，未回调，再debug查一遍看看", zap.Any("len", len(orderDBList)))
-	}
+	//if len(orderDBList) == 0 {
+	//	return nil
+	//} else {
+	//	//查出来有订单已支付，未回调
+	//	global.GVA_LOG.Info("查出来有订单已支付，未回调，当前情况", zap.Any("len", len(orderDBList)))
+	//	global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Table("vbox_pay_order").
+	//		Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
+	//
+	//	global.GVA_LOG.Info("查出来有订单已支付，未回调，再debug查一遍看看", zap.Any("len", len(orderDBList)))
+	//}
 
 	for _, orderDB := range orderDBList {
 		orderDBTmp := orderDB
@@ -72,5 +72,16 @@ func HandleOrderCallCheck() (err error) {
 		}()
 	}
 
+	var orderDBFixList []vbox.PayOrder
+	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
+		Where("order_status != ? and cb_status = ?", 1, 1).Find(&orderDBFixList)
+	for _, orderDB := range orderDBFixList {
+		orderDBTmp := orderDB
+		go func() {
+			global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", orderDBTmp.ID).
+				Update("order_status", 1).Update("hand_status", 1)
+			global.GVA_LOG.Info("【系统修复】更新已回调确显示未支付的订单", zap.Any("order ID", orderDBTmp.OrderId))
+		}()
+	}
 	return err
 }

@@ -49,7 +49,6 @@
             :data="tableData"
             row-key="ID"
             border
-            @selection-change="handleSelectionChange"
         >
           <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
           <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
@@ -119,8 +118,7 @@
         </el-table>
 
         <!--   详情版   -->
-        <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID" border @selection-change="handleSelectionChange">
-          <el-table-column type="selection" width="55"/>
+        <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID" border>
           <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
           <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
             <template #default="scope">
