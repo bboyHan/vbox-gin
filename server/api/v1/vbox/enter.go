@@ -13,4 +13,5 @@ type ApiGroup struct {
 	BdaChIndexDApi
 	BdaChaccIndexDApi
 	BdaChShopIndexDApi
+	BdaChorgIndexDApi
 }

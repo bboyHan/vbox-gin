@@ -13,4 +13,5 @@ type ServiceGroup struct {
 	BdaChIndexDService
 	BdaChaccIndexDService
 	BdaChShopIndexDService
+	BdaChorgIndexDService
 }

@@ -89,6 +89,7 @@ func Routers() *gin.Engine {
 		vboxRouter.InitBdaChIndexDRouter(PrivateGroup)
 		vboxRouter.InitBdaChaccIndexDRouter(PrivateGroup)
 		vboxRouter.InitBdaChShopIndexDRouter(PrivateGroup)
+		vboxRouter.InitBdaChorgIndexDRouter(PrivateGroup)
 
 	}
 	global.GVA_LOG.Info("router register success")

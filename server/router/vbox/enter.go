@@ -14,4 +14,5 @@ type RouterGroup struct {
 	BdaChIndexDRouter
 	BdaChaccIndexDRouter
 	BdaChShopIndexDRouter
+	BdaChorgIndexDRouter
 }
