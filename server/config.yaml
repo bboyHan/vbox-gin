@@ -181,9 +181,11 @@ rabbitmq:
 redis:
 #    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
 #    addr: 60.204.145.173:10818
-    addr: 62.234.218.227:6379
-    password: Vbox123qwe
+#    addr: 62.234.218.227:6379
+#    password: Vbox123qwe
 #    password: ""
+    addr: localhost:6379
+    password: ""
     db: 0
 sqlite:
     prefix: ""
@@ -210,8 +212,8 @@ system:
     use-multipoint: false
     use-redis: true
     use-mongo: false
-    use-mq: true
-    use-mq-task: true
+    use-mq: false
+    use-mq-task: false
     timer-task: false
 mq-task:
     order-wait: false
