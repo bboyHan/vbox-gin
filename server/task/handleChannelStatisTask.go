@@ -33,5 +33,16 @@ func HandleChannelStatisTask() (err error) {
 	} else {
 		global.GVA_LOG.Info("用户通道店铺粒度 --> 统计成功")
 	}
+
+	global.GVA_LOG.Info("用户通道团队粒度 --> 统计开始")
+	err = service.ServiceGroupApp.VboxServiceGroup.CronVboxBdaChOrgIndexD()
+	if err != nil {
+		global.GVA_LOG.Error("用户通道团队粒度 --> 统计失败 ", zap.Error(err))
+		return
+	} else {
+		global.GVA_LOG.Info("用户通道团队粒度 --> 统计成功")
+	}
+
 	return err
+
 }

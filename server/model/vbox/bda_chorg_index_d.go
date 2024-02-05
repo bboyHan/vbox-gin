@@ -11,9 +11,10 @@ type BdaChorgIndexD struct {
 	OrganizationName string  `json:"organizationName" form:"organizationName" gorm:"column:organization_name;comment:团队名;size:64;"` //团队名
 	Cid              string  `json:"cid" form:"cid" gorm:"column:cid;comment:通道ID;size:32;"`                                        //通道ID
 	ChannelCode      string  `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道code;size:20;"`             //通道code
-	ProductId        string  `json:"product_id" form:"product_id" gorm:"column:product_id;comment:产品ID;size:128;"`                  //产品ID
+	ProductId        string  `json:"productId" form:"productId" gorm:"column:product_id;comment:产品ID;size:128;"`                    //产品ID
 	ProductName      string  `json:"productName" form:"productName" gorm:"column:product_name;comment:产品名称;size:128;"`              //产品名称
-	OrderQuantify    int     `json:"orderQuantify" form:"orderQuantify" gorm:"column:order_quantify;comment:成功订单量;size:64;"`        //成功订单量
+	OrderQuantify    int     `json:"orderQuantify" form:"orderQuantify" gorm:"column:order_quantify;comment:成功订单量;size:64;"`        //订单量
+	OkOrderQuantify  int     `json:"okOrderQuantify" form:"okOrderQuantify" gorm:"column:ok_order_quantify;comment:成功订单量;"`         //成功订单量
 	Ratio            float64 `json:"ratio" form:"ratio" gorm:"column:ratio;comment:成交率;size:64;"`                                   //成交率
 	Income           int     `json:"income" form:"income" gorm:"column:income;comment:成交金额;size:64;"`                               //成交金额
 	Dt               string  `json:"dt" form:"dt" gorm:"column:dt;comment:天;size:32;"`                                              //天
