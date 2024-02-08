@@ -70,6 +70,7 @@ const (
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodeMoneyPrefix = "vb_pay_code_set:org_%d:chan_%s:money_*"                     // 同组织通道下可用付款码（取用池）
 
+	PayAccKey      = "vb_ac_id:%s"
 	PayOrderKey    = "vb_order:%s"
 	PayOrderJUCKey = "vb_juc_order:%s"
 

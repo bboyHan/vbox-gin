@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"strings"
 	"sync"
-	"time"
 )
 
 // 订单等待查询
@@ -56,15 +55,24 @@ func AccCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 15
+	consumerCount := 30
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
 	// 启动多个消费者
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
+
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行查单回调处理
-			deliveries, errC := ch.Consume(AccCDCheckDeadQueue, "", false, false, false, false, nil)
+			deliveries, errC := chX.Consume(AccCDCheckDeadQueue, "", false, false, false, false, nil)
 			if errC != nil {
 				global.GVA_LOG.Error("mq 消费者异常， err", zap.Error(errC), zap.Any("queue", AccCDCheckDeadQueue))
 			}
@@ -78,7 +86,12 @@ func AccCDCheckTask() {
 				//         j3  - "vb_acc_j3_waiting_yd:acid_%s:money_%v"
 				waitAccYdKey := split[0]
 				waitAccMem := split[1]
-				accInfo := strings.Split(waitAccMem, "_")
+				var accInfo []string
+				if strings.Contains(waitAccMem, ",") {
+					accInfo = strings.Split(waitAccMem, ",")
+				} else {
+					accInfo = strings.Split(waitAccMem, "_")
+				}
 				ID := accInfo[0]
 				acID := accInfo[1]
 				acAccount := accInfo[2]
@@ -87,7 +100,7 @@ func AccCDCheckTask() {
 					money = accInfo[3]
 				}
 
-				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的账号", zap.Any("info", v))
+				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的账号", zap.Any("acID", acID), zap.Any("acAccount", acAccount), zap.Any("money", money), zap.Any("waitAccYdKey", waitAccYdKey))
 
 				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, acID)
 				// 检查消息是否已经被处理过
@@ -111,7 +124,7 @@ func AccCDCheckTask() {
 				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
 
 				var accDB vbox.ChannelAccount
-				if errQ := global.GVA_DB.Debug().First(&accDB, ID).Error; errQ != nil {
+				if errQ := global.GVA_DB.Debug().Unscoped().First(&accDB, ID).Error; errQ != nil {
 					global.GVA_LOG.Error("查找异常", zap.Error(errQ), zap.Any("ID", ID), zap.Any("acID", acID), zap.Any("acAccount", acAccount), zap.Any("money", money))
 					_ = msg.Reject(false)
 					continue
@@ -143,18 +156,18 @@ func AccCDCheckTask() {
 				// 2.1 日限制
 				if accDB.DailyLimit > 0 {
 					var dailySum int
-					// 获取今天的时间范围
-					startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-					endOfDay := startOfDay.Add(24 * time.Hour)
-					// 获取本地时区
-					loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
-					startOfDay = startOfDay.In(loc)
-					endOfDay = endOfDay.In(loc)
+					//// 获取今天的时间范围
+					//startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+					//endOfDay := startOfDay.Add(24 * time.Hour)
+					//// 获取本地时区
+					//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+					//startOfDay = startOfDay.In(loc)
+					//endOfDay = endOfDay.In(loc)
 
 					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 						Where("ac_id = ?", accDB.AcId).
 						Where("channel_code = ?", accDB.Cid).
-						Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+						Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
 
 					if err != nil {
 						global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
@@ -238,40 +251,40 @@ func AccCDCheckTask() {
 
 						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 					} else if global.DnfContains(cid) { // dnf 引导
 						accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, money)
 
 						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 					} else if global.SdoContains(cid) { // sdo 引导
 						accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
 
 						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 					} else if global.J3Contains(cid) { // 剑三引导
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 
 						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
 						} else {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-							global.GVA_LOG.Info("置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 					} else if global.PcContains(cid) { // wx qb
 						global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))
@@ -290,22 +303,22 @@ func AccCDCheckTask() {
 						if global.TxContains(cid) { // 引导
 							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.DnfContains(cid) { // dnf 引导
 							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, money)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.SdoContains(cid) { // sdo 引导
 							accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.J3Contains(cid) { // 剑三引导
 							accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-							global.GVA_LOG.Info("超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
 						} else if global.PcContains(cid) { // wx qb
 							global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))
@@ -322,14 +335,9 @@ func AccCDCheckTask() {
 						}
 						waitMsg := v
 
-						if ttl < 5 { //小于5秒的数据，缓冲 1s再发
-							ttl += 1
-							err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
-							global.GVA_LOG.Info("多缓冲1s")
-						} else {
-							err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttl)
-						}
-						global.GVA_LOG.Info("还在冷却中，重新放回ck check mq", zap.Any("msg", waitMsg), zap.Any("ttl", ttl))
+						ttlN := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), ttlN)
+						global.GVA_LOG.Info("还在冷却中，重新放回cd check mq", zap.Any("msg", waitMsg), zap.Any("ttlN", ttlN))
 					}
 				}
 

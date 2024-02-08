@@ -58,8 +58,16 @@ func OrderStatusCheckTask() {
 	// 启动多个消费者
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行查单回调处理
-			deliveries, err := ch.Consume(OrderStatusCheckDeadQueue, "", false, false, false, false, nil)
+			deliveries, err := chX.Consume(OrderStatusCheckDeadQueue, "", false, false, false, false, nil)
 			if err != nil {
 				global.GVA_LOG.Error("mq 消费者异常， err", zap.Error(err), zap.Any("queue", OrderStatusCheckDeadQueue))
 			}

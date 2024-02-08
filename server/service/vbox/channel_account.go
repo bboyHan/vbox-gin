@@ -264,7 +264,7 @@ func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res [
 			keyMem := fmt.Sprintf("%s_%d", ele.Cid, ele.Total)
 			global.GVA_REDIS.SAdd(context.Background(), accCntKey, keyMem)
 		}
-		global.GVA_REDIS.Expire(context.Background(), accCntKey, 25*time.Second)
+		global.GVA_REDIS.Expire(context.Background(), accCntKey, 5*time.Second)
 	} else {
 		cidTotalList := global.GVA_REDIS.SMembers(context.Background(), accCntKey).Val()
 		for _, ele := range cidTotalList {
@@ -400,7 +400,7 @@ func (vcaService *ChannelAccountService) TransferChannelForAcc(vca *vbox.Channel
 
 		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
 
-		global.GVA_LOG.Info("转移通道清理旧资源", zap.Any("旧cid", oldAccTmp.Cid), zap.Any("新cid", vca.Cid))
+		global.GVA_LOG.Info("转移通道清理旧资源", zap.Any("旧cid", oldAccTmp.Cid), zap.Any("新cid", vca.Cid), zap.Any("转移账号", accDB.AcAccount))
 	}()
 
 	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("cid", vca.Cid).Error
@@ -440,7 +440,7 @@ func (vcaService *ChannelAccountService) TransferChannelForAcc(vca *vbox.Channel
 			}
 			marshal, err := json.Marshal(oc)
 
-			global.GVA_LOG.Info("转移通道创建新资源", zap.Any("新cid", vcaDB.Cid))
+			global.GVA_LOG.Info("转移通道创建新资源,转移时状态开启了,所以先清了旧的,再开新的", zap.Any("新cid", vcaDB.Cid), zap.Any("转移账号", accDB.AcAccount))
 
 			err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
 		}()

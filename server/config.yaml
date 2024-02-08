@@ -212,8 +212,8 @@ system:
     use-multipoint: false
     use-redis: true
     use-mongo: false
-    use-mq: false
-    use-mq-task: false
+    use-mq: true
+    use-mq-task: true
     timer-task: false
 mq-task:
     order-wait: false

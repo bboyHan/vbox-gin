@@ -27,12 +27,29 @@ import (
 type PayOrderService struct {
 }
 
-// QryOrderAccOverview QryOrderAccOverview
-//
-//	p := &vboxReq.CallBackExtReq{
-//			OrderId:        "123",
-//			Ext:        "123",
-//		}
+func (vpoService *PayOrderService) QryOrderDataOverview(info vboxReq.PayOrderSearch, ids []uint) (ov []vboxRep.DataWalletOverView, err error) {
+	db := global.GVA_DB.Table("vbox_pay_order").Model(&vboxRep.DataWalletOverView{})
+	if info.ChannelCode != "" {
+		db = db.Where("channel_code = ?", info.ChannelCode)
+	}
+	if info.PAccount != "" {
+		db = db.Where("p_account =?", info.PAccount)
+	}
+
+	err = db.Select(
+		`IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x0,
+	IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 1 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN cb_time >= NOW() - INTERVAL 1 HOUR AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
+		Where("created_by in ?", ids).Find(&ov).Error
+	if err != nil {
+		return
+	}
+
+	return ov, nil
+}
+
 func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSearch, ids []uint) (ov []vboxRep.OrderAccRes, err error) {
 	var acIDs []uint
 	db := global.GVA_DB.Table("vbox_pay_order").Model(&vboxRep.OrderAccRes{})
@@ -43,7 +60,7 @@ func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSear
 		global.GVA_DB.Debug().Model(&vbox.ChannelAccount{}).Select("ac_id").Where("ac_remark like ?", "%"+info.AcRemark+"%").Scan(&acIDs)
 	}
 	if info.AcId != "" && len(acIDs) == 0 {
-		db = db.Where("ac_id =?", info.AcId)
+		db = db.Where("ac_id = ?", info.AcId)
 	} else if len(acIDs) > 0 {
 		db = db.Where("ac_id in ?", acIDs)
 	}
@@ -53,10 +70,11 @@ func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSear
 	if info.ToUid != 0 {
 		err = db.Select(
 			`created_by,ac_id,ac_account,channel_code,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
+    IFNULL(SUM(CASE WHEN order_status = 1 THEN money ELSE 0 END), 0) AS x0,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
 			Where("created_by = ?", info.ToUid).Group("created_by, ac_id ,channel_code").Find(&ov).Error
 		if err != nil {
 			return
@@ -64,10 +82,11 @@ func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSear
 	} else {
 		err = db.Select(
 			`created_by,ac_id,ac_account,channel_code,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
-    IFNULL(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
+    IFNULL(SUM(CASE WHEN order_status = 1  THEN money ELSE 0 END), 0) AS x0,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 3 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x1,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 2 DAY AND order_status = 1 THEN money ELSE 0 END), 0) AS x2,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() - INTERVAL 1 DAY AND order_status = 1  THEN money ELSE 0 END), 0) AS x3,
+    IFNULL(SUM(CASE WHEN DATE(cb_time) = CURDATE() AND order_status = 1 THEN money ELSE 0 END), 0) AS x4`).
 			Where("created_by in ?", ids).Group("created_by, ac_id ,channel_code").Find(&ov).Error
 		if err != nil {
 			return
@@ -1263,7 +1282,7 @@ func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSear
 		location, _ := time.LoadLocation("Asia/Shanghai")
 		start := time.Unix(info.StartTime, 0).In(location)
 		end := time.Unix(info.EndTime, 0).In(location)
-		db = db.Where("created_at BETWEEN ? AND ?", start, end)
+		db = db.Where("cb_time BETWEEN ? AND ?", start, end)
 
 		if info.ChannelCode != "" {
 			db = db.Where("channel_code =?", info.ChannelCode)
@@ -1275,7 +1294,7 @@ func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSear
 			db = db.Where("order_status =?", info.OrderStatus)
 		}
 
-		err = db.Where("created_by in ?", ids).Find(&payOrders).Error
+		err = db.Debug().Where("created_by in ?", ids).Find(&payOrders).Error
 		if err != nil {
 			return
 		}

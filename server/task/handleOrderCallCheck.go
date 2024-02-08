@@ -25,7 +25,7 @@ func HandleOrderCallCheck() (err error) {
 
 	var orderDBList []vbox.PayOrder
 	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
-		Where("order_status = ? and cb_status = ?", 1, 2).Find(&orderDBList)
+		Where("order_status = ? and cb_status in (0,2)", 1).Find(&orderDBList)
 
 	//if len(orderDBList) == 0 {
 	//	return nil

@@ -124,18 +124,18 @@ func PayCodeCDCheckTask() {
 						// 2.1 日限制
 						if accDB.DailyLimit > 0 {
 							var dailySum int
-							// 获取今天的时间范围
-							startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-							endOfDay := startOfDay.Add(24 * time.Hour)
-							// 获取本地时区
-							loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
-							startOfDay = startOfDay.In(loc)
-							endOfDay = endOfDay.In(loc)
+							//// 获取今天的时间范围
+							//startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+							//endOfDay := startOfDay.Add(24 * time.Hour)
+							//// 获取本地时区
+							//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+							//startOfDay = startOfDay.In(loc)
+							//endOfDay = endOfDay.In(loc)
 
 							err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 								Where("ac_id = ?", accDB.AcId).
 								Where("channel_code = ?", accDB.Cid).
-								Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
 
 							if err != nil {
 								global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())

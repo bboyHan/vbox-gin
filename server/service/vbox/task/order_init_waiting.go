@@ -66,8 +66,17 @@ func OrderWaitingTask() {
 			}()
 			var operationRecordService system.OperationRecordService
 			now := time.Now()
+
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行账号匹配
-			deliveries, errQ := ch.Consume(OrderWaitQueue, "", false, false, false, false, nil)
+			deliveries, errQ := chX.Consume(OrderWaitQueue, "", false, false, false, false, nil)
 			if errQ != nil {
 				global.GVA_LOG.Error("err", zap.Error(err), zap.Any("queue", OrderWaitQueue))
 			}
@@ -166,7 +175,7 @@ func OrderWaitingTask() {
 						Min:    "0",
 						Max:    "0",
 						Offset: 0,
-						Count:  1,
+						Count:  -1,
 					}).Result()
 
 					if err != nil {
@@ -178,7 +187,9 @@ func OrderWaitingTask() {
 						continue
 					}
 					if resList != nil && len(resList) > 0 {
-						accTmp := resList[0]
+						//accTmp := resList[0]
+						// 如果结果非空，则随机选择一个元素
+						accTmp := utils.RandomElement(resList)
 						tmpMem = accTmp
 						// 2.1 把账号设置为已用
 						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
@@ -240,7 +251,7 @@ func OrderWaitingTask() {
 						Min:    "0",
 						Max:    "0",
 						Offset: 0,
-						Count:  1,
+						Count:  -1,
 					}).Result()
 
 					if err != nil {
@@ -252,7 +263,9 @@ func OrderWaitingTask() {
 						continue
 					}
 					if resList != nil && len(resList) > 0 {
-						accTmp := resList[0]
+						// 如果结果非空，则随机选择一个元素
+						accTmp := utils.RandomElement(resList)
+						//accTmp := resList[0]
 						tmpMem = accTmp
 						// 2.1 把账号设置为已用
 						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
@@ -313,7 +326,7 @@ func OrderWaitingTask() {
 						Min:    "0",
 						Max:    "0",
 						Offset: 0,
-						Count:  1,
+						Count:  -1,
 					}).Result()
 
 					if err != nil {
@@ -325,7 +338,9 @@ func OrderWaitingTask() {
 						continue
 					}
 					if resList != nil && len(resList) > 0 {
-						accTmp := resList[0]
+						// 如果结果非空，则随机选择一个元素
+						accTmp := utils.RandomElement(resList)
+						//accTmp := resList[0]
 						tmpMem = accTmp
 						// 2.1 把账号设置为已用
 						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
@@ -334,7 +349,7 @@ func OrderWaitingTask() {
 						})
 
 						// 2.2 把可用的账号给出来继续往下执行建单步骤
-						split := strings.Split(accTmp, "_")
+						split := strings.Split(accTmp, ",")
 						ID = split[0]
 						accID = split[1]
 						acAccount = split[2]
@@ -386,7 +401,7 @@ func OrderWaitingTask() {
 						Min:    "0",
 						Max:    "0",
 						Offset: 0,
-						Count:  1,
+						Count:  -1,
 					}).Result()
 
 					if err != nil {
@@ -397,8 +412,11 @@ func OrderWaitingTask() {
 						}
 						continue
 					}
+
 					if resList != nil && len(resList) > 0 {
-						accTmp := resList[0]
+						//accTmp := resList[0]
+						// 如果结果非空，则随机选择一个元素
+						accTmp := utils.RandomElement(resList)
 						tmpMem = accTmp
 						// 2.1 把账号设置为已用
 						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
@@ -407,10 +425,24 @@ func OrderWaitingTask() {
 						})
 
 						// 2.2 把可用的账号给出来继续往下执行建单步骤
-						split := strings.Split(accTmp, "_")
+						split := strings.Split(accTmp, ",")
 						ID = split[0]
 						accID = split[1]
 						acAccount = split[2]
+
+						// 判断一下当前的账号tm的有没有同时拉单
+						accJucKey := fmt.Sprintf(global.PayAccKey, accID)
+						jucTTL := global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+						if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+							global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTime)
+						}
 
 						var vca vbox.ChannelAccount
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
@@ -431,6 +463,7 @@ func OrderWaitingTask() {
 						if errQy != nil {
 							// 查单有问题，直接订单要置为超时，消息置为处理完毕
 							global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
+							_ = msg.Ack(true)
 							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
 								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 							}
@@ -637,7 +670,7 @@ func OrderWaitingTask() {
 							global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
 
 							waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
-							err = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+							err = chX.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 
 							global.GVA_LOG.Info("同账号涉及的其它资源进入冷却状态", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 						} else {
@@ -952,7 +985,7 @@ func OrderWaitingTask() {
 				global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
 
 				//3. 匹配账号后，更新订单信息（账号信息，订单支付链接处理）
-				errQ = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 35*time.Second)
+				errQ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 35*time.Second)
 
 				if errQ != nil {
 					global.GVA_LOG.Error("订单匹配异常，消息丢弃", zap.Any("对应单号", v.Obj.OrderId), zap.Error(errQ))
@@ -979,7 +1012,7 @@ func OrderWaitingTask() {
 					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
 
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 
 				} else if global.DnfContains(cid) {
 					//	2.3 取用的账号进入CD 冷却
@@ -998,12 +1031,12 @@ func OrderWaitingTask() {
 					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
 
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 				} else if global.SdoContains(cid) {
 
 					//	2.3 取用的账号进入CD 冷却
 					accWaitYdKey := fmt.Sprintf(global.YdSdoAccWaiting, accID, money)
-					accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+					accInfoVal := fmt.Sprintf("%s,%s,%s,%v", ID, accID, acAccount, money)
 
 					// 设置一个冷却时间
 					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
@@ -1014,12 +1047,12 @@ func OrderWaitingTask() {
 					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
 
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 
 				} else if global.J3Contains(cid) {
 					//	2.3 取用的账号进入CD 冷却
 					accWaitYdKey := fmt.Sprintf(global.YdJ3AccWaiting, accID)
-					accInfoVal := fmt.Sprintf("%s_%s_%s_%v", ID, accID, acAccount, money)
+					accInfoVal := fmt.Sprintf("%s,%s,%s", ID, accID, acAccount)
 
 					// 设置一个冷却时间
 					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
@@ -1030,7 +1063,7 @@ func OrderWaitingTask() {
 					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTime)
 
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-					err = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 
 				} else if global.PcContains(cid) {
 				}

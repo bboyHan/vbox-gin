@@ -40,13 +40,13 @@
         </div>
         <div class="table-body">
           <el-table :data="userTable">
-            <el-table-column align="center" prop="sysUser.username" label="用户名" width="120" />
+            <el-table-column align="center" prop="sysUser.username" label="用户名" width="120"/>
             <el-table-column align="center" prop="x9" label="积分" width="90" />
             <el-table-column label="操作列" min-width="560">
               <template #default="{row}">
                   <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet" @click="showOperateRecharge(row)"> 充值 </el-button>
-                  <el-button link type="primary" icon="wallet-filled" @click="showCostRecharge(row)"> 结算 </el-button>
-                  <el-button link type="primary" icon="wallet" @click="showCostOrderAcc(row)"> 核对 </el-button>
+<!--                  <el-button link type="primary" icon="wallet-filled" @click="showCostRecharge(row)"> 结算 </el-button>-->
+                  <el-button link type="primary" icon="wallet" @click="showCostOrderAcc(row)"> 跑量 </el-button>
                   <el-button link type="primary" icon="switch" @click="showRecharge(row)"> 积分划转 </el-button>
                   <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(row)"> 重置密码 </el-button>
                   <el-button type="primary" link icon="lock" @click="getAuthCaptcha(row)"> 安全码 </el-button>
@@ -62,14 +62,14 @@
                   </el-popover>
               </template>
             </el-table-column>
-            <el-table-column align="center" prop="x1" label="前日收入" width="90" />
-            <el-table-column align="center" prop="x2" label="前日支出" width="90" />
-            <el-table-column align="center" prop="x3" label="昨日收入" width="90" />
-            <el-table-column align="center" prop="x4" label="昨日支出" width="90" />
-            <el-table-column align="center" prop="x5" label="今日收入" width="90" />
-            <el-table-column align="center" prop="x6" label="今日支出" width="90" />
-            <el-table-column align="center" prop="x7" label="总收入" width="90" />
-            <el-table-column align="center" prop="x8" label="总支出" width="90" />
+<!--            <el-table-column align="center" prop="x1" label="前日收入" width="90" />-->
+<!--            <el-table-column align="center" prop="x2" label="前日支出" width="90" />-->
+<!--            <el-table-column align="center" prop="x3" label="昨日收入" width="90" />-->
+<!--            <el-table-column align="center" prop="x4" label="昨日支出" width="90" />-->
+<!--            <el-table-column align="center" prop="x5" label="今日收入" width="90" />-->
+<!--            <el-table-column align="center" prop="x6" label="今日支出" width="90" />-->
+<!--            <el-table-column align="center" prop="x7" label="总收入" width="90" />-->
+<!--            <el-table-column align="center" prop="x8" label="总支出" width="90" />-->
           </el-table>
           <div class="gva-pagination">
             <el-pagination
@@ -133,26 +133,26 @@
 
     <!-- 获取订单acc统计数据 -->
     <el-dialog v-model="showCostOrderAccVisible" :title="showCostOrderAccTitle" :draggable="true" width="1000px" @close="closeCostOrderAcc">
-      <div class="gva-search-box">
-        <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">
-          <el-form-item label="通道账户名" prop="acId">
-            <el-input v-model="searchAccInfo.acAccount" placeholder="搜索通道账户"/>
-          </el-form-item>
-          <el-form-item label="通道账户ID" prop="acAccount">
-            <el-input v-model="searchAccInfo.acId" placeholder="搜索通道账户ID"/>
-          </el-form-item>
-          <el-form-item label="通道ID" prop="cid">
-            <el-input v-model.number="searchAccInfo.channelCode" placeholder="搜索通道ID"/>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" icon="search" @click="onAccSubmit">查询</el-button>
-            <el-button icon="refresh" @click="onAccReset">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
+<!--      <div class="gva-search-box">-->
+<!--        <el-form :inline="true" :model="searchAccInfo" class="demo-form-inline" @keyup.enter="onAccSubmit">-->
+<!--          <el-form-item label="通道账户名" prop="acId">-->
+<!--            <el-input v-model="searchAccInfo.acAccount" placeholder="搜索通道账户"/>-->
+<!--          </el-form-item>-->
+<!--          <el-form-item label="通道账户ID" prop="acAccount">-->
+<!--            <el-input v-model="searchAccInfo.acId" placeholder="搜索通道账户ID"/>-->
+<!--          </el-form-item>-->
+<!--          <el-form-item label="通道ID" prop="cid">-->
+<!--            <el-input v-model.number="searchAccInfo.channelCode" placeholder="搜索通道ID"/>-->
+<!--          </el-form-item>-->
+<!--          <el-form-item>-->
+<!--            <el-button type="primary" icon="search" @click="onAccSubmit">查询</el-button>-->
+<!--            <el-button icon="refresh" @click="onAccReset">重置</el-button>-->
+<!--          </el-form-item>-->
+<!--        </el-form>-->
+<!--      </div>-->
       <div class="gva-table-box">
         <el-scrollbar>
-          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true"
+          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true" height="400"
                     show-summary>
             <el-table-column align="center" label="通道ID" width="80">
               <template #default="{row}">
@@ -173,6 +173,7 @@
             <el-table-column align="center" sortable label="2日前" prop="x2" width="120"/>
             <el-table-column align="center" sortable label="昨日" prop="x3" width="120"/>
             <el-table-column align="center" sortable label="今日" prop="x4" width="120"/>
+            <el-table-column align="center" sortable label="总充值" prop="x0" width="120"/>
           </el-table>
         </el-scrollbar>
       </div>

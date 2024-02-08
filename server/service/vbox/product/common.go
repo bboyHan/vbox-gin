@@ -17,11 +17,13 @@ func Classifier(payments interface{}) map[string]map[string][]string {
 	case []product.Payment:
 		for _, payment := range payments.([]product.Payment) {
 			amount := payment.PayAmt
+			serialNo := payment.SerialNo
 			showName := payment.ShowName
 			provideID := payment.ProvideID
 			if strings.Contains(showName, "DNF") {
 				showName = "DNF"
 			}
+			accAndOrderID := fmt.Sprintf("%s,%s", provideID, serialNo)
 
 			// 检查是否存在对应的充值类型的map
 			if _, ok := paymentsByTypeAndAmount[showName]; !ok {
@@ -32,13 +34,13 @@ func Classifier(payments interface{}) map[string]map[string][]string {
 			ids := paymentsByTypeAndAmount[showName][amount]
 			exists := false
 			for _, id := range ids {
-				if id == provideID {
+				if id == accAndOrderID {
 					exists = true
 					break
 				}
 			}
 			if !exists {
-				paymentsByTypeAndAmount[showName][amount] = append(ids, provideID)
+				paymentsByTypeAndAmount[showName][amount] = append(ids, accAndOrderID)
 			}
 		}
 	case []product.SdoDaoYuOrderRecord:

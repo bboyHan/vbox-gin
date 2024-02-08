@@ -1448,7 +1448,7 @@
       </div>
       <div class="gva-table-box">
         <el-scrollbar>
-          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true"
+          <el-table ref="multipleTable" tooltip-effect="dark" :data="costOrderAccTable" border resizable="true" height="420"
                     show-summary>
             <el-table-column align="center" label="通道ID" width="80">
               <template #default="{row}">
@@ -1469,6 +1469,7 @@
             <el-table-column align="center" sortable label="2日前" prop="x2" width="120"/>
             <el-table-column align="center" sortable label="昨日" prop="x3" width="120"/>
             <el-table-column align="center" sortable label="今日" prop="x4" width="120"/>
+            <el-table-column align="center" sortable label="总充值" prop="x0" width="120"/>
           </el-table>
         </el-scrollbar>
       </div>

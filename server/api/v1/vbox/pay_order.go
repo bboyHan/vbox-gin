@@ -365,6 +365,31 @@ func (vpoApi *PayOrderApi) GetPayOrderOverview(c *gin.Context) {
 	}
 }
 
+// QryOrderDataOverview 概览页获取近1小时，今天，昨天，前天的统计数据
+// @Tags PayOrder
+// @Summary 概览页获取近1小时，今天，昨天，前天的统计数据
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query vboxReq.PayOrderSearch true "概览页获取近1小时，今天，昨天，前天的统计数据"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /payOrder/qryOrderDataOverview [get]
+func (vpoApi *PayOrderApi) QryOrderDataOverview(c *gin.Context) {
+	var pageInfo vboxReq.PayOrderSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	ids := utils2.GetUserIDS(c)
+	if list, err := payOrderService.QryOrderDataOverview(pageInfo, ids); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"list": list}, c)
+	}
+}
+
 // QryOrderAccOverview 获取订单acc统计数据
 // @Tags PayOrder
 // @Summary 分页获取订单列表

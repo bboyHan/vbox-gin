@@ -74,7 +74,7 @@
                     </span>
                   <span>
                       <div class="label">成率</div>
-                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }} % </div>
+                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }}% </div>
                     </span>
                 </div>
               </div>
@@ -101,7 +101,7 @@
                   </span>
                   <span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }}% </div>
                   </span>
                 </div>
               </div>
@@ -128,7 +128,7 @@
                   </span>
                   <span>
                     <div class="label">成率</div>
-                    <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }} % </div>
+                    <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }}% </div>
                   </span>
                 </div>
               </div>
@@ -148,7 +148,7 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(nearOneHourRate.x3) }}</div>
+                    <div class="value">{{ formatMoney(sumData.x4) }}</div>
                   </span>
                 </div>
               </div>
@@ -167,7 +167,7 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(nearYesterdayRate.x3) }}</div>
+                    <div class="value">{{ formatMoney(sumData.x2) }}</div>
                   </span>
                 </div>
               </div>
@@ -186,7 +186,7 @@
                 <div class="indicator">
                   <span>
                     <div class="label">金额</div>
-                    <div class="value">{{ formatMoney(nearTodayRate.x3) }}</div>
+                    <div class="value">{{ formatMoney(sumData.x3) }}</div>
                   </span>
                 </div>
               </div>
@@ -222,7 +222,7 @@ import CenterCard from '@/view/vbox/dashboard/dataCenterComponents/CenterCard.vu
 import {reactive, ref, nextTick, defineEmits, onMounted, watch, toRefs} from "vue";
 import {getChannelProductSelf} from "@/api/channelProduct";
 import {getChannelAccountList} from "@/api/channelAccount";
-import {getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
+import {getOrderDataOverview, getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
 import {calculatePercentage, formatMoney} from "@/utils/format";
 import {getUserWalletSelf} from "@/api/userWallet";
 
@@ -394,6 +394,7 @@ const nearOneHourCnt = ref()
 const nearOneHourSum = ref()
 const nearTodayCnt = ref()
 const nearTodaySum = ref()
+const sumData = ref({})
 
 const getTableData = async() => {
   await nextTick()
@@ -409,6 +410,14 @@ const getTableData = async() => {
   let nearOneHourSumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, pAccount: searchInfo.value.pAccount, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeOneHour.getTime() / 1000), endTime: Math.floor(endTimeOneHour.getTime() / 1000), interval:  '5m', keyword:'sum', format: 'HH:mm'})
   let nearTodayCntResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, pAccount: searchInfo.value.pAccount, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword: 'cnt', format: 'HH:mm'})
   let nearTodaySumResult = await getPayOrderOverview({ page: 1, pageSize: 9999, orderStatus:1, pAccount: searchInfo.value.pAccount, channelCode: searchInfo.value.cid, startTime: Math.floor(startTimeToday.getTime() / 1000), endTime: Math.floor(endTimeToday.getTime() / 1000), interval:  '30m', keyword:'sum', format: 'HH:mm'})
+
+  let sumDataOverview = await getOrderDataOverview({
+    channelCode: searchInfo.value.cid,
+    pAccount: searchInfo.value.pAccount,
+  })
+
+  sumData.value = sumDataOverview.data.list[0]
+
   nearOneHourCnt.value = nearOneHourCntResult
   nearOneHourSum.value = nearOneHourSumResult
   nearTodayCnt.value = nearTodayCntResult

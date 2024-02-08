@@ -9,7 +9,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strings"
-	"time"
 )
 
 func HandleAccLimitCheck() (err error) {
@@ -46,18 +45,18 @@ func HandleAccLimitCheck() (err error) {
 			// 2.1 日限制
 			if accDBTmp.DailyLimit > 0 {
 				var dailySum int
-				// 获取今天的时间范围
-				startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-				endOfDay := startOfDay.Add(24 * time.Hour)
-				// 获取本地时区
-				loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
-				startOfDay = startOfDay.In(loc)
-				endOfDay = endOfDay.In(loc)
+				//// 获取今天的时间范围
+				//startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+				//endOfDay := startOfDay.Add(24 * time.Hour)
+				//// 获取本地时区
+				//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+				//startOfDay = startOfDay.In(loc)
+				//endOfDay = endOfDay.In(loc)
 
-				err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 					Where("ac_id = ?", accDBTmp.AcId).
 					Where("channel_code = ?", accDBTmp.Cid).
-					Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+					Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
 
 				if dailySum >= accDBTmp.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 					flag = true

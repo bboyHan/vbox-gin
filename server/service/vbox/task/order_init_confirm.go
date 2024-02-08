@@ -64,15 +64,23 @@ func OrderConfirmTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 20
+	consumerCount := 30
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
 	// 启动多个消费者
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行查单回调处理
-			deliveries, errC := ch.Consume(OrderConfirmDeadQueue, "", false, false, false, false, nil)
+			deliveries, errC := chX.Consume(OrderConfirmDeadQueue, "", false, false, false, false, nil)
 			if errC != nil {
 				global.GVA_LOG.Error("mq 消费者异常， err", zap.Error(errC), zap.Any("queue", OrderConfirmDeadQueue))
 			}
@@ -171,7 +179,8 @@ func OrderConfirmTask() {
 					//处理查询的起始时间（提前2分半钟）
 					startTime := odCreatedTime.Add(-150 * time.Second)
 					//global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
-					records, errX := product.QryQQRecordsBetween(vca, startTime, *expTime)
+					records, errX, qryURL := product.QryQQRecordsBetween(vca, startTime, *expTime)
+
 					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
@@ -216,13 +225,13 @@ func OrderConfirmTask() {
 						}
 						marshal, _ := json.Marshal(oc)
 
-						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+						_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
 
 						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
 
 						//// 重新丢回去 下一个20s再查一次
 						//marshal, _ := json.Marshal(v)
-						//err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 29*time.Second)
+						//err = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 29*time.Second)
 						_ = msg.Ack(true)
 						continue
 					}
@@ -234,7 +243,20 @@ func OrderConfirmTask() {
 							global.GVA_LOG.Info("还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 
 						} else { // 证明这种金额的，充上了
-							if utils.Contains(rd, vca.AcAccount) {
+
+							var flag bool
+							var platID string
+							for _, tg := range rd {
+								if strings.Contains(tg, vca.AcAccount) {
+									flag = true
+									platID = strings.Split(tg, ",")[1]
+									break
+								}
+							}
+							if flag {
+								global.GVA_LOG.Info("查单链接", zap.Any("订单ID", v.Obj.OrderId), zap.Any("url", qryURL))
+								global.GVA_LOG.Info("核对官方订单", zap.Any("platID", platID), zap.Any("订单ID", v.Obj.OrderId), zap.Any("查单起始时间", startTime), zap.Any("结束时间", *expTime))
+
 								//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
 								if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).Error; err != nil {
 									global.GVA_LOG.Error("更新订单异常", zap.Error(err))
@@ -252,11 +274,12 @@ func OrderConfirmTask() {
 
 								// 并且发起一个回调通知的消息
 								marshal, _ := json.Marshal(v)
-								err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+								err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
 								global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
 								continue
 							}
+
 						}
 					}
 				} else if global.DnfContains(chanID) {
@@ -264,7 +287,7 @@ func OrderConfirmTask() {
 					//处理查询的起始时间（提前2分半钟）
 					startTime := odCreatedTime.Add(-150 * time.Second)
 					//global.GVA_LOG.Info("查询的起始时间", zap.Any("查询的起始时间", startTime))
-					records, errX := product.QryQQRecordsBetween(vca, startTime, *expTime)
+					records, errX, qryURL := product.QryQQRecordsBetween(vca, startTime, *expTime)
 					if errX != nil {
 						// 查单有问题，直接订单要置为超时，消息置为处理完毕
 						global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
@@ -309,7 +332,7 @@ func OrderConfirmTask() {
 						}
 						marshal, _ := json.Marshal(oc)
 
-						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+						_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
 
 						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
 
@@ -323,7 +346,19 @@ func OrderConfirmTask() {
 						if rd, ok2 := vm[strconv.FormatInt(int64(money*100), 10)]; !ok2 {
 							global.GVA_LOG.Info("还没有Dnf的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", v.Obj.OrderId))
 						} else { // 证明这种金额的，充上了
-							if utils.Contains(rd, vca.AcAccount) {
+							var flag bool
+							var platID string
+							for _, tg := range rd {
+								if strings.Contains(tg, vca.AcAccount) {
+									flag = true
+									platID = strings.Split(tg, ",")[1]
+									break
+								}
+							}
+							if flag {
+								global.GVA_LOG.Info("查单链接", zap.Any("订单ID", v.Obj.OrderId), zap.Any("url", qryURL))
+								global.GVA_LOG.Info("核对官方订单", zap.Any("platID", platID), zap.Any("订单ID", v.Obj.OrderId), zap.Any("查单起始时间", startTime), zap.Any("结束时间", *expTime))
+
 								//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
 								if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).Error; err != nil {
 									global.GVA_LOG.Error("更新订单异常", zap.Error(err))
@@ -341,7 +376,7 @@ func OrderConfirmTask() {
 
 								// 并且发起一个回调通知的消息
 								marshal, _ := json.Marshal(v)
-								err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+								err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
 								global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
 								continue
@@ -396,7 +431,7 @@ func OrderConfirmTask() {
 						}
 						marshal, _ := json.Marshal(oc)
 
-						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+						_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
 
 						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
 
@@ -443,7 +478,7 @@ func OrderConfirmTask() {
 
 								// 并且发起一个回调通知的消息
 								marshal, _ := json.Marshal(v)
-								err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+								err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
 								global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
 								continue
@@ -497,7 +532,7 @@ func OrderConfirmTask() {
 						}
 						marshal, _ := json.Marshal(oc)
 
-						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+						_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
 
 						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
 
@@ -521,9 +556,14 @@ func OrderConfirmTask() {
 						split := strings.Split(mem, ",")
 						hisBalance, _ := strconv.Atoi(split[4])
 						if hisBalance+money*100 == nowBalance { // 充值成功的情况
+							qryURL := vca.Token
 
 							keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
 							delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+
+							global.GVA_LOG.Info("查单链接", zap.Any("订单ID", v.Obj.OrderId), zap.Any("url", qryURL))
+							global.GVA_LOG.Info("核对官方订单", zap.Any("核准", keyMem))
+
 							global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
 								Score:  float64(nowTimeUnix),
 								Member: keyMem,
@@ -558,7 +598,7 @@ func OrderConfirmTask() {
 							}
 
 							_ = msg.Ack(true)
-							global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("orderId", v.Obj.OrderId))
+							global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("pa", v.Obj.PAccount), zap.Any("orderId", v.Obj.OrderId))
 
 							// 同时把订单 redis信息也设置一下缓存信息
 							v.Obj.OrderStatus = 1
@@ -568,16 +608,16 @@ func OrderConfirmTask() {
 
 							// 并且发起一个回调通知的消息
 							marshal, _ := json.Marshal(v)
-							err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+							err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
 							global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
 							_ = msg.Ack(true)
 							continue
 						} else {
-							global.GVA_LOG.Info("未对账成功，当前余额为", zap.Any("nowBalance", nowBalance), zap.Any("hisBalance", hisBalance), zap.Any("money", money))
+							global.GVA_LOG.Info("未对账成功，当前余额为", zap.Any("nowBalance", nowBalance), zap.Any("hisBalance", hisBalance), zap.Any("money", money), zap.Any("orderId", v.Obj.OrderId))
 							// 重新丢回去 下一个20s再查一次
 							marshal, _ := json.Marshal(v)
-							err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+							err = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 15*time.Second)
 							_ = msg.Ack(true)
 							continue
 						}
@@ -638,7 +678,7 @@ func OrderConfirmTask() {
 						}
 						marshal, _ := json.Marshal(oc)
 
-						_ = ch.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+						_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
 
 						global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
 
@@ -689,7 +729,7 @@ func OrderConfirmTask() {
 
 								// 并且发起一个回调通知的消息
 								marshal, _ := json.Marshal(v)
-								err = ch.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+								err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
 								global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
 								_ = msg.Ack(true)
@@ -706,7 +746,11 @@ func OrderConfirmTask() {
 
 				// 重新丢回去 下一个20s再查一次
 				marshal, err := json.Marshal(v)
-				err = ch.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+				if global.J3Contains(v.Obj.ChannelCode) {
+					err = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 15*time.Second)
+				} else {
+					err = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
+				}
 			}
 			wg.Done()
 		}(i + 1)

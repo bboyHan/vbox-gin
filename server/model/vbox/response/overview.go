@@ -6,6 +6,7 @@ type DataOverView struct {
 }
 
 type DataRateOverView struct {
+	X0 int `json:"x0" form:"x0" url:"x0"`
 	X1 int `json:"x1" form:"x1" url:"x1"`
 	X2 int `json:"x2" form:"x2" url:"x2"`
 	X3 int `json:"x3" form:"x3" url:"x3"`
@@ -18,6 +19,7 @@ type DataSOverView struct {
 }
 
 type DataSExtOverView struct {
+	X0 string `json:"x0" form:"x0" url:"x0"`
 	X1 string `json:"x1" form:"x1" url:"x1"`
 	X2 string `json:"x2" form:"x2" url:"x2"`
 	X3 string `json:"x3" form:"x3" url:"x3"`

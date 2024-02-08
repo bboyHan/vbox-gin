@@ -57,8 +57,16 @@ func OrderCallbackTask() {
 	// 启动多个消费者
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行账号匹配
-			deliveries, errC := ch.Consume(OrderCallbackQueue, "", false, false, false, false, nil)
+			deliveries, errC := chX.Consume(OrderCallbackQueue, "", false, false, false, false, nil)
 			if errC != nil {
 				global.GVA_LOG.Error("err", zap.Error(errC), zap.Any("queue", OrderCallbackQueue))
 			}
@@ -67,6 +75,7 @@ func OrderCallbackTask() {
 				//v1 := &map[string]interface{}{}
 				//err := json.Unmarshal(msg.Body, v1)
 				//global.GVA_LOG.Info(fmt.Sprintf("%v", v1))
+
 				now := time.Now()
 				var operationRecordService system.OperationRecordService
 

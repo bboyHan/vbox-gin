@@ -119,7 +119,7 @@ func RecordsByID(rawURL string, openID string, openKey string, orderID string, p
 	return &records
 }
 
-func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) (*product.Records, error) {
+func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) (*product.Records, error, string) {
 	var Url string
 
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
@@ -134,7 +134,7 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 			First(&Url).Error
 
 		if err != nil {
-			return nil, errors.New("该信道无资源配置")
+			return nil, errors.New("该信道无资源配置"), ""
 		}
 
 		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, Url, 10*time.Minute)
@@ -145,14 +145,14 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 
 	openID, openKey, err := Secret(vca.Token)
 	if err != nil {
-		return nil, err
+		return nil, err, ""
 	}
-	records := RecordsBetween(Url, openID, openKey, start, end)
+	records, newURL := RecordsBetween(Url, openID, openKey, start, end)
 	if records == nil || records.Ret != 0 {
-		return nil, errors.New("查询官方记录异常")
+		return nil, errors.New("查询官方记录异常"), ""
 	}
 	//classifier := Classifier(records.WaterList)
-	return records, nil
+	return records, nil, newURL
 }
 
 // 校验官方合法性用一下
@@ -202,7 +202,7 @@ func Secret(token string) (string, string, error) {
 }
 
 // RecordsBetween 获取指定时间内记录（开始时间到结束时间）
-func RecordsBetween(rawURL string, openID string, openKey string, start time.Time, end time.Time) *product.Records {
+func RecordsBetween(rawURL string, openID string, openKey string, start time.Time, end time.Time) (*product.Records, string) {
 
 	u, _ := url.Parse(rawURL)
 	queryParams := u.Query()
@@ -227,21 +227,21 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 	resp, err := client.Get(newURL, options)
 	if err != nil {
 		global.GVA_LOG.Error("err:  ->", zap.Error(err), zap.Any("resp", resp))
-		return nil
+		return nil, newURL
 	}
 
 	var records product.Records
 	err = json.Unmarshal(resp.Body, &records)
 	if err != nil {
 		global.GVA_LOG.Error("json.Unmarshal:  ->", zap.Error(err))
-		return nil
+		return nil, newURL
 	} else if records.Ret != 0 {
 		global.GVA_LOG.Error("官方查单异常:  ->", zap.Any("openID", openID), zap.Any("resp body", string(resp.Body)))
-		return nil
+		return nil, newURL
 	}
 	//fmt.Print(records)
 
-	return &records
+	return &records, newURL
 }
 
 // Records 获取指定时间内记录

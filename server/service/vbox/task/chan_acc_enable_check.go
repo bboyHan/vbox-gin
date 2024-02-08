@@ -59,8 +59,16 @@ func ChanAccEnableCheckTask() {
 	// 启动多个消费者
 	for i := 0; i < consumerCount; i++ {
 		go func(consumerID int) {
+			connX, errX := mq.MQ.ConnPool.GetConnection()
+			if errX != nil {
+				//log.Fatalf("Failed to get connection from pool: %v", err)
+				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			chX, _ := connX.Channel()
+
 			// 说明：执行账号匹配
-			deliveries, err := ch.Consume(ChanAccEnableCheckQueue, "", false, false, false, false, nil)
+			deliveries, err := chX.Consume(ChanAccEnableCheckQueue, "", false, false, false, false, nil)
 			if err != nil {
 				global.GVA_LOG.Error("err", zap.Error(err), zap.Any("queue", ChanAccEnableCheckQueue))
 			}
@@ -131,18 +139,18 @@ func ChanAccEnableCheckTask() {
 					if v.Obj.DailyLimit > 0 {
 
 						var dailySum int
-						// 获取今天的时间范围
-						startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-						endOfDay := startOfDay.Add(24 * time.Hour)
-						// 获取本地时区
-						loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
-						startOfDay = startOfDay.In(loc)
-						endOfDay = endOfDay.In(loc)
+						//// 获取今天的时间范围
+						//startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+						//endOfDay := startOfDay.Add(24 * time.Hour)
+						//// 获取本地时区
+						//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
+						//startOfDay = startOfDay.In(loc)
+						//endOfDay = endOfDay.In(loc)
 
 						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 							Where("ac_id = ?", acId).
 							Where("channel_code = ?", cid).
-							Where("order_status = ? AND created_at BETWEEN ? AND ?", 1, startOfDay, endOfDay).Scan(&dailySum).Error
+							Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
 
 						if err != nil {
 							global.GVA_LOG.Error("当前账号计算日消耗查mysql错误，直接丢了..." + err.Error())
@@ -382,6 +390,7 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Reject(false)
 							continue
 						}
+
 						for _, money := range moneyList {
 							moneyTmp := money
 							go func() {
@@ -392,7 +401,7 @@ func ChanAccEnableCheckTask() {
 								if ttl > 0 { //该账号正在冷却中
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 									cdTime := ttl
-									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+									_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 								} else {
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -413,7 +422,7 @@ func ChanAccEnableCheckTask() {
 									if ttl > 0 { //该账号正在冷却中
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
-										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -435,7 +444,7 @@ func ChanAccEnableCheckTask() {
 									if ttl > 0 { //该账号正在冷却中
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
-										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -486,7 +495,7 @@ func ChanAccEnableCheckTask() {
 								if ttl > 0 { //该账号正在冷却中
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 									cdTime := ttl
-									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+									_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 								} else {
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -514,7 +523,7 @@ func ChanAccEnableCheckTask() {
 									if ttl > 0 { //该账号正在冷却中
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
-										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -536,7 +545,7 @@ func ChanAccEnableCheckTask() {
 									if ttl > 0 { //该账号正在冷却中
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 										cdTime := ttl
-										_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
 										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -576,13 +585,13 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func() {
 								waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 									cdTime := ttl
-									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+									_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 								} else {
 									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -631,7 +640,7 @@ func ChanAccEnableCheckTask() {
 						if ttl > 0 { //该账号正在冷却中
 							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
 							cdTime := ttl
-							_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+							_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 						} else {
 							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
@@ -665,7 +674,7 @@ func ChanAccEnableCheckTask() {
 										waitIDsTmp := fmt.Sprintf("%d", pcDB.ID)
 										waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
 										cdTime := ttl
-										_ = ch.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+										_ = chX.PublishWithDelay(PayCodeCDCheckDelayedExchange, PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 										global.GVA_LOG.Info("开启过程校验..处理预产开启匹配,账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 									} else {
 										global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})

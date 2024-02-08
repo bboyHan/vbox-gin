@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/snowflake"
 	"golang.org/x/crypto/bcrypt"
+	"math/rand"
 	"time"
 )
 
@@ -50,4 +51,21 @@ func GenerateID(prefix string) string {
 func Prefix(prefix string, target string) string {
 	uniqueID := fmt.Sprintf("%s%s", prefix, target)
 	return uniqueID
+}
+
+// RandomElement 从给定的字符串切片中随机选择一个元素并返回。
+// 如果切片为空，将返回空字符串。
+func RandomElement(elements []string) string {
+	// 检查切片是否为空
+	if len(elements) == 0 {
+		return ""
+	}
+
+	// 初始化随机数生成器
+	src := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(src)
+
+	// 生成随机索引并返回对应的元素
+	randomIndex := rng.Intn(len(elements))
+	return elements[randomIndex]
 }
