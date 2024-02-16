@@ -203,6 +203,20 @@ func OrderWaitingTask() {
 						accID = split[1]
 						acAccount = split[2]
 
+						// 判断一下当前的账号tm的有没有同时拉单
+						accJucKey := fmt.Sprintf(global.PayAccMoneyKey, accID, money)
+						jucTTL := global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+						if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+							global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTime)
+						}
+
 						var vca vbox.ChannelAccount
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 						if err != nil {
@@ -279,6 +293,20 @@ func OrderWaitingTask() {
 						accID = split[1]
 						acAccount = split[2]
 
+						// 判断一下当前的账号tm的有没有同时拉单
+						accJucKey := fmt.Sprintf(global.PayAccMoneyKey, accID, money)
+						jucTTL := global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+						if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+							global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTime)
+						}
+
 						var vca vbox.ChannelAccount
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 						if err != nil {
@@ -354,6 +382,20 @@ func OrderWaitingTask() {
 						accID = split[1]
 						acAccount = split[2]
 
+						// 判断一下当前的账号tm的有没有同时拉单
+						accJucKey := fmt.Sprintf(global.PayAccMoneyKey, accID, money)
+						jucTTL := global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+						if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+							global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTime)
+						}
+						
 						var vca vbox.ChannelAccount
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 						if err != nil {

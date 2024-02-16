@@ -176,16 +176,14 @@ rabbitmq:
     port: "5672"
     password: Vbox123qwe
     username: admin
-    poolSize: 30
+    poolSize: 10
     retryReConnDelay: 1
 redis:
-#    addr: vboxredis1005.redis.zhangbei.rds.aliyuncs.com:6379
 #    addr: 60.204.145.173:10818
-#    addr: 62.234.218.227:6379
-#    password: Vbox123qwe
+    addr: 62.234.218.227:6379
+    password: Vbox123qwe
+#    addr: localhost:6379
 #    password: ""
-    addr: localhost:6379
-    password: ""
     db: 0
 sqlite:
     prefix: ""
@@ -243,7 +241,7 @@ timer:
     with_seconds: false
 zap:
     level: info
-    prefix: '[vb]'
+    prefix: ''
     format: console
     director: log
     encode-level: LowercaseColorLevelEncoder

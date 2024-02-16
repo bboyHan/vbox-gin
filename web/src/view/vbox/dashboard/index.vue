@@ -1,27 +1,58 @@
 <template>
   <div>
     <div>
-      <el-col :span="24" :xs="24">
-        <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>我的积分</h2></div>
-      </el-col>
       <el-row :gutter="12">
-        <el-col :xs="24" :span="6">
-          <CenterCard title="我的积分" :custom-style="walletCustomStyle">
-            <template #action>
-              <span class="gvaIcon-prompt" style="color: #999"/>
-            </template>
-            <template #body>
-              <!--              <Order :channel-code="searchInfo.cid"/>-->
-              <div class="acc-container">
-                <div class="indicator">
+        <el-col :span="6" :xs="24">
+          <el-col :span="24" :xs="24">
+            <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>我的积分</h2></div>
+          </el-col>
+              <CenterCard title="我的积分" :custom-style="walletCustomStyle">
+                <template #action>
+                  <span class="gvaIcon-prompt" style="color: #999"/>
+                </template>
+                <template #body>
+                  <!--              <Order :channel-code="searchInfo.cid"/>-->
+                  <div class="acc-container">
+                    <div class="indicator">
+                    <span>
+                      <div class="label"></div>
+                      <div class="value">{{ userBalance }}</div>
+                    </span>
+                    </div>
+                  </div>
+                </template>
+              </CenterCard>
+        </el-col>
+
+        <el-col :span="6" :xs="24">
+          <!-- 通道账号 -->
+            <el-col :span="24" :xs="24">
+              <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>通道账号</h2></div>
+            </el-col>
+              <CenterCard title="当前通道账号" :custom-style="accCustomStyle">
+                <template #action>
+                  <span class="gvaIcon-prompt" style="color: #999"></span>
+                </template>
+                <template #body>
+                  <!--              <ReclaimMileage :channel-code="searchInfo.cid" :acc-on="accOn" :acc-off="accOff" :acc-total="accTotal"/>-->
+                  <div class="acc-container">
+                    <div class="indicator">
                   <span>
-                    <div class="label"></div>
-                    <div class="value">{{ userBalance }}</div>
+                    <div class="label">账户总数</div>
+                    <div class="value">{{ accTotal }}</div>
                   </span>
-                </div>
-              </div>
-            </template>
-          </CenterCard>
+                      <span>
+                    <div class="label">开启数</div>
+                    <div class="value">{{ accOn }}</div>
+                  </span>
+                      <span>
+                    <div class="label">关闭数</div>
+                    <div class="value">{{ accOff }}</div>
+                  </span>
+                    </div>
+                  </div>
+                </template>
+              </CenterCard>
         </el-col>
       </el-row>
     </div>
@@ -46,39 +77,6 @@
     </div>
     <div>
 
-      <!-- 通道账号 -->
-      <el-row :gutter="24">
-        <el-col :span="24" :xs="24">
-          <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>通道账号</h2></div>
-        </el-col>
-        <el-col :span="6" :xs="24">
-          <CenterCard title="当前通道账号" :custom-style="accCustomStyle">
-            <template #action>
-              <span class="gvaIcon-prompt" style="color: #999"></span>
-            </template>
-            <template #body>
-              <!--              <ReclaimMileage :channel-code="searchInfo.cid" :acc-on="accOn" :acc-off="accOff" :acc-total="accTotal"/>-->
-              <div class="acc-container">
-                <div class="indicator">
-                  <span>
-                    <div class="label">账户总数</div>
-                    <div class="value">{{ accTotal }}</div>
-                  </span>
-                  <span>
-                    <div class="label">开启数</div>
-                    <div class="value">{{ accOn }}</div>
-                  </span>
-                  <span>
-                    <div class="label">关闭数</div>
-                    <div class="value">{{ accOff }}</div>
-                  </span>
-                </div>
-              </div>
-            </template>
-          </CenterCard>
-        </el-col>
-      </el-row>
-
       <!-- 成单统计 -->
       <el-row :gutter="24">
         <el-col :span="24" :xs="24">
@@ -93,19 +91,14 @@
               <!--              <Order :channel-code="searchInfo.cid"/>-->
               <div class="acc-container">
                 <div class="indicator">
-
-                    <span>
-                      <div class="label">总笔数</div>
-                      <div class="value">{{ nearOneHourRate.x2 }}</div>
-                    </span>
                   <span>
-                      <div class="label">成单数</div>
-                      <div class="value">{{ nearOneHourRate.x1 }}</div>
-                    </span>
+                    <div class="label">成单数 / 总笔数</div>
+                    <div class="value">{{ nearOneHourRate.x1 }} / {{ nearOneHourRate.x2 }}</div>
+                  </span>
                   <span>
-                      <div class="label">成率</div>
-                      <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }}% </div>
-                    </span>
+                    <div class="label">成率</div>
+                    <div class="value">{{ calculatePercentage(nearOneHourRate.x1, nearOneHourRate.x2) }}% </div>
+                  </span>
                 </div>
               </div>
             </template>
@@ -121,12 +114,10 @@
               <!--              <Order :channel-code="searchInfo.cid"/>-->
               <div class="acc-container">
                 <div class="indicator"><span>
-                    <div class="label">总笔数</div>
-                    <div class="value">{{ nearYesterdayRate.x2 }}</div>
-                  </span><span>
-                    <div class="label">成单数</div>
-                    <div class="value">{{ nearYesterdayRate.x1 }}</div>
-                  </span><span>
+                    <div class="label">成单数 / 总笔数</div>
+                    <div class="value">{{ nearYesterdayRate.x1 }} / {{ nearYesterdayRate.x2 }}</div>
+                  </span>
+                  <span>
                     <div class="label">成率</div>
                     <div class="value">{{ calculatePercentage(nearYesterdayRate.x1, nearYesterdayRate.x2) }}% </div>
                   </span>
@@ -146,12 +137,10 @@
               <div class="acc-container">
                 <div class="indicator">
                   <span>
-                    <div class="label">总笔数</div>
-                    <div class="value">{{ nearTodayRate.x2 }}</div>
-                  </span><span>
-                    <div class="label">成单数</div>
-                    <div class="value">{{ nearTodayRate.x1 }}</div>
-                  </span><span>
+                    <div class="label">成单数 / 总笔数</div>
+                    <div class="value">{{ nearTodayRate.x1 }} / {{ nearTodayRate.x2 }}</div>
+                  </span>
+                  <span>
                     <div class="label">成率</div>
                     <div class="value">{{ calculatePercentage(nearTodayRate.x1, nearTodayRate.x2) }}% </div>
                   </span>
@@ -319,9 +308,11 @@ import {reactive, ref, nextTick, defineEmits, onMounted, watch, toRefs} from "vu
 import {getChannelProductSelf} from "@/api/channelProduct";
 import {getChannelAccountList} from "@/api/channelAccount";
 import {getOrderDataOverview, getPayOrderOverview, getPayOrderRate} from "@/api/payOrder";
-import {calculatePercentage, formatMoney} from "../../../utils/format";
+import {calculatePercentage, formatMoney} from "@/utils/format";
 import {getUserWalletSelf} from "@/api/userWallet";
+import bgImage from '@/assets/bg.jpg'; // 背景图片
 
+const backgroundImageStyle = `background-image: url(${bgImage});background-size: 100% 100%;`;
 
 const searchInfo = ref({})
 // 获取当前时间
@@ -373,34 +364,34 @@ const onReset = () => {
 
 const isUpd = ref(false)
 const accCustomStyle = ref({
-  background: 'linear-gradient(to right, #3498db, #2ecc71)',
+  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
   color: '#FFF',
-  height: '140px',
+  height: '120px',
 })
 const order1CustomStyle = ref({
-  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  background: 'linear-gradient(to right, #2ecc71, #3498db)',
   color: '#FFF',
-  height: '150px',
+  height: '120px',
 })
 const order2CustomStyle = ref({
-  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  background: 'linear-gradient(to right, #2ecc71, #3498db)',
   color: '#FFF',
-  height: '150px',
+  height: '120px',
 })
 const order3CustomStyle = ref({
-  background: 'linear-gradient(to right, #be2eba, #5b2ecc)',
+  background: 'linear-gradient(to right, #2ecc71, #3498db)',
   color: '#FFF',
-  height: '150px',
+  height: '120px',
 })
 const order4CustomStyle = ref({
   background: 'linear-gradient(to right, #22111a, #606266)',
   color: '#FFF',
-  height: '150px',
+  height: '120px',
 })
 const walletCustomStyle = ref({
   background: 'linear-gradient(to right, #22111a, #606266)',
   color: '#FFF',
-  height: '140px',
+  height: '120px',
 })
 // 余额
 const userBalance = ref(0)
@@ -638,7 +629,7 @@ export default {
 .indicator {
   display: flex;
   justify-content: space-around; // 使子元素水平居中展开
-  padding: 15px;
+  padding: 10px;
   border-radius: 8px; // 添加圆角
 }
 
@@ -646,11 +637,11 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px; // 调整间距
+  padding: 8px; // 调整间距
 
   &:not(:last-child) {
     border-right: 2px solid #fff; // 白色边框
-    margin-right: 10px; // 调整间距
+    margin-right: 5px; // 调整间距
   }
 }
 
@@ -661,7 +652,7 @@ export default {
 
 .value {
   color: #FFFFFF;
-  font-size: 30px;
+  font-size: 22px;
   font-weight: bold;
   margin-top: 5px; // 调整间距
 }

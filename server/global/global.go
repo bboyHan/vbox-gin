@@ -32,9 +32,10 @@ const (
 	AccQryEx = "系统关号,检测账号CK异常.无法正确查单. ID: %s, acc: %s"
 
 	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
-	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
-	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
-	AccCountLimitNotEnough = "当前账户笔数消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s"
+	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前日消费：%v, 当前限额： %v"
+	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前总消费：%v, 当前限额： %v"
+	AccInCntLimitNotEnough = "当前账户进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
+	AccCountLimitNotEnough = "当前账户拉单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前拉单数：%v, 当前限额数： %v"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryShopEx           = "当前组织无商铺地址匹配，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
@@ -70,6 +71,7 @@ const (
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodeMoneyPrefix = "vb_pay_code_set:org_%d:chan_%s:money_*"                     // 同组织通道下可用付款码（取用池）
 
+	PayAccMoneyKey = "vb_ac_id:%s:%v"
 	PayAccKey      = "vb_ac_id:%s"
 	PayOrderKey    = "vb_order:%s"
 	PayOrderJUCKey = "vb_juc_order:%s"
@@ -86,6 +88,7 @@ const (
 
 	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
+	PayOrderVOKey = "vb_order_vo:%s"
 )
 
 const (
@@ -116,13 +119,13 @@ const (
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                         // 充值
-	WalletEventTransferPrefix = "VBTS"                         // 划转
-	WalletEventOrderPrefix    = "VBOD"                         // 订单消费
-	WalletEventRecharge       = "充值积分[%d]"                     // 充值
-	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]"          // 划转
-	WalletEventIncome         = "积分增加[%d], 来自用户:[%s]"          // 划转
-	WalletEventOrderCost      = "积分消费[%d], 来自(通道:[%s])订单:[%s]" // 消费
+	WalletEventRechargePrefix = "VBIN"                           // 充值
+	WalletEventTransferPrefix = "VBTS"                           // 划转
+	WalletEventOrderPrefix    = "VBOD"                           // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"                       // 充值
+	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]"            // 划转
+	WalletEventIncome         = "积分增加[%d], 来自用户:[%s]"            // 划转
+	WalletEventOrderCost      = "积分消费[%d], 来自(通道:[%s]), 订单:[%s]" // 消费
 )
 
 var (

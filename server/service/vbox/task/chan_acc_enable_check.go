@@ -170,7 +170,7 @@ func ChanAccEnableCheckTask() {
 								Agent:   v.Ctx.UserAgent,
 								Status:  500,
 								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccDailyLimitNotEnough, acId, v.Obj.AcAccount),
+								Resp:    fmt.Sprintf(global.AccDailyLimitNotEnough, acId, v.Obj.AcAccount, dailySum, v.Obj.DailyLimit),
 								UserID:  v.Ctx.UserID,
 							}
 
@@ -182,7 +182,7 @@ func ChanAccEnableCheckTask() {
 							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
 
-							global.GVA_LOG.Info("当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							global.GVA_LOG.Error("【DailyLimit】当前账号日消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
 						}
@@ -212,7 +212,7 @@ func ChanAccEnableCheckTask() {
 								Agent:   v.Ctx.UserAgent,
 								Status:  500,
 								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccTotalLimitNotEnough, acId, v.Obj.AcAccount),
+								Resp:    fmt.Sprintf(global.AccTotalLimitNotEnough, acId, v.Obj.AcAccount, totalSum, v.Obj.TotalLimit),
 								UserID:  v.Ctx.UserID,
 							}
 
@@ -223,19 +223,60 @@ func ChanAccEnableCheckTask() {
 
 							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
-							global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							global.GVA_LOG.Error("【TotalLimit】当前账号总消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
 						}
 					}
 					// 2.3 笔数限制
-					if v.Obj.CountLimit > 0 {
+					if v.Obj.InCntLimit > 0 {
 
 						var count int64
 
 						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).
 							Where("channel_code = ?", cid).
 							Where("ac_id = ? and order_status = ?", acId, 1).Count(&count).Error
+
+						if err != nil {
+							global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
+							_ = msg.Reject(false)
+							continue
+						}
+
+						if int(count) >= v.Obj.InCntLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccInCntLimitNotEnough, acId, v.Obj.AcAccount, count, v.Obj.InCntLimit),
+								UserID:  v.Ctx.UserID,
+							}
+
+							err = operationRecordService.CreateSysOperationRecord(record)
+							if err != nil {
+								global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
+							}
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+							global.GVA_LOG.Error("【InCntLimit】当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
+					}
+
+					// 2.4 拉单限制
+					if v.Obj.CountLimit > 0 {
+
+						var count int64
+
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).
+							Where("channel_code = ?", cid).
+							Where("ac_id = ?", acId).Count(&count).Error
 
 						if err != nil {
 							global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
@@ -253,7 +294,7 @@ func ChanAccEnableCheckTask() {
 								Agent:   v.Ctx.UserAgent,
 								Status:  500,
 								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccCountLimitNotEnough, acId, v.Obj.AcAccount),
+								Resp:    fmt.Sprintf(global.AccCountLimitNotEnough, acId, v.Obj.AcAccount, count, v.Obj.CountLimit),
 								UserID:  v.Ctx.UserID,
 							}
 
@@ -263,7 +304,7 @@ func ChanAccEnableCheckTask() {
 							}
 							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
 								Update("sys_status", 0).Error
-							global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							global.GVA_LOG.Error("【CountLimit】当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
 							_ = msg.Reject(false)
 							continue
 						}

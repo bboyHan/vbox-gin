@@ -61,8 +61,8 @@ func HandleAccLimitCheck() (err error) {
 				if dailySum >= accDBTmp.DailyLimit { // 如果日消费已经超了，不允许开启了，直接结束
 					flag = true
 
-					msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
-					global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg))
+					msg := fmt.Sprintf(global.AccDailyLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, dailySum, accDBTmp.DailyLimit)
+					global.GVA_LOG.Error("当前账号日消耗已经超限...", zap.Any("msg", msg), zap.Any("daily Sum", dailySum), zap.Any("daily limit", accDBTmp.DailyLimit))
 					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 				}
@@ -85,8 +85,8 @@ func HandleAccLimitCheck() (err error) {
 					flag = true
 
 					//入库操作记录
-					msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
-					global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX))
+					msgX := fmt.Sprintf(global.AccTotalLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, totalSum, accDBTmp.TotalLimit)
+					global.GVA_LOG.Error("当前账号总消耗已经超限...", zap.Any("msg", msgX), zap.Any("total Sum", totalSum), zap.Any("total limit", accDBTmp.TotalLimit))
 
 					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
@@ -94,8 +94,8 @@ func HandleAccLimitCheck() (err error) {
 					global.GVA_LOG.Info("当前账号总消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
 				}
 			}
-			// 2.3 笔数限制
-			if accDBTmp.CountLimit > 0 {
+			// 2.3 进单限制
+			if accDBTmp.InCntLimit > 0 {
 
 				var count int64
 
@@ -105,12 +105,34 @@ func HandleAccLimitCheck() (err error) {
 					global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
 				}
 
+				if int(count) >= accDBTmp.InCntLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+
+					flag = true
+					msgX := fmt.Sprintf(global.AccInCntLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, count, accDBTmp.InCntLimit)
+
+					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDBTmp.InCntLimit))
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+						Update("status", 0).Update("sys_status", 0).Error
+					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
+				}
+			}
+			// 2.4 拉单限制
+			if accDBTmp.CountLimit > 0 {
+
+				var count int64
+
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("channel_code = ? and ac_id = ?", accDBTmp.Cid, accDBTmp.AcId).Count(&count).Error
+
+				if err != nil {
+					global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
+				}
+
 				if int(count) >= accDBTmp.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
 					flag = true
-					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount)
+					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, count, accDBTmp.InCntLimit)
 
-					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX))
+					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDBTmp.InCntLimit))
 					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))

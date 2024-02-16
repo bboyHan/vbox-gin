@@ -212,8 +212,8 @@ const initPage = () => {
     isCollapse.value = true
   } else {
     isMobile.value = false
-    isSider.value = true
-    isCollapse.value = false
+    isSider.value = false
+    isCollapse.value = true
   }
 }
 
@@ -321,7 +321,7 @@ const totalCollapse = () => {
 }
 
 const toPerson = () => {
-  router.push({ name: 'person' })
+  router.push({ name: 'userSetting' })
 }
 const changeShadow = () => {
   isShadowBg.value = !isShadowBg.value

@@ -827,6 +827,13 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
+	if info.Username != "" {
+		var sysUserIDs []uint
+		err = global.GVA_DB.Unscoped().Table("sys_users").Select("id").Where("username LIKE ?", "%"+info.Username+"%").Scan(&sysUserIDs).Error
+		if len(sysUserIDs) > 0 {
+			db = db.Where("created_by in (?)", sysUserIDs)
+		}
+	}
 	if info.AcRemark != "" {
 		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
 	}

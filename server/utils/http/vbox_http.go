@@ -15,6 +15,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -95,29 +97,77 @@ func ParseCookie(cookieStr string, targetKey string) string {
 
 }
 
+func IsIP(input string) bool {
+	// 尝试直接解析为IP地址
+	if net.ParseIP(input) != nil {
+		return true
+	}
+
+	// 尝试解析为IP地址加端口号
+	host, portStr, err := net.SplitHostPort(input)
+	if err != nil {
+		return false // 不能正确分割为host和port部分
+	}
+	if net.ParseIP(host) == nil {
+		return false // host部分不是合法的IP地址
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil || port < 1 || port > 65535 {
+		return false // 端口号不是有效的范围
+	}
+
+	return true
+}
+
+func Trim(str string) string {
+	regex := regexp.MustCompile(`\s+`)
+	return regex.ReplaceAllString(str, "")
+}
+
 func ProxyAddress2DB() string {
 	var proxyDB vbox.Proxy
 	err := global.GVA_DB.Where("status = ? and chan = ?", 1, "proxy").First(&proxyDB).Error
 	if err != nil {
-		log.Fatal("Proxy URL from DB parsing error:", err)
+		global.GVA_LOG.Error("数据库获取代理渠道失败", zap.Error(err))
+		return ""
 	}
-	log.Printf("xxxxxxx: %v", proxyDB)
-
-	c := NewHTTPClient()
 	// 创建 HTTP 客户端实例
 	headers := map[string]string{
-		"Content-Type":  "application/json",
-		"Authorization": "Bearer token",
+		"Content-Type": "application/json",
 	}
 	options := &RequestOptions{
 		Headers:      headers,
 		MaxRedirects: 3,
 	}
-	res, err := c.Get(proxyDB.Url, options)
-	s := string(res.Body)
-	log.Printf("pppppppp: %v", strings.TrimSpace(s))
 
-	return s
+	c := NewHTTPClient()
+
+	var ipAddr string
+	// 尝试3次
+	for i := 0; i < 3; i++ {
+		res, errC := c.Get(proxyDB.Url, options)
+		if errC != nil {
+			global.GVA_LOG.Error("Proxy URL from DB parsing error", zap.Error(errC))
+			continue
+		}
+		if res == nil {
+			global.GVA_LOG.Error("请求代理无响应数据", zap.Error(errC))
+			continue
+		}
+		s := string(res.Body)
+		//获取代理地址
+		trimAddr := Trim(s)
+		isIP := IsIP(trimAddr)
+		if !isIP {
+			global.GVA_LOG.Error("代理地址不合法", zap.String("proxy", trimAddr))
+			continue
+		}
+		global.GVA_LOG.Info("代理地址获取成功", zap.String("proxy", trimAddr))
+		ipAddr = trimAddr
+		break
+	}
+
+	return ipAddr
 }
 
 func NewProxyHTTPClient() *FastHttpClient {

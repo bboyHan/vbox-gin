@@ -3,19 +3,12 @@
     <div v-if="isMobile">手机页面内容</div>
     <div v-else><div>
       <div class="gva-search-box">
-        <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
-                 @keyup.enter="onSubmit">
+        <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" :rules="searchRule" @keyup.enter="onSubmit" label-width="auto" label-position="right">
           <el-form-item label="付方单号" prop="orderId">
             <el-input v-model="searchInfo.orderId" placeholder="搜索付方单号"/>
           </el-form-item>
-          <el-form-item label="账号ID" prop="acId">
-            <el-input v-model="searchInfo.acId" placeholder="搜索账号ID"/>
-          </el-form-item>
-          <el-form-item label="通道账号" prop="acAccount">
-            <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
-          </el-form-item>
-          <el-form-item label="通道编码" prop="channelCode">
-            <el-input v-model="searchInfo.channelCode" placeholder="搜索通道编码"/>
+          <el-form-item label="付方ID" prop="pAccount">
+            <el-input v-model="searchInfo.pAccount" placeholder="搜索付方ID"/>
           </el-form-item>
           <el-form-item label="订单状态" prop="orderStatus">
             <el-select v-model="searchInfo.orderStatus" placeholder="选择状态">
@@ -31,8 +24,20 @@
               <el-option label="未回调" value="2"/>
             </el-select>
           </el-form-item>
+          <el-form-item label="补单状态" prop="handStatus">
+            <el-select v-model="searchInfo.handStatus" placeholder="选择状态">
+              <el-option label="已补单" value="1"/>
+              <el-option label="默认" value="2"/>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="通道账号" prop="acAccount">
+            <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
+          </el-form-item>
+          <el-form-item label="通道ID" prop="channelCode">
+            <el-input v-model="searchInfo.channelCode" placeholder="搜索通道ID"/>
+          </el-form-item>
           <el-form-item>
-            <el-button icon="refresh" @click="onReset">重置</el-button>
+            <el-button icon="refresh" @click="onReset"></el-button>
             <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
             <el-button icon="refresh" @click="resetSimple(true)">简约版</el-button>
             <el-button icon="refresh" @click="resetSimple(false)">详情版</el-button>
@@ -51,7 +56,7 @@
             border
         >
           <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
-          <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
+          <el-table-column align="center" label="充值账号" prop="acAccount" width="200">
             <template #default="scope">
               <div v-if="isPendingAcc(scope.row)">
                 <el-button type="info" link @click="getAccDetails(scope.row)">
@@ -120,7 +125,7 @@
         <!--   详情版   -->
         <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID" border>
           <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
-          <el-table-column align="center" label="充值账号" prop="acAccount" width="180">
+          <el-table-column align="center" label="充值账号" prop="acAccount" width="200">
             <template #default="scope">
               <div v-if="isPendingAcc(scope.row)">
                 <el-button type="info" link @click="getAccDetails(scope.row)">
@@ -188,7 +193,7 @@
             </template>
           </el-table-column>
           <el-table-column align="center" label="过期时间" width="180">
-            <template #default="scope">{{ formatDate(scope.row.cbTime) }}</template>
+            <template #default="scope">{{ formatDate(scope.row.expTime) }}</template>
           </el-table-column>
           <el-table-column align="center" label="付方ID" prop="pAccount" width="160">
             <template #default="scope">
@@ -196,7 +201,7 @@
             </template>
           </el-table-column>
           <el-table-column align="center" label="单价积分" prop="unitPrice" width="120"/>
-          <el-table-column align="center" label="平台ID" prop="platId" width="320"/>
+          <el-table-column align="center" label="平台ID" prop="platId" width="500"/>
           <el-table-column align="center" label="访客ip" prop="payIp" width="180"/>
           <el-table-column align="center" label="区域" prop="payRegion" width="240"/>
           <el-table-column align="center" label="客户端设备" prop="payDevice" width="120"/>

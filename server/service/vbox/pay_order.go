@@ -667,14 +667,15 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 			err = global.GVA_DB.Create(&order).Error
 
 			// 设置检查长时间未匹配的订单
-			conn, err := mq.MQ.ConnPool.GetConnection()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			conn, errC := mq.MQ.ConnPool.GetConnection()
+			if errC != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", errC))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(conn)
-			ch, err := conn.Channel()
-			if err != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			ch, errC := conn.Channel()
+			if errC != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", errC))
+				return
 			}
 
 			waitOrderMsg := fmt.Sprintf("%s-%d", order.OrderId, order.ID)
@@ -1270,54 +1271,75 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 // GetPayOrderOverview 计算趋势图概览数据
 func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSearch, ids []uint) (list []vboxRep.DataOverView, err error) {
 	var overViews []vboxRep.DataOverView
-	// 创建db
-	db := global.GVA_DB.Model(&vbox.PayOrder{})
-	var payOrders []vbox.PayOrder
-	// 如果有条件搜索 下方会自动创建搜索语句
-	//空值时，默认设置为5m
-	if info.Interval == "" {
-		info.Interval = "5m"
-	}
-	if info.StartTime > 0 && info.EndTime > 0 && info.StartTime < info.EndTime {
-		location, _ := time.LoadLocation("Asia/Shanghai")
-		start := time.Unix(info.StartTime, 0).In(location)
-		end := time.Unix(info.EndTime, 0).In(location)
-		db = db.Where("cb_time BETWEEN ? AND ?", start, end)
+	jsonData, err := json.Marshal(&info)
+	idsStr := utils.UintSliceToString(ids)
+	md5VKey := utils.MD5V(jsonData, []byte(idsStr)...)
+	key := fmt.Sprintf(global.PayOrderVOKey, md5VKey)
+	rdRes, err := global.GVA_REDIS.Get(context.Background(), key).Bytes()
+	if err == redis.Nil { // redis中还没有的情况，查一下库，并且去匹配设备信息
+		// 创建db
+		db := global.GVA_DB.Model(&vbox.PayOrder{})
+		var payOrders []vbox.PayOrder
+		// 如果有条件搜索 下方会自动创建搜索语句
+		//空值时，默认设置为5m
+		if info.Interval == "" {
+			info.Interval = "5m"
+		}
+		if info.StartTime > 0 && info.EndTime > 0 && info.StartTime < info.EndTime {
+			location, _ := time.LoadLocation("Asia/Shanghai")
+			start := time.Unix(info.StartTime, 0).In(location)
+			end := time.Unix(info.EndTime, 0).In(location)
+			db = db.Where("cb_time BETWEEN ? AND ?", start, end)
 
-		if info.ChannelCode != "" {
-			db = db.Where("channel_code =?", info.ChannelCode)
-		}
-		if info.PAccount != "" {
-			db = db.Where("p_account =?", info.PAccount)
-		}
-		if info.OrderStatus != 0 {
-			db = db.Where("order_status =?", info.OrderStatus)
-		}
+			if info.ChannelCode != "" {
+				db = db.Where("channel_code =?", info.ChannelCode)
+			}
+			if info.PAccount != "" {
+				db = db.Where("p_account =?", info.PAccount)
+			}
+			if info.OrderStatus != 0 {
+				db = db.Where("order_status =?", info.OrderStatus)
+			}
 
-		err = db.Debug().Where("created_by in ?", ids).Find(&payOrders).Error
-		if err != nil {
-			return
-		}
+			err = db.Debug().Where("created_by in ?", ids).Find(&payOrders).Error
+			if err != nil {
+				return
+			}
 
-		// 解析参数为 time.Duration 类型
-		interval, errParse := time.ParseDuration(info.Interval)
-		if errParse != nil {
-			return nil, errParse
-		}
+			// 解析参数为 time.Duration 类型
+			interval, errParse := time.ParseDuration(info.Interval)
+			if errParse != nil {
+				return nil, errParse
+			}
 
-		if info.Keyword == "sum" {
-			overViews = calculateTotalMoney(payOrders, start, end, interval)
-		} else if info.Keyword == "cnt" {
-			overViews = calculateTotalCount(payOrders, start, end, interval)
+			if info.Keyword == "sum" {
+				overViews = calculateTotalMoney(payOrders, start, end, interval)
+			} else if info.Keyword == "cnt" {
+				overViews = calculateTotalCount(payOrders, start, end, interval)
+			} else {
+				return nil, fmt.Errorf("未知的统计类型")
+			}
+
+			//set redis
+			jsonString, errJ := json.Marshal(overViews)
+			if errJ != nil {
+				return nil, fmt.Errorf("系统错误r")
+			}
+			global.GVA_REDIS.Set(context.Background(), key, jsonString, 60*time.Second)
+
+			return overViews, err
+
 		} else {
-			return nil, fmt.Errorf("未知的统计类型")
+			return nil, fmt.Errorf("未传入合规时间参数")
 		}
-
-		return overViews, err
-
+	} else if err != nil {
+		fmt.Println("error:", err)
 	} else {
-		return nil, fmt.Errorf("未传入合规时间参数")
+		//fmt.Println("从缓存里拿result:", rdRes)
+		err = json.Unmarshal(rdRes, &overViews)
 	}
+
+	return overViews, err
 
 }
 

@@ -215,7 +215,7 @@ const setOptions = () => {
         lineStyle: {
           normal: {
             width: 2,
-            color: 'rgba(110,60,183,0.63)', // 线条颜色
+            color: 'rgba(37,153,215,0.87)', // 线条颜色
           },
         },
         areaStyle: {
@@ -224,14 +224,14 @@ const setOptions = () => {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               {
                 offset: 0,
-                color: 'rgba(105,50,216,0.8)'
+                color: 'rgba(10,116,161,0.8)'
               },
               {
                 offset: 1,
                 color: 'rgba(255, 255, 255, 0.2)'
               }
             ], false),
-            shadowColor: 'rgba(142,117,191,0.52)', // 阴影颜色
+            shadowColor: 'rgba(11,74,232,0.89)', // 阴影颜色
             shadowBlur: 3,
           },
         },

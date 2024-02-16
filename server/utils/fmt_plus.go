@@ -27,6 +27,14 @@ func StructToMap(obj interface{}) map[string]interface{} {
 	return data
 }
 
+func UintSliceToString(ids []uint) string {
+	var builder strings.Builder
+	for _, id := range ids {
+		builder.WriteString(fmt.Sprint(id))
+	}
+	return builder.String()
+}
+
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: ArrayToString
 //@description: 将数组格式化为字符串

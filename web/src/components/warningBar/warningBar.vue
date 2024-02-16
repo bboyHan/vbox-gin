@@ -7,7 +7,7 @@
     <el-icon class="text-xl">
       <warning-filled/>
     </el-icon>
-    <span>
+    <span style="color: red">
       {{ title }}
     </span>
   </div>

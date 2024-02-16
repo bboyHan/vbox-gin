@@ -1,31 +1,82 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" :rules="searchRule"
-               @keyup.enter="onSubmit">
-        <el-form-item label="通道账户" prop="acAccount">
-          <el-input v-model="searchInfo.acAccount" placeholder="搜索条件"/>
-        </el-form-item>
-        <el-form-item label="账户备注" prop="acRemark">
-          <el-input v-model="searchInfo.acRemark" placeholder="搜索条件"/>
-        </el-form-item>
-        <el-form-item label="账户ID" prop="acId">
-          <el-input v-model.number="searchInfo.acId" placeholder="搜索条件"/>
-        </el-form-item>
-        <el-form-item label="通道ID" prop="cid">
-          <el-input v-model.number="searchInfo.cid" placeholder="搜索通道ID"/>
-        </el-form-item>
-        <el-form-item label="开关状态" prop="status">
-          <el-select v-model="searchInfo.status" placeholder="选择状态">
-            <el-option label="已开启" value="1"/>
-            <el-option label="已关闭" value="0"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+      <el-row :gutter="12">
+        <el-col :span="24">
+          <div class="gva-btn-list">
+            <ul>
+              <li><span style="color: blue;">【注意】</span>同类型通道，原则上不允许创建相同账号，<span style="color: red;">如在同一时间段产生同金额的订单，会对多个通道中的相同账号，均认定为“支付成功”</span>，请谨慎操作!</li>
+              <li><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!</li>
+              <li><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog" style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！</li>
+              <li><span style="color: blue;">【限额说明】</span>针对添加通道账号的限额设置，包括<span style="color: blue;">"总额限制"、"日额限制"、"进单限制"、"拉单限制"</span>，系统计算规则：当前账号进单的累计金额或累计笔数<span style="color: blue;">大于或等于限制时</span>，系统进行自动关号。<span style="color: red;text-decoration: underline;"><b>非精准控制，请知悉！</b></span></li>
+            </ul>
+          </div>
+<!--          <div>
+            <div class="scrolling-text">
+              <el-row :gutter="12">
+                <ul>
+
+                <el-col :span="24">
+                  <li><p><span style="color: blue;">【注意】</span>同类型通道，原则上不允许创建相同账号，<span style="color: red;">如在同一时间段产生同金额的订单，会对多个通道中的相同账号，均认定为“支付成功”</span>，请谨慎操作!
+                  </p></li>
+                </el-col>
+                <el-col :span="24">
+                  <li><p><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!
+                  </p></li>
+                </el-col>
+                <el-col :span="24">
+                  <li><p><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog" style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！
+                  </p></li>
+                </el-col>
+                <el-col :span="24">
+                  <li><p><span style="color: blue;">【限额说明】</span>针对添加通道账号的限额设置，包括<span style="color: blue;">"总额限制"、"日额限制"、"进单限制"、"拉单限制"</span>，系统计算规则：当前账号进单的累计金额或累计笔数<span style="color: blue;">大于或等于限制时</span>，系统进行自动关号。<span style="color: red;text-decoration: underline;"><b>非精准控制，请知悉！</b></span>
+                  </p></li>
+                </el-col>
+                </ul>
+              </el-row>
+            </div>
+          </div>-->
+        </el-col>
+
+        <el-col :span="24">
+          <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" :rules="searchRule" @keyup.enter="onSubmit" label-width="auto" label-position="right">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账户"/>
+            </el-form-item>
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="searchInfo.acRemark" placeholder="搜索备注"/>
+            </el-form-item>
+            <el-form-item label="账户ID" prop="acId">
+              <el-input v-model.number="searchInfo.acId" placeholder="搜索账户ID"/>
+            </el-form-item>
+            <el-form-item label="通道ID" prop="cid">
+              <el-input v-model.number="searchInfo.cid" placeholder="搜索通道ID"/>
+            </el-form-item>
+            <el-form-item label="开关状态" prop="status">
+              <el-select v-model="searchInfo.status" placeholder="选择状态">
+                <el-option label="已开启" value="1"/>
+                <el-option label="已关闭" value="0"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="系统状态" prop="sysStatus">
+              <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态">
+                <el-option label="已开启" value="1"/>
+                <el-option label="已关闭" value="0"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="归属用户" prop="username">
+              <el-input v-model.number="searchInfo.username" placeholder="搜索归属用户"/>
+            </el-form-item>
+            <el-form-item>
+              <el-button icon="refresh" @click="onReset"></el-button>
+              <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
+            </el-form-item>
+          </el-form>
+        </el-col>
+
+
+      </el-row>
+
     </div>
     <div class="gva-table-box">
       <div class="gva-btn-list">
@@ -50,9 +101,7 @@
             <el-button type="primary" @click="onSwitchEnable">确定</el-button>
           </div>
           <template #reference>
-            <el-button icon="turn-off" style="margin-left: 10px;" :disabled="!multipleSelection.length"
-                       @click="switchOnVisible = true">批量开启
-            </el-button>
+            <el-button icon="turn-off" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="switchOnVisible = true">批量开启</el-button>
           </template>
         </el-popover>
         <el-popover v-model:visible="switchOffVisible" placement="top" width="240">
@@ -94,26 +143,7 @@
         </el-row>
       </div>
 
-      <div class="gva-btn-list">
-        <el-row :gutter="12">
-          <el-col :span="24">
-            <p><span style="color: blue;">【注意】</span>同类型通道，原则上不允许创建相同账号，<span style="color: red;">如在同一时间段产生同金额的订单，会对多个通道中的相同账号，均认定为“支付成功”</span>，请谨慎操作!
-            </p>
-          </el-col>
-          <el-col :span="24">
-            <p><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!
-            </p>
-          </el-col>
-          <el-col :span="24">
-            <p><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog" style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！
-            </p>
-          </el-col>
-          <el-col :span="24">
-            <p><span style="color: blue;">【限额说明】</span>针对添加通道账号的限额设置，包括<span style="color: blue;">"总额限制"、"日额限制"、"笔数限制"</span>，系统计算规则：当前账号进单的累计金额或累计笔数<span style="color: blue;">大于或等于限制时</span>，系统进行自动关号。<span style="color: red;text-decoration: underline;"><b>非精准控制，请知悉！</b></span>
-            </p>
-          </el-col>
-        </el-row>
-      </div>
+
       <el-table ref="multipleTable" tooltip-effect="dark" :data="tableData" row-key="ID" border resizable="true"
                 @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"/>
@@ -130,8 +160,8 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="160"/>
-        <el-table-column align="left" label="通道账户" prop="acAccount" width="160"/>
+        <el-table-column align="left" label="账户备注" prop="acRemark" width="180"/>
+        <el-table-column align="left" label="通道账户" prop="acAccount" width="180"/>
         <el-table-column align="left" label="账户密钥" prop="acPwd" width="120"/>
         <el-table-column align="left" label="CK" prop="token" width="260">
           <template #default="scope">
@@ -142,9 +172,6 @@
             </el-input>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="日限额" prop="dailyLimit" width="90"/>
-        <el-table-column align="center" label="总限额" prop="totalLimit" width="90"/>
-        <el-table-column align="center" label="笔数限额" prop="countLimit" width="90"/>
         <el-table-column align="left" label="状态 / 系统开关" prop="status" width="140">
           <template #default="scope">
             <el-row :gutter="12">
@@ -187,6 +214,10 @@
             </el-row>
           </template>
         </el-table-column>
+        <el-table-column align="center" label="日限额" prop="dailyLimit" width="90"/>
+        <el-table-column align="center" label="总限额" prop="totalLimit" width="90"/>
+        <el-table-column align="center" label="进单限额" prop="countLimit" width="90"/>
+        <el-table-column align="center" label="拉单限额" prop="inCntLimit" width="90"/>
         <el-table-column align="center" label="操作" width="160">
           <template #default="scope">
             <el-row :gutter="12">
@@ -249,33 +280,6 @@
 
     <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close
                style="width: 1000px">
-      <!--        <el-form :model="formData" label-position="right" ref="elChanFormRef" :rules="chanRule" label-width="80px">
-                <el-row>
-                  <el-col :span="24">
-                    <el-form-item label="产码方式" prop="type" :required="true">
-                      <el-radio-group v-model="formData.type" @change="handleChange">
-                        <el-radio label="1">
-                          <template #default><span>引导</span></template>
-                        </el-radio>
-                        <el-radio label="2">
-                          <template #default><span>预产</span></template>
-                        </el-radio>
-                        <el-radio label="3">
-                          <template #default><span>原生</span></template>
-                        </el-radio>
-                      </el-radio-group>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-                <el-row>
-                  <el-col :span="24">
-                    <el-form-item label="通道ID" prop="cid" :required="true">
-                      <el-cascader v-model="formData.cid" :options="channelCodeOptions" :props="channelCodeProps" @change=""
-                                   style="width: 100%"/>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-              </el-form>-->
       <el-scrollbar height="700px">
         <div>
           <div>
@@ -361,18 +365,6 @@
               <el-button v-model="formData.type" readonly disabled>
                 {{ formatProdType(Number(formData.type)) }}
               </el-button>
-              <!--
-                            <el-radio-group v-model="formData.type" @change="handleChange" disabled>
-                              <el-radio label="1">
-                                <template #default><span>引导</span></template>
-                              </el-radio>
-                              <el-radio label="2">
-                                <template #default><span>预产</span></template>
-                              </el-radio>
-                              <el-radio label="3">
-                                <template #default><span>原生</span></template>
-                              </el-radio>
-                            </el-radio-group>-->
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -397,23 +389,28 @@
           <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -466,23 +463,28 @@
           <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -535,23 +537,28 @@
           <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -571,8 +578,7 @@
     </el-dialog>
 
     <!--  创建 2000 -->
-    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle"
-               destroy-on-close>
+    <el-dialog v-model="dialog2000FormVisible" :before-close="close2000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule2000" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -600,23 +606,28 @@
                     placeholder="输入示例：https://security.seasungame.com/security_extend_server/helper/balance/queryBalance?gameCode=jx3&account=aa123123&accountType=&zoneCode=z22&SN=98710641126&remark=&sign=36A360706FD189A2BF867D70F61117BE"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -669,23 +680,28 @@
           <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -739,23 +755,28 @@
                     placeholder="输入示例：https://yaoshi.sdo.com/apipool?system_deviceId=83241004891122-40caee54f545f373&sequence=7&isHttp=0&netFlag=WIFI&method=txz_bs_mixed.dqOrder.list&ticket=cFFHWkDhsIx112NhvcX09FFaDUm3p%2F4Pk146eTWCS7IdU34mtVVI8rgoCVXnJmTJ9kfSiHkT0BP8SXK1sdeLempgKsItWc2F3FPn3BMsa6stXomxFjDNyaOieJADp3NapOnjl9Qnh7n9zi%2BavTlWAxE45Y9R38iCZz6x98tLMu0%3D&txzDeviceId=861110048918892&sndaId=1122890350&maxCount=10&version=a.9.4.8&timestampMs=-1"/>
         </el-form-item>
         <el-row>
-          <el-col :span="6"></el-col>
-          <el-col :span="12">
-            <warning-bar title="注：默认0，则无限额控制"/>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
           </el-col>
-          <el-col :span="6"></el-col>
-          <el-col :span="8">
+          <el-col :span="1"></el-col>
+          <el-col :span="6">
             <el-form-item label="日限额" prop="dailyLimit">
               <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="总限额" prop="totalLimit">
               <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="笔数限额" prop="countLimit">
+          <el-col :span="6">
+            <el-form-item label="进单限数" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="拉单限数" prop="countLimit">
               <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
@@ -802,23 +823,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -861,23 +887,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -920,23 +951,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -979,23 +1015,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -1038,23 +1079,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -1097,23 +1143,28 @@
             <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
           </el-form-item>
           <el-row>
-            <el-col :span="6"></el-col>
-            <el-col :span="12">
-              <warning-bar title="注：默认0，则无限额控制"/>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
             </el-col>
-            <el-col :span="6"></el-col>
-            <el-col :span="8">
+            <el-col :span="1"></el-col>
+            <el-col :span="6">
               <el-form-item label="日限额" prop="dailyLimit">
                 <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-form-item label="总限额" prop="totalLimit">
                 <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="笔数限额" prop="countLimit">
+            <el-col :span="6">
+              <el-form-item label="进单限数" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="拉单限数" prop="countLimit">
                 <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
               </el-form-item>
             </el-col>
@@ -1476,9 +1527,7 @@
     </el-dialog>
 
     <!-- 查询指定账户订单 -->
-    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :before-close="closeOrderSysShow"
-               :draggable="true"
-               title="查看系统充值详情" destroy-on-close>
+    <el-dialog v-model="orderSysVisible" style="width: 1100px" lock-scroll :draggable="true" title="查看系统充值详情" destroy-on-close>
       <div class="gva-search-box">
         <el-form :inline="true" class="demo-form-inline">
           <el-form-item>
@@ -1601,12 +1650,6 @@
           />
         </div>
       </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closePcDialog">取 消</el-button>
-          <el-button type="primary" @click="enterPcDialog">确 定</el-button>
-        </div>
-      </template>
     </el-dialog>
 
     <!-- 订单查看详情 -->
@@ -1814,19 +1857,20 @@ const resetSimple = (status) => {
 }
 const handleSysSizeChange = (val) => {
   sysPageSize.value = val
-  queryAccOrderSysFunc()
+  queryAccOrderSysFunc(req.value)
 }
 
 // 系统查单修改页面容量
 const handleSysCurrentChange = (val) => {
   sysPage.value = val
-  queryAccOrderSysFunc()
+  queryAccOrderSysFunc(req.value)
 }
+const req = ref()
 const queryAccOrderSysFunc = async (row) => {
-  const req = {...row}
+  req.value = {...row}
   console.log(req)
 
-  let res = await getPayOrderList({page: page.value, pageSize: pageSize.value, acId: req.acId, orderStatus: 1})
+  let res = await getPayOrderList({page: page.value, pageSize: pageSize.value, acId: req.value.acId, orderStatus: 1})
   console.log(res.data)
   if (res.code === 0) {
     orderSysTableData.value = res.data.list
@@ -1996,6 +2040,7 @@ const formData = ref({
   cid: '',
   countLimit: 0,
   dailyLimit: 0,
+  inCntLimit: 0,
   totalLimit: 0,
   type: 0,
   status: 0,
@@ -2485,6 +2530,7 @@ const close1000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2502,6 +2548,7 @@ const close1100Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2519,6 +2566,7 @@ const close1200Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2536,6 +2584,7 @@ const close2000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2553,6 +2602,7 @@ const close3000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2570,6 +2620,7 @@ const close4000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2587,6 +2638,7 @@ const closeUpd3000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2603,6 +2655,7 @@ const closeUpd4000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2619,6 +2672,7 @@ const closeUpd2000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2635,6 +2689,7 @@ const closeUpd1000Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2651,6 +2706,7 @@ const closeUpd1100Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2667,6 +2723,7 @@ const closeUpd1200Dialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2683,6 +2740,7 @@ const closeUpdTokenDialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -2713,6 +2771,7 @@ const closeDialog = () => {
     acPwd: '',
     cid: '',
     countLimit: 0,
+    inCntLimit: 0,
     dailyLimit: 0,
     totalLimit: 0,
     status: 0,
@@ -3467,9 +3526,9 @@ function handleProdClick(node) {
 }
 
 const accCustomStyle = ref({
-  background: 'linear-gradient(to right, #3498db, #2ecc71)',
+  background: 'linear-gradient(to right, #2ecc71, #3498db)',
   color: '#FFF',
-  height: '150px',
+  height: '120px',
 })
 // ---------- 通道卡片 ---------
 
@@ -3686,4 +3745,27 @@ const setTransferOptions = (ChannelCodeData, optionsData, cidNum) => {
   font-weight: bold;
   margin-top: 15px; // 调整间距
 }
+
+.scrolling-text {
+  height: 30px; /* 设置显示区域的高度 */
+  overflow: hidden; /* 隐藏超出显示区域的内容 */
+  position: relative; /* 设置为相对定位，以便在其中添加绝对定位的子元素 */
+}
+
+.scrolling-text ul {
+  list-style-type: none; /* 移除列表默认样式 */
+  padding: 0;
+  margin: 0;
+  animation: scroll-text 4s linear infinite; /* 使用动画实现滚动效果，20s表示滚动完成需要的时间，可根据需要调整 */
+}
+
+@keyframes scroll-text {
+  0% {
+    transform: translateY(0); /* 初始位置在顶部 */
+  }
+  100% {
+    transform: translateY(-100%); /* 最终位置在顶部的上方，根据行数和行高进行计算 */
+  }
+}
+
 </style>
