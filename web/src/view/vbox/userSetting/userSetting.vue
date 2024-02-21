@@ -36,7 +36,7 @@
           >
             <el-tab-pane label="账号绑定" name="second">
               <ul>
-                <li class="borderd pt-2.5">
+<!--                <li class="borderd pt-2.5">
                   <p class="pb-2.5 text-xl text-gray-600">密码生成器(开发中)</p>
                   <p class="pb-2.5 text-lg text-gray-400">
                     复杂密码生成器
@@ -44,7 +44,7 @@
                       <el-button type="primary" link icon="magic-stick"> 密码生成器(开发中) </el-button>
                     </a>
                   </p>
-                </li>
+                </li>-->
                 <li class="borderd pt-2.5">
                   <p class="pb-2.5 text-xl text-gray-600">密码设置</p>
                   <p class="pb-2.5 text-lg text-gray-400">
@@ -55,11 +55,11 @@
                   </p>
                 </li>
                 <li class="borderd pt-2.5">
-                  <p class="pb-2.5 text-xl text-gray-600">安全码设置</p>
+                  <p class="pb-2.5 text-xl text-gray-600">谷歌动态验证设置</p>
                   <p class="pb-2.5 text-lg text-gray-400">
-                    修改安全码
+                    修改谷歌动态验证
                     <a href="javascript:void(0)" class="float-right text-blue-400" @click="getAuthCaptcha()">
-                      <el-button type="primary" link icon="lock"> 设置安全码 </el-button>
+                      <el-button type="primary" link icon="lock"> 设置谷歌动态验证 </el-button>
                     </a>
                   </p>
                 </li>
@@ -127,7 +127,7 @@
     </el-dialog>
 
     <!-- 防爆验证码 -->
-    <el-dialog v-model="showAuthCaptcha" title="重置安全码" :draggable="true" width="360px" @close="clearAuthCaptcha">
+    <el-dialog v-model="showAuthCaptcha" title="重置谷歌动态验证" :draggable="true" width="360px" @close="clearAuthCaptcha">
       <el-form ref="modifyCapForm" :model="capModify" label-width="80px">
         <el-form-item label="用户ID" prop="toUid">
           <el-input v-model="capModify.ID" disabled />
@@ -145,10 +145,10 @@
     </el-dialog>
 
     <!-- 查看 -->
-    <el-dialog v-model="showQRCode" title="安全码" :draggable="true" width="300px" @close="closeAuthCaptcha">
+    <el-dialog v-model="showQRCode" title="谷歌动态验证" :draggable="true" width="300px" @close="closeAuthCaptcha">
       <div class="qrcode-generator">
         <div v-if="isNotSetting" style="margin-bottom: 20px">
-          暂未设置安全码，请尽快设置！
+          暂未设置谷歌动态验证，请尽快设置！
         </div>
         <div v-else>
           <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
@@ -357,7 +357,7 @@ const resetAuthCaptcha = () => {
         type: 1,
       }).then((res) => {
         if (res.code === 0) {
-          ElMessage.success('重置安全码成功！')
+          ElMessage.success('重置谷歌动态验证成功！')
         }
         showQRCode.value = false
         showAuthCaptcha.value = false

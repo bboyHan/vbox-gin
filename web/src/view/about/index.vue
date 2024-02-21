@@ -13,11 +13,8 @@
                 :offset="8"
               >
                 <a href="https://github.com/flipped-aurora/gin-vue-admin">
-                  <img
-                    class="org-img dom-center"
-                    src="@/assets/logo.png"
-                    alt="gin-vue-admin"
-                  >
+                  <img class="org-img dom-center" src="@/assets/LK_logo.jpg" alt="gin-vue-admin">
+<!--                  <img class="org-img dom-center" src="@/assets/logo.jpg" alt="gin-vue-admin">-->
                 </a>
               </el-col>
             </el-row>

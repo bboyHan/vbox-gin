@@ -500,7 +500,8 @@ func ChanAccShopUpdCheckTask() {
 			wg.Done()
 		}(i + 1)
 	}
-	global.GVA_LOG.Info("Vbox Acc init 初始化搞定")
+
 	// 等待所有消费者完成处理
 	wg.Wait()
+	global.GVA_LOG.Info("Vbox Acc shop upd check 初始化搞定")
 }

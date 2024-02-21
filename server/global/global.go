@@ -65,6 +65,7 @@ const (
 	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
+	ChanOrgECAccZSet        = "vb_acc_ec_set:org_%d:chan_%s"             // 同组织通道下可用账号（ec）
 	ChanOrgShopAddrZSet     = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
 	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
@@ -87,12 +88,16 @@ const (
 	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
+	YdECAccWaiting = "vb_acc_ec_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
+
+	YdECJdCodeZSet = "vb_acc_ec_jd_code" // 引导类-等待开启的账户(冷却中)
 
 	PayOrderVOKey = "vb_order_vo:%s"
 )
 
 const (
 	ProductRecordQBPrefix  = "product_record:qb:proxy"  // QB查询
+	ProductRecordJ3Prefix  = "product_record:j3:proxy"  // QB查询
 	ProductRecordSdoPrefix = "product_record:sdo:proxy" // sdo 查询
 )
 
@@ -119,12 +124,12 @@ const (
 )
 
 const (
-	WalletEventRechargePrefix = "VBIN"                           // 充值
-	WalletEventTransferPrefix = "VBTS"                           // 划转
-	WalletEventOrderPrefix    = "VBOD"                           // 订单消费
-	WalletEventRecharge       = "充值积分[%d]"                       // 充值
-	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]"            // 划转
-	WalletEventIncome         = "积分增加[%d], 来自用户:[%s]"            // 划转
+	WalletEventRechargePrefix = "VBIN"                                     // 充值
+	WalletEventTransferPrefix = "VBTS"                                     // 划转
+	WalletEventOrderPrefix    = "VBOD"                                     // 订单消费
+	WalletEventRecharge       = "充值积分[%d]"                             // 充值
+	WalletEventTransfer       = "积分扣减[%d], 积分划转至[%s]"             // 划转
+	WalletEventIncome         = "积分增加[%d], 来自用户:[%s]"              // 划转
 	WalletEventOrderCost      = "积分消费[%d], 来自(通道:[%s]), 订单:[%s]" // 消费
 )
 

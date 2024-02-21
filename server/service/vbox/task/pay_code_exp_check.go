@@ -150,6 +150,6 @@ func PayCodeExpCheck() {
 	// 等待所有消费者完成处理
 	wg.Wait()
 	//time.Sleep(time.Minute)
-	global.GVA_LOG.Info("MqOrderConfirmTask 初始化搞定")
+	global.GVA_LOG.Info("MqOrder exp check Task 初始化搞定")
 
 }

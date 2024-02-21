@@ -205,7 +205,7 @@ func HandleXCXUrl(requestString string) (payUrl string, err error) {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
 	} else {
-		return "", fmt.Errorf("不合法的TB链接")
+		return "", fmt.Errorf("不合法的XCX链接")
 	}
 	return payUrl, nil
 }
@@ -301,6 +301,11 @@ func HandleTBUrl(requestString string) (payUrl string, err error) {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
 	} else if strings.Contains(requestString, "main.m.taobao.com") {
+		//payUrl = "tbopen://m.taobao.com/tbopen/index.html?h5Url=" + url.QueryEscape(requestString)
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
+		//global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
+	} else if strings.Contains(requestString, "market.m.taobao.com") {
 		//payUrl = "tbopen://m.taobao.com/tbopen/index.html?h5Url=" + url.QueryEscape(requestString)
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))

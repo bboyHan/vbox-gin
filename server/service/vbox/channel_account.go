@@ -78,6 +78,94 @@ type ChannelAccountService struct {
 	}
 */
 
+func (vcaService *ChannelAccountService) LoginQNByQRCode() (res interface{}, err error) {
+	ResMap, err := utils.GetQrImg()
+	if err != nil {
+		global.GVA_LOG.Error("获取二维码失败:", zap.Error(err))
+		return
+	}
+
+	//qrImg := ResMap["QrImg"]
+	//fmt.Println("登录二维码 -> Base64编码:  " + qrImg)
+	//login, err := utils.LoopIfLogin()
+
+	return ResMap, err
+}
+
+func (vcaService *ChannelAccountService) LoginQNQrStatusCheck(qrSig string) (ret interface{}, err error) {
+	return
+}
+
+func (vcaService *ChannelAccountService) LoginQQByQRCode() (res interface{}, err error) {
+	ResMap, err := utils.GetQrImg()
+	if err != nil {
+		global.GVA_LOG.Error("获取二维码失败:", zap.Error(err))
+		return
+	}
+
+	//qrImg := ResMap["QrImg"]
+	//fmt.Println("登录二维码 -> Base64编码:  " + qrImg)
+	//login, err := utils.LoopIfLogin()
+
+	return ResMap, err
+}
+
+func (vcaService *ChannelAccountService) LoginQQQrStatusCheck(qrSig string) (ret interface{}, err error) {
+	LoginSig, err := utils.GetLoginSig()
+	if err != nil {
+		return nil, err
+	}
+
+	QrToken := utils.GetQrToken(qrSig)
+
+	str, err := utils.IfLogin(QrToken, LoginSig, qrSig)
+	if err != nil {
+		return nil, err
+	}
+
+	if !strings.Contains(str, "") {
+		return nil, errors.New("未知错误 Line 70，请刷新重试！")
+	}
+
+	var res = make(map[string]string)
+
+	s := strings.Split(strings.ReplaceAll(str[strings.Index(str, "(")+1:len(str)-1], "'", ""), ",")
+	// 65 二维码已失效 66 二维码未失效 67 已扫描,但还未点击确认 0  已经点击确认,并登录成功
+	switch s[0] {
+	case "65":
+		fmt.Println(time.Now().Format("2006/01/02 15:04:05"), "二维码失效 -> 已重新生成")
+		return nil, errors.New("二维码已失效 -> 请重新获取")
+	case "66":
+		fmt.Println(time.Now().Format("2006/01/02 15:04:05"), "登录二维码获取成功 -> 等待扫描")
+		return nil, errors.New("登录二维码获取成功 -> 等待扫描")
+	case "67":
+		fmt.Println(time.Now().Format("2006/01/02 15:04:05"), "已扫描 -> 请点击允许登录")
+		return nil, errors.New("已扫描 -> 请点击允许登录")
+	case "0":
+		// 已经点击确认,并登录成功
+		res["NickName"] = s[5]
+		res["Location"] = s[2]
+		res["QQ"] = utils.ExtractParamValue(res["Location"], "uin")
+		fmt.Println("已经点击确认,并登录成功, QQ号:"+res["QQ"], "QQ昵称:"+res["NickName"])
+	default:
+		return nil, errors.New("未知错误 Line 104，请刷新重试！")
+	}
+
+	Res, err := utils.Credential(res["Location"])
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := utils.GetResult(Res)
+
+	if err != nil {
+		return nil, err
+	}
+	result["qq"] = res["QQ"]
+
+	return result, nil
+}
+
 // QueryOrgAccAvailable 查询通道账号的官方记录
 func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelAccount) (res interface{}, err error) {
 
@@ -159,30 +247,64 @@ func (vcaService *ChannelAccountService) QueryOrgAccAvailable(vca *vbox.ChannelA
 // QueryAccOrderHis 查询通道账号的官方记录
 func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccount) (res interface{}, err error) {
 
-	var urlQ string
+	var urlQ, channelCode string
 
-	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
-	if c == 0 {
-		var channelCode string
-		if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
+	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+		if c == 0 {
 			channelCode = "qb_proxy"
-		} else if global.SdoContains(vca.Cid) {
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, urlQ, 10*time.Minute)
+
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+
+		}
+	} else if global.SdoContains(vca.Cid) {
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordSdoPrefix).Result()
+		if c == 0 {
 			channelCode = "sdo_proxy"
-		} else if global.J3Contains(vca.Cid) {
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordSdoPrefix, urlQ, 10*time.Minute)
+
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordSdoPrefix).Result()
+
+		}
+
+	} else if global.J3Contains(vca.Cid) {
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordJ3Prefix).Result()
+		if c == 0 {
 			channelCode = "j3_proxy"
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordJ3Prefix, urlQ, 10*time.Minute)
+
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordJ3Prefix).Result()
+
 		}
 
-		err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
-			First(&urlQ).Error
-
-		if err != nil {
-			return nil, errors.New("该信道无资源配置")
-		}
-
-		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, urlQ, 10*time.Minute)
-
-	} else {
-		urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
 	}
 
 	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
@@ -488,6 +610,17 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 			return errors.New("仅支持双线二区参数，请核查")
 		}
 		vca.AcAccount = account
+	} else if global.ECContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		if vca.AcAccount == "" {
+			pin := http2.ParseCookie(token, "pin")
+			if pin != "" {
+				vca.AcAccount = pin
+			}
+		}
 	} else {
 		return errors.New("该信道暂不支持创建账号")
 	}
@@ -659,35 +792,35 @@ func (vcaService *ChannelAccountService) SwitchEnableChannelAccount(vca vboxReq.
 
 	// 如果是开启，则发起一条消息，去查这个账号是否能开启
 
-	go func() {
-		conn, err := mq.MQ.ConnPool.GetConnection()
-		if err != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
+	//go func() {
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
 
-		ch, err := conn.Channel()
-		if err != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
+	ch, err := conn.Channel()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
 
-		body := http2.DoGinContextBody(c)
-		vcaDB.Status = vca.Status
-		oc := vboxReq.ChanAccAndCtx{
-			Obj: vcaDB,
-			Ctx: vboxReq.Context{
-				Body:      string(body),
-				ClientIP:  c.ClientIP(),
-				Method:    c.Request.Method,
-				UrlPath:   c.Request.URL.Path,
-				UserAgent: c.Request.UserAgent(),
-				UserID:    int(vcaDB.CreatedBy),
-			},
-		}
-		marshal, err := json.Marshal(oc)
+	body := http2.DoGinContextBody(c)
+	vcaDB.Status = vca.Status
+	oc := vboxReq.ChanAccAndCtx{
+		Obj: vcaDB,
+		Ctx: vboxReq.Context{
+			Body:      string(body),
+			ClientIP:  c.ClientIP(),
+			Method:    c.Request.Method,
+			UrlPath:   c.Request.URL.Path,
+			UserAgent: c.Request.UserAgent(),
+			UserID:    int(vcaDB.CreatedBy),
+		},
+	}
+	marshal, err := json.Marshal(oc)
 
-		err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
-	}()
+	err = ch.Publish(task.ChanAccEnableCheckExchange, task.ChanAccEnableCheckKey, marshal)
+	//}()
 
 	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err

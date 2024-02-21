@@ -76,7 +76,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column align="center" label="订单ID" prop="orderId" width="240"/>
+          <el-table-column align="center" label="订单ID" prop="orderId" width="260"/>
           <el-table-column align="center" label="金额" prop="money" width="120"/>
           <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
             <template #default="scope">
@@ -145,7 +145,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+          <el-table-column align="center" label="订单ID" prop="orderId" width="260"/>
           <el-table-column align="center" label="金额" prop="money" width="80"/>
           <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
             <template #default="scope">
@@ -253,11 +253,11 @@
       >
         <el-scrollbar height="100px">
           <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="120px">
-            <el-form-item label="订单ID" prop="authCaptcha">
+            <el-form-item label="订单ID" prop="orderId">
               <el-input disabled v-model="formData.orderId" :clearable="true" placeholder="请输入" style="width: 80%"/>
             </el-form-item>
-            <el-form-item label="安全码" prop="authCaptcha">
-              <el-input v-model="formData.authCaptcha" :clearable="true" placeholder="请输入安全码" style="width: 80%"/>
+            <el-form-item label="谷歌动态验证" prop="authCaptcha">
+              <el-input v-model="formData.authCaptcha" :clearable="true" placeholder="请输入谷歌动态验证" style="width: 80%"/>
             </el-form-item>
           </el-form>
         </el-scrollbar>

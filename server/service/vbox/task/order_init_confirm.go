@@ -485,6 +485,139 @@ func OrderConfirmTask() {
 							}
 						}
 					}
+				} else if global.ECContains(chanID) {
+					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
+					//ecRecord, errX := product.ECardBind(v.Obj.PlatId, vca.Token)
+					//if errX != nil {
+					//	// 查单有问题，直接订单要置为超时，消息置为处理完毕
+					//	global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX))
+					//
+					//	if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
+					//		global.GVA_LOG.Error("更新订单异常", zap.Error(errX))
+					//		_ = msg.Reject(false)
+					//		continue
+					//	}
+					//
+					//	//入库操作记录
+					//	record := sysModel.SysOperationRecord{
+					//		Ip:      v.Ctx.ClientIP,
+					//		Method:  v.Ctx.Method,
+					//		Path:    v.Ctx.UrlPath,
+					//		Agent:   v.Ctx.UserAgent,
+					//		Status:  500,
+					//		Latency: time.Since(time.Now()),
+					//		Resp:    fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+					//		UserID:  v.Ctx.UserID,
+					//	}
+					//
+					//	err = operationRecordService.CreateSysOperationRecord(record)
+					//	if err != nil {
+					//		global.GVA_LOG.Error("当前账号回调查单，官方查单异常，record 入库失败..." + err.Error())
+					//	}
+					//
+					//	err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+					//		Update("sys_status", 0).Error
+					//
+					//	vca.Status = 0
+					//	oc := vboxReq.ChanAccAndCtx{
+					//		Obj: vca,
+					//		Ctx: vboxReq.Context{
+					//			Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+					//			ClientIP:  "127.0.0.1",
+					//			Method:    "POST",
+					//			UrlPath:   "/vca/switchEnable",
+					//			UserAgent: "",
+					//			UserID:    int(vca.CreatedBy),
+					//		},
+					//	}
+					//	marshal, _ := json.Marshal(oc)
+					//
+					//	_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+					//
+					//	global.GVA_LOG.Error("处理订单为失败，发起一条关号清理资源", zap.Any("orderID", v.Obj.OrderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+					//
+					//	_ = msg.Ack(true)
+					//	continue
+					//}
+					//
+					//if len(valMembers) > 0 {
+					//	mem := valMembers[0]
+					//	split := strings.Split(mem, ",")
+					//	hisBalance, _ := strconv.Atoi(split[4])
+					//	if hisBalance+money*100 == nowBalance { // 充值成功的情况
+					//		qryURL := vca.Token
+					//
+					//		keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+					//		delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+					//
+					//		global.GVA_LOG.Info("查单链接", zap.Any("订单ID", v.Obj.OrderId), zap.Any("url", qryURL))
+					//		global.GVA_LOG.Info("核对官方订单", zap.Any("核准", keyMem))
+					//
+					//		global.GVA_REDIS.ZAdd(context.Background(), J3AccBalanceKey, redis.Z{
+					//			Score:  float64(nowTimeUnix),
+					//			Member: keyMem,
+					//		})
+					//		global.GVA_REDIS.ZRem(context.Background(), J3AccBalanceKey, delMem)
+					//
+					//		v.Obj.PlatId = keyMem
+					//
+					//		//3. 查询充值成功后，更新订单信息（订单状态，订单支付链接处理）
+					//		if err := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 1).
+					//			Update("plat_id", keyMem).Error; err != nil {
+					//			global.GVA_LOG.Error("更新订单异常", zap.Error(err))
+					//			_ = msg.Reject(false)
+					//			continue
+					//		}
+					//
+					//		// 4.入库wallet
+					//		var count int64
+					//		global.GVA_DB.Model(&vbox.UserWallet{}).Where("event_id = ?", v.Obj.OrderId).Count(&count)
+					//
+					//		if count == 0 {
+					//			wallet := vbox.UserWallet{
+					//				Uid:       v.Obj.CreatedBy,
+					//				CreatedBy: v.Obj.CreatedBy,
+					//				Type:      global.WalletOrderType,
+					//				EventId:   v.Obj.OrderId,
+					//				Recharge:  -money,
+					//				Remark:    fmt.Sprintf(global.WalletEventOrderCost, money, v.Obj.ChannelCode, v.Obj.OrderId),
+					//			}
+					//
+					//			global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
+					//		}
+					//
+					//		_ = msg.Ack(true)
+					//		global.GVA_LOG.Info("订单查到已支付并确认消息消费，更新订单状态", zap.Any("pa", v.Obj.PAccount), zap.Any("orderId", v.Obj.OrderId))
+					//
+					//		// 同时把订单 redis信息也设置一下缓存信息
+					//		v.Obj.OrderStatus = 1
+					//		odKey := fmt.Sprintf(global.PayOrderKey, v.Obj.OrderId)
+					//		jsonString, _ := json.Marshal(v.Obj)
+					//		global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
+					//
+					//		// 并且发起一个回调通知的消息
+					//		marshal, _ := json.Marshal(v)
+					//		err = chX.Publish(OrderCallbackExchange, OrderCallbackKey, marshal)
+					//		global.GVA_LOG.Info("【系统自动】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
+					//
+					//		_ = msg.Ack(true)
+					//		continue
+					//	} else {
+					//		global.GVA_LOG.Info("未对账成功，当前余额为", zap.Any("nowBalance", nowBalance), zap.Any("hisBalance", hisBalance), zap.Any("money", money), zap.Any("orderId", v.Obj.OrderId))
+					//		// 重新丢回去 下一个20s再查一次
+					//		marshal, _ := json.Marshal(v)
+					//		err = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 15*time.Second)
+					//		_ = msg.Ack(true)
+					//		continue
+					//	}
+					//
+					//} else {
+					//	// 异常情况处理
+					//	global.GVA_LOG.Error("订单匹配消息查redis数据异常", zap.Error(errZ), zap.Any("valMembers", valMembers))
+					//	// 如果解析消息失败，则直接丢弃消息
+					//	_ = msg.Reject(false)
+					//	continue
+					//}
 				} else if global.J3Contains(chanID) {
 					global.GVA_LOG.Info("传入的时间", zap.Any("传入的创建时间", odCreatedTime), zap.Any("传入的过期时间", *expTime))
 					j3Record, errX := product.QryJ3Record(vca)

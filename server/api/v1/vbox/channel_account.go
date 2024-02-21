@@ -18,6 +18,62 @@ type ChannelAccountApi struct {
 
 var vcaService = service.ServiceGroupApp.VboxServiceGroup.ChannelAccountService
 
+// LoginQQByQRCode qq 登录 qr
+func (vcaApi *ChannelAccountApi) LoginQQByQRCode(c *gin.Context) {
+
+	if res, err := vcaService.LoginQQByQRCode(); err != nil {
+		global.GVA_LOG.Error("获取二维码失败!", zap.Error(err))
+		response.FailWithMessage("获取二维码失败", c)
+	} else {
+		response.OkWithData(gin.H{"img": res}, c)
+	}
+}
+
+// LoginQrQqStatusCheck qq 登录 qr状态查询
+func (vcaApi *ChannelAccountApi) LoginQrQqStatusCheck(c *gin.Context) {
+	var info vboxReq.ChannelAccountSearch
+	err := c.ShouldBindQuery(&info)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if res, err := vcaService.LoginQQQrStatusCheck(info.Sig); err != nil {
+		global.GVA_LOG.Error("获取二维码失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"ret": res}, c)
+	}
+}
+
+// LoginQNByQrCode 千牛 登录 qr
+func (vcaApi *ChannelAccountApi) LoginQNByQrCode(c *gin.Context) {
+
+	if res, err := vcaService.LoginQNByQRCode(); err != nil {
+		global.GVA_LOG.Error("获取二维码失败!", zap.Error(err))
+		response.FailWithMessage("获取二维码失败", c)
+	} else {
+		response.OkWithData(gin.H{"img": res}, c)
+	}
+}
+
+// LoginQNQrStatusCheck qn 登录 qr状态查询
+func (vcaApi *ChannelAccountApi) LoginQNQrStatusCheck(c *gin.Context) {
+	var info vboxReq.ChannelAccountSearch
+	err := c.ShouldBindQuery(&info)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if res, err := vcaService.LoginQNQrStatusCheck(info.Sig); err != nil {
+		global.GVA_LOG.Error("获取二维码失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"ret": res}, c)
+	}
+}
+
 func (vcaApi *ChannelAccountApi) QueryOrgAccAvailable(c *gin.Context) {
 	var vca vbox.ChannelAccount
 	err := c.ShouldBindJSON(&vca)
@@ -141,8 +197,7 @@ func (vcaApi *ChannelAccountApi) CreateChannelAccount(c *gin.Context) {
 	}
 	vca.CreatedBy = utils.GetUserID(c)
 	verify := utils.Rules{
-		"AcRemark": {utils.NotEmpty()},
-		"Cid":      {utils.NotEmpty()},
+		"Cid": {utils.NotEmpty()},
 	}
 	if err := utils.Verify(vca, verify); err != nil {
 		response.FailWithMessage(err.Error(), c)

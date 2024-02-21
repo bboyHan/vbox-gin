@@ -38,9 +38,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+<!--              <el-col>
+                <img src="@/assets/LK_logo.jpg" alt="" style="width: 80px; height: 80px">
+              </el-col>-->
               <el-col>
                 <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
               </el-col>
@@ -136,9 +138,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
               <el-col>
                 <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
               </el-col>
@@ -221,9 +225,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
               <el-col>
                 <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
               </el-col>
@@ -299,9 +305,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
               <el-col>
                 <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
               </el-col>
@@ -373,9 +381,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
               <el-col>
                 <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
               </el-col>
@@ -450,9 +460,11 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col>
-                <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+              <el-col style="width: 80px; height: 80px">
               </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
               <el-col>
                 <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
               </el-col>

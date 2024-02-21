@@ -54,7 +54,7 @@ func IsValidCookie(cookieString string) bool {
 
 	// 验证解析后的 Cookie 是否合法
 	for _, cookie := range cookies {
-		if cookie.Name == "" || cookie.Value == "" {
+		if cookie.Name == "" {
 			return false
 		}
 	}

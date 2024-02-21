@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-type ChannelAccountSearch struct {
-	vbox.ChannelAccount
+type ChannelCardAccSearch struct {
+	vbox.ChannelCardAcc
 	StartCreatedAt *time.Time `json:"startCreatedAt" form:"startCreatedAt"`
 	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
 	Status         *int       `json:"status" form:"status"`
@@ -16,7 +16,7 @@ type ChannelAccountSearch struct {
 	request.PageInfo
 }
 
-type ChannelAccountUpd struct {
+type ChannelCardAccUpd struct {
 	Ids       []uint `json:"ids" form:"ids" url:"ids"`
 	ID        uint   `json:"id" form:"id" url:"id"`
 	Status    int    `json:"status" form:"status" url:"status"`

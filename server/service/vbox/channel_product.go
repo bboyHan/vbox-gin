@@ -78,7 +78,7 @@ func (vcpService *ChannelProductService) GetChannelProductSelf(ids []uint, searc
 		db.Where("type = ?", search.Type)
 	}
 
-	err = db.Select("vbox_channel_product.*").
+	err = db.Debug().Select("vbox_channel_product.*").
 		Where("id in ?", productIds).Find(&channelProducts).Error
 
 	channelProducts = SetChildren(channelProducts)

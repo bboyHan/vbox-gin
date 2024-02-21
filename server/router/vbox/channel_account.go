@@ -25,6 +25,10 @@ func (s *ChannelAccountRouter) InitChannelAccountRouter(Router *gin.RouterGroup)
 	}
 	{
 		vcaRouterWithoutRecord.POST("queryAccOrderHis", vcaApi.QueryAccOrderHis)          // 查询账户所有的充值记录
+		vcaRouterWithoutRecord.GET("loginByQRCode", vcaApi.LoginQQByQRCode)                 // 获取qq登录二维码
+		vcaRouterWithoutRecord.GET("loginByQnCode", vcaApi.LoginQNByQrCode)       // 获取qn登录二维码状态
+		vcaRouterWithoutRecord.GET("loginQrStatusCheck", vcaApi.LoginQrQqStatusCheck)       // 获取qq登录二维码状态
+		vcaRouterWithoutRecord.GET("loginQrQnStatusCheck", vcaApi.LoginQNQrStatusCheck)       // 获取qn登录二维码状态
 		vcaRouterWithoutRecord.GET("countAcc", vcaApi.CountAcc)                           // 查询账户所有的通道账号可用个数
 		vcaRouterWithoutRecord.GET("findChannelAccount", vcaApi.FindChannelAccount)       // 根据ID获取通道账号
 		vcaRouterWithoutRecord.GET("getChannelAccountList", vcaApi.GetChannelAccountList) // 获取通道账号列表

@@ -19,7 +19,7 @@ const props = defineProps({
 
 
 const customStyle = props.customStyle
-console.log(customStyle)
+// console.log(customStyle)
 </script>
 
 <style lang="scss" scoped>

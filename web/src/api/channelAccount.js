@@ -129,6 +129,38 @@ export const updateChannelAccount = (data) => {
 }
 
 // @Tags ChannelAccount
+// @Summary 二维码
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelAccount true "获取二维码"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
+// @Router /vca/loginByQr [get]
+export const loginByQr = (params) => {
+  return service({
+    url: '/vca/loginByQRCode',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags ChannelAccount
+// @Summary 二维码状态
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.ChannelAccount true "获取二维码状态"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
+// @Router /vca/loginQrStatusCheck [get]
+export const loginQrStatusCheck = (params) => {
+  return service({
+    url: '/vca/loginQrStatusCheck',
+    method: 'get',
+    params
+  })
+}
+
+// @Tags ChannelAccount
 // @Summary 通道转移
 // @Security ApiKeyAuth
 // @accept application/json

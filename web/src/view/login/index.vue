@@ -9,7 +9,8 @@
         <div class="z-[999] pt-12 pb-10 md:w-96 w-full  rounded-lg flex flex-col justify-between box-border">
           <div>
             <div class="flex items-center justify-center">
-              <img class="w-24" src="@/assets/logo.png" alt>
+              <img class="w-24" src="@/assets/LK_logo.jpg" alt>
+<!--              <img class="w-24" src="@/assets/logo.jpg" alt>-->
             </div>
             <div class="mb-9">
             </div>
@@ -41,7 +42,7 @@
                 </div>
               </el-form-item>
               <el-form-item prop="authCaptcha" class="mb-6">
-                <el-input v-model="loginFormData.authCaptcha" size="large" placeholder="安全码" />
+                <el-input v-model="loginFormData.authCaptcha" size="large" placeholder="谷歌动态验证" />
               </el-form-item>
               <el-form-item class="mb-6">
                 <el-button class="shadow shadow-blue-600 h-11 w-full" type="primary" size="large" @click="submitForm">登 录</el-button>

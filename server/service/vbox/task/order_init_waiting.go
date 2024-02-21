@@ -395,7 +395,7 @@ func OrderWaitingTask() {
 						} else {
 							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTime)
 						}
-						
+
 						var vca vbox.ChannelAccount
 						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
 						if err != nil {
@@ -1117,9 +1117,9 @@ func OrderWaitingTask() {
 			wg.Done()
 		}(i + 1)
 	}
-	global.GVA_LOG.Info("Vbox OrderWaitingTask 初始化搞定")
 	// 等待所有消费者完成处理
 	wg.Wait()
+	global.GVA_LOG.Info("Vbox OrderWaitingTask 初始化搞定")
 }
 
 func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID string, err error) {

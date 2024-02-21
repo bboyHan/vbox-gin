@@ -78,6 +78,7 @@ func Routers() *gin.Engine {
 		vboxRouter.InitPubAccessRouter(PublicGroup)
 
 		vboxRouter.InitChannelAccountRouter(PrivateGroup)
+		vboxRouter.InitChannelCardAccRouter(PrivateGroup)
 		vboxRouter.InitChannelProductRouter(PrivateGroup)
 		vboxRouter.InitPayOrderRouter(PrivateGroup)
 		vboxRouter.InitPayAccountRouter(PrivateGroup)

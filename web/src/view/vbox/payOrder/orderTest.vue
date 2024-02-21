@@ -39,9 +39,12 @@
       <div class="p_container">
         <!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
         <div class="p_content">
+          <el-col style="width: 80px; height: 80px">
+          </el-col>
           <el-row :gutter="12">
             <el-col>
-              <img src="@/assets/logo.png" alt="" style="width: 80px; height: 80px">
+<!--              <img src="@/assets/LK_logo.jpg" alt="" style="width: 80px; height: 80px">-->
+<!--              <img src="@/assets/logo.jpg" alt="" style="width: 80px; height: 80px">-->
             </el-col>
           </el-row>
         </div>

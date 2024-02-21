@@ -378,6 +378,6 @@ func AccCDCheckTask() {
 	// 等待所有消费者完成处理
 	wg.Wait()
 	//time.Sleep(time.Minute)
-	global.GVA_LOG.Info("Mq PayCodeCDCheck Task 初始化搞定")
+	global.GVA_LOG.Info("Mq acc cd Task 初始化搞定")
 
 }

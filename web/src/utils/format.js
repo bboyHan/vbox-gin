@@ -11,6 +11,8 @@ export const formatProdType = (type) => {
         opMsg = '预产'
     } else if (type === 3) {
         opMsg = '原生'
+    } else if (type === 4) {
+        opMsg = '卡密'
     }
     return opMsg
 }
@@ -338,4 +340,51 @@ export const fmtSimpleBody = (value) => {
     } catch (err) {
         return value
     }
+}
+
+// 缺省，如果内容大于200个字符，则后面后省略号代替
+export const fmtSimpleBodyByWidth = (value, width) => {
+    try {
+        if (value.length > width) {
+            return value.substring(0, width) + '......'
+        } else {
+            return value
+        }
+    } catch (err) {
+        return value
+    }
+}
+
+export const validateCookie  = cookie => {
+    const cookiePairs = cookie.split(';');
+    for (const pair of cookiePairs) {
+        const [key, value] = pair.split('=');
+        if (!key || !value) {
+            return false;
+        }
+    }
+    return true;
+};
+
+export const parseCookie = (cookieString)  =>{
+    const cookies = {};
+    const cookieArray = cookieString.split(';');
+    for (let i = 0; i < cookieArray.length; i++) {
+        const cookie = cookieArray[i].trim();
+        const [key, value] = cookie.split('=');
+        cookies[key] = value;
+    }
+    return cookies;
+}
+
+export const findValuesContainingString = (cookieString, searchString)  =>{
+    const cookies = parseCookie(cookieString);
+    const matchingValues = {};
+    for (const key in cookies) {
+        if (key.includes(searchString)) {
+            // matchingValues[key] = cookies[key];
+            return cookies[key];
+        }
+    }
+    return null;
 }

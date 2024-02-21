@@ -30,7 +30,6 @@ require (
 	github.com/qiniu/qmgo v1.1.8
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.0.5
-	github.com/robertkrimen/otto v0.3.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.14.1
 	github.com/shirou/gopsutil/v3 v3.23.6
@@ -43,6 +42,7 @@ require (
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.42
 	github.com/unrolled/secure v1.13.0
 	github.com/valyala/fasthttp v1.50.0
+	github.com/weloe/token-go v0.1.65
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0
@@ -140,7 +140,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/plugin/dbresolver v1.4.1 // indirect
 	modernc.org/libc v1.24.1 // indirect

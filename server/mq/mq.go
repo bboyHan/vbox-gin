@@ -233,12 +233,33 @@ func (cp *ConnPool) GetConnection() (*Connection, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 
+	mqCfg := global.GVA_CONFIG.RabbitMQ
+
 	select {
 	case conn := <-cp.pool: // 从连接池中取出连接
 		return conn, nil
+	//default:
+	//	// 如果连接池已满，则等待可用连接
+	//	return <-cp.pool, nil
+	//}
 	default:
-		// 如果连接池已满，则等待可用连接
-		return <-cp.pool, nil
+		if len(cp.pool) < cap(cp.pool) { // 判断连接池是否已满
+			// 如果连接池未满，则新建连接
+			url := fmt.Sprintf("amqp://%s:%s@%s:%s/",
+				mqCfg.Username,
+				mqCfg.Password,
+				mqCfg.Addr,
+				mqCfg.Port)
+			conn, err := MQ.Dial(url)
+			if err != nil {
+				return nil, err
+			}
+			return conn, nil
+		} else {
+			log.Println("connection pool is full")
+			// 如果连接池已满，则等待可用连接
+			return <-cp.pool, nil
+		}
 	}
 }
 

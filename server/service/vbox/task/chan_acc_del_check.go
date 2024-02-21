@@ -214,6 +214,13 @@ func ChanAccDelCheckTask() {
 					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
+				} else if global.ECContains(cid) { //QB引导，
+
+					accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+					waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
 				} else if global.PcContains(cid) { //QB直付，查一下有没有还没剩余的预产，处理掉
 					var pcDBList []vbox.ChannelPayCode
 					global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("ac_id = ?", acId).Find(&pcDBList)
@@ -279,7 +286,7 @@ func ChanAccDelCheckTask() {
 			wg.Done()
 		}(i + 1)
 	}
-	global.GVA_LOG.Info("Vbox Acc DEL init 初始化搞定")
 	// 等待所有消费者完成处理
 	wg.Wait()
+	global.GVA_LOG.Info("Vbox Acc DEL init 初始化搞定")
 }

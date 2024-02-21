@@ -120,13 +120,14 @@ mssql:
     log-zap: false
 mysql:
     prefix: ""
-    port: "10995"
+#    port: "10995"
+    port: "3306"
     config: charset=utf8mb4&parseTime=True&loc=Local
     db-name: vbox_system
     username: vbox_admin
     password: Vbox123qwe
-    path: 62.234.218.227
-#    path: rm-cn-lbj3k08et0006bto.rwlb.rds.aliyuncs.com
+#    path: 62.234.218.227
+    path: vbqqww.rwlb.rds.aliyuncs.com
     engine: ""
     log-mode: error
     max-idle-conns: 10
@@ -172,15 +173,18 @@ qiniu:
 rabbitmq:
 #    addr: 60.204.145.173
 #    port: "8083"
-    addr: 62.234.218.227
-    port: "5672"
+#    addr: 62.234.218.227
+#    addr: 18.166.178.178
+    addr: 47.104.71.188
+    port: 5672
     password: Vbox123qwe
     username: admin
-    poolSize: 10
+    poolSize: 20
     retryReConnDelay: 1
 redis:
 #    addr: 60.204.145.173:10818
-    addr: 62.234.218.227:6379
+#    addr: 62.234.218.227:6379
+    addr: 18.166.178.178:6379
     password: Vbox123qwe
 #    addr: localhost:6379
 #    password: ""
@@ -212,7 +216,7 @@ system:
     use-mongo: false
     use-mq: true
     use-mq-task: true
-    timer-task: false
+    timer-task: true
 mq-task:
     order-wait: false
     order-confirm: false

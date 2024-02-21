@@ -51,7 +51,7 @@ func ChanAccEnableCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 20
+	consumerCount := 5
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -397,6 +397,33 @@ func ChanAccEnableCheckTask() {
 							continue
 
 						}
+					} else if global.ECContains(cid) { //sdo
+						_, errQ := product.JDValidCookie(v.Obj.Token)
+						if errQ != nil {
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
+							}
+
+							errR := operationRecordService.CreateSysOperationRecord(record)
+							if errR != nil {
+								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+							}
+
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0)
+							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
 					}
 
 					//2.
@@ -407,29 +434,38 @@ func ChanAccEnableCheckTask() {
 						//pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
 						//keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 						if moneyList == nil || len(moneyList) < 1 {
-							global.GVA_LOG.Error("商铺没有匹配资源...")
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							userIDs := utils2.GetUsersByOrgIds(orgTmp)
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
 							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
 
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
+
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
 							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
 						}
 
 						for _, money := range moneyList {
@@ -452,79 +488,98 @@ func ChanAccEnableCheckTask() {
 								}
 							}()
 						}
-						/*if len(moneyList) >= len(keys) {
-							for _, money := range moneyList {
-								moneyTmp := money
-								go func() {
-									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
-										cdTime := ttl
-										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
-									} else {
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
-										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
+
+					} else if global.ECContains(cid) { //e card
+
+						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, 1, cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						if len(moneyList) < 1 {
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ?", cid, 1).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
 							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
+
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
+							}
+						}
+
+						accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+						waitAccYdKey := fmt.Sprintf(global.YdECAccWaiting, acId)
+
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						if ttl > 0 { //该账号正在冷却中
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+							cdTime := ttl
+							_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
 						} else {
-							for _, key := range keys {
-								keyTmp := key
-								go func() {
-									money := strings.Split(keyTmp, ":")[3]
-									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
-										cdTime := ttl
-										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
-									} else {
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
-										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
-										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-							}
-						}*/
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 
 					} else if global.DnfContains(cid) { //dnf
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
 
 						if len(moneyList) < 1 {
-							global.GVA_LOG.Error("商铺没有匹配资源...")
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							userIDs := utils2.GetUsersByOrgIds(orgTmp)
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
 							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
 
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
 							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
 						}
 						for _, money := range moneyList {
 							moneyTmp := money
@@ -550,77 +605,39 @@ func ChanAccEnableCheckTask() {
 
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-						/*pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgTmp[0], cid)
-						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
-						if len(moneyList) >= len(keys) {
-							for _, money := range moneyList {
-								moneyTmp := money
-								go func() {
-									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
-										cdTime := ttl
-										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
-									} else {
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
-										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-							}
-						} else {
-							for _, key := range keys {
-								keyTmp := key
-								go func() {
-									money := strings.Split(keyTmp, ":")[3]
-									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, money)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
-										cdTime := ttl
-										_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-										global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
-									} else {
-										global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
-										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
-										global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-										global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-							}
-						}*/
 						if len(moneyList) < 1 {
-							global.GVA_LOG.Error("商铺没有匹配资源...")
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							userIDs := utils2.GetUsersByOrgIds(orgTmp)
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
 							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
 
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
 							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
 						}
 						for _, money := range moneyList {
 							moneyTmp := money
@@ -647,29 +664,37 @@ func ChanAccEnableCheckTask() {
 						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
 						if len(moneyList) < 1 {
-							global.GVA_LOG.Error("商铺没有匹配资源...")
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							userIDs := utils2.GetUsersByOrgIds(orgTmp)
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
 							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
 
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
 							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
 						}
 
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
@@ -749,50 +774,7 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Ack(true)
 							continue
 						}
-						/*pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgTmp[0], cid)
-						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
-						if len(moneyList) >= len(keys) {
-							for _, money := range moneyList {
-								moneyTmp := money
-								go func() {
-									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
-									//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中，直接处理删掉
-										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
-									} else {
-										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-
-							}
-						} else {
-
-							for _, key := range keys {
-								keyTmp := key
-								go func() {
-									money := strings.Split(keyTmp, ":")[3]
-									waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中，直接处理删掉
-										//global.GVA_REDIS.Del(context.Background(), waitAccYdKey)
-										global.GVA_LOG.Info("关闭过程校验..账号在冷却中,把账号ttl key干掉", zap.Any("waitMsg", waitMsg))
-									} else {
-										accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, money)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-							}
-						}*/
 						for _, money := range moneyList {
 							moneyTmp := money
 							go func() {
@@ -852,52 +834,7 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Ack(true)
 							continue
 						}
-						/*moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
-						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()*/
-						/*pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgTmp[0], cid)
-						keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
 
-						if len(moneyList) >= len(keys) {
-							for _, money := range moneyList {
-								moneyTmp := money
-								go func() {
-									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
-									//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中，直接处理删掉
-										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
-									} else {
-										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-
-							}
-						} else {
-
-							for _, key := range keys {
-								keyTmp := key
-								go func() {
-									money := strings.Split(keyTmp, ":")[3]
-									waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, money)
-									waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-									waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-									ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-									if ttl > 0 { //该账号正在冷却中，直接处理删掉
-										//global.GVA_REDIS.Del(context.Background(), waitAccYdKey)
-										global.GVA_LOG.Info("关闭过程校验..账号在冷却中,把账号ttl key干掉", zap.Any("waitMsg", waitMsg))
-									} else {
-										accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, money)
-										global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-										global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-									}
-								}()
-							}
-						}*/
 						for _, money := range moneyList {
 							moneyTmp := money
 							go func() {
@@ -916,6 +853,20 @@ func ChanAccEnableCheckTask() {
 								}
 							}()
 
+						}
+					} else if global.ECContains(cid) {
+						waitAccYdKey := fmt.Sprintf(global.YdECAccWaiting, acId)
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+						//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						if ttl > 0 { //该账号正在冷却中，直接处理删掉
+							accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
+						} else {
+							accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 					} else if global.J3Contains(cid) {
 
@@ -971,7 +922,7 @@ func ChanAccEnableCheckTask() {
 			wg.Done()
 		}(i + 1)
 	}
-	global.GVA_LOG.Info("Vbox Acc init 初始化搞定")
 	// 等待所有消费者完成处理
 	wg.Wait()
+	global.GVA_LOG.Info("Vbox Acc enable init 初始化搞定")
 }

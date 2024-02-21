@@ -16,8 +16,13 @@
           <img
             alt
             class="w-9 h-9 p-1 bg-white rounded-full"
-            src="@/assets/logo.png"
+            src="@/assets/LK_logo.jpg"
           >
+<!--          <img
+            alt
+            class="w-9 h-9 p-1 bg-white rounded-full"
+            src="@/assets/logo.jpg"
+          >-->
         </div>
         <Aside class="aside" />
       </el-aside>
@@ -212,8 +217,8 @@ const initPage = () => {
     isCollapse.value = true
   } else {
     isMobile.value = false
-    isSider.value = false
-    isCollapse.value = true
+    isSider.value = true
+    isCollapse.value = false
   }
 }
 

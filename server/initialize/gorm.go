@@ -54,6 +54,7 @@ func RegisterTables() {
 		example.ExaFileUploadAndDownload{},
 
 		vbox.ChannelAccount{},
+		vbox.ChannelCardAcc{},
 		vbox.ChannelProduct{},
 		vbox.PayOrder{},
 		vbox.PayAccount{},
@@ -61,7 +62,11 @@ func RegisterTables() {
 		vbox.ChannelShop{},
 		vbox.OrgProduct{},
 		vbox.UserWallet{},
-		vbox.ChannelPayCode{}, vbox.BdaChIndexD{}, vbox.BdaChaccIndexD{}, vbox.BdaChShopIndexD{}, vbox.BdaChorgIndexD{},
+		vbox.ChannelPayCode{},
+		vbox.BdaChIndexD{},
+		vbox.BdaChaccIndexD{},
+		vbox.BdaChShopIndexD{},
+		vbox.BdaChorgIndexD{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

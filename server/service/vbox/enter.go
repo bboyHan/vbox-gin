@@ -2,6 +2,7 @@ package vbox
 
 type ServiceGroup struct {
 	ChannelAccountService
+	ChannelCardAccService
 	ChannelProductService
 	PayOrderService
 	OrgProductService

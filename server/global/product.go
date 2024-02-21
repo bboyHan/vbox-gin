@@ -102,6 +102,40 @@ func SdoContains(target string) bool {
 	return found
 }
 
+func QNContains(target string) bool {
+	set := map[string]bool{
+		"5000": true,
+		"5001": true,
+		"5002": true,
+		"5003": true,
+		"5004": true,
+		"5005": true,
+		"5006": true,
+		"5007": true,
+		"5008": true,
+		"5009": true,
+	}
+	_, found := set[target]
+	return found
+}
+
+func ECContains(target string) bool {
+	set := map[string]bool{
+		"6000": true,
+		"6001": true,
+		"6002": true,
+		"6003": true,
+		"6004": true,
+		"6005": true,
+		"6006": true,
+		"6007": true,
+		"6008": true,
+		"6009": true,
+	}
+	_, found := set[target]
+	return found
+}
+
 func ISPContains(target string) bool {
 	//写一个函数判断是否包含 yidong|liantong|dianxin,包含返回true，反之false
 	if target == "yidong" || target == "liantong" || target == "dianxin" {
