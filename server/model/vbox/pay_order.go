@@ -32,6 +32,8 @@ type PayOrder struct {
 	CreatedBy   uint       `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy   uint       `gorm:"column:updated_by;comment:更新者"`
 	DeletedBy   uint       `gorm:"column:deleted_by;comment:删除者"`
+
+	Ext interface{} `json:"ext" form:"ext" gorm:"-"` //扩展信息
 }
 
 // TableName 订单 PayOrder自定义表名 vbox_pay_order

@@ -46,7 +46,7 @@ func DefaultCheckOrMark(key string, expire int, limit int) (err error) {
 	if global.GVA_REDIS == nil {
 		return err
 	}
-	if err = SetLimitWithTime(key, limit, time.Duration(expire)*time.Second); err != nil {
+	if _, err = SetLimitWithTime(key, limit, time.Duration(expire)*time.Second); err != nil {
 		global.GVA_LOG.Error("limit", zap.Error(err))
 	}
 	return err
@@ -62,30 +62,30 @@ func DefaultLimit() gin.HandlerFunc {
 }
 
 // SetLimitWithTime 设置访问次数
-func SetLimitWithTime(key string, limit int, expiration time.Duration) error {
+func SetLimitWithTime(key string, limit int, expiration time.Duration) (cnt int, err error) {
 	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
 	if err != nil {
-		return err
+		return cnt, err
 	}
 	if count == 0 {
 		pipe := global.GVA_REDIS.TxPipeline()
 		pipe.Incr(context.Background(), key)
 		pipe.Expire(context.Background(), key, expiration)
 		_, err = pipe.Exec(context.Background())
-		return err
+		return cnt + 1, err
 	} else {
 		// 次数
 		if times, err := global.GVA_REDIS.Get(context.Background(), key).Int(); err != nil {
-			return err
+			return times, err
 		} else {
 			if times >= limit {
 				if t, err := global.GVA_REDIS.PTTL(context.Background(), key).Result(); err != nil {
-					return errors.New("请求太过频繁，请稍后再试")
+					return times, errors.New("请求太过频繁，请稍后再试")
 				} else {
-					return errors.New("请求太过频繁, 请 " + t.String() + " 秒后尝试")
+					return times, errors.New("请求太过频繁, 请 " + t.String() + " 秒后尝试")
 				}
 			} else {
-				return global.GVA_REDIS.Incr(context.Background(), key).Err()
+				return times + 1, global.GVA_REDIS.Incr(context.Background(), key).Err()
 			}
 		}
 	}

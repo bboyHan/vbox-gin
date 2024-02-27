@@ -1,6 +1,7 @@
 package vbox
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -8,6 +9,8 @@ import (
 	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/mq"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"github.com/gin-gonic/gin"
@@ -57,23 +60,81 @@ func (cardAccService *ChannelCardAccService) CreateChannelCardAcc(vca *vbox.Chan
 
 	err = global.GVA_DB.Create(vca).Error
 	//vca传入的所有值 转化成 vcaDB vbox.ChannelCardAcc存放
+	if vca.Status == 1 {
+		go func() {
+			var vcaDB vbox.ChannelCardAcc
+			err = global.GVA_DB.Model(vbox.ChannelCardAcc{}).Where("id =?", vca.ID).First(&vcaDB).Error
 
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+			ch, err := conn.Channel()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+			}
+
+			body := http2.DoGinContextBody(c)
+
+			oc := vboxReq.ChanCardAccAndCtx{
+				Obj: vcaDB,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  c.ClientIP(),
+					Method:    c.Request.Method,
+					UrlPath:   c.Request.URL.Path,
+					UserAgent: c.Request.UserAgent(),
+					UserID:    int(vcaDB.CreatedBy),
+				},
+			}
+			marshal, err := json.Marshal(oc)
+
+			err = ch.Publish(task.ChanCardAccEnableCheckExchange, task.ChanCardAccEnableCheckKey, marshal)
+		}()
+	}
 	return err
 }
 
 // DeleteChannelCardAcc 删除通道账号记录
 func (cardAccService *ChannelCardAccService) DeleteChannelCardAcc(vca vbox.ChannelCardAcc, c *gin.Context) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		//var vcaDB vbox.ChannelCardAcc
-		//if err := tx.Model(&vbox.ChannelCardAcc{}).Where("id = ?", vca.ID).First(&vcaDB).Error; err != nil {
-		//	return err
-		//}
+		var vcaDB vbox.ChannelCardAcc
+		if err := tx.Model(&vbox.ChannelCardAcc{}).Where("id = ?", vca.ID).First(&vcaDB).Error; err != nil {
+			return err
+		}
+
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
+		body := http2.DoGinContextBody(c)
+
+		oc := vboxReq.ChanCardAccAndCtx{
+			Obj: vcaDB,
+			Ctx: vboxReq.Context{
+				Body:      string(body),
+				ClientIP:  c.ClientIP(),
+				Method:    c.Request.Method,
+				UrlPath:   c.Request.URL.Path,
+				UserAgent: c.Request.UserAgent(),
+				UserID:    int(vcaDB.DeletedBy),
+			},
+		}
+		marshal, err := json.Marshal(oc)
+
+		err = ch.Publish(task.ChanCardAccDelCheckExchange, task.ChanCardAccDelCheckKey, marshal)
 
 		if err := tx.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id = ?", vca.ID).Update("sys_status", 2).Error; err != nil {
 			return err
-		}
-		if errD := global.GVA_DB.Where("id = ?", vca.ID).Delete(&vbox.ChannelCardAcc{}).Error; errD != nil {
-			global.GVA_LOG.Error("账号删除过程...处理删除预产,删除预产失败", zap.Error(errD))
 		}
 
 		return nil
@@ -89,44 +150,41 @@ func (cardAccService *ChannelCardAccService) DeleteChannelCardAccByIds(ids reque
 	} else {
 		for _, ID := range ids.Ids {
 			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-				//var vcaDB vbox.ChannelCardAcc
-				//if err := tx.Model(&vbox.ChannelCardAcc{}).Where("id = ?", ID).First(&vcaDB).Error; err != nil {
-				//	return err
-				//}
-				//
-				//conn, err := mq.MQ.ConnPool.GetConnection()
-				//if err != nil {
-				//	global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-				//}
-				//defer mq.MQ.ConnPool.ReturnConnection(conn)
-				//
-				//ch, err := conn.Channel()
-				//if err != nil {
-				//	global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-				//}
-				//
-				//body := http2.DoGinContextBody(c)
-				//
-				//oc := vboxReq.ChanAccAndCtx{
-				//	Obj: vcaDB,
-				//	Ctx: vboxReq.Context{
-				//		Body:      string(body),
-				//		ClientIP:  c.ClientIP(),
-				//		Method:    c.Request.Method,
-				//		UrlPath:   c.Request.URL.Path,
-				//		UserAgent: c.Request.UserAgent(),
-				//		UserID:    int(deletedBy),
-				//	},
-				//}
-				//marshal, err := json.Marshal(oc)
-				//
-				//err = ch.Publish(task.ChanAccDelCheckExchange, task.ChanAccDelCheckKey, marshal)
-
-				if err := tx.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
+				var vcaDB vbox.ChannelCardAcc
+				if err := tx.Model(&vbox.ChannelCardAcc{}).Where("id = ?", ID).First(&vcaDB).Error; err != nil {
 					return err
 				}
-				if errD := global.GVA_DB.Where("id = ?", ID).Delete(&vbox.ChannelCardAcc{}).Error; errD != nil {
-					global.GVA_LOG.Error("账号删除过程...处理删除预产,删除预产失败", zap.Error(errD))
+
+				conn, err := mq.MQ.ConnPool.GetConnection()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+				}
+				defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+				ch, err := conn.Channel()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				}
+
+				body := http2.DoGinContextBody(c)
+
+				oc := vboxReq.ChanCardAccAndCtx{
+					Obj: vcaDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(deletedBy),
+					},
+				}
+				marshal, err := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanCardAccDelCheckExchange, task.ChanCardAccDelCheckKey, marshal)
+
+				if err := tx.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("sys_status", 2).Error; err != nil {
+					return err
 				}
 
 				return nil
@@ -146,6 +204,38 @@ func (cardAccService *ChannelCardAccService) SwitchEnableChannelCardAcc(vca vbox
 		return fmt.Errorf("不存在的账号，请核查")
 	}
 
+	// 如果是开启，则发起一条消息，去查这个账号是否能开启
+
+	//go func() {
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+	ch, err := conn.Channel()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
+
+	body := http2.DoGinContextBody(c)
+	vcaDB.Status = vca.Status
+	oc := vboxReq.ChanCardAccAndCtx{
+		Obj: vcaDB,
+		Ctx: vboxReq.Context{
+			Body:      string(body),
+			ClientIP:  c.ClientIP(),
+			Method:    c.Request.Method,
+			UrlPath:   c.Request.URL.Path,
+			UserAgent: c.Request.UserAgent(),
+			UserID:    int(vcaDB.CreatedBy),
+		},
+	}
+	marshal, err := json.Marshal(oc)
+
+	err = ch.Publish(task.ChanCardAccEnableCheckExchange, task.ChanCardAccEnableCheckKey, marshal)
+	//}()
+
 	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id = ?", vca.ID).Update("status", vca.Status).Update("updated_by", vca.UpdatedBy).Error
 	return err
 }
@@ -154,6 +244,45 @@ func (cardAccService *ChannelCardAccService) SwitchEnableChannelCardAcc(vca vbox
 // Author [bboyhan](https://github.com/bboyhan)
 func (cardAccService *ChannelCardAccService) SwitchEnableChannelCardAccByIds(upd vboxReq.ChannelCardAccUpd, updatedBy uint, c *gin.Context) (err error) {
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+		// 如果是开启，则发起一条消息，去查这个账号是否能开启
+
+		go func() {
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+			var vcaDBList []vbox.ChannelCardAcc
+			err = global.GVA_DB.Model(vbox.ChannelCardAcc{}).Where("id in ?", upd.Ids).Find(&vcaDBList).Error
+
+			for _, vcaDB := range vcaDBList {
+
+				ch, err := conn.Channel()
+				if err != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+					continue
+				}
+
+				body := http2.DoGinContextBody(c)
+				vcaDB.Status = upd.Status
+
+				oc := vboxReq.ChanCardAccAndCtx{
+					Obj: vcaDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(vcaDB.CreatedBy),
+					},
+				}
+				marshal, err := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanCardAccEnableCheckExchange, task.ChanCardAccEnableCheckKey, marshal)
+			}
+		}()
 
 		if err := tx.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id in ?", upd.Ids).Update("status", upd.Status).Update("updated_by", updatedBy).Error; err != nil {
 			return err

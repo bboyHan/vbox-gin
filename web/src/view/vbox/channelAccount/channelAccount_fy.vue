@@ -2892,7 +2892,7 @@ const returnPreStep = (cid) => {
     dialog4000FormVisible.value = false
   } else if (cid >= 5000 && cid <= 5099) {
     dialog5000FormVisible.value = false
-  } else if (cid >= 6000 && cid <= 6099) {
+  } else if (cid >= 6000 && cid <= 65099) {
     dialog6000FormVisible.value = false
   }
 }

@@ -132,6 +132,39 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser) {
 	}
 }
 
+// OpenAccRegister
+// @Tags     SysUser
+// @Summary  用户注册账号
+// @Produce   application/json
+// @Param    data  body      systemReq.Register                                            true  "用户名, 昵称, 密码, 角色ID"
+// @Success  200   {object}  response.Response{data=systemRes.SysUserResponse,msg=string}  "用户注册账号,返回包括用户信息"
+// @Router   /user/openAccRegister [post]
+func (b *BaseApi) OpenAccRegister(c *gin.Context) {
+	var r systemReq.OpenAccRegister
+	err := c.ShouldBindJSON(&r)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	verify := utils.Rules{
+		"password": {utils.NotEmpty()},
+		"username": {utils.NotEmpty()},
+	}
+	err = utils.Verify(r, verify)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	r.CreateBy = utils.GetUserID(c)
+	userReturn, err := userService.OpenAccRegister(r)
+	if err != nil {
+		global.GVA_LOG.Error("注册失败!", zap.Error(err))
+		response.FailWithDetailed(systemRes.SysUserResponse{User: userReturn}, "注册失败", c)
+		return
+	}
+	response.OkWithDetailed(systemRes.SysUserResponse{User: userReturn}, "注册成功", c)
+}
+
 // SelfRegister
 // @Tags     SysUser
 // @Summary  用户注册账号

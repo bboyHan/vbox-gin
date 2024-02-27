@@ -69,6 +69,10 @@ func AccCDCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX == nil", zap.Any("err", errX))
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行查单回调处理
@@ -298,6 +302,16 @@ func AccCDCheckTask() {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
+					} else if global.ECContains(cid) { // e card引导
+						accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+
+						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 					} else if global.J3Contains(cid) { // 剑三引导
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 
@@ -337,6 +351,11 @@ func AccCDCheckTask() {
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
+						} else if global.ECContains(cid) { // e card引导
+							accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
 						} else if global.J3Contains(cid) { // 剑三引导
 							accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
@@ -350,6 +369,7 @@ func AccCDCheckTask() {
 						if global.TxContains(cid) { // 引导
 						} else if global.DnfContains(cid) { // dnf引导
 						} else if global.SdoContains(cid) { // sdo引导
+						} else if global.ECContains(cid) { // e card卡密
 						} else if global.J3Contains(cid) { // 剑三引导
 							// 更新账号为冷却状态
 							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)

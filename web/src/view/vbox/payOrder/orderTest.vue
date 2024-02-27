@@ -43,8 +43,6 @@
           </el-col>
           <el-row :gutter="12">
             <el-col>
-<!--              <img src="@/assets/LK_logo.jpg" alt="" style="width: 80px; height: 80px">-->
-<!--              <img src="@/assets/logo.jpg" alt="" style="width: 80px; height: 80px">-->
             </el-col>
           </el-row>
         </div>

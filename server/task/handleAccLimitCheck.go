@@ -163,12 +163,13 @@ func HandleAccLimitCheck() (err error) {
 								//	把超限的码全部处理掉
 								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
-								// 把该账号的码全部状态置为0，即关停不可用
-								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
-									Update("status", 0).Update("sys_status", 0)
 							}
 						}
 					}
+					// 把该账号的码全部状态置为0，即关停不可用
+					global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+						Update("status", 0).Update("sys_status", 0)
+
 				} else if global.DnfContains(cid) {
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]
@@ -238,11 +239,12 @@ func HandleAccLimitCheck() (err error) {
 							//	把超限的码全部处理掉
 							global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
-							// 把该账号的码全部状态置为0，即关停不可用
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
-								Update("status", 0).Update("sys_status", 0)
 						}
 					}
+					// 把该账号的码全部状态置为0，即关停不可用
+					global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).
+						Update("status", 0).Update("sys_status", 0)
+
 				} else if global.PcContains(cid) {
 					orgTmp := utils2.GetSelfOrg(accDBTmp.CreatedBy)
 					orgID := orgTmp[0]

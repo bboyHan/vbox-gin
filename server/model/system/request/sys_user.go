@@ -4,6 +4,20 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 )
 
+// OpenAccRegister vb开户
+type OpenAccRegister struct {
+	Username        string `json:"username" example:"用户名"`
+	Password        string `json:"password" example:"密码"`
+	NewPassword     string `json:"newPassword" example:"新密码"`
+	ConfirmPassword string `json:"confirmPassword" example:"确认密码"`
+	CodeProdIDS     []uint `json:"codeProdIDS,omitempty"`
+	OrgName         string `json:"orgName" example:"orgName"`
+	Recharge        int    `json:"recharge" example:"int 充值金额"`
+	Enable          int    `json:"enable" example:"int 是否启用"`
+	EnableAuth      int    `json:"enableAuth" example:"int 是否启用防爆验证码"`
+	CreateBy        uint   `json:"createBy" example:"创建者"`
+}
+
 // SelfRegister Vbox注册子账号
 type SelfRegister struct {
 	Username        string `json:"username" example:"用户名"`

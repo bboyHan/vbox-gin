@@ -3,7 +3,44 @@
     <div class="gva-search-box">
       <el-row :gutter="12">
         <el-col :span="24"></el-col>
-        <el-col :span="24"></el-col>
+        <el-col :span="24">
+          <el-col :span="24">
+            <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" :rules="searchRule" @keyup.enter="onSubmit"
+                     label-width="auto" label-position="right">
+              <el-form-item label="查单池账户" prop="acAccount">
+                <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账户"/>
+              </el-form-item>
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="searchInfo.acRemark" placeholder="搜索备注"/>
+              </el-form-item>
+              <el-form-item label="账户ID" prop="acId">
+                <el-input v-model.number="searchInfo.acId" placeholder="搜索账户ID"/>
+              </el-form-item>
+              <el-form-item label="通道ID" prop="cid">
+                <el-input v-model.number="searchInfo.cid" placeholder="搜索通道ID"/>
+              </el-form-item>
+              <el-form-item label="开关状态" prop="status">
+                <el-select v-model="searchInfo.status" placeholder="选择状态">
+                  <el-option label="已开启" value="1"/>
+                  <el-option label="已关闭" value="0"/>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="系统状态" prop="sysStatus">
+                <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态">
+                  <el-option label="已开启" value="1"/>
+                  <el-option label="已关闭" value="0"/>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="归属用户" prop="username">
+                <el-input v-model.number="searchInfo.username" placeholder="搜索归属用户"/>
+              </el-form-item>
+              <el-form-item>
+                <el-button icon="refresh" @click="onReset"></el-button>
+                <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
+              </el-form-item>
+            </el-form>
+          </el-col>
+        </el-col>
       </el-row>
     </div>
     <div class="gva-table-box">
@@ -589,7 +626,7 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async () => {
   const table = await getCardAccList({page: page.value, pageSize: pageSize.value, ...searchInfo.value})
-  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value, type: 3})
+  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 999, ...searchInfo.value, productId: "card", type: 1})
 
   if (table.code === 0) {
     tableData.value = table.data.list

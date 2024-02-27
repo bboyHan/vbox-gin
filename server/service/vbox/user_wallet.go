@@ -40,6 +40,11 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 		return errors.New("不允许给非当前团队成员划转/充值积分")
 	}
 
+	if recharge > 0 {
+	} else {
+		return errors.New("请输入大于0的积分进行划转或充值")
+	}
+
 	// 2.
 	switch userWalletTransfer.Type {
 	// Type: 1 直充 (只允许超管操作)
@@ -48,7 +53,8 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 		// uid 888 (超管)
 		var roleID uint
 		roleID, err = utils.GetRoleID(uid)
-		if roleID != 888 {
+		if roleID == 888 || roleID == 1000 {
+		} else {
 			return errors.New("该账号无直充权限")
 		}
 

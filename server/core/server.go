@@ -49,6 +49,9 @@ func RunWindowsServer() {
 			go task.ChanAccEnableCheckTask()
 			go task.ChanAccDelCheckTask()
 			go task.ChanAccShopUpdCheckTask()
+
+			go task.ChanCardAccEnableCheckTask()
+			go task.ChanCardAccDelCheckTask()
 		}
 		if global.GVA_CONFIG.MQTask.PayCodeExpCheck {
 			go task.PayCodeExpCheck()
@@ -58,6 +61,7 @@ func RunWindowsServer() {
 		}
 		if global.GVA_CONFIG.MQTask.AccCDCheck {
 			go task.AccCDCheckTask()
+			go task.CardAccCDCheckTask()
 		}
 	}
 

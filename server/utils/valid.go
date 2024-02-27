@@ -35,7 +35,8 @@ func ParseUrlContent(content string) (url string, err error) {
 
 	//	2.处理查找第一个
 	// 使用正则表达式匹配 URL
-	re := regexp.MustCompile(`((https?://)[^\s]+)`)
+	//re := regexp.MustCompile(`((https?://)[^\s]+)`)
+	re := regexp.MustCompile(`(\S+://[^\s]+)`)
 	url = re.FindString(content)
 
 	// 输出匹配结果

@@ -52,6 +52,7 @@ type OrderSimpleRes struct {
 	ResourceUrl string    `json:"resource_url" form:"resource_url" url:"resource_url"`
 	ChannelCode string    `json:"channel_code" form:"channel_code" url:"channel_code"`
 	Money       int       `json:"money" form:"money" url:"money"`
+	Cnt         int       `json:"cnt" form:"cnt" url:"cnt"`
 	ExpTime     time.Time `json:"exp_time" form:"exp_time" url:"exp_time"`
 	Ext         string    `json:"ext" form:"ext" url:"ext"`
 	Status      int       `json:"status" form:"status" url:"status"`

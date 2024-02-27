@@ -77,6 +77,12 @@ func (vcpService *ChannelProductService) GetChannelProductSelf(ids []uint, searc
 	if search.Type != 0 {
 		db.Where("type = ?", search.Type)
 	}
+	if search.ProductId != "" {
+		db.Where("product_id like ?", "%"+search.ProductId+"%")
+	}
+	if search.ProductName != "" {
+		db.Where("product_name like ?", "%"+search.ProductName+"%")
+	}
 
 	err = db.Debug().Select("vbox_channel_product.*").
 		Where("id in ?", productIds).Find(&channelProducts).Error

@@ -87,7 +87,11 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidTBUrl(c.Address)
 		case "4001": //sdo tb
 			flag = utils.ValidTBUrl(c.Address)
+		case "6001": //ec jd
+			flag = utils.ValidJDUrl(c.Address)
+
 		}
+
 		if !flag {
 			return fmt.Errorf("传入的地址不合法, %s", c.Address)
 		}

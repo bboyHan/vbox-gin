@@ -95,29 +95,6 @@ func OrderWaitingTask() {
 				}
 				global.GVA_LOG.Info("收到一条需要进行匹配的订单消息", zap.Any("order ID", v.Obj.OrderId), zap.Any("order", v))
 
-				/*msgID := fmt.Sprintf(global.MsgFilterMem, msg.MessageId, v.Obj.OrderId)
-				// 检查消息是否已经被处理过
-				exists, errR := global.GVA_REDIS.SIsMember(context.Background(), global.MsgFilterKey, msgID).Result()
-				if errR != nil {
-					global.GVA_LOG.Error("redis ex", zap.Error(errR))
-				}
-
-				if exists {
-					// 消息已经被处理过，直接返回
-					global.GVA_LOG.Info("消息已经被处理过", zap.Any("msgID", msgID))
-					// 消息已经处理过，不再处理
-					_ = msg.Ack(false)
-					continue
-				}
-				// 将消息ID添加到已处理集合
-				errR = global.GVA_REDIS.SAdd(context.Background(), global.MsgFilterKey, msgID).Err()
-				if errR != nil {
-					global.GVA_LOG.Error("redis ex", zap.Error(errR))
-				}
-				global.GVA_LOG.Info("消息首次被处理", zap.Any("msgID", msgID))*/
-
-				//1. 筛选匹配是哪个产品
-
 				//1.0 核查商户
 				var vpa vbox.PayAccount
 				if strings.Contains(v.Obj.PAccount, "TEST") {
@@ -235,6 +212,45 @@ func OrderWaitingTask() {
 						}
 						v.Ctx.UserID = int(vca.CreatedBy)
 
+						if vca.TotalLimit > 0 {
+							var totalSum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if totalSum+money > vca.TotalLimit {
+								global.GVA_LOG.Error("总限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
+
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+								_ = msg.Ack(true)
+								continue
+							}
+						}
+
+						if vca.DailyLimit > 0 {
+							var dailySum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
+
+							if dailySum+money > vca.DailyLimit {
+								global.GVA_LOG.Error("每日限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
+
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("orderId", v.Obj.OrderId), zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+								_ = msg.Ack(true)
+								continue
+							}
+
+						}
+
 						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
 					} else {
@@ -325,6 +341,85 @@ func OrderWaitingTask() {
 
 						v.Ctx.UserID = int(vca.CreatedBy)
 
+						if vca.TotalLimit > 0 {
+							var totalSum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if totalSum+money > vca.TotalLimit {
+								global.GVA_LOG.Error("总限额不足,清理资源,关号", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
+
+								pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
+								var keys []string
+								keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+								for _, key := range keys {
+									resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  -1,
+									}).Val()
+
+									for _, waitMem := range resWaitTmpList {
+										if strings.Contains(waitMem, vca.AcAccount) {
+											//	把超限的码全部处理掉
+											global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+										}
+									}
+								}
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", vca.ID).
+									Update("status", 0).Update("sys_status", 0)
+								_ = msg.Ack(true)
+								continue
+							}
+						}
+
+						if vca.DailyLimit > 0 {
+							var dailySum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
+
+							if dailySum+money > vca.DailyLimit {
+								global.GVA_LOG.Error("每日限额不足,清理资源,关号", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
+
+								pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
+								var keys []string
+								keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+								for _, key := range keys {
+									resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  -1,
+									}).Val()
+
+									for _, waitMem := range resWaitTmpList {
+										if strings.Contains(waitMem, vca.AcAccount) {
+											//	把超限的码全部处理掉
+											global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+										}
+									}
+								}
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", vca.ID).
+									Update("status", 0).Update("sys_status", 0)
+								_ = msg.Ack(true)
+								continue
+							}
+
+						}
+
 						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
 					} else {
@@ -410,6 +505,233 @@ func OrderWaitingTask() {
 						v.Obj.AcId = vca.AcId
 						v.Obj.AcAccount = vca.AcAccount
 						v.Ctx.UserID = int(vca.CreatedBy)
+
+						if vca.TotalLimit > 0 {
+							var totalSum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if totalSum+money > vca.TotalLimit {
+								global.GVA_LOG.Error("总限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
+
+								pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgID, cid)
+								var keys []string
+								keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+								for _, key := range keys {
+									resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  -1,
+									}).Val()
+
+									for _, waitMem := range resWaitTmpList {
+										if strings.Contains(waitMem, vca.AcAccount) {
+											//	把超限的码全部处理掉
+											global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+										}
+									}
+								}
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", vca.ID).
+									Update("status", 0).Update("sys_status", 0)
+
+								_ = msg.Ack(true)
+								continue
+							}
+						}
+
+						if vca.DailyLimit > 0 {
+							var dailySum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
+
+							if dailySum+money > vca.DailyLimit {
+								global.GVA_LOG.Error("每日限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
+
+								pattern := fmt.Sprintf(global.ChanOrgSdoAccZSetPrefix, orgID, cid)
+								var keys []string
+								keys = global.GVA_REDIS.Keys(context.Background(), pattern).Val() //拿出所有该账号的码，全部处理掉
+
+								for _, key := range keys {
+									resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+										Min:    "0",
+										Max:    "0",
+										Offset: 0,
+										Count:  -1,
+									}).Val()
+
+									for _, waitMem := range resWaitTmpList {
+										if strings.Contains(waitMem, vca.AcAccount) {
+											//	把超限的码全部处理掉
+											global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+										}
+									}
+								}
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", vca.ID).
+									Update("status", 0).Update("sys_status", 0)
+								_ = msg.Ack(true)
+								continue
+							}
+
+						}
+
+						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
+
+					} else {
+						global.GVA_LOG.Error("引导类匹配账号不足, list size zero", zap.Error(err), zap.Any("orgID", orgID), zap.Any("channelCode", cid), zap.Any("money", money))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						record := sysModel.SysOperationRecord{
+							Ip:      v.Ctx.ClientIP,
+							Method:  v.Ctx.Method,
+							Path:    v.Ctx.UrlPath,
+							Agent:   v.Ctx.UserAgent,
+							Status:  500,
+							Latency: time.Since(now),
+							Resp:    fmt.Sprintf(global.ResourceAccNotEnough, cid, money),
+							UserID:  v.Ctx.UserID,
+						}
+						err = operationRecordService.CreateSysOperationRecord(record)
+						continue
+					}
+
+				} else if global.ECContains(cid) {
+
+					accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgID, cid)
+					tmpKey = accKey
+
+					var resList []string
+					resList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+						Min:    "0",
+						Max:    "0",
+						Offset: 0,
+						Count:  -1,
+					}).Result()
+
+					if err != nil {
+						global.GVA_LOG.Error("引导类匹配异常, redis err", zap.Error(err))
+						_ = msg.Ack(true)
+						if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+							global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+						}
+						continue
+					}
+
+					if resList != nil && len(resList) > 0 {
+						//accTmp := resList[0]
+						// 如果结果非空，则随机选择一个元素
+						accTmp := utils.RandomElement(resList)
+						tmpMem = accTmp
+						// 2.1 把账号设置为已用
+						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{
+							Score:  1,
+							Member: accTmp,
+						})
+
+						// 2.2 把可用的账号给出来继续往下执行建单步骤
+						split := strings.Split(accTmp, ",")
+						ID = split[0]
+						accID = split[1]
+						acAccount = split[2]
+
+						// 判断一下当前的账号tm的有没有同时拉单
+						cdTimeEc := 10 * time.Second
+						accJucKey := fmt.Sprintf(global.PayAccKey, accID)
+						jucTTL := global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+						if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+							global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+							if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+								global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+							}
+							_ = msg.Ack(true)
+							continue
+						} else {
+							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, cdTimeEc)
+						}
+
+						var vca vbox.ChannelAccount
+						err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
+						if err != nil {
+							//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
+
+							global.GVA_LOG.Error("匹配账号异常", zap.Error(err))
+							_ = msg.Ack(true)
+							continue
+						}
+						v.Obj.CreatedBy = vca.CreatedBy
+						v.Obj.AcId = vca.AcId
+						v.Obj.AcAccount = vca.AcAccount
+						v.Ctx.UserID = int(vca.CreatedBy)
+
+						if vca.TotalLimit > 0 {
+							var totalSum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if totalSum+money > vca.TotalLimit {
+								global.GVA_LOG.Error("总限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount),
+									zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
+
+								key := fmt.Sprintf(global.ChanOrgECAccZSet, orgID, cid)
+
+								resWaitTmpList := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{
+									Min:    "0",
+									Max:    "0",
+									Offset: 0,
+									Count:  -1,
+								}).Val()
+
+								for _, waitMem := range resWaitTmpList {
+									if strings.Contains(waitMem, vca.AcAccount) {
+										//	把超限的码全部处理掉
+										global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
+
+									}
+								}
+								// 把该账号的码全部状态置为0，即关停不可用
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", vca.ID).
+									Update("status", 0).Update("sys_status", 0)
+
+								_ = msg.Ack(true)
+								continue
+							}
+						}
+
+						if vca.DailyLimit > 0 {
+							var dailySum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
+
+							if dailySum+money > vca.DailyLimit {
+								global.GVA_LOG.Error("每日限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
+
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("orderId", v.Obj.OrderId), zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+								_ = msg.Ack(true)
+								continue
+							}
+
+						}
 
 						global.GVA_LOG.Info("匹配账号", zap.Any("ID", ID), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount))
 
@@ -499,6 +821,45 @@ func OrderWaitingTask() {
 						v.Obj.AcId = vca.AcId
 						v.Obj.AcAccount = vca.AcAccount
 						v.Ctx.UserID = int(vca.CreatedBy)
+
+						/*if vca.TotalLimit > 0 {
+							var totalSum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ?", 1).Scan(&totalSum).Error
+
+							if totalSum+money > vca.TotalLimit {
+								global.GVA_LOG.Error("总限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
+
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+								_ = msg.Ack(true)
+								continue
+							}
+						}
+
+						if vca.DailyLimit > 0 {
+							var dailySum int
+
+							err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
+								Where("ac_id = ?", vca.AcId).
+								Where("channel_code = ?", vca.Cid).
+								Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dailySum).Error
+
+							if dailySum+money > vca.DailyLimit {
+								global.GVA_LOG.Error("每日限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
+
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("orderId", v.Obj.OrderId), zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+								_ = msg.Ack(true)
+								continue
+							}
+
+						}*/
 
 						// 查一下当前余额
 						j3Record, errQy := product.QryJ3Record(vca)
@@ -938,6 +1299,10 @@ func OrderWaitingTask() {
 								// 回滚上面匹配的取用
 								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
 								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
+							} else if global.ECContains(cid) {
+								// 回滚上面匹配的取用
+								global.GVA_REDIS.ZAdd(context.Background(), tmpKey, redis.Z{Score: 0, Member: tmpMem})
+								global.GVA_LOG.Info("回滚匹配的取用", zap.Any("tmpKey", tmpKey), zap.Any("tmpMem", tmpMem))
 							} else if global.PcContains(cid) {
 							}
 
@@ -1091,6 +1456,24 @@ func OrderWaitingTask() {
 					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
 					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
 
+				} else if global.ECContains(cid) {
+					//	2.3 取用的账号进入CD 冷却
+					accWaitYdKey := fmt.Sprintf(global.YdECAccWaiting, accID)
+					accInfoVal := fmt.Sprintf("%s,%s,%s", ID, accID, acAccount)
+
+					cdTimeEc := 10 * time.Second
+
+					// 设置一个冷却时间
+					ttl := global.GVA_REDIS.TTL(context.Background(), accWaitYdKey).Val()
+					if ttl > 0 {
+						global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
+						cdTimeEc = ttl
+					}
+					global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, cdTimeEc)
+
+					waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+					err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), 0)
+
 				} else if global.J3Contains(cid) {
 					//	2.3 取用的账号进入CD 冷却
 					accWaitYdKey := fmt.Sprintf(global.YdJ3AccWaiting, accID)
@@ -1126,6 +1509,9 @@ func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID st
 	// 1-商铺关联
 	var vsList []vbox.ChannelShop
 
+	if chanID == "6001" {
+		orgIDs = []uint{1}
+	}
 	var zs []redis.Z
 	var key string
 	for _, orgID := range orgIDs {
@@ -1302,7 +1688,11 @@ func HandleResourceUrl2chShop(eventID string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
-
+	case "6001": //ec jd
+		payUrl, err = utils.HandleJDUrl(shop.Address)
+		if err != nil {
+			return "", err
+		}
 	default:
 		payUrl = shop.Address
 	}
@@ -1372,12 +1762,16 @@ func HandleEventType(chanID string) (int, error) {
 		return 1, nil
 	} else if chanCode >= 1200 && chanCode <= 1299 {
 		return 1, nil
-	} else if chanCode >= 4000 && chanCode <= 4099 {
-		return 1, nil
 	} else if chanCode >= 2000 && chanCode <= 2099 {
 		return 1, nil
 	} else if chanCode >= 3000 && chanCode <= 3099 {
 		return 2, nil
+	} else if chanCode >= 4000 && chanCode <= 4099 {
+		return 1, nil
+	} else if chanCode >= 5000 && chanCode <= 5099 {
+		return 1, nil
+	} else if chanCode >= 6000 && chanCode <= 6099 {
+		return 1, nil
 	}
 	return 0, fmt.Errorf("不存在的event类型")
 }
@@ -1398,6 +1792,8 @@ func HandleExpTime2Product(chanID string) (time.Duration, error) {
 		key = "3000"
 	} else if global.SdoContains(chanID) {
 		key = "4000"
+	} else if global.ECContains(chanID) {
+		key = "6000"
 	}
 
 	var expTimeStr string

@@ -902,6 +902,11 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		if sndaId == "" {
 			return errors.New("账号信息不完整")
 		}
+	} else if global.ECContains(vca.Cid) {
+		b := http2.IsValidCookie(token)
+		if !b {
+			return errors.New("传入的ck不合法，请核查")
+		}
 	} else if global.J3Contains(vca.Cid) {
 		parsedURL, errX := url.Parse(token)
 		if errX != nil {

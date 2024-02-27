@@ -20,6 +20,7 @@ type ChannelCardAcc struct {
 	Status    int            `json:"status" form:"status" gorm:"column:status;comment:状态开关;size:2;"`                             //状态开关
 	SysStatus int            `json:"sysStatus" form:"sysStatus" gorm:"column:sys_status;comment:系统开关,0-关闭,1-开启,2-删除中;size:2;"`   //系统开关
 	CdStatus  int            `json:"cdStatus" form:"cdStatus" gorm:"default:1;column:cd_status;comment:是否冷却,1-默认,2-冷却中;size:2;"` //冷却状态
+	Desc      string         `json:"desc" form:"desc" gorm:"column:desc;comment:desc;type:text;"`                                //ck
 	Username  string         `json:"username" form:"username" gorm:"-"`                                                          // 用户登录名`
 	CreatedBy uint           `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy uint           `gorm:"column:updated_by;comment:更新者"`

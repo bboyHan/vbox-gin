@@ -53,7 +53,7 @@
             tooltip-effect="dark"
             :data="tableData"
             row-key="ID"
-            border
+            border :table-layout="'fixed'"
         >
           <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
           <el-table-column align="center" label="充值账号" prop="acAccount" width="200">
@@ -120,6 +120,7 @@
               </el-button>
             </template>
           </el-table-column>
+<!--          <el-table-column align="center" label="平台ID" prop="platId" width="260"/>-->
         </el-table>
 
         <!--   详情版   -->
@@ -224,21 +225,28 @@
                  title="查看详情"
                  destroy-on-close>
         <el-scrollbar height="550px">
-          <el-descriptions column="1" border>
-            <el-descriptions-item label="订单ID">{{ formData.orderId }}</el-descriptions-item>
-            <el-descriptions-item label="付方ID">{{ formData.pAccount }}</el-descriptions-item>
-            <el-descriptions-item label="金额">{{ formData.money }}</el-descriptions-item>
-            <el-descriptions-item label="单价积分">{{ formData.unitPrice }}</el-descriptions-item>
-            <el-descriptions-item label="账号ID">{{ formData.acId }}</el-descriptions-item>
-            <el-descriptions-item label="通道编码">{{ formData.channelCode }}</el-descriptions-item>
-            <el-descriptions-item label="平台id">{{ formData.platId }}</el-descriptions-item>
-            <el-descriptions-item label="客户ip">{{ formData.payIp }}</el-descriptions-item>
-            <el-descriptions-item label="区域">{{ formData.payRegion }}</el-descriptions-item>
-            <el-descriptions-item label="客户端设备">{{ formData.payDevice }}</el-descriptions-item>
-            <el-descriptions-item label="订单状态">{{ formatBoolean(formData.orderStatus) }}</el-descriptions-item>
-            <el-descriptions-item label="回调状态">{{ formatBoolean(formData.cbStatus) }}</el-descriptions-item>
-            <el-descriptions-item label="回调时间">{{ formatDate(formData.cbTime) }}</el-descriptions-item>
-            <el-descriptions-item label="过期时间">{{ formatDate(formData.expTime) }}</el-descriptions-item>
+          <el-descriptions :column="6" border>
+            <el-descriptions-item label="订单ID" :span="6">{{ formData.orderId }}</el-descriptions-item>
+            <el-descriptions-item label="平台ID" :span="6">{{ formData.platId }}</el-descriptions-item>
+            <el-descriptions-item label="付方ID" :span="6">{{ formData.pAccount }}</el-descriptions-item>
+            <el-descriptions-item label="账号ID" :span="3">{{ formData.acId }}</el-descriptions-item>
+            <el-descriptions-item label="通道账号" :span="3">{{ formData.acAccount }}</el-descriptions-item>
+            <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
+            <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
+            <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
+            <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
+            <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
+            <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
+            <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
+            <el-descriptions-item label="商铺ID" :span="3">{{ formData.ext.shop.productId }}</el-descriptions-item>
+            <el-descriptions-item label="商铺备注" :span="3">{{ formData.ext.shop.shopRemark }}</el-descriptions-item>
+            <el-descriptions-item label="商铺成率" :span="6"><div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{formData.ext.dv.x1}}
+              成率：{{ calculatePercentage(formData.ext.dv.x2,formData.ext.dv.x1) }}%</div><div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{formData.ext.dv.x3}}
+              成率：{{ calculatePercentage(formData.ext.dv.x4,formData.ext.dv.x3) }}%</div></el-descriptions-item>
+            <el-descriptions-item label="订单状态" :span="3">{{ formatPayed(formData.orderStatus) }}</el-descriptions-item>
+            <el-descriptions-item label="回调状态" :span="3">{{ formatNotify(formData.cbStatus) }}</el-descriptions-item>
+            <el-descriptions-item label="回调时间" :span="3">{{ formatDate(formData.cbTime) }}</el-descriptions-item>
+            <el-descriptions-item label="过期时间" :span="3">{{ formatDate(formData.expTime) }}</el-descriptions-item>
           </el-descriptions>
         </el-scrollbar>
       </el-dialog>
@@ -432,7 +440,7 @@ import {
   formatNotifyColor,
   formatHandNotify,
   formatHandNotifyColor,
-  formatUtcTimestamp
+  formatUtcTimestamp, calculatePercentage, formatPayCodeStatus
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, onMounted} from 'vue'

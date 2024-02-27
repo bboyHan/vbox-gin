@@ -137,18 +137,18 @@ func (orgService *OrganizationService) GetOrgUserListSelf(info organizationReq.O
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
-	db := global.GVA_DB.Model(&organization.OrgUser{}).Joins("SysUser").Preload("SysUser.Authority")
+	db := global.GVA_DB.Model(&organization.OrgUser{}).Joins("SysUser").Preload("SysUser.Authority").Preload("Organization")
 	var orgs []organization.OrgUser
 	// 如果有条件搜索 下方会自动创建搜索语句
 	db = db.Where("organization_id in ?", info.OrgIds)
 	if info.Username != "" {
-		db = db.Where("SysUser.nickname LIKE ?", "%"+info.Username+"%")
+		db = db.Where("SysUser.username LIKE ?", "%"+info.Username+"%")
 	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
-	err = db.Limit(limit).Offset(offset).Order("SysUser.id desc").Find(&orgs).Error
+	err = db.Debug().Limit(limit).Offset(offset).Order("SysUser.id desc").Find(&orgs).Error
 	return orgs, total, err
 }
 

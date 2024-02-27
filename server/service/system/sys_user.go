@@ -8,6 +8,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/model"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/captcha"
+	"github.com/songzhibin97/gkit/tools/rand_string"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -19,6 +20,140 @@ import (
 )
 
 type UserService struct{}
+
+// OpenAccRegister
+// @function: OpenAccRegister
+// @description: 开户，注册子用户（子角色存在才能建立）
+// @param: u model.SysUser
+// @return: userInter system.SysUser, err error
+func (userService *UserService) OpenAccRegister(u systemReq.OpenAccRegister) (userInter system.SysUser, err error) {
+	var user system.SysUser
+	if !errors.Is(global.GVA_DB.Where("username = ?", u.Username).First(&user).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
+		return userInter, errors.New("用户名已注册")
+	}
+
+	if u.NewPassword != u.ConfirmPassword {
+		return userInter, errors.New("两次输入密码不一致")
+	}
+
+	// 只允许建 当前角色的子角色账户(目前只支持 子角色为单一角色，多角色不支持)
+	roleID := uint(1001)
+
+	u.Password = utils.BcryptHash(u.NewPassword)
+
+	authorities := []system.SysAuthority{
+		{
+			AuthorityId: roleID,
+		},
+	}
+
+	create := system.SysUser{
+		UUID:        uuid.Must(uuid.NewV4()),
+		Username:    u.Username,
+		Password:    u.Password,
+		Nickname:    u.Username,
+		Enable:      u.Enable,
+		EnableAuth:  u.EnableAuth,
+		AuthorityId: roleID,
+		Authorities: authorities,
+	}
+
+	create.AuthCaptcha, err = captcha.AuthQrCode(u.Username)
+	if err != nil {
+		return userInter, errors.New("当前用户设置防爆码异常，请联系管理员")
+	}
+
+	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+		TxErr := tx.Create(&create).Error
+		if TxErr != nil {
+			return TxErr
+		}
+
+		if u.OrgName == "" {
+			u.OrgName = create.Username + "团队"
+		}
+
+		var orgId uint
+		if u.OrgName != "" {
+			var org model.Organization
+			if !errors.Is(tx.Where("name = ?", u.OrgName).First(&org).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
+				return errors.New("团队名已注册")
+			}
+
+			orgCreat := model.Organization{
+				Name:     u.OrgName,
+				ParentID: 1,
+			}
+			if err := tx.Create(&orgCreat).Error; err != nil {
+				return err
+			}
+
+			orgId = orgCreat.ID
+		}
+
+		roleID, err = utils.GetRoleID(u.CreateBy)
+		if roleID == 888 || roleID == 1000 {
+		} else {
+			return errors.New("该账号无直充权限")
+		}
+
+		eventId := utils.Prefix(global.WalletEventRechargePrefix, rand_string.RandomInt(8))
+		// 直充
+		rowSelf := &vbox.UserWallet{
+			Uid:       create.ID,
+			Username:  create.Username,
+			Recharge:  u.Recharge,
+			Type:      global.WalletRechargeType,
+			EventId:   eventId,
+			Remark:    fmt.Sprintf(global.WalletEventRecharge, u.Recharge),
+			CreatedBy: create.ID,
+		}
+		if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
+			return err
+		}
+
+		var Users []model.OrgUser
+		var CUsers []model.OrgUser
+		//if !errors.Is(tx.Where("name = ?", u.OrgName).First(&org).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
+
+		err := tx.Find(&Users, "organization_id = ?", orgId).Error
+		if err != nil {
+			return err
+		}
+		var UserIdMap = make(map[uint]bool)
+		for i := range Users {
+			UserIdMap[Users[i].SysUserID] = true
+		}
+
+		if !UserIdMap[create.ID] {
+			CUsers = append(CUsers, model.OrgUser{SysUserID: create.ID, OrganizationID: orgId})
+		}
+		err = tx.Create(&CUsers).Error
+
+		// 产品入队
+		var Products []vbox.OrgProduct
+		var CProducts []vbox.OrgProduct
+		err = tx.Find(&Products, "organization_id = ?", orgId).Error
+		if err != nil {
+			return err
+		}
+		var ProductMap = make(map[uint]bool)
+		for i := range Products {
+			ProductMap[Products[i].ChannelProductID] = true
+		}
+
+		for i := range u.CodeProdIDS {
+			if !ProductMap[u.CodeProdIDS[i]] {
+				CProducts = append(CProducts, vbox.OrgProduct{ChannelProductID: u.CodeProdIDS[i], OrganizationID: orgId})
+			}
+		}
+		err = tx.Create(&CProducts).Error
+
+		// 返回 nil 提交事务
+		return nil
+	})
+	return create, err
+}
 
 // SelfRegister
 // @function: SelfRegister

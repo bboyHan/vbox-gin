@@ -193,6 +193,18 @@ func OrderCallbackTask() {
 					Payload:      notifyBody,
 				}
 
+				if strings.Contains(notifyUrl, "127.0.0.1") {
+					global.GVA_LOG.Info("本地测试，不回调", zap.Any("orderId", orderId))
+					//3. 更新回调成功的状态
+					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
+						Update("cb_status", 1).Update("cb_time", nowTime).Error; errD != nil {
+						global.GVA_LOG.Error("更新订单异常", zap.Error(errD))
+						_ = msg.Reject(false)
+						continue
+					}
+					_ = msg.Ack(true)
+					continue
+				}
 				response, errH := client.Post(notifyUrl, options)
 				if errH != nil {
 					global.GVA_LOG.Error("回调异常", zap.Error(errH))

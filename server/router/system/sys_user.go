@@ -14,6 +14,7 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 	baseApi := v1.ApiGroupApp.SystemApiGroup.BaseApi
 	{
 		userRouter.POST("self_register", baseApi.SelfRegister)        //  Vbox注册账号
+		userRouter.POST("openAccRegister", baseApi.OpenAccRegister)   //  Vbox开户
 		userRouter.POST("resetAuthCaptcha", baseApi.ResetAuthCaptcha) // 重置防爆验证码
 
 		userRouter.POST("admin_register", baseApi.Register)               // 管理员注册账号

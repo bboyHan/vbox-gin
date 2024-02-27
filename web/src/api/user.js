@@ -23,6 +23,18 @@ export const captcha = (data) => {
   })
 }
 
+// @Summary 开户
+// @Produce  application/json
+// @Param data body {username:"string",password:"string"}
+// @Router /user/openAccRegister [post]
+export const openAccRegister = (data) => {
+  return service({
+    url: '/user/openAccRegister',
+    method: 'post',
+    data: data
+  })
+}
+
 // @Summary 子用户注册
 // @Produce  application/json
 // @Param data body {username:"string",password:"string"}

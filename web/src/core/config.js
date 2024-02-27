@@ -3,7 +3,8 @@
  */
 
 const config = {
-  appName: 'VB',
+  // appName: 'VB',
+  appName: '',
   showViteLogo: true
 }
 
