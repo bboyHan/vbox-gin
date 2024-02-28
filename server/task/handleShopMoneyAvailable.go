@@ -14,7 +14,7 @@ func HandleShopMoneyAvailable() (err error) {
 	//自定义 通道账号可用检测
 	var idList []uint
 	// 拿出现在所有付方可用的账户
-	err = global.GVA_DB.Model(&vbox.PayAccount{}).Table("vbox_pay_account").
+	err = global.GVA_DB.Model(&vbox.PayAccount{}).Table("vbox_pay_account").Distinct("uid").
 		Select("uid").Where("status = ?", 1).Find(&idList).Error
 	if err != nil {
 		global.GVA_LOG.Error("查付方库数据异常", zap.Error(err))
@@ -65,31 +65,23 @@ func HandleShopMoneyAvailable() (err error) {
 		for _, cid := range channelCodeList {
 			var moneyList []string
 			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgIdTemp[0], cid)
-			cm, err := global.GVA_REDIS.Exists(context.Background(), moneyKey).Result()
+			global.GVA_REDIS.Del(context.Background(), moneyKey)
+			if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+				Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; err != nil {
+				global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
+				continue
+			}
 
-			if cm == 0 {
-				if err != nil {
-					global.GVA_LOG.Error("redis err", zap.Error(err))
-				}
-				if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
-					Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; err != nil {
-					global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
-					continue
-				}
-
-				if moneyList == nil || len(moneyList) == 0 {
-					continue
-				} else {
-					for _, m := range moneyList {
-						global.GVA_REDIS.SAdd(context.Background(), moneyKey, m)
-					}
-					//jsonStr, _ := json.Marshal(moneyList)
-					//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
-					global.GVA_REDIS.Expire(context.Background(), moneyKey, 1*time.Minute)
-				}
+			if moneyList == nil || len(moneyList) == 0 {
+				continue
 			} else {
-				moneyMem, _ := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Result()
-				moneyList = moneyMem
+				for _, m := range moneyList {
+					global.GVA_REDIS.SAdd(context.Background(), moneyKey, m)
+				}
+				//jsonStr, _ := json.Marshal(moneyList)
+				//rdConn.Set(context.Background(), moneyKey, jsonStr, 10*time.Minute)
+				global.GVA_REDIS.Expire(context.Background(), moneyKey, 1*time.Minute)
+
 			}
 		}
 

@@ -45,7 +45,7 @@
               </el-col>
               <el-col>
                 <p v-if="Number(payData.channel_code) === 1003" style="color: red;margin-right: 20px;margin-left: 20px">
-                  充值时必须<b style="color: blue;">滑动选择【王者荣耀】并粘贴账号</b>付款即可到账！</p>
+                  充值时必须<b style="color: blue;">选择【Q币】并粘贴账号</b>付款即可到账！</p>
                 <p v-else-if="Number(payData.channel_code) === 1006"
                    style="color: red;margin-right: 20px;margin-left: 20px">
                   点击<b style="color: blue;">【一键复制】</b>跳转微信，打开任意<b style="color: blue;">【聊天窗口】</b>粘贴发送复制内容，再根据提示步骤操作支付！</p>
@@ -117,7 +117,7 @@
             <el-col :span="24">
               <div v-if="Number(payData.channel_code) === 1003">
                 <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">②
-                  点击付款,右滑选"王者荣耀"
+                  点击付款
                 </button>
               </div>
               <div v-else>
@@ -767,7 +767,7 @@
                   <div v-else>
                     <div v-if="Number(payData.channel_code) === 1003">
                       <button class="btn-copy yd_p_button" @click="openPay" style="font-size: 16px">
-                        点此支付,右滑选"王者荣耀"
+                        点我支付
                       </button>
                     </div>
                     <div v-else>
@@ -802,7 +802,7 @@
                     <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                   </div>
                   <div v-else>
-                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
                   </div>
                 </el-col>
               </el-row>
@@ -867,7 +867,7 @@
                     <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                   </div>
                   <div v-else>
-                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
                   </div>
                 </el-col>
               </el-row>
@@ -934,7 +934,7 @@
                     <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                   </div>
                   <div v-else>
-                    <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
                   </div>
                 </el-col>
               </el-row>
@@ -996,7 +996,7 @@
                   <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
                 </div>
                 <div v-else>
-                  <button class="btn-copy yd_p_button" @click="openPay">点此支付</button>
+                  <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
                 </div>
               </el-col>
             </el-row>

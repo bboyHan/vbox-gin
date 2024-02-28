@@ -2310,6 +2310,8 @@ const imageQrCode = ref()
 const imageQrSig = ref()
 const imageQrStatusMsg = ref()
 const loginQr = async () => {
+  imageQrCode.value = ''
+  imageQrSig.value = ''
   let res = await loginByQr()
   if (res.code === 0) {
     console.log(res.data.img)

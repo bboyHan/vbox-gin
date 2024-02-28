@@ -470,7 +470,7 @@ func ChanAccEnableCheckTask() {
 
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -486,7 +486,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 						}
 
 					} else if global.ECContains(cid) { //e card
@@ -583,7 +583,7 @@ func ChanAccEnableCheckTask() {
 						}
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -599,7 +599,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 						}
 					} else if global.SdoContains(cid) { //sdo
 
@@ -641,7 +641,7 @@ func ChanAccEnableCheckTask() {
 						}
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -657,7 +657,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 						}
 					} else if global.J3Contains(cid) { //J3
 
@@ -777,7 +777,7 @@ func ChanAccEnableCheckTask() {
 
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -791,7 +791,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 
 						}
 					} else if global.DnfContains(cid) {
@@ -807,7 +807,7 @@ func ChanAccEnableCheckTask() {
 
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -821,7 +821,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 
 						}
 					} else if global.SdoContains(cid) {
@@ -837,7 +837,7 @@ func ChanAccEnableCheckTask() {
 
 						for _, money := range moneyList {
 							moneyTmp := money
-							go func() {
+							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdSdoAccWaiting, acId, moneyTmp)
 								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
@@ -851,7 +851,7 @@ func ChanAccEnableCheckTask() {
 									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(moneyTmp)
 
 						}
 					} else if global.ECContains(cid) {

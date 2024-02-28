@@ -41,88 +41,175 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 	}
 
 	if recharge > 0 {
-	} else {
-		return errors.New("请输入大于0的积分进行划转或充值")
-	}
+		// 2.
+		switch userWalletTransfer.Type {
+		// Type: 1 直充 (只允许超管操作)
+		case global.WalletRechargeType:
 
-	// 2.
-	switch userWalletTransfer.Type {
-	// Type: 1 直充 (只允许超管操作)
-	case global.WalletRechargeType:
+			// uid 888 (超管)
+			var roleID uint
+			roleID, err = utils.GetRoleID(uid)
+			if roleID == 888 || roleID == 1000 {
+			} else {
+				return errors.New("该账号无直充权限")
+			}
 
-		// uid 888 (超管)
-		var roleID uint
-		roleID, err = utils.GetRoleID(uid)
-		if roleID == 888 || roleID == 1000 {
-		} else {
-			return errors.New("该账号无直充权限")
+			eventId := utils.Prefix(global.WalletEventRechargePrefix, rand_string.RandomInt(8))
+			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+				// 直充
+				rowSelf := &vbox.UserWallet{
+					Uid:       toUid,
+					Username:  toUsername,
+					Recharge:  recharge,
+					Type:      global.WalletRechargeType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventRecharge, recharge),
+					CreatedBy: toUid,
+				}
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
+					return err
+				}
+
+				return nil
+			})
+		// Type: 2 划转 -> 入库（1条-本用户扣减，1条-转用户加分）
+		case global.WalletTransferType:
+
+			// 检查当前余额够不够
+			var balance int
+			balance, err = userWalletService.GetUserWalletSelf(uid)
+			if balance <= 0 || balance < recharge {
+				return errors.New("余额不足")
+			}
+
+			eventId := utils.Prefix(global.WalletEventTransferPrefix, rand_string.RandomInt(8))
+
+			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+				// 扣减
+				rowSelf := &vbox.UserWallet{
+					Uid:       uid,
+					Username:  username,
+					Recharge:  -recharge,
+					Type:      global.WalletTransferType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventTransfer, recharge, toUsername),
+					CreatedBy: uid,
+				}
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
+					return err
+				}
+
+				// 划转至新账户
+				rowTo := &vbox.UserWallet{
+					Uid:       toUid,
+					Username:  toUsername,
+					Recharge:  recharge,
+					Type:      global.WalletTransferType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventIncome, recharge, username),
+					CreatedBy: uid,
+				}
+
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowTo).Error; err != nil {
+					return err
+				}
+				return nil
+			})
+		case global.WalletOrderType: // 2- 订单积分扣费
+		default:
+			return errors.New("不支持的充值类型")
 		}
+	} else if recharge < 0 {
+		// 2.
+		switch userWalletTransfer.Type {
+		// Type: 1 直充 (只允许超管操作)
+		case global.WalletRechargeType:
 
-		eventId := utils.Prefix(global.WalletEventRechargePrefix, rand_string.RandomInt(8))
-		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-			// 直充
-			rowSelf := &vbox.UserWallet{
-				Uid:       toUid,
-				Username:  toUsername,
-				Recharge:  recharge,
-				Type:      global.WalletRechargeType,
-				EventId:   eventId,
-				Remark:    fmt.Sprintf(global.WalletEventRecharge, recharge),
-				CreatedBy: toUid,
-			}
-			if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
-				return err
+			// uid 888 (超管)
+			var roleID uint
+			roleID, err = utils.GetRoleID(uid)
+			if roleID == 888 || roleID == 1000 {
+			} else {
+				return errors.New("该账号无直充权限")
 			}
 
-			return nil
-		})
-	// Type: 2 划转 -> 入库（1条-本用户扣减，1条-转用户加分）
-	case global.WalletTransferType:
+			eventId := utils.Prefix(global.WalletEventRechargePrefix, rand_string.RandomInt(8))
+			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+				// 直充
+				rowSelf := &vbox.UserWallet{
+					Uid:       toUid,
+					Username:  toUsername,
+					Recharge:  recharge,
+					Type:      global.WalletRechargeType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventRecharge, recharge),
+					CreatedBy: toUid,
+				}
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
+					return err
+				}
 
-		// 检查当前余额够不够
-		var balance int
-		balance, err = userWalletService.GetUserWalletSelf(uid)
-		if balance <= 0 || balance < recharge {
-			return errors.New("余额不足")
+				return nil
+			})
+		// Type: 2 划转 -> 入库（1条-本用户扣减，1条-转用户加分）
+		case global.WalletTransferType:
+
+			revRecharge := -recharge //正
+
+			// uid 888 (超管)
+			var roleID uint
+			roleID, err = utils.GetRoleID(uid)
+			if roleID == 888 || roleID == 1000 || roleID == 1001 {
+			} else {
+				return errors.New("该账号无扣减权限")
+			}
+
+			// 检查当前余额够不够
+			var balance int
+			balance, err = userWalletService.GetUserWalletSelf(uid)
+			if balance <= 0 || balance < revRecharge {
+				return errors.New("余额不足")
+			}
+
+			eventId := utils.Prefix(global.WalletEventTransferPrefix, rand_string.RandomInt(8))
+
+			err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+
+				// 扣减
+				rowSelf := &vbox.UserWallet{
+					Uid:       uid,
+					Username:  username,
+					Recharge:  -recharge,
+					Type:      global.WalletTransferType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventTransfer, recharge, toUsername),
+					CreatedBy: uid,
+				}
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
+					return err
+				}
+
+				// 划转至新账户
+				rowTo := &vbox.UserWallet{
+					Uid:       toUid,
+					Username:  toUsername,
+					Recharge:  recharge,
+					Type:      global.WalletTransferType,
+					EventId:   eventId,
+					Remark:    fmt.Sprintf(global.WalletEventIncome, recharge, username),
+					CreatedBy: uid,
+				}
+
+				if err := tx.Model(&vbox.UserWallet{}).Create(rowTo).Error; err != nil {
+					return err
+				}
+				return nil
+			})
+		case global.WalletOrderType: // 2- 订单积分扣费
+		default:
+			return errors.New("不支持的充值类型")
 		}
-
-		eventId := utils.Prefix(global.WalletEventTransferPrefix, rand_string.RandomInt(8))
-
-		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-
-			// 扣减
-			rowSelf := &vbox.UserWallet{
-				Uid:       uid,
-				Username:  username,
-				Recharge:  -recharge,
-				Type:      global.WalletTransferType,
-				EventId:   eventId,
-				Remark:    fmt.Sprintf(global.WalletEventTransfer, recharge, toUsername),
-				CreatedBy: uid,
-			}
-			if err := tx.Model(&vbox.UserWallet{}).Create(rowSelf).Error; err != nil {
-				return err
-			}
-
-			// 划转至新账户
-			rowTo := &vbox.UserWallet{
-				Uid:       toUid,
-				Username:  toUsername,
-				Recharge:  recharge,
-				Type:      global.WalletTransferType,
-				EventId:   eventId,
-				Remark:    fmt.Sprintf(global.WalletEventIncome, recharge, username),
-				CreatedBy: uid,
-			}
-
-			if err := tx.Model(&vbox.UserWallet{}).Create(rowTo).Error; err != nil {
-				return err
-			}
-			return nil
-		})
-	case global.WalletOrderType: // 2- 订单积分扣费
-	default:
-		return errors.New("不支持的充值类型")
 	}
 
 	return err

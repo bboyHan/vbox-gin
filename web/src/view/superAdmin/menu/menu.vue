@@ -37,7 +37,7 @@
         <el-table-column
           align="left"
           label="图标"
-          min-width="140"
+          min-width="160"
           prop="authorityName"
         >
           <template #default="scope">

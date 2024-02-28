@@ -125,12 +125,12 @@ func ChanAccDelCheckTask() {
 
 					for _, money := range moneyList {
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
 							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-						}()
+						}(moneyTmp)
 					}
 					/*moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
 					moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
@@ -162,12 +162,12 @@ func ChanAccDelCheckTask() {
 				} else if global.DnfContains(cid) { //dnf引导，
 					for _, money := range moneyList {
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
 							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-						}()
+						}(moneyTmp)
 					}
 				} else if global.SdoContains(cid) { //sdo引导，
 
@@ -199,12 +199,12 @@ func ChanAccDelCheckTask() {
 					}*/
 					for _, money := range moneyList {
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgTmp[0], cid, moneyTmp)
 							waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-						}()
+						}(moneyTmp)
 					}
 
 				} else if global.J3Contains(cid) { //QB引导，

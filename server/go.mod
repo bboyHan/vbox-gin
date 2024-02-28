@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.7+incompatible
 	github.com/aws/aws-sdk-go v1.44.307
+	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/casbin/casbin/v2 v2.71.1
 	github.com/casbin/gorm-adapter/v3 v3.18.0
@@ -42,7 +43,6 @@ require (
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.42
 	github.com/unrolled/secure v1.13.0
 	github.com/valyala/fasthttp v1.50.0
-	github.com/weloe/token-go v0.1.65
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0

@@ -5,10 +5,11 @@
     </div>
     <div>
       <el-row :gutter="12">
-        <el-col :span="8">
+<!--        <el-col :span="8">-->
 
-        </el-col>
-        <el-col :span="16">
+<!--        </el-col>-->
+<!--        <el-col :span="16">-->
+        <el-col :span="24">
           <div class="">
             <div class="toolbar">
               <div class="gva-search-box" style=" margin-left: 10px;margin-right: 10px">

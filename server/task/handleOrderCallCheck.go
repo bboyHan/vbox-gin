@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"go.uber.org/zap"
+	"sync"
 )
 
 func HandleOrderCallCheck() (err error) {
@@ -40,7 +41,7 @@ func HandleOrderCallCheck() (err error) {
 
 	for _, orderDB := range orderDBList {
 		orderDBTmp := orderDB
-		go func() {
+		go func(orderDBTmp vbox.PayOrder) {
 			//查一下订单是否超出账户限制
 			v := request.PayOrderAndCtx{
 				Obj: orderDBTmp,
@@ -69,19 +70,24 @@ func HandleOrderCallCheck() (err error) {
 			err = ch.Publish(task.OrderCallbackExchange, task.OrderCallbackKey, marshal)
 			global.GVA_LOG.Info("【系统补单】发起一条回调消息等待处理", zap.Any("pa", v.Obj.PAccount), zap.Any("order ID", v.Obj.OrderId))
 
-		}()
+		}(orderDBTmp)
 	}
 
 	var orderDBFixList []vbox.PayOrder
 	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
 		Where("order_status != ? and cb_status = ?", 1, 1).Find(&orderDBFixList)
+	var wg sync.WaitGroup
 	for _, orderDB := range orderDBFixList {
-		orderDBTmp := orderDB
-		go func() {
-			global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", orderDBTmp.ID).
+		wg.Add(1)
+		go func(orderDB vbox.PayOrder) {
+			defer wg.Done()
+
+			global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", orderDB.ID).
 				Update("order_status", 1).Update("hand_status", 1)
-			global.GVA_LOG.Info("【系统修复】更新已回调确显示未支付的订单", zap.Any("order ID", orderDBTmp.OrderId))
-		}()
+			global.GVA_LOG.Info("【系统修复】更新已回调确显示未支付的订单", zap.Any("order ID", orderDB.OrderId))
+		}(orderDB)
 	}
+
+	wg.Wait() // 等待所有goroutine完成
 	return err
 }

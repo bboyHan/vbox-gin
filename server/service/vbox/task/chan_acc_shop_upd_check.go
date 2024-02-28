@@ -216,7 +216,7 @@ func ChanAccShopUpdCheckTask() {
 						for _, acDB := range acDBList {
 							accDBTmp := acDB
 							moneyTmp := money
-							go func() {
+							go func(accDBTmp vbox.ChannelAccount, moneyTmp string) {
 								ID := accDBTmp.ID
 								acId := accDBTmp.AcId
 								acAccount := accDBTmp.AcAccount
@@ -234,7 +234,7 @@ func ChanAccShopUpdCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(accDBTmp, moneyTmp)
 						}
 					}
 
@@ -243,7 +243,7 @@ func ChanAccShopUpdCheckTask() {
 						//for _, acDB := range acDBList {
 						//	accDBTmp := acDB
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, moneyTmp)
 							//先删掉所有的，重新加一次
 							global.GVA_REDIS.Del(context.Background(), accKey)
@@ -262,7 +262,7 @@ func ChanAccShopUpdCheckTask() {
 							//	global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							//	global.GVA_LOG.Info("商铺关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 							//}
-						}()
+						}(moneyTmp)
 						//}
 					}
 				} else if global.DnfContains(cid) { // dnf
@@ -275,7 +275,7 @@ func ChanAccShopUpdCheckTask() {
 						for _, acDB := range acDBList {
 							accDBTmp := acDB
 							moneyTmp := money
-							go func() {
+							go func(accDBTmp vbox.ChannelAccount, moneyTmp string) {
 								ID := accDBTmp.ID
 								acId := accDBTmp.AcId
 								acAccount := accDBTmp.AcAccount
@@ -293,7 +293,7 @@ func ChanAccShopUpdCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(accDBTmp, moneyTmp)
 						}
 					}
 
@@ -302,7 +302,7 @@ func ChanAccShopUpdCheckTask() {
 						//for _, acDB := range acDBList {
 						//	accDBTmp := acDB
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgID, cid, moneyTmp)
 							//先删掉所有的，重新加一次
 							global.GVA_REDIS.Del(context.Background(), accKey)
@@ -321,7 +321,7 @@ func ChanAccShopUpdCheckTask() {
 							//	global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							//	global.GVA_LOG.Info("商铺关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 							//}
-						}()
+						}(moneyTmp)
 						//}
 					}
 				} else if global.SdoContains(cid) { // sdo
@@ -406,7 +406,7 @@ func ChanAccShopUpdCheckTask() {
 						for _, acDB := range acDBList {
 							accDBTmp := acDB
 							moneyTmp := money
-							go func() {
+							go func(accDBTmp vbox.ChannelAccount, moneyTmp string) {
 								ID := accDBTmp.ID
 								acId := accDBTmp.AcId
 								acAccount := accDBTmp.AcAccount
@@ -425,7 +425,7 @@ func ChanAccShopUpdCheckTask() {
 									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 									global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 								}
-							}()
+							}(accDBTmp, moneyTmp)
 						}
 					}
 
@@ -434,7 +434,7 @@ func ChanAccShopUpdCheckTask() {
 						//for _, acDB := range acDBList {
 						//	accDBTmp := acDB
 						moneyTmp := money
-						go func() {
+						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgID, cid, moneyTmp)
 							//先删掉所有的，重新加一次
 							global.GVA_REDIS.Del(context.Background(), accKey)
@@ -453,7 +453,7 @@ func ChanAccShopUpdCheckTask() {
 							//	global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							//	global.GVA_LOG.Info("商铺关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 							//}
-						}()
+						}(moneyTmp)
 						//}
 					}
 				} else if global.J3Contains(cid) { // J3
@@ -465,7 +465,7 @@ func ChanAccShopUpdCheckTask() {
 
 					for _, acDB := range acDBList {
 						acDBTmp := acDB
-						go func() {
+						go func(acDBTmp vbox.ChannelAccount) {
 							ID := acDBTmp.ID
 							acId := acDBTmp.AcId
 							acAccount := acDBTmp.AcAccount
@@ -483,7 +483,7 @@ func ChanAccShopUpdCheckTask() {
 								global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 								global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 							}
-						}()
+						}(acDBTmp)
 
 					}
 
