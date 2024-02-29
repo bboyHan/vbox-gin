@@ -9,8 +9,8 @@
         <div class="z-[999] pt-12 pb-10 md:w-96 w-full  rounded-lg flex flex-col justify-between box-border">
           <div>
             <div class="flex items-center justify-center">
-<!--              <img class="w-24" src="@/assets/LK_logo.jpg" alt>-->
-              <img class="w-24" src="@/assets/logo.jpg" alt>
+              <img class="w-24" src="@/assets/LK_logo.jpg" alt>
+<!--              <img class="w-24" src="@/assets/logo.jpg" alt>-->
             </div>
             <div class="mb-9">
             </div>

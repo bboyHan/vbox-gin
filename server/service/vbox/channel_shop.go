@@ -90,6 +90,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		case "6001": //ec jd
 			flag = utils.ValidJDUrl(c.Address)
 
+		case "7001": //qn tb
+			flag = utils.ValidTBUrl(c.Address)
 		}
 
 		if !flag {
@@ -106,6 +108,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				ProductId:  pid,
 				ShopRemark: channelShop.ShopRemark,
 				Address:    c.Address,
+				Device:     c.Device,
+				MarkId:     c.MarkId,
 				Money:      c.Money,
 				Status:     c.Status,
 				CreatedBy:  channelShop.CreatedBy,
@@ -123,6 +127,8 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				ProductId:  pid,
 				ShopRemark: channelShop.ShopRemark,
 				Address:    c.Address,
+				Device:     c.Device,
+				MarkId:     c.MarkId,
 				Money:      c.Money,
 				Status:     c.Status,
 				UpdatedBy:  channelShop.CreatedBy,
@@ -403,6 +409,8 @@ func (channelShopService *ChannelShopService) GetChannelShopByProductId(productI
 			ID:      record.ID,
 			Address: record.Address,
 			Money:   record.Money,
+			Device:  record.Device,
+			MarkId:  record.MarkId,
 			Status:  record.Status,
 		})
 	}
@@ -454,6 +462,8 @@ func (channelShopService *ChannelShopService) GetChannelShopInfoList(info vboxRe
 				ID:      record.ID,
 				Address: record.Address,
 				Money:   record.Money,
+				Device:  record.Device,
+				MarkId:  record.MarkId,
 				Status:  record.Status,
 			})
 		}

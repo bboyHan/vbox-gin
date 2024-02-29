@@ -3,8 +3,8 @@ package main
 //import (
 //	"encoding/json"
 //	"fmt"
-//	"github.com/axgle/mahonia"
 //	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+//	"golang.org/x/text/encoding/simplifiedchinese"
 //)
 //
 //func main() {
@@ -125,22 +125,22 @@ package main
 //	}
 //
 //	resp, _ := client.Post(content, options)
-//	s := string(resp.Body)
+//
+//	readerBody, err := simplifiedchinese.GB18030.NewDecoder().Bytes(resp.Body)
+//
+//	s := string(readerBody)
 //	fmt.Println(s)
 //	fmt.Println(resp.StatusCode)
 //	fmt.Println(resp.Headers)
 //
 //	var m map[string]interface{}
-//	err := json.Unmarshal(resp.Body, &m)
+//	err = json.Unmarshal(readerBody, &m)
 //	if i, ok := m["mainOrders"]; ok {
 //		for _, ele := range i.([]interface{}) {
 //			if e, ok := ele.(map[string]interface{}); ok {
 //				if statusInfo, ok := e["statusInfo"]; ok {
 //					if text, ok := statusInfo.(map[string]interface{})["text"]; ok {
-//						fmt.Println(text.(string))
-//						encoder := mahonia.NewDecoder("gbk")
-//						decodedStr := encoder.ConvertString(text.(string))
-//						fmt.Println(decodedStr)
+//						fmt.Printf(text.(string))
 //					} else {
 //						fmt.Println("Error:", err)
 //					}
@@ -148,6 +148,52 @@ package main
 //					fmt.Println("Error:", err)
 //				}
 //
+//				if payInfo, ok := e["payInfo"]; ok {
+//					if actualFee, ok := payInfo.(map[string]interface{})["actualFee"]; ok {
+//						fmt.Printf(", %v", actualFee.(string))
+//					} else {
+//						fmt.Println("Error:", err)
+//					}
+//				} else {
+//					fmt.Println("Error:", err)
+//				}
+//
+//				if orderInfo, ok := e["orderInfo"]; ok {
+//					if createTime, ok := orderInfo.(map[string]interface{})["createTime"]; ok {
+//						fmt.Printf(", %v", createTime.(string))
+//					} else {
+//						fmt.Println("Error:", err)
+//					}
+//				} else {
+//					fmt.Println("Error:", err)
+//				}
+//
+//				if buyer, ok := e["buyer"]; ok {
+//					if decodeNick, ok := buyer.(map[string]interface{})["decodeNick"]; ok {
+//						fmt.Printf(", %v", decodeNick.(string))
+//					} else {
+//						fmt.Println("Error:", err)
+//					}
+//				} else {
+//					fmt.Println("Error:", err)
+//				}
+//
+//				if subOrders, ok := e["subOrders"]; ok {
+//					for _, subOrder := range subOrders.([]interface{}) {
+//						if itemInfo, ok := subOrder.(map[string]interface{})["itemInfo"]; ok {
+//							if title, ok := itemInfo.(map[string]interface{})["title"]; ok {
+//								fmt.Printf(", %v \n", title.(string))
+//							} else {
+//								fmt.Println("Error:", err)
+//							}
+//						} else {
+//							fmt.Println("Error:", err)
+//						}
+//					}
+//
+//				} else {
+//					fmt.Println("Error:", err)
+//				}
 //			} else {
 //				fmt.Println("Error:", err)
 //			}

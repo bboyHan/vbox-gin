@@ -24,8 +24,8 @@
               </CenterCard>
         </el-col>
 
-        <el-col :span="6" :xs="24">
-          <!-- 通道账号 -->
+<!--        <el-col :span="6" :xs="24">
+          &lt;!&ndash; 通道账号 &ndash;&gt;
             <el-col :span="24" :xs="24">
               <div class="flex justify-between items-center flex-wrap" style="margin-left: 10px"><h2>通道账号</h2></div>
             </el-col>
@@ -34,7 +34,7 @@
                   <span class="gvaIcon-prompt" style="color: #999"></span>
                 </template>
                 <template #body>
-                  <!--              <ReclaimMileage :channel-code="searchInfo.cid" :acc-on="accOn" :acc-off="accOff" :acc-total="accTotal"/>-->
+                  &lt;!&ndash;              <ReclaimMileage :channel-code="searchInfo.cid" :acc-on="accOn" :acc-off="accOff" :acc-total="accTotal"/>&ndash;&gt;
                   <div class="acc-container">
                     <div class="indicator">
                   <span>
@@ -53,7 +53,7 @@
                   </div>
                 </template>
               </CenterCard>
-        </el-col>
+        </el-col>-->
       </el-row>
     </div>
 
@@ -412,8 +412,6 @@ const searchRule = reactive({})
 //通道产品
 const channelCodeOptions = ref([])
 const vcpTableData = ref([])
-//账号明细
-const accTableData = ref([])
 
 const channelCodeProps = {
   expandTrigger: 'hover',
@@ -456,25 +454,6 @@ const accOn = ref()
 const accOff = ref()
 const accTotal = ref()
 
-const setAccSwitchView = async () => {
-  const re = accTableData.value
-  let countOn = 0
-  let countOff = 0
-  for (let i = 0; i < re.length; i++) {
-    if (re[i].status === 1) {
-      countOn++;
-    } else {
-      countOff++;
-    }
-  }
-
-  accOn.value = countOn
-  accOff.value = countOff
-  accTotal.value = re.length
-  console.log(re.length)
-
-}
-
 const nearOneHourRate = ref({})
 const nearYesterdayRate = ref({})
 const nearTodayRate = ref({})
@@ -486,17 +465,9 @@ const sumData = ref({})
 
 const getTableData = async () => {
   await nextTick()
-  const vcpTable = await getChannelProductSelf({page: 1, pageSize: 9999, ...searchInfo.value})
-  const table = await getChannelAccountList({page: 1, pageSize: 9999, ...searchInfo.value})
-  if (table.code === 0) {
-    accTableData.value = table.data.list
-    await setAccSwitchView()
-  }
-  if (vcpTable.code === 0) {
-    vcpTableData.value = vcpTable.data.list
-    setOptions()
-  }
-  let nearOneHourRateResult = await getPayOrderRate({
+  const vcpTablePromise = getChannelProductSelf({page: 1, pageSize: 9999, ...searchInfo.value})
+
+  let nearOneHourRateResultPromise = getPayOrderRate({
     page: 1,
     pageSize: 9999,
     channelCode: searchInfo.value.cid,
@@ -504,7 +475,7 @@ const getTableData = async () => {
     endTime: Math.floor(endTimeOneHour.getTime() / 1000),
     keyword: 'cas'
   })
-  let nearYesterdayRateResult = await getPayOrderRate({
+  let nearYesterdayRateResultPromise = getPayOrderRate({
     page: 1,
     pageSize: 9999,
     channelCode: searchInfo.value.cid,
@@ -512,7 +483,7 @@ const getTableData = async () => {
     endTime: Math.floor(endTimeYesterday.getTime() / 1000),
     keyword: 'cas'
   })
-  let nearTodayRateResult = await getPayOrderRate({
+  let nearTodayRateResultPromise = getPayOrderRate({
     page: 1,
     pageSize: 9999,
     channelCode: searchInfo.value.cid,
@@ -520,7 +491,7 @@ const getTableData = async () => {
     endTime: Math.floor(endTimeToday.getTime() / 1000),
     keyword: 'cas'
   })
-  let nearOneHourCntResult = await getPayOrderOverview({
+  let nearOneHourCntResultPromise = getPayOrderOverview({
     page: 1,
     pageSize: 9999,
     orderStatus: 1,
@@ -531,7 +502,7 @@ const getTableData = async () => {
     keyword: 'cnt',
     format: 'HH:mm'
   })
-  let nearOneHourSumResult = await getPayOrderOverview({
+  let nearOneHourSumResultPromise = getPayOrderOverview({
     page: 1,
     pageSize: 9999,
     orderStatus: 1,
@@ -542,7 +513,7 @@ const getTableData = async () => {
     keyword: 'sum',
     format: 'HH:mm'
   })
-  let nearTodayCntResult = await getPayOrderOverview({
+  let nearTodayCntResultPromise = getPayOrderOverview({
     page: 1,
     pageSize: 9999,
     orderStatus: 1,
@@ -553,7 +524,7 @@ const getTableData = async () => {
     keyword: 'cnt',
     format: 'HH:mm'
   })
-  let nearTodaySumResult = await getPayOrderOverview({
+  let nearTodaySumResultPromise = getPayOrderOverview({
     page: 1,
     pageSize: 9999,
     orderStatus: 1,
@@ -565,24 +536,50 @@ const getTableData = async () => {
     format: 'HH:mm'
   })
 
-  let sumDataOverview = await getOrderDataOverview({
+  let sumDataOverviewPromise = getOrderDataOverview({
     channelCode: searchInfo.value.cid,
     pAccount: searchInfo.value.pAccount,
   })
 
-  sumData.value = sumDataOverview.data.list[0]
-  nearOneHourCnt.value = nearOneHourCntResult
-  nearOneHourSum.value = nearOneHourSumResult
-  nearTodayCnt.value = nearTodayCntResult
-  nearTodaySum.value = nearTodaySumResult
-  nearOneHourRate.value = (nearOneHourRateResult.data)[0]
-  nearTodayRate.value = (nearTodayRateResult.data)[0];
-  nearYesterdayRate.value = (nearYesterdayRateResult.data)[0];
-  console.log(nearOneHourRate.value)
-  console.log(nearTodayRate.value)
+  let balanceValPromise = getUserWalletSelf({...searchInfo.value})
 
-  let balanceVal = await getUserWalletSelf({...searchInfo.value})
-  userBalance.value = balanceVal.data.balance
+  const [vcpTable, nearOneHourRateResult, nearYesterdayRateResult, nearTodayRateResult, nearOneHourCntResult,
+    nearOneHourSumResult, nearTodayCntResult, nearTodaySumResult, sumDataOverview, balanceVal
+  ] = await Promise.all([vcpTablePromise, nearOneHourRateResultPromise, nearYesterdayRateResultPromise,
+    nearTodayRateResultPromise, nearOneHourCntResultPromise, nearOneHourSumResultPromise, nearTodayCntResultPromise,
+    nearTodaySumResultPromise, sumDataOverviewPromise, balanceValPromise])
+
+  if (vcpTable.code === 0) {
+    vcpTableData.value = vcpTable.data.list
+    setOptions()
+  }
+  if (sumDataOverview.code === 0) {
+    sumData.value = sumDataOverview.data.list[0];
+  }
+  if (nearOneHourCntResult.code === 0) {
+    nearOneHourCnt.value = nearOneHourCntResult;
+  }
+  if (nearOneHourSumResult.code === 0) {
+    nearOneHourSum.value = nearOneHourSumResult;
+  }
+  if (nearTodayCntResult.code === 0) {
+    nearTodayCnt.value = nearTodayCntResult;
+  }
+  if (nearTodaySumResult.code === 0) {
+    nearTodaySum.value = nearTodaySumResult;
+  }
+  if (nearOneHourRateResult.code === 0) {
+    nearOneHourRate.value = (nearOneHourRateResult.data)[0]
+  }
+  if (nearTodayRateResult.code === 0) {
+    nearTodayRate.value = (nearTodayRateResult.data)[0];
+  }
+  if (nearYesterdayRateResult.code === 0) {
+    nearYesterdayRate.value = (nearYesterdayRateResult.data)[0];
+  }
+  if (balanceVal.code === 0) {
+    userBalance.value = balanceVal.data.balance
+  }
 
 }
 

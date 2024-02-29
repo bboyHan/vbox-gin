@@ -1,38 +1,45 @@
 package main
 
 //import (
-//	"bytes"
 //	"fmt"
+//	"golang.org/x/text/encoding/simplifiedchinese"
 //	"io/ioutil"
 //	"net/http"
+//	"strings"
 //)
 //
 //func main() {
-//	url := "https://havanalogin.taobao.com/newlogin/qrcode/query.do?appName=taobao&fromSite=0&_bx-v=2.5.3"
 //
-//	payload := []byte(`t=1708418758050&ck=0b7ae6215b9e5447a1dc75ec6de73154&ua=140%23l8zdCDaAzzWPLQo23z7b4pN8s9xT9nk%2FJidB0WQzKRrMchHkpAgLHu8AkGRBlCX0wJMDXGWqlbzxYjAlznLEzFruKOIblpTzzPzbVXlqlbnzazKxDrd367FsSEF1C4s%2B9EOsuBEPCt%2B3NOYzjIs0UgSps09vxK137YXpnOhPwGM30xKzrwds1HFpbIF9%2FBb47KsJ3NoFP4z4c9UDdoQEVq1JzFScWsu40FuJn1CFWBQ4NWcD%2FCxgE%2B2NGfAmjhTKVXSNcKgZKJOKVh8oWeGFE1TN351FoGuK5ZfNHGmZBauK3oaoKZ%2BBvtrO0yLjHpb25GbOmsJCjNs2najdzrGcSLTO7VTlCNX21VfO%2FtBC2%2BXL11Dr2Q%2BHagr9DnLhCm1Lk7b9t%2FownOsLibjrmrA%2BvBQ9xDQyBu2L0q27d3EfP6umNOacq8%2BOYkr7nwL9u%2FfmMYs7r2BfBBzmVikcwveU6ab7cfiD%2F7fH0XXafHnAogOHImUnFyA%2FQGOanoXTfOfFNRdzcqn4RKuF1jKt3yRceR6zcEbOrhQFT2dxuaVKWg1Z9h8ucAe%2BILxxJiFd%2FsFZUVpxPG7%2BPJFWrRaqRVXyOOioaVzVHOzW62tDwYh3%2FqrP2PPKV66ezzrb2XehrJF4OSvZrI7ZbIEpfUAmKYPQL%2BmYPrdmhf6Kn1%2FXKy8bnWl8wFHWk5v74CUta5rY9dBm53fiuzs%2F%2Bh0fTaSCX60oHqMBZatv%2BPh6yu6%2BTRQ2BRmvMfSrQSe7rL9MB04sePNHe%2BvAJnyTf38LVJEwxGlQpo%2FzZX7VSlkDEMwQ7cwT8bvw11DHqiXq20vg1sV2aYUQMw4IuRTshmJ1duTtczksCBNuR6amOXOFc2Hxs7q%2BzXkBfw9L5YZ4%2BeBmCKFt%2BI5fZpPxs7A5ApC%2B5F6q09S%2BjCl0O%2F6pDjPvp9l%2BMHfQsqvpCOvYpw3cjx2P2SbtKJDP19ZEe7WnNKLYw5K4YuEndp43DPqW4eWlBPSDr6%2B%2FgMRANCFb%2B9jvHbg6NsBJzJNb4uom9z7MzetfSk%2BSCz0hcROjPdu5GvXW7sR2ZS2KPL6R%2Fskko0Mz%2F7uoCMJYVApYHy3a%2BViFILD2ZdZL63L8sO4QInmMvq52RLJLwCsKPHrAjywV4ukLz35q8isDMqYVYDjDmH7FQc7sMKmmTIQGbcP52andI47%2Bh1GBDyPiK%2BiMBkvvkE9E%2FmOcUYFJnmpfvQUWZAHRv8M5aY3Cq8XyIRcMU%2FLS9ixkl1h8HA%2FkDjkschp%2B4WvPYrIje4ILUE22Us3m3REjt7vlmz4GXeSr3ivDXJ0wwE%2F5uW%2BwzCwNT4KzHZD47lXpyybrR1GM8jNbqEGhZPA9YqBbzh3RNUgrb4CIE722JPkdhkOtjQnW1sK4GowsRQvSgZmzzgZnelHTFqggaV6upLr89l2BHqJhEBjhvBlRMOzB%2BJ0GewkkQFIewLNZYn8M2kprBoH45k0XOzNbfq7x%2FicrLZWEXEI7mXdjTPnP%2F7db3rAaiVJMK%2FRKZidiP1igC0HNz%2BI4hATOeDXnWRW%2F%2BFYk7U%2BrVNF%2B6EXOYpIgIlS22%2FRGxqHKVPY%2BLilLIQ5N%2B%2B0DUYYoYGNeb0puYPHWtUdAamPXRRsMX%2F0r%2BO0ewFO%2FSVXvb6fyP8uys4s0p2A1doNPad23BVMFhspMYKnE1tLsAnkn2uU3uT8fOTQPKEYPbQZst2J7w4p9Qn8xRxC2vxwv5AY%2B3Z7adhNy0URtr4nyhOXPCkO0n3vJtzrJPiXHkyQOZW7O19dmITU0wl%2FZ%2Bnx50JGDt6f9KOAy2f1oFOB2Gjph%2BQVtGYIz6luhP%2FeK439IOOZCCre%2Fg0Hr&appName=taobao&appEntrance=qianniu_pc_web&_csrf_token=wn3ZGxzKh5H6ZDqVA84EI3&umidToken=f5be3b0bacfe452df84e0afab9154875bdeaa148&hsiz=1e1b37f173675bfa03da18dc9413fb9f&bizParams=renderRefer%3Dhttps%253A%252F%252Floginmyseller.taobao.com%252F&mainPage=false&isMobile=false&lang=zh_CN&returnUrl=https%3A%2F%2Fqn.taobao.com%2Fhome.htm%2Ftrade-platform%2Ftp%2Fdetail%3FbizOrderId%3D3668803670628269143&fromSite=0&umidTag=SERVER&navlanguage=zh-CN&navUserAgent=Mozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F120.0.0.0%20Safari%2F537.36&navPlatform=Win32&isIframe=true&banThirdPartyCookie=false&documentReferer=https%3A%2F%2Floginmyseller.taobao.com%2F&defaultView=qrcode&deviceId=ItihHOiEHRACAW%2FPeyWsKO3o&pageTraceId=2108b42817084186217772890e1195&bx-ua=227!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&bx-umidtoken=G7CC443D9D070C16567C476D946E614A2FAFD9A3853218E7C3A`)
-//
-//	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-//	if err != nil {
-//		fmt.Println("Error creating request:", err)
-//		return
-//	}
-//
-//	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-//	req.Header.Set("EagleEye-SessionID", "C7lF9sm7uqR4gUcjt6yg70yg133g")
-//	req.Header.Set("Accept", "application/json, text/plain, */*")
-//	req.Header.Set("bx-v", "2.5.3")
-//	req.Header.Set("EagleEye-pAppName", "gf3el0xc6g@256d85bbd150cf1")
-//	req.Header.Set("EagleEye-TraceID", "e38534e61708418940931115350cf1")
+//	url := "https://trade.taobao.com/trade/itemlist/asyncSold.htm?event_submit_do_query=1&_input_charset=utf8&prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&queryMore=false&close=0&pageNum=1&isQnNew=true&isHideNick=true&pageSize=30"
+//	method := "POST"
 //
 //	client := &http.Client{}
-//	resp, err := client.Do(req)
+//	req, err := http.NewRequest(method, url, nil)
+//
 //	if err != nil {
-//		fmt.Println("Error making request:", err)
+//		fmt.Println(err)
 //		return
 //	}
-//	defer resp.Body.Close()
+//	req.Header.Add("Cookie", "Cookie: DI_T_=CvCyYhs4fx1SHMLxwCHxDHh5AoWsb; unb=291897500; lgc=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; cancelledSubSites=empty; dnk=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; tracknick=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; _l_g_=Ug%3D%3D; sg=%E6%B3%AE00; cookie1=BYe81wL1aEcXISEX05eGKFLHATjgHSMwpdZLh%2Bonxys%3D; lid=%E5%AE%9D%E5%AE%9D%E6%B3%AE%E6%B3%AE; cna=FGlaHnsb10QCAXU+tSXEiMHd; thw=cn; cookie2=10623e205f58c7e968229f67304d1d02; tbcp=e=UoM%2BHFG%2BH40YFva9%2BW9MM%2Bo%3D&f=UUjZeloosIiw2%2BCvtr5iVE1G0QM%3D; xlly_s=1; cookie17=UUGjOpdJllU9; _nk_=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; uc1=existShop=true&cookie21=U%2BGCWk%2F7owY2UcgNjKoRpw%3D%3D&cookie15=VT5L2FSpMGV7TQ%3D%3D&cookie14=UoYenMybgOipZw%3D%3D&pas=0&cookie16=W5iHLLyFPlMGbLDwA%2BdvAGZqLg%3D%3D; sn=; uc3=nk2=0uNrG6CNYqo%3D&vt3=F8dD3er%2F0loI8jNL%2Fno%3D&lg2=VFC%2FuZ9ayeYq2g%3D%3D&id2=UUGjOpdJllU9; csg=1fe052a3; t=a4b6b35c23815dd0ed51c362682a4ba9; skt=2e755f87f775e356; existShop=MTcwOTEyMDgzNg%3D%3D; uc4=nk4=0%400FJ7kRcJ2hk1GuZTgLlt5gCbyA%3D%3D&id4=0%40U2OU9SmOE7zVKGEpEatYkPdWeiI%3D; publishItemObj=; _cc_=Vq8l%2BKCLiw%3D%3D; _tb_token_=e3333e9164eee; sgcookie=P100y%2FFjvfaJ%2FFNhpfPE1vitYYowDBTiaTDBy77VTLYDlikqsdMRVGsQ0u%2FZwzdZOIp4ZwfMa702n1HY3k1iZkJfrWNuLsbvSbPBvs19V%2B%2FTj89Bn3ihwJsDkpklVDcXAk%2BT; lc=V3ic9Tykb4JHIbVnVQ%3D%3D; mtop_partitioned_detect=1; _m_h5_tk=967854cac29d1dba60bf9474c0bd6e25_1709128037680; _m_h5_tk_enc=f23e6c71538f5a41a7597826731973e6; tfstk=eXvHRev66B5CKfyXXeBIBPtmvVhORy65mUeRyTQr_N71v_KPyTYkrUbda26pEFYB56dp4LIyEN-V2DgSAdxy5U2Jw9CJEFxX4wydpUIuAdY0eJ3IO3yleTuxkxHvAMB5UqUt7umpAoMFa-kxHHtUvMovbxnBkpd1x7D-3a49EDXGoo2JpJ9T7K_2Yw-pvdSQkZ-F58yP-Mfh9H7gU8J142Vag9c0FGoJQ7N5TGsGkDH9aYdTsUYrjcVvV6S1cZnij7iNTGsMwcmgGGCFfMVA.; isg=BLm5V_y9-HcaNqTvMIujGDVF0CWTxq14kI6uPdvuN-BfYtn0Ixb7SFY04GaUWkWw; DI_T_=CvCyYhs4fx1SHMLxwCHxDHh5AoWsb; 3PcFlag=1709118191551; _samesite_flag_=true; _tb_token_=361d8db3b935e; cookie2=10623e205f58c7e968229f67304d1d02; t=c2b992be677a4265cbe3861511edfdcf; uc1=cookie21=Vq8l%2BKCLiv0NZbsVmuOI%2Bw%3D%3D&cookie16=WqG3DMC9UpAPBHGz5QBErFxlCA%3D%3D&cookie14=UoYenM23TMAiFw%3D%3D&existShop=true&pas=0")
+//	req.Header.Add("Referer", " https://qn.taobao.com/")
 //
-//	body, _ := ioutil.ReadAll(resp.Body)
-//	fmt.Println(string(body))
+//	res, err := client.Do(req)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	defer res.Body.Close()
+//
+//	reader := simplifiedchinese.GB18030.NewDecoder().Reader(res.Body)
+//	body, err := ioutil.ReadAll(reader)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	a := string(body)
+//
+//	fmt.Println(a)
+//	if strings.Contains(a, "发货") {
+//		fmt.Println("xxxxx")
+//	}
 //}

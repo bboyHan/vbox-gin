@@ -65,7 +65,7 @@ export const useRouterStore = defineStore('router', () => {
       name: 'layout',
       component: 'view/layout/index.vue',
       meta: {
-        title: '底层layout'
+        title: 'layout'
       },
       children: []
     }]

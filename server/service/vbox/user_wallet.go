@@ -165,9 +165,9 @@ func (userWalletService *UserWalletService) TransferUserWallet(userWalletTransfe
 				return errors.New("该账号无扣减权限")
 			}
 
-			// 检查当前余额够不够
+			// 检查对方余额够不够
 			var balance int
-			balance, err = userWalletService.GetUserWalletSelf(uid)
+			balance, err = userWalletService.GetUserWalletSelf(toUid)
 			if balance <= 0 || balance < revRecharge {
 				return errors.New("余额不足")
 			}

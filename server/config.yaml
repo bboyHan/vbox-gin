@@ -124,12 +124,13 @@ mysql:
     db-name: vbox_system
     username: vbox_admin
     password: Vbox123qwe
-    port: "10995"
-    path: 62.234.218.227
+#    port: "10995"
+#    path: 62.234.218.227
 
 #    path: vbqqww.rwlb.rds.aliyuncs.com
 #    path: rm-2zeinkw5enkmx219xao.mysql.rds.aliyuncs.com
-#    port: "3306"
+    port: "3306"
+    path: mysql.letmeplays.com
 #    path: 47.104.64.121
     engine: ""
     log-mode: error
@@ -191,8 +192,8 @@ redis:
 #    addr: 60.204.145.173:10818
 #    addr: 62.234.218.227:6379
 #    addr: 18.166.178.178:6379
-    addr: 127.0.0.1:6379
-    password: ""
+    addr: redis.letmeplays.com:6379
+    password: "Vbox123qwe"
 #    addr: localhost:6379
 #    password: ""
     db: 0

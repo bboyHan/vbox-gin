@@ -34,6 +34,8 @@ type ChannelShop struct {
 type ChannelShopSub struct {
 	ID      uint   `json:"id" form:"id"`
 	Address string `json:"address" form:"address"` //店地址
+	MarkId  string `json:"markId" form:"markId"`   //标识
+	Device  string `json:"device" form:"device"`   //设备
 	Money   int    `json:"money" form:"money"`     //金额
 	Status  int    `json:"status" form:"status"`   //开关
 }
@@ -45,7 +47,7 @@ func (c ChannelShopList) Len() int {
 }
 
 func (c ChannelShopList) Less(i, j int) bool {
-	return c[i].ProductId < c[j].ProductId
+	return c[i].ProductId > c[j].ProductId
 }
 
 func (c ChannelShopList) Swap(i, j int) {

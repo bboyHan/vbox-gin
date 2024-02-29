@@ -28,67 +28,106 @@
       <div>
         <div>
           <div>
-            <el-row :gutter="12">
-              <div class="card_list_wrap">
-                <div v-for="item in tableData">
-                  <div class="card_wrap sm_card hot">
-                    <div class="card_header" :style="backgroundImageStyle">
-                      <div class="card_header_tag new_customers">
-                        <span>通道ID: {{ item.cid }}</span>
-                      </div>
-                      <div class="card_header_title"><span>{{ item.shopRemark }}</span></div>
-                      <div class="card_header_description">
-                        <div>商铺ID：{{ item.productId }}</div>
-                      </div>
-                    </div>
-                    <div class="card_content">
-                      <div class="label">
-                        <span class="label_item">商铺数量： {{ lengthFunc(item.list) }}</span>
-                      </div>
-                    </div>
-                    <div class="card_footer">
-                      <div class="label">
-                        <span class="label_item">已开启： {{ statusOnCountFunc(item.list) }}</span>
-                        <span class="label_item_err">未开启： {{ statusOffCountFunc(item.list) }}</span>
-                      </div>
-                      <div class="list_wrap">
-                        <div class="percent">
-                          <div class="font-num en3">102%</div>
-                          <div class="percent_des">
-                            <span>成率</span>
-                            <span class="org_percent">10/100</span>
-                          </div>
-                        </div>
-                        <div class="buy btn_wrap">
-                          <el-popconfirm @confirm="switchEnableAll(item, 0)" width="220"
-                                         confirm-button-text="Yes" cancel-button-text="No, Thanks"
-                                         :icon="InfoFilled" icon-color="#626AEF"
-                                         title="确定要一键关闭所有商品？">
-                            <template #reference>
-                              <button class="card button-base red" type="button">一键关闭</button>
-                            </template>
-                          </el-popconfirm>
-                          <el-popconfirm @confirm="switchEnableAll(item, 1)" width="220"
-                                         confirm-button-text="Yes" cancel-button-text="No, Thanks"
-                                         :icon="InfoFilled" icon-color="#626AEF"
-                                         title="确定要一键启用所有商品？">
-                            <template #reference>
-                              <button class="card button-base yellow" type="button">一键开启</button>
-                            </template>
-                          </el-popconfirm>
-                        </div>
-                        <div class="buy btn_wrap">
-                          <button class="card button-base yellow" type="button" @click="updShopNameDialog(item)">
-                            店名修改
-                          </button>
-                          <button class="card button-base yellow" type="button" @click="updDialog(item)">地址管理</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </el-row>
+              <el-row :gutter="12">
+                <el-col v-for="item in tableData" :span="12" :xs="24">
+                  <el-card shadow="hover">
+                    <template #header>
+                      <el-button type="info" style="font-size: 24px">{{ item.shopRemark }}</el-button>
+                      <el-descriptions  :column="6" border>
+                        <template #extra>
+                          <el-button link>商铺ID：{{ item.productId }}</el-button>
+                        </template>
+                        <el-descriptions-item :span="3">
+                          <template #label>
+                            <div>店名</div>
+                          </template>
+                          {{ item.shopRemark }}
+                        </el-descriptions-item>
+                        <el-descriptions-item :span="3">
+                          <template #label>
+                            <div>通道编码</div>
+                          </template>
+                          {{ item.cid }}
+                        </el-descriptions-item>
+                        <el-descriptions-item :span="6">
+                          <template #label>
+                            <div>商品数</div>
+                          </template>
+                          <el-tag type="" effect="dark"> {{ lengthFunc(item.list) }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item :span="3">
+                          <template #label>
+                            <div>已开启</div>
+                          </template>
+                          <el-tag type="success" effect="dark"> {{ statusOnCountFunc(item.list) }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item :span="3">
+                          <template #label>
+                            <div>未开启</div>
+                          </template>
+                          <el-tag type="danger" effect="dark"> {{ statusOffCountFunc(item.list) }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item :span="6" align="center">
+                          <template #label>
+                            <div>启用占比</div>
+                          </template>
+                          <el-row>
+                            <el-col :span="12">
+                              <el-progress type="dashboard" :percentage="calPercentage(item.list)">
+                                <template #default="{ percentage }">
+                                  <span class="percentage-value">{{ percentage }}%</span>
+                                  <span class="percentage-label">Running</span>
+                                </template>
+                              </el-progress>
+                            </el-col>
+                            <el-col :span="12">
+                              <el-row>
+                                <el-col :span="12">
+                                  <el-popconfirm @confirm="switchEnableAll(item, 1)" width="220"
+                                                 confirm-button-text="Yes" cancel-button-text="No, Thanks"
+                                                 :icon="InfoFilled" icon-color="#626AEF"
+                                                 title="确定要一键启用所有商品？">
+                                    <template #reference>
+                                      <el-button type="success"
+                                                 style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键开启
+                                      </el-button>
+                                    </template>
+                                  </el-popconfirm>
+                                </el-col>
+                                <el-col :span="12">
+                                  <el-popconfirm @confirm="switchEnableAll(item, 0)" width="220"
+                                                 confirm-button-text="Yes" cancel-button-text="No, Thanks"
+                                                 :icon="InfoFilled" icon-color="#626AEF"
+                                                 title="确定要一键启用所有商品？">
+                                    <template #reference>
+                                      <el-button type="danger"
+                                                 style="margin-top: 10px; margin-bottom: 5px; width: 110px">一键关闭
+                                      </el-button>
+                                    </template>
+                                  </el-popconfirm>
+                                </el-col>
+                                <el-col :span="12">
+                                  <el-button type="primary" icon="edit" @click="updShopNameDialog(item)" round
+                                             style="margin-top: 10px; margin-bottom: 5px; width: 110px">店名修改
+                                  </el-button>
+                                </el-col>
+                                <el-col :span="12">
+                                  <el-button round color="#626aef" icon="edit" @click="updDialog(item)"
+                                             style="margin-top: 10px; margin-bottom: 5px; width: 110px">地址管理
+                                  </el-button>
+                                </el-col>
+                              </el-row>
+                            </el-col>
+                          </el-row>
+                        </el-descriptions-item>
+                      </el-descriptions>
+                    </template>
+                    <el-row :gutter="12">
+                      <el-button round color="#626aef" icon="search" @click="">统计概览</el-button>
+                    </el-row>
+                  </el-card>
+                </el-col>
+              </el-row>
           </div>
 
         </div>
@@ -96,12 +135,11 @@
     </div>
 
     <!--  创建商铺  -->
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle"
-               destroy-on-close width="80%" draggable overflow>
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close width="60%">
       <el-scrollbar height="500px">
-        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="120px">
           <el-row>
-            <el-col :span="8">
+            <el-col :span="20">
               <el-form-item label="通道ID" prop="cid">
                 <el-cascader
                     v-model="formData.cid"
@@ -112,7 +150,7 @@
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="16">
+            <el-col :span="20">
               <el-form-item label="店名" prop="shopRemark">
                 <el-input v-model="formData.shopRemark" :clearable="true" placeholder="请输入店铺备注"/>
               </el-form-item>
@@ -141,22 +179,6 @@
                     <span v-else>{{ scope.row.money }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="设备" prop="device" width="120px">
-                  <template #default="scope">
-                    <el-select v-if="activeIndex === scope.$index" v-model="scope.row.device">
-                      <el-option label="默认" value="default"/>
-                      <el-option label="安卓" value="Android"/>
-                      <el-option label="苹果" value="iOS"/>
-                    </el-select>
-                    <span v-else>{{ scope.row.device }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="标识" prop="markId" width="120px">
-                  <template #default="scope">
-                    <el-input v-if="activeIndex === scope.$index" v-model="scope.row.markId"></el-input>
-                    <span v-else>{{ scope.row.markId }}</span>
-                  </template>
-                </el-table-column>
                 <el-table-column label="开关" prop="status" width="100px">
                   <template #default="scope">
                     <el-switch v-if="activeIndex === scope.$index" v-model="scope.row.status" :active-value="1"
@@ -176,9 +198,7 @@
                   <template #default="scope">
                     <div v-if="activeIndex === scope.$index">
                       <el-button type="primary" @click="handleSave"><Select style="width:1em; height:1em;"/></el-button>
-                      <el-button type="primary" @click="handleDelete(scope.$index)">
-                        <Delete style="width:1em; height:1em;"/>
-                      </el-button>
+                      <el-button type="primary" @click="handleDelete(scope.$index)"><Delete style="width:1em; height:1em;"/></el-button>
                     </div>
                     <div v-else>
                       <el-button type="success" @click="handleEdit(scope.$index)">
@@ -210,8 +230,7 @@
     </el-dialog>
 
     <!--  修改店名备注  -->
-    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle"
-               destroy-on-close
+    <el-dialog v-model="dialogUpdShopRemarkFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close
                width="20%">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
@@ -246,9 +265,8 @@
     </el-dialog>
 
     <!--  修改商铺  -->
-    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle"
-               destroy-on-close draggable overflow
-               width="80%">
+    <el-dialog v-model="dialogUpdFormVisible" :before-close="closeDialog" :draggable="true" :title="typeTitle" destroy-on-close
+               width="60%">
       <el-scrollbar height="500px">
         <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
           <el-row>
@@ -286,34 +304,18 @@
               <el-table :data="formData.list" style="width: 100%">
                 <el-table-column label="地址" prop="address" style="width: 100%">
                   <template #default="scope">
-                    <el-input :rows="2" type="textarea" v-if="editUpdFieldVisible(scope.row, scope.$index)"
+                    <el-input :rows="2" type="textarea" v-if="activeUpdIndex === scope.$index"
                               v-model="scope.row.address"></el-input>
-                    <el-input :rows="2" type="textarea" v-model="scope.row.address" readonly v-else></el-input>
+                    <el-input :rows="2" type="textarea" disabled v-model="scope.row.address" readonly v-else></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column label="金额（元）" prop="money" width="120px">
                   <template #default="scope">
-                    <el-input type="number" v-if="editUpdFieldVisible(scope.row, scope.$index)"
-                              v-model.number="scope.row.money"
+                    <el-input type="number" v-if="!editUpdMoneyVisible(scope.row, scope.$index)" v-model.number="scope.row.money"
+                              :step="10" disabled></el-input>
+                    <el-input type="number" v-else v-model.number="scope.row.money"
                               :step="10"></el-input>
-                    <el-input type="number" v-else v-model.number="scope.row.money" readonly></el-input>
-                    <!--                    <span v-else>{{ scope.row.money }}</span>-->
-                  </template>
-                </el-table-column>
-                <el-table-column label="设备" prop="device" width="120px">
-                  <template #default="scope">
-                    <el-select v-if="editUpdFieldVisible(scope.row, scope.$index)" v-model="scope.row.device">
-                      <el-option label="默认" value="default"/>
-                      <el-option label="安卓" value="Android"/>
-                      <el-option label="苹果" value="iOS"/>
-                    </el-select>
-                    <el-input v-model="scope.row.device" readonly v-else></el-input>
-                  </template>
-                </el-table-column>
-                <el-table-column label="标识" prop="markId" width="120px">
-                  <template #default="scope">
-                    <el-input v-if="editUpdFieldVisible(scope.row, scope.$index)" v-model="scope.row.markId"></el-input>
-                    <el-input v-else v-model="scope.row.markId" readonly></el-input>
+<!--                    <span v-else>{{ scope.row.money }}</span>-->
                   </template>
                 </el-table-column>
                 <el-table-column label="开关" prop="status" width="100px">
@@ -328,7 +330,7 @@
                                @change="()=>{switchEnable(scope.row)}"></el-switch>
                   </template>
                 </el-table-column>
-                <el-table-column align="right" width="100">
+                <el-table-column align="right" width="200">
                   <template #header>
                     <el-popconfirm @confirm="handleAdd2Upd" width="320" confirm-button-text="Yes"
                                    cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
@@ -342,13 +344,12 @@
                   </template>
                   <template #default="scope">
                     <div v-if="activeUpdIndex === scope.$index">
-                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/>
-                      </el-button>
+                      <el-button type="primary" @click="handleSave2Upd()"><Select style="width:1em; height:1em;"/></el-button>
                     </div>
                     <div v-else>
-<!--                      <el-button v-if="editUpdFieldVisible(scope.row, scope.$index)" type="success" @click="handleEdit2Upd(scope.$index)">
+                      <el-button type="success" @click="handleEdit2Upd(scope.$index)">
                         <Edit style="width:1em; height:1em;"/>
-                      </el-button>-->
+                      </el-button>
                       <el-popconfirm @confirm="handleDelete2Upd(scope.$index)" width="320" confirm-button-text="Yes"
                                      cancel-button-text="No, Thanks" :icon="InfoFilled" icon-color="#626AEF"
                                      title="注意：如果只剩一条记录，删除商品时将连同店铺一起删除。确定要删除该商品吗？">
@@ -368,8 +369,7 @@
       </el-scrollbar>
     </el-dialog>
 
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow"
-               title="查看详情"
+    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow" title="查看详情"
                destroy-on-close>
       <el-scrollbar height="550px">
         <el-descriptions column="1" border>
@@ -397,55 +397,7 @@
         </el-descriptions>
       </el-scrollbar>
     </el-dialog>
-
-    <!--  dialog -->
-<!--    <div class="form-dialog" v-show="dialogPFormVisible">
-      <div class="form-wrapper">
-        <div class="form-item">
-          <label for="uid">uid:</label>
-          <input type="text" v-model="formData.uid" id="uid">
-        </div>
-        <div class="form-item">
-          <label for="cid">cid:</label>
-          <input type="text" v-model="formData.cid" id="cid">
-        </div>
-        <div class="form-item">
-          <label for="productId">productId:</label>
-          <input type="text" v-model="formData.productId" id="productId">
-        </div>
-        <div class="form-item">
-          <label for="shopRemark">shopRemark:</label>
-          <input type="text" v-model="formData.shopRemark" id="shopRemark">
-        </div>
-        <div class="form-item">
-          <label>list:</label>
-          <button @click="addPFormRow">新增一行</button>
-          <button @click="deletePFormSelected">删除选中行</button>
-          <div class="table-wrapper">
-            <div class="table-scroll">
-              <div class="table">
-                <div v-for="(item, index) in formData.list" :key="index" class="table-row" :class="{ 'selected': selectedPFormRows.includes(index) }">
-                  <input type="checkbox" v-model="selectedPFormRows" :value="index">
-                  <input type="text" v-model="item.address">
-                  <input type="number" v-model="item.money">
-                  <input type="number" v-model="item.status">
-                  <input type="checkbox" v-model="item.enable">
-                  <button @click="deletePFormRow(index)">删除</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button @click="dialogPFormVisible = false">取消</button>
-          <button @click="handlePFormSubmit">确定</button>
-        </div>
-      </div>
-    </div>-->
-
   </div>
-
-
 </template>
 
 <script setup>
@@ -468,13 +420,10 @@ import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
 import {CircleCheck, CircleClose, Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';
 import {setUserInfo} from "@/api/user";
-import bgImage from "@/assets/od_info_bg.png";
-import shopBgImage from '@/assets/shop_bg.png'
 
 defineOptions({
   name: 'ChannelShop'
 })
-const backgroundImageStyle = `background-image: url(${shopBgImage});background-size: 100% 100%;background-repeat: no-repeat;`;
 
 // -------------- 子表编辑(创建) ------------------------
 let activeIndex = ref(-1);
@@ -508,7 +457,7 @@ let activeUpdIndex = ref(-1);
 // 新增行
 const handleAdd2Upd = function () {
   for (let ele of formData.value.list) {
-    if (ele.address === '') {
+    if (ele.address === ''){
       ElMessage({
         type: 'error',
         message: '请先正确填写上一条记录中的地址'
@@ -533,13 +482,13 @@ const handleAdd2Upd = function () {
 };
 
 
-const editUpdFieldVisible = (row, index) => {
+const editUpdMoneyVisible = (row, index) => {
   console.log(row)
   if (row.id) {
-    // formData.value.list[index].enable = false
+    formData.value.list[index].enable = false
     return false
   } else {
-    // formData.value.list[index].enable = true
+    formData.value.list[index].enable = true
     return true
   }
   // let flag = activeUpdIndex.value === index
@@ -573,7 +522,7 @@ const handleSave2Upd = () => {
       message: '请至少添加一个商铺地址'
     })
     return
-  } else {
+  }else {
     for (let i = 0; i < create.list.length; i++) {
       let addr = create.list[i].address
       let money = create.list[i].money
@@ -753,8 +702,6 @@ const formData = ref({
   list: [
     {
       address: '',
-      device: '',
-      markId: '',
       money: 0,
       status: 0,
       enable: true,
@@ -928,7 +875,6 @@ const closeDetailShow = () => {
 const openDialog = () => {
   type.value = 'create'
   typeTitle.value = '创建商铺'
-  // dialogPFormVisible.value = true
   dialogFormVisible.value = true
 }
 
@@ -979,7 +925,7 @@ const enterDialog = async () => {
             message: '请至少添加一个商铺地址'
           })
           return
-        } else {
+        }else {
           for (let i = 0; i < formData.value.list.length; i++) {
             let addr = formData.value.list[i].address
             let money = formData.value.list[i].money
@@ -1009,7 +955,7 @@ const enterDialog = async () => {
             message: '请至少添加一个商铺地址'
           })
           return
-        } else {
+        }else {
           for (let i = 0; i < formData.value.list.length; i++) {
             let addr = formData.value.list[i].address
             let money = formData.value.list[i].money
@@ -1054,354 +1000,15 @@ const enterDialog = async () => {
     }
   })
 }
-
-//
-const addPFormRow = () => {
-  formData.value.list.push({
-    address: '',
-    money: 0,
-    status: 0,
-    enable: true,
-  });
-};
-const dialogPFormVisible = ref(false);
-const handlePFormSubmit = () => {
-  // 提交表单逻辑，可以在这里处理表单数据
-  console.log(formData.value);
-  dialogPFormVisible.value = false;
-};
-const selectedPFormRows = ref([]);
-
-const deletePFormRow = (index) => {
-  formData.value.list.splice(index, 1);
-};
-
-const deletePFormSelected = () => {
-  const sortedSelection = selectedPFormRows.value.sort((a, b) => b - a);
-  sortedSelection.forEach(index => {
-    formData.value.list.splice(index, 1);
-  });
-};
 </script>
 
 <style>
-.card_list_wrap {
-  display: flex;
-  gap: 32px 24px;
-  flex-flow: wrap;
-}
-
-.card_wrap.sm_card {
-  min-width: 252px;
-  width: 252px;
-  position: relative;
-}
-
-.card_warp.hot::before {
-  background: #FFD4C8;
-}
-
-.card_warp::before {
-  background: #fe5f47;
-}
-
-.card_warp::before {
-  content: '';
-  position: absolute;
-  left: 24px;
-  width: 60px;
-  height: 4px;
-  background: #3860f4;
-  box-shadow: 0 16px 16px 0 rgba(55, 69, 103, 2%), 0 8px 8px 0 rgba(235, 240, 252, 2%);
-  border-radius: 0 0 2px 2px;
-  z-index: 1;
-}
-
-.card_wrap {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  position: relative;
-  min-width: 344px;
-  box-sizing: border-box;
-  background-color: #fff;
-  box-shadow: 0px 16px 16px 0px rgb(55 69 103 / 2%), 0px 8px 8px 0px rgb(235 240 252 / 2%);
-  border: 1px solid #e1e6f0;
-}
-
-.card_warp.hot .card_header .card_header_title {
-  color: #fff;
-}
-
-.card_warp.hot .card_header .card_header_description {
-  color: #fff;
-}
-
-.card_header {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding-top: 32px;
-  padding-bottom: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-}
-
-.card_header_tag.new_customers {
-  color: #ffffff;
-  background-image: linear-gradient(130deg, rgb(255, 62, 31) 40%, rgb(255, 50, 170) 100%);
-}
-
-.card_header_tag.new_customers::before {
-  background: #ffffff;
-}
-
-.card_header_tag.new_customers::after {
-  background: rgb(255, 62, 31);
-}
-
-.card_header_tag::after {
-  background: rgba(255, 235, 214, 1);
-}
-
-.card_header_tag::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 12px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: #3860f4;
-  z-index: 10;
-}
-
-.card_header_tag::after {
-  content: " ";
-  height: 28px;
-  width: 28px;
-  background: linear-gradient(90deg, #f9faff 0%, #ebf0fc 100%);
-  position: absolute;
-  top: 0px;
-  left: -9px;
-  border-radius: 4px;
-  transform: rotate(-41deg) skew(16deg, 9deg) translateZ(-1px);
-  z-index: 0;
-}
-
-.card_header_tag {
-  background: rgba(255, 235, 214, 1);
-  color: #724040;
-}
-
-.card_header_tag {
-  position: absolute;
-  top: 12px;
-  right: 0;
-  padding: 2px 10px;
-  border-radius: 4px 0 0 4px;
-  font-size: 12px;
-  line-height: 24px;
-  font-weight: bold;
-  background: linear-gradient(90deg, #f9faff 0%, #ebf0fc 100%);
-  color: #3860f4;
-  transform-style: preserve-3d;
-}
-
-.card_header_title {
-  margin-top: 8px;
-  padding-left: 24px;
-  padding-right: 24px;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 36px;
-  color: #ffffff;
-}
-
-.card_header_description {
-  padding-left: 24px;
-  padding-right: 24px;
-  font-size: 14px;
-  line-height: 28px;
-  color: #ffffff;
-}
-
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 20px;
   color: #6B7687;
-}
-
-.card_content {
-  padding: 16px 24px;
-}
-
-.card_footer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, 0);
-  width: calc(100% - 48px);
-  height: 1px;
-  background-color: #ebf0fc;
-}
-
-.card_footer {
-  position: relative;
-  padding: 16px 0 0 0;
-}
-
-.card_footer .label {
-  display: flex;
-  padding: 0 24px;
-}
-
-.card_footer .label .label_item {
-  background-color: rgba(252, 241, 235, 1);
-  color: rgba(254, 95, 71, 1);
-}
-
-.card_footer .label .label_item {
-  margin-right: 8px;
-  min-width: max-content;
-  padding: 0 8px;
-  height: 24px;
-  line-height: 24px;
-  font-size: 12px;
-  font-weight: bold;
-  color: #3860f4;
-  background: #ebf0fc;
-  border-radius: 2px;
-}
-
-.card_footer .label .label_item_blue {
-  margin-right: 8px;
-  min-width: max-content;
-  padding: 0 8px;
-  height: 24px;
-  line-height: 24px;
-  font-size: 12px;
-  font-weight: bold;
-  color: #3848f4;
-  background: #ebf0fc;
-  border-radius: 2px;
-}
-
-.card_footer .label .label_item_err {
-  margin-right: 8px;
-  min-width: max-content;
-  padding: 0 8px;
-  height: 24px;
-  line-height: 24px;
-  font-size: 12px;
-  font-weight: bold;
-  color: #f43838;
-  background: #ebf0fc;
-  border-radius: 2px;
-}
-
-.sm_card .card_footer .list_wrap {
-  flex-direction: column;
-  padding: 0;
-}
-
-.card_footer .list_wrap {
-  margin-top: 24px;
-  padding: 0 24px 36px 24px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.sm_card .card_footer .list_wrap .percent {
-  padding: 0 24px;
-}
-
-.card_footer .list_wrap .percent {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  min-width: 100px;
-}
-
-.sm_card .card_footer .list_wrap .percent .font-num {
-  font-size: 48px;
-}
-
-.card_footer .list_wrap .percent .font-num {
-  font-size: 50px;
-  color: #f66a14;
-}
-
-.card_footer .list_wrap .percent .percent_des {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  line-height: 16px;
-  color: #374567;
-}
-
-.card_footer .list_wrap .percent .percent_des > span:last-child {
-  color: #7a8ba6;
-}
-
-.card_footer .org_percent {
-  margin-top: 4px;
-  line-height: 12px;
-}
-
-.sm_card .card_footer .list_wrap .btn_wrap {
-  margin-top: 12px;
-}
-
-.card_footer .list_wrap .btn_wrap {
-  display: flex;
-  gap: 8px;
-  flex: 1 1 auto;
-  justify-content: flex-end;
-}
-
-.card_footer .buy .button-base.yellow {
-  color: #ffffff;
-  border: none;
-  height: 34px;
-  line-height: 34px;
-}
-
-.card_footer .buy .button-base.red {
-  color: #ffffff;
-  border: none;
-  height: 34px;
-  line-height: 34px;
-}
-
-.card_footer .buy .button-base.blue {
-  color: #ffffff;
-  border: none;
-  height: 34px;
-  line-height: 34px;
-}
-
-.sm_card .card_footer .list_wrap .button-base {
-  width: 100%;
-}
-
-.card.button-base.yellow {
-  background: linear-gradient(to right, #ffcb87, #ffab76);
-  color: #4e342e;
-}
-
-.card.button-base.red {
-  background: linear-gradient(to right, #ec8c8c, #ef4949);
-  color: #4e342e;
-}
-
-.card.button-base.blue {
-  background: linear-gradient(to right, #0c87ec, #0daef3);
-  color: #4e342e;
 }
 
 .percentage-value {
@@ -1415,85 +1022,4 @@ const deletePFormSelected = () => {
   margin-top: 10px;
   font-size: 12px;
 }
-
-.form-dialog {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #f5f5f5;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.table-wrapper {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.table-scroll {
-  width: calc(100% + 17px); /* 17px 是滚动条的宽度 */
-  overflow-x: hidden;
-}
-
-.form-item {
-  margin-bottom: 15px;
-}
-
-.table {
-  margin-top: 10px;
-  border: 1px solid #ccc;
-  border-collapse: collapse;
-  width: 100%;
-}
-.table-row.selected {
-  background-color: #f0f0f0;
-}
-.table-row {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.table-row.selected {
-  background-color: #e1f5fe;
-}
-
-.table-row input,
-.table-row button {
-  margin-right: 10px;
-  flex: 1;
-  height: 30px;
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.form-actions {
-  margin-top: 20px;
-  text-align: right;
-}
-
-.form-actions button {
-  padding: 8px 16px;
-  margin-left: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  background-color: #4CAF50;
-  color: white;
-}
-
-.form-actions button:hover {
-  background-color: #45a049;
-}
-
 </style>

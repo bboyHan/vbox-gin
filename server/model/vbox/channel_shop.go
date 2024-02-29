@@ -12,8 +12,10 @@ type ChannelShop struct {
 	ProductId  string `json:"productId" form:"productId" gorm:"column:product_id;comment:通道;size:32;"`       //产品ID
 	ShopRemark string `json:"shopRemark" form:"shopRemark" gorm:"column:shop_remark;comment:店铺备注;size:128;"` //店铺备注
 	Address    string `json:"address" form:"address" gorm:"column:address;comment:店地址;type:text;"`           //店地址
-	Money      int    `json:"money" form:"money" gorm:"column:money;comment:金额;size:32;"`                    //金额
-	Status     int    `json:"status" form:"status" gorm:"column:status;comment:开关;size:4;"`                  //开关
+	MarkId     string `json:"markId" form:"markId" gorm:"column:mark_id;comment:标识;size:128;"`
+	Device     string `json:"device" form:"device" gorm:"default:default;column:device;comment:设备;size:32;"`
+	Money      int    `json:"money" form:"money" gorm:"column:money;comment:金额;size:32;"`   //金额
+	Status     int    `json:"status" form:"status" gorm:"column:status;comment:开关;size:4;"` //开关
 	CreatedBy  uint   `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy  uint   `gorm:"column:updated_by;comment:更新者"`
 	DeletedBy  uint   `gorm:"column:deleted_by;comment:删除者"`

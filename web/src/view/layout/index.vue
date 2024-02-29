@@ -13,8 +13,8 @@
           class="min-h-[60px] text-center transition-all duration-300 flex items-center justify-center gap-2"
           :style="{background: backgroundColor}"
         >
-<!--          <img alt class="w-9 h-9 p-1 bg-white rounded-full" src="@/assets/LK_logo.jpg">-->
-          <img alt class="w-9 h-9 p-1 bg-white rounded-full" src="@/assets/logo.jpg">
+          <img alt class="w-9 h-9 p-1 bg-white rounded-full" src="@/assets/LK_logo.jpg">
+<!--          <img alt class="w-9 h-9 p-1 bg-white rounded-full" src="@/assets/logo.jpg">-->
         </div>
         <Aside class="aside" />
       </el-aside>
