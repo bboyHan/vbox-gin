@@ -12,3 +12,11 @@ type BdaChorgIndexDSearch struct {
 	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
 	request.PageInfo
 }
+
+type OrgSelectForm struct {
+	SysUserID      *uint  `json:"sysUserID" form:"sysUserID"`
+	OrganizationID int    `json:"organizationID" form:"organizationID"`
+	Cid            string `json:"cid" form:"cid"`
+	PAccount       string `json:"pAccount" form:"pAccount"`
+	Uid            uint   `json:"uid" form:"uid"`
+}

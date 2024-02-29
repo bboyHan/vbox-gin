@@ -21,7 +21,8 @@ func (s *BdaChorgIndexDRouter) InitBdaChorgIndexDRouter(Router *gin.RouterGroup)
 		bdaChorgRouter.PUT("updateBdaChorgIndexD", bdaChorgApi.UpdateBdaChorgIndexD)              // 更新通道团队统计-天更新
 	}
 	{
-		bdaChorgRouterWithoutRecord.GET("findBdaChorgIndexD", bdaChorgApi.FindBdaChorgIndexD)       // 根据ID获取通道团队统计-天更新
-		bdaChorgRouterWithoutRecord.GET("getBdaChorgIndexDList", bdaChorgApi.GetBdaChorgIndexDList) // 获取通道团队统计-天更新列表
+		bdaChorgRouterWithoutRecord.GET("findBdaChorgIndexD", bdaChorgApi.FindBdaChorgIndexD)             // 根据ID获取通道团队统计-天更新
+		bdaChorgRouterWithoutRecord.GET("getBdaChorgIndexDList", bdaChorgApi.GetBdaChorgIndexDList)       // 获取通道团队统计-天更新列表
+		bdaChorgRouterWithoutRecord.GET("getBdaChorgIndexRealList", bdaChorgApi.GetBdaChorgIndexRealList) // 获取通道团队统计-天更新列表
 	}
 }

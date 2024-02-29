@@ -141,11 +141,12 @@
                 </el-form-item>
               </el-form>
           </div>
-          <!-- <div>
-            <el-button type="primary" @click="openTransferOrgUser()">更换组织</el-button>
-            <el-button type="primary" @click="deleteUser(selectData.map(item=>item.sysUser.ID))">踢出组织</el-button>
-            <el-button type="primary" @click="addUser">人员入职</el-button>
-          </div> -->
+          <div>
+            <el-button type="primary" @click="orgShow()">团队</el-button>
+            <el-button type="primary" @click="cidShow()">产品</el-button>
+            <el-button type="primary" @click="uidShow()">用户</el-button>
+            <el-button type="primary" @click="paccShow()">付款账户</el-button>
+          </div>
 
         </div>
         <div>
@@ -237,7 +238,8 @@ import { createOrganization,
   findOrgUserList,
   setOrgUserAdmin,
   deleteOrgUserApi,
-  transferOrgUserApi
+  transferOrgUserApi,
+  
 } from '@/plugin/organization/api/organization'
 import {
   createPayAccount,
@@ -249,6 +251,10 @@ import {
   switchEnablePA,
   getPAccGateway,
 } from '@/api/payAccount'
+
+import {
+  getBdaChorgIndexRealList
+} from '@/api/bdaChorgIndexD'
 
 import {getChannelProductSelf} from "@/api/channelProduct";
 import { getUserList } from '@/api/user.js'
@@ -306,8 +312,8 @@ const cardsDataValue = ref({
 })
 
 const orgSelectForm = ref({
-  sysUserID: null,
-  organizationID: '',
+  sysUserID: '',
+  organizationID: 0,
   cid: '',
   pAccount: '',
 })
@@ -395,9 +401,72 @@ const onSubmit = () => {
   //   console.log("elSearchFormRef.value", elSearchFormRef.value)
   //   getTableData()
   // })
+  getYyCards()
 }
 
 
+const getYyCards = async() => {
+  const res = await getBdaChorgIndexRealList(orgSelectForm.value)
+  if (res.code === 0) {
+    total.value = res.data.total
+    cardsData.value = res.data.list
+    console.log('cardsData.value', JSON.stringify(cardsData.value))
+  }
+}
+
+
+const orgShow = async() => {
+  getYyCards()
+}
+
+
+const cidShow = async() => {
+  const selectForm = ref({ 
+                sysUserID: '',
+                organizationID: orgSelectForm.value.organizationID,
+                cid: '1001',
+                pAccount: '',
+              } )
+
+ const res = await getBdaChorgIndexRealList(selectForm.value)
+  if (res.code === 0) {
+    total.value = res.data.total
+    cardsData.value = res.data.list
+    console.log('cardsData.value', JSON.stringify(cardsData.value))
+  }
+}
+
+const uidShow = async() => {
+  const selectForm = ref({ 
+                sysUserID: 10,
+                organizationID: orgSelectForm.value.organizationID,
+                cid: '',
+                pAccount: '',
+              } )
+
+  const res = await getBdaChorgIndexRealList(selectForm.value)
+  if (res.code === 0) {
+    total.value = res.data.total
+    cardsData.value = res.data.list
+    console.log('cardsData.value', JSON.stringify(cardsData.value))
+  }
+}
+
+const paccShow = async() => {
+  const selectForm = ref({  
+                sysUserID: '',
+                organizationID: orgSelectForm.value.organizationID,
+                cid: '',
+                pAccount: '10000',
+              }) 
+
+  const res = await getBdaChorgIndexRealList(selectForm.value)
+  if (res.code === 0) {
+    total.value = res.data.total
+    cardsData.value = res.data.list
+    console.log('cardsData.value', JSON.stringify(cardsData.value))
+  }
+}
 
 
 
@@ -538,6 +607,7 @@ const userSearch = ref({
 // 获取所有用户（用于弹窗内选择）
 const getAllUser = async(e) => {
   const res = await getUserList({ page: 1, pageSize: 9999 })
+  console.log('getAllUser',JSON.stringify(res))
   userList.value = res.data.list
   total.value = res.data.total
 }
@@ -556,6 +626,7 @@ const init = async() => {
   currentOrg.value = data.value[0].ID
   orgSelectForm.value.organizationID = data.value[0].ID
   getUserTable()
+  getYyCards()
 }
 
  
