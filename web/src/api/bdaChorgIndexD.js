@@ -112,3 +112,21 @@ export const getBdaChorgIndexRealList = (params) => {
     params
   })
 }
+
+
+
+// @Tags BdaChorgIndexD
+// @Summary 分页获取通道团队统计-天更新列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query request.PageInfo true "分页获取通道团队统计-天更新列表"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /bdaChorg/getBdaChorgIndexRealList [get]
+export const getBdaChorgIndexRealListBySelect = (params) => {
+  return service({
+    url: '/bdaChorg/getBdaChorgIndexRealListBySelect',
+    method: 'get',
+    params
+  })
+}

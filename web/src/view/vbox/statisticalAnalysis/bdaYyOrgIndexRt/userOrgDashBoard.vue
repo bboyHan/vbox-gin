@@ -100,6 +100,7 @@
                       :props="channelCodeProps"
                       @change="handleChange"
                       style="width: 100%"
+                      clearable
                   />
                 </el-form-item>
                 <el-form-item label="用户" >
@@ -132,7 +133,7 @@
                       :key="item.ID"
                       :disabled="disabledUserMap[item.ID]"
                       :label="item.pRemark"
-                      :value="item.ID"
+                      :value="item.pAccount"
                     />
                   </el-select>
                 </el-form-item>
@@ -158,7 +159,7 @@
               <el-col 
                 v-for="(item, index) in cardsData"
                 :key="index" 
-                :span="6" 
+                :span="8" 
                 :xs="24"
               >
                 <CenterCard :title="`${item.title}-当天成单数`" :custom-style="order1CustomStyle">
@@ -253,7 +254,8 @@ import {
 } from '@/api/payAccount'
 
 import {
-  getBdaChorgIndexRealList
+  getBdaChorgIndexRealList,
+  getBdaChorgIndexRealListBySelect
 } from '@/api/bdaChorgIndexD'
 
 import {getChannelProductSelf} from "@/api/channelProduct";
@@ -326,6 +328,7 @@ const getPAccountList = async(e) => {
   const res = await getPayAccountList({page: page.value, pageSize: pageSize.value, ...orgSelectForm.value})
   if (res.code === 0) {
     pAccountList.value = res.data.list
+    console.log('pAccountList:', JSON.stringify(pAccountList.value))
   }
 }
 const handleChangePAccount = (value) => {
@@ -401,8 +404,20 @@ const onSubmit = () => {
   //   console.log("elSearchFormRef.value", elSearchFormRef.value)
   //   getTableData()
   // })
-  getYyCards()
+  getYyCardsBySelect()
+  // getYyCards()
 }
+
+
+const getYyCardsBySelect = async() => {
+  const res = await getBdaChorgIndexRealListBySelect(orgSelectForm.value)
+  if (res.code === 0) {
+    total.value = res.data.total
+    cardsData.value = res.data.list
+    console.log('cardsData.value', JSON.stringify(cardsData.value))
+  }
+}
+
 
 
 const getYyCards = async() => {
@@ -491,7 +506,7 @@ const loadDeptData = async(node, resolve) => {
     return
   }
   const res = await getOrganizationList({ parentID: node.data.ID })
-  console.log('loadDeptData',JSON.stringify(res))
+  // console.log('loadDeptData',JSON.stringify(res))
   const data = res.data.list
   if (data) {
     resolve(data)
@@ -567,7 +582,9 @@ const orgUserDialog = ref(false)
 // 切换选中组织
 const getNowOrg = (e) => {
   currentOrg.value = e.ID
-  getUserTable()
+  // getUserTable()
+  orgSelectForm.value.organizationID = currentOrg.value
+  getYyCardsBySelect()
   console.log('getNowOrg',currentOrg.value)
 }
 
@@ -607,7 +624,7 @@ const userSearch = ref({
 // 获取所有用户（用于弹窗内选择）
 const getAllUser = async(e) => {
   const res = await getUserList({ page: 1, pageSize: 9999 })
-  console.log('getAllUser',JSON.stringify(res))
+  // console.log('getAllUser',JSON.stringify(res))
   userList.value = res.data.list
   total.value = res.data.total
 }
@@ -629,7 +646,7 @@ const init = async() => {
   getYyCards()
 }
 
- 
+
 
 
 
