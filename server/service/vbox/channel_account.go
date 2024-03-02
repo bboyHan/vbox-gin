@@ -18,6 +18,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"github.com/flipped-aurora/gin-vue-admin/server/vbUtil"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
@@ -375,93 +376,66 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 }
 
 // CountAcc 查询可用通道的 当前等待取用的账号个数
-func (vcaService *ChannelAccountService) CountAcc(ids []uint, orgId uint) (res []vboxResp.ChannelAccountUnused, err error) {
-	accCntKey := fmt.Sprintf(global.ChanAccOrgCountUnused, orgId)
-	cm := global.GVA_REDIS.Exists(context.Background(), accCntKey).Val()
+func (vcaService *ChannelAccountService) CountAcc(orgIds []uint) (ret []vboxResp.OrgUnusedData, err error) {
 
-	if cm == 0 {
-		err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
+	for _, orgId := range orgIds {
+		ids := utils2.GetUsersByOrgId(orgId)
+		var res []vboxResp.ChannelAccountUnused
+		err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Select("count(1) as total, cid").
+			Where("status = ? and sys_status = ? and created_by in (?)", 1, 1, ids).
 			Group("cid").Order("id desc").Find(&res).Error
-		for _, ele := range res {
-			keyMem := fmt.Sprintf("%s_%d", ele.Cid, ele.Total)
-			global.GVA_REDIS.SAdd(context.Background(), accCntKey, keyMem)
-		}
-		global.GVA_REDIS.Expire(context.Background(), accCntKey, 5*time.Second)
-	} else {
-		cidTotalList := global.GVA_REDIS.SMembers(context.Background(), accCntKey).Val()
-		for _, ele := range cidTotalList {
-			split := strings.Split(ele, "_")
-			cid := split[0]
-			total, _ := strconv.Atoi(split[1])
-			v := vboxResp.ChannelAccountUnused{
-				Cid:   cid,
-				Total: uint(total),
+
+		for i := range res {
+			v := &res[i]
+			cid := v.Cid
+			var moneyList []string
+			userIDs := utils2.GetUsersByOrgId(orgId)
+
+			if err = global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+				Where("cid = ? and created_by in ?", cid, userIDs).Scan(&moneyList).Error; err != nil {
+				global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(err))
 			}
-			res = append(res, v)
+
+			prodInfo, _ := vbUtil.GetProductByCode(cid)
+
+			switch {
+			case strings.Contains(prodInfo.Ext, "money"):
+				var accQueueList []vboxResp.AccQueue
+				for _, money := range moneyList {
+					//cntKey := fmt.Sprintf(global.ChanOrgProdMoneyAccZSet, prodInfo.ProductId, orgId, cid, money)
+					cntKey := fmt.Sprintf(prodInfo.Ext, orgId, cid, money)
+					cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+					accQueue := vboxResp.AccQueue{
+						Money:  money,
+						Unused: cnt,
+					}
+					accQueueList = append(accQueueList, accQueue)
+				}
+				v.List = accQueueList
+			default:
+				var accQueueList []vboxResp.AccQueue
+				//cntKey := fmt.Sprintf(global.ChanOrgProdAccZSet, prodInfo.ProductId, orgId, cid)
+				cntKey := fmt.Sprintf(prodInfo.Ext, orgId, cid)
+				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
+				accQueue := vboxResp.AccQueue{
+					Money:  "default",
+					Unused: cnt,
+				}
+				accQueueList = append(accQueueList, accQueue)
+				v.List = accQueueList
+			}
 		}
+
+		ele := vboxResp.OrgUnusedData{
+			OrgId: orgId,
+			List:  res,
+		}
+		ret = append(ret, ele)
+
 	}
+	global.GVA_LOG.Info("当前等待取用的账号个数", zap.Any("ret", ret))
 
-	for i := range res {
-		v := &res[i]
-		cid := v.Cid
-		if global.TxContains(cid) {
-			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
-			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-			var accQueueList []vboxResp.AccQueue
-			for _, money := range moneyList {
-				cntKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgId, cid, money)
-				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
-				accQueue := vboxResp.AccQueue{
-					Money:  money,
-					Unused: cnt,
-				}
-				accQueueList = append(accQueueList, accQueue)
-			}
-			v.List = accQueueList
-		} else if global.DnfContains(cid) {
-			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
-			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-			var accQueueList []vboxResp.AccQueue
-			for _, money := range moneyList {
-				cntKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgId, cid, money)
-				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
-				accQueue := vboxResp.AccQueue{
-					Money:  money,
-					Unused: cnt,
-				}
-				accQueueList = append(accQueueList, accQueue)
-			}
-			v.List = accQueueList
-		} else if global.SdoContains(cid) {
-			moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgId, cid)
-			moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
-			var accQueueList []vboxResp.AccQueue
-			for _, money := range moneyList {
-				cntKey := fmt.Sprintf(global.ChanOrgSdoAccZSet, orgId, cid, money)
-				cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
-				accQueue := vboxResp.AccQueue{
-					Money:  money,
-					Unused: cnt,
-				}
-				accQueueList = append(accQueueList, accQueue)
-			}
-			v.List = accQueueList
-		} else if global.J3Contains(cid) {
-			var accQueueList []vboxResp.AccQueue
-			cntKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgId, cid)
-			cnt := global.GVA_REDIS.ZCount(context.Background(), cntKey, "0", "0").Val()
-			accQueue := vboxResp.AccQueue{
-				Money:  "default",
-				Unused: cnt,
-			}
-			accQueueList = append(accQueueList, accQueue)
-			v.List = accQueueList
-		}
-	}
-
-	global.GVA_LOG.Info("当前等待取用的账号个数", zap.Any("res", res))
-
-	return res, err
+	return ret, err
 }
 
 // TransferChannelForAcc 账号通道转移

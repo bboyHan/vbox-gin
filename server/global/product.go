@@ -85,6 +85,25 @@ func PcContains(target string) bool {
 	return found
 }
 
+// QN
+
+func QnContains(target string) bool {
+	set := map[string]bool{
+		"7000": true,
+		"7001": true,
+		"7002": true,
+		"7003": true,
+		"7004": true,
+		"7005": true,
+		"7006": true,
+		"7007": true,
+		"7008": true,
+		"7009": true,
+	}
+	_, found := set[target]
+	return found
+}
+
 func SdoContains(target string) bool {
 	set := map[string]bool{
 		"4000": true,

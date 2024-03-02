@@ -6,6 +6,11 @@ type ChannelAccountUnused struct {
 	List  []AccQueue `json:"list" form:"list" gorm:"-"`
 }
 
+type OrgUnusedData struct {
+	OrgId uint                   `json:"orgId" form:"orgId"`
+	List  []ChannelAccountUnused `json:"list" form:"list"`
+}
+
 type AccQueue struct {
 	Money  string `json:"money" form:"money"`
 	Unused int64  `json:"unused" form:"unused"`

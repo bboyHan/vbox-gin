@@ -62,6 +62,10 @@ func ChanCardAccDelCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX == nil")
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行账号匹配

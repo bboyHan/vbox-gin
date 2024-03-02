@@ -63,6 +63,10 @@ func ChanAccDelCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX is nil")
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行账号匹配
@@ -127,7 +131,7 @@ func ChanAccDelCheckTask() {
 						moneyTmp := money
 						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgTmp[0], cid, moneyTmp)
-							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+							waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}(moneyTmp)
@@ -164,7 +168,7 @@ func ChanAccDelCheckTask() {
 						moneyTmp := money
 						go func(moneyTmp string) {
 							accKey := fmt.Sprintf(global.ChanOrgDnfAccZSet, orgTmp[0], cid, moneyTmp)
-							waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+							waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}(moneyTmp)
@@ -232,7 +236,7 @@ func ChanAccDelCheckTask() {
 						for _, pcDB := range pcDBList {
 
 							pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0], pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-							pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+							pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 
 							global.GVA_LOG.Info("账号删除过程...处理删除预产", zap.Any("pcKey", pcKey), zap.Any("pcMem", pcMem))
 

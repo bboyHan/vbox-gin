@@ -65,6 +65,10 @@ func ChanAccEnableCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX == nil", zap.Any("err", errX))
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行账号匹配
@@ -472,7 +476,7 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中
@@ -585,7 +589,7 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中
@@ -725,7 +729,7 @@ func ChanAccEnableCheckTask() {
 							for _, pcDB := range pcDBList {
 
 								pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0], pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-								pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+								pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 
 								global.GVA_LOG.Info("开启过程校验..处理预产开启匹配", zap.Any("pcKey", pcKey), zap.Any("pcMem", pcMem))
 
@@ -779,7 +783,7 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中，直接处理删掉
@@ -809,7 +813,7 @@ func ChanAccEnableCheckTask() {
 							moneyTmp := money
 							go func(moneyTmp string) {
 								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中，直接处理删掉
@@ -894,7 +898,7 @@ func ChanAccEnableCheckTask() {
 							for _, pcDB := range pcDBList {
 
 								pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0], pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-								pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+								pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 
 								global.GVA_LOG.Info("关闭过程校验..处理预产关闭匹配", zap.Any("pcKey", pcKey), zap.Any("pcMem", pcMem))
 

@@ -215,7 +215,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
 		err = ch.PublishWithDelay(task.PayCodeCDCheckDelayedExchange, task.PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
 
-		pcMem := fmt.Sprintf("%d", vboxChannelPayCode.ID) + "_" + vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
+		pcMem := fmt.Sprintf("%d,%s,%s,%s", vboxChannelPayCode.ID, vboxChannelPayCode.Mid, vboxChannelPayCode.AcAccount, vboxChannelPayCode.ImgContent)
 		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 4, Member: pcMem})
 	} else {
 		global.GVA_LOG.Info("当前添加的账号没有冷却中（没有预产正在处理中）")
@@ -223,7 +223,7 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 
 		err = global.GVA_DB.Create(vboxChannelPayCode).Error
 
-		pcMem := fmt.Sprintf("%d", vboxChannelPayCode.ID) + "_" + vboxChannelPayCode.Mid + "_" + vboxChannelPayCode.AcAccount + "_" + vboxChannelPayCode.ImgContent
+		pcMem := fmt.Sprintf("%d,%s,%s,%s", vboxChannelPayCode.ID, vboxChannelPayCode.Mid, vboxChannelPayCode.AcAccount, vboxChannelPayCode.ImgContent)
 		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
 	}
 
@@ -296,7 +296,7 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCode(vboxCha
 			// 删待取池中数据
 			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-			pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
 
 		}
@@ -328,7 +328,7 @@ func (channelPayCodeService *ChannelPayCodeService) DeleteChannelPayCodeByIds(id
 			// 删待取池中数据
 			key := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 				pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-			pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+			pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 			global.GVA_REDIS.ZRem(context.Background(), key, pcMem)
 
 		}

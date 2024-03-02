@@ -31,13 +31,36 @@ const (
 
 	AccQryEx = "系统关号,检测账号CK异常.无法正确查单. ID: %s, acc: %s"
 
+	AccRecord   = "accID,%v"
+	UserRecord  = "userID,%v"
+	OrderRecord = "orderID,%v"
+
+	OrderStartMsg            = "创建订单，等待用户进行访问..."
+	OrderWaitingMsg          = "用户访问订单页，开始进行库存匹配"
+	OrderWaitingFinishedMsg  = "库存匹配完成，匹配账号：%s，ID:%s，等待支付..."
+	OrderConfirmMsg          = "订单核验充值已到账，等待发起回调..."
+	OrderConfirmErrMsg       = "系统无法正确查单，通过CK查验充值记录异常，账号：%s，ID:%s，进行关闭账号处理，该订单置为失败单"
+	OrderTimeoutMsg          = "订单已过期，关闭订单"
+	OrderCallbackMsg         = "开始执行回调任务..."
+	OrderCallbackRespMsg     = "回调完成，响应状态码：%v，响应数据: %v"
+	OrderCallbackFinishedMsg = "更新回调状态，订单交易完成"
+	OrderManualOperationMsg  = "人工核实，进行手动补单入库，订单交易完成"
+
+	OrderConfirmBindMsg           = "订单核验已绑定卡密，卡密信息：%v，等待发起回调..."
+	OrderConfirmBindOtherMoneyMsg = "订单核验已绑定卡密，卡密信息：%v，但与订单金额不符，需人工核实"
+	OrderConfirmBindQryRetMsg     = "查询卡密合法性，卡密信息：%v，查询结果：%v"
+	OrderConfirmBindRetMsg        = "绑定卡密信息：%v，执行结果：%v"
+	OrderConfirmBindLimitErrMsg   = "提交的错误次数过多，请重新下单"
+	OrderConfirmBindPoolErrMsg    = "查单池CK账户不足，请及时核查"
+	OrderConfirmBindErrMsg        = "第【%d】次上传卡密信息，提交卡密信息：%v，执行结果：%v"
+
 	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
 	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前日消费：%v, 当前限额： %v"
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前总消费：%v, 当前限额： %v"
 	AccInCntLimitNotEnough = "当前账户进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
 	AccCountLimitNotEnough = "当前账户拉单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前拉单数：%v, 当前限额数： %v"
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
-	CardAccQryRecordsEx        = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+	CardAccQryRecordsEx    = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryShopEx           = "当前组织无商铺地址匹配，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
@@ -55,8 +78,12 @@ const (
 	BloomFilterErrorRate = 0.001
 	BloomFilterCapacity  = 100000
 
-	MsgFilterKey = "vb_msg_filter_set"                 // 同组织通道下可用账号（过滤器）
-	MsgFilterMem = "vb_msg_filter:msgID_%s:orderID_%s" // 同组织通道下可用账号（过滤器）
+	MsgFilterKey            = "vb_msg_filter_set"                     // 同组织通道下可用账号（过滤器）
+	MsgFilterMem            = "vb_msg_filter:msgID_%s:orderID_%s"     // 同组织通道下可用账号（过滤器）
+	ChanOrgProdMoneyAccZSet = "vb_acc_%s_set:org_%d:chan_%s:money_%v" // 同组织通道下可用账号
+	ChanOrgProdAccZSet      = "vb_acc_%s_set:org_%d:chan_%s"          // 同组织通道下可用账号
+	YdProdMoneyAccWaiting   = "vb_acc_%s_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
+	YdProdAccWaiting        = "vb_acc_%s_waiting_yd:acid_%s"          // 引导类-等待开启的账户(冷却中)
 
 	ChanOrgAccFilter        = "vb_accFilter:org_%s:chan_%s"              // 同组织通道下可用账号（过滤器）
 	ChanOrgQBAccZSet        = "vb_acc_qb_set:org_%d:chan_%s:money_%v"    // 同组织通道下可用账号
@@ -74,6 +101,10 @@ const (
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodeMoneyPrefix = "vb_pay_code_set:org_%d:chan_%s:money_*"                     // 同组织通道下可用付款码（取用池）
 
+	ProdCodeKey = "vb_prod_code:%v"
+	ProdTypeKey = "vb_prod_type:%v"
+	ProductKey  = "vb_prod_info:%v"
+
 	PayAccMoneyKey      = "vb_ac_id:%s:%v"
 	PayAccKey           = "vb_ac_id:%s"
 	PayOrderKey         = "vb_order:%s"
@@ -86,12 +117,15 @@ const (
 	PcAccWaiting     = "vb_acc_waiting_pc:acid_%s"  // 预产类-等待开启的账户(冷却中)
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
+	ProdAccMoneyWaiting = "vb_acc_%s_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
+	ProdAccWaiting      = "vb_acc_%s_waiting_yd:acid_%s"          // 引导类-等待开启的账户(冷却中)
+
 	YdQBAccWaiting  = "vb_acc_qb_waiting_yd:acid_%s:money_%v"  // 引导类-等待开启的账户(冷却中)
 	YdDnfAccWaiting = "vb_acc_dnf_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
-	YdJ3AccWaiting = "vb_acc_j3_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
-	YdECAccWaiting = "vb_acc_ec_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
+	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
 	YdECJdCodeZSet = "vb_acc_ec_jd_code" // 引导类-等待开启的账户(冷却中)
@@ -125,6 +159,12 @@ const (
 	WalletRechargeType = 1 // 直充
 	WalletTransferType = 2 // 划转
 	WalletOrderType    = 3 // 订单积分消费
+)
+
+const (
+	UserType  = 1 // 用户级别
+	AccType   = 2 // 账户级别
+	OrderType = 3 // 订单级别
 )
 
 const (

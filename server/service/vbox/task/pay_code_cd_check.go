@@ -93,7 +93,7 @@ func PayCodeCDCheckTask() {
 				for _, pcDB := range pcDBList {
 					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
 					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0], pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 
 					if pcDB.CodeStatus == 1 {
 						global.GVA_LOG.Info("已使用，置为已用", zap.Any("pcID", pcDB.ID))

@@ -64,6 +64,10 @@ func OrderStatusCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX == nil", zap.Any("err", errX))
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行查单回调处理

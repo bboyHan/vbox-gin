@@ -119,7 +119,7 @@ func RecordsByID(rawURL string, openID string, openKey string, orderID string, p
 	return &records
 }
 
-func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) (*product.Records, error, string) {
+func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time) ([]product.Payment, error, string) {
 	var Url string
 
 	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
@@ -152,7 +152,7 @@ func QryQQRecordsBetween(vca vbox.ChannelAccount, start time.Time, end time.Time
 		return nil, errors.New("查询官方记录异常"), ""
 	}
 	//classifier := Classifier(records.WaterList)
-	return records, nil, newURL
+	return records.WaterList, nil, newURL
 }
 
 // 校验官方合法性用一下

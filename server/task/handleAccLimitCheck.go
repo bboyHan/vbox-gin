@@ -269,7 +269,7 @@ func HandleAccLimitCheck() (err error) {
 								global.GVA_REDIS.ZRem(context.Background(), key, waitMem)
 
 								// 把 pay code中属于该账号的码全部处理掉
-								id := strings.Split(waitMem, "_")[0]
+								id := strings.Split(waitMem, ",")[0]
 								global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ? ", id).Update("code_status", 4)
 								// 把该账号的码全部状态置为0，即关停不可用
 								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ? ", accDBTmp.ID).

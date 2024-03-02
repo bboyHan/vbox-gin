@@ -13,6 +13,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"github.com/flipped-aurora/gin-vue-admin/server/vbUtil"
 	"go.uber.org/zap"
 	"log"
 	"strings"
@@ -28,6 +29,7 @@ const (
 
 // OrderCallbackTask 订单回调
 func OrderCallbackTask() {
+	var operationRecordService system.OperationRecordService
 
 	// 示例：发送消息
 	conn, err := mq.MQ.ConnPool.GetConnection()
@@ -63,6 +65,10 @@ func OrderCallbackTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX is nil")
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行账号匹配
@@ -77,7 +83,6 @@ func OrderCallbackTask() {
 				//global.GVA_LOG.Info(fmt.Sprintf("%v", v1))
 
 				now := time.Now()
-				var operationRecordService system.OperationRecordService
 
 				v := request.PayOrderAndCtx{}
 				err = json.Unmarshal(msg.Body, &v)
@@ -160,7 +165,7 @@ func OrderCallbackTask() {
 					"Content-Type": "application/json",
 				}
 				var payUrl string
-				payUrl, err = HandlePayUrl2PAcc(orderId)
+				payUrl, err = vbUtil.HandlePayUrl2PAcc(orderId)
 
 				signBody := &vboxRep.Order2PayAccountRes{
 					OrderId:   orderId,
@@ -185,6 +190,21 @@ func OrderCallbackTask() {
 
 				global.GVA_LOG.Info("请求地址", zap.Any("notifyUrl", notifyUrl))
 				global.GVA_LOG.Info("请求body", zap.Any("notifyBody", notifyBody))
+
+				record := sysModel.SysOperationRecord{
+					Ip:      v.Ctx.ClientIP,
+					Method:  v.Ctx.Method,
+					Path:    v.Ctx.UrlPath,
+					Agent:   v.Ctx.UserAgent,
+					MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+					Type:    global.OrderType,
+					Body:    "",
+					Status:  200,
+					Latency: time.Since(now),
+					Resp:    fmt.Sprintf(global.OrderCallbackMsg),
+					UserID:  v.Ctx.UserID,
+				}
+				err = operationRecordService.CreateSysOperationRecord(record)
 
 				var options = &vbHttp.RequestOptions{
 					Headers:      headers,
@@ -211,11 +231,13 @@ func OrderCallbackTask() {
 					_ = msg.Reject(false)
 
 					//入库操作记录
-					record := sysModel.SysOperationRecord{
+					record = sysModel.SysOperationRecord{
 						Ip:      v.Ctx.ClientIP,
 						Method:  v.Ctx.Method,
 						Path:    v.Ctx.UrlPath,
 						Agent:   v.Ctx.UserAgent,
+						MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+						Type:    global.OrderType,
 						Status:  500,
 						Latency: time.Since(now),
 						Resp:    fmt.Sprintf(global.NotifyEx, errH.Error(), response),
@@ -237,8 +259,37 @@ func OrderCallbackTask() {
 					continue
 				}
 				global.GVA_LOG.Info("回调响应消息", zap.Any("状态码", response.StatusCode), zap.Any("响应内容", string(response.Body)))
+				record = sysModel.SysOperationRecord{
+					Ip:      v.Ctx.ClientIP,
+					Method:  v.Ctx.Method,
+					Path:    v.Ctx.UrlPath,
+					Agent:   v.Ctx.UserAgent,
+					MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+					Type:    global.OrderType,
+					Body:    "",
+					Status:  200,
+					Latency: time.Since(now),
+					Resp:    fmt.Sprintf(global.OrderCallbackRespMsg, response.StatusCode, string(response.Body)),
+					UserID:  v.Ctx.UserID,
+				}
+				err = operationRecordService.CreateSysOperationRecord(record)
 
 				if v.Obj.HandStatus == 3 {
+					record = sysModel.SysOperationRecord{
+						Ip:      v.Ctx.ClientIP,
+						Method:  v.Ctx.Method,
+						Path:    v.Ctx.UrlPath,
+						Agent:   v.Ctx.UserAgent,
+						MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+						Type:    global.OrderType,
+						Body:    "",
+						Status:  200,
+						Latency: time.Since(now),
+						Resp:    fmt.Sprintf(global.OrderManualOperationMsg),
+						UserID:  v.Ctx.UserID,
+					}
+					err = operationRecordService.CreateSysOperationRecord(record)
+
 					//3. 更新回调成功的状态
 					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
 						Update("order_status", 1).Update("cb_status", 1).Update("hand_status", 1).Update("cb_time", nowTime).Error; errD != nil {
@@ -247,22 +298,8 @@ func OrderCallbackTask() {
 						continue
 					}
 
-					//	补单单独记录一下日志
-					record := sysModel.SysOperationRecord{
-						Ip:      v.Ctx.ClientIP,
-						Method:  v.Ctx.Method,
-						Path:    v.Ctx.UrlPath,
-						Agent:   v.Ctx.UserAgent,
-						Status:  200,
-						Latency: time.Since(now),
-						Resp:    fmt.Sprintf(global.NotifyHandSuccess, response.StatusCode, string(response.Body)),
-						UserID:  v.Ctx.UserID,
-					}
-					err = operationRecordService.CreateSysOperationRecord(record)
-					if err != nil {
-						global.GVA_LOG.Error("record 入库失败..." + err.Error())
-					}
 				} else {
+
 					//3. 更新回调成功的状态
 					if errD := global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).
 						Update("cb_status", 1).Update("cb_time", nowTime).Error; errD != nil {
@@ -288,6 +325,21 @@ func OrderCallbackTask() {
 
 					global.GVA_DB.Model(&vbox.UserWallet{}).Save(&wallet)
 				}
+
+				record = sysModel.SysOperationRecord{
+					Ip:      v.Ctx.ClientIP,
+					Method:  v.Ctx.Method,
+					Path:    v.Ctx.UrlPath,
+					Agent:   v.Ctx.UserAgent,
+					MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+					Type:    global.OrderType,
+					Body:    "",
+					Status:  200,
+					Latency: time.Since(now),
+					Resp:    fmt.Sprintf(global.OrderCallbackFinishedMsg),
+					UserID:  v.Ctx.UserID,
+				}
+				err = operationRecordService.CreateSysOperationRecord(record)
 
 				_ = msg.Ack(true)
 				global.GVA_LOG.Info("订单完成，回调完成", zap.Any("对应单号", orderId))

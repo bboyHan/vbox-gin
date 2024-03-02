@@ -58,6 +58,10 @@ func ChanAccShopUpdCheckTask() {
 				global.GVA_LOG.Error("Failed to get connection from pool", zap.Error(errX))
 			}
 			defer mq.MQ.ConnPool.ReturnConnection(connX)
+			if connX == nil {
+				global.GVA_LOG.Error("connX is nil")
+				return
+			}
 			chX, _ := connX.Channel()
 
 			// 说明：执行账号匹配
@@ -221,7 +225,7 @@ func ChanAccShopUpdCheckTask() {
 								acId := accDBTmp.AcId
 								acAccount := accDBTmp.AcAccount
 								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中
@@ -280,7 +284,7 @@ func ChanAccShopUpdCheckTask() {
 								acId := accDBTmp.AcId
 								acAccount := accDBTmp.AcAccount
 								waitAccYdKey := fmt.Sprintf(global.YdDnfAccWaiting, acId, moneyTmp)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, moneyTmp)
+								waitAccMem := fmt.Sprintf("%v,%s,%s,%v", ID, acId, acAccount, moneyTmp)
 								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
 								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
 								if ttl > 0 { //该账号正在冷却中

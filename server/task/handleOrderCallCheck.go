@@ -10,7 +10,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"go.uber.org/zap"
-	"sync"
 )
 
 func HandleOrderCallCheck() (err error) {
@@ -75,19 +74,20 @@ func HandleOrderCallCheck() (err error) {
 
 	var orderDBFixList []vbox.PayOrder
 	global.GVA_DB.Model(&vbox.PayOrder{}).Table("vbox_pay_order").
-		Where("order_status != ? and cb_status = ?", 1, 1).Find(&orderDBFixList)
-	var wg sync.WaitGroup
-	for _, orderDB := range orderDBFixList {
-		wg.Add(1)
-		go func(orderDB vbox.PayOrder) {
-			defer wg.Done()
+		Where("cb_status = ? and order_status in (0,2,3)", 1).Find(&orderDBFixList)
 
-			global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", orderDB.ID).
-				Update("order_status", 1).Update("hand_status", 1)
-			global.GVA_LOG.Info("【系统修复】更新已回调确显示未支付的订单", zap.Any("order ID", orderDB.OrderId))
-		}(orderDB)
+	var updateIDs []uint
+
+	for _, orderDB := range orderDBFixList {
+		updateIDs = append(updateIDs, orderDB.ID)
+		global.GVA_LOG.Info("【系统修复】更新已回调确显示未支付的订单", zap.Any("order ID", orderDB.OrderId), zap.Any("id", orderDB.ID))
 	}
 
-	wg.Wait() // 等待所有goroutine完成
+	if len(updateIDs) > 0 {
+		global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id in (?)", updateIDs).
+			Updates(map[string]interface{}{"order_status": 1, "hand_status": 1})
+		//Update("order_status", 1).Update("hand_status", 1)
+	}
+
 	return err
 }

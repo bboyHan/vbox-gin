@@ -63,45 +63,80 @@ func Timer() {
 		//	fmt.Println("add timer error:", err)
 		//}
 
-		_, err = global.GVA_Timer.AddTaskByFunc("handleOrderCallCheck", "@every 30s", func() {
-			err = task.HandleOrderCallCheck()
-			if err != nil {
-				fmt.Println("timer error:", err)
-			}
-		})
-		if err != nil {
-			fmt.Println("add timer error:", err)
-		}
+		//_, err = global.GVA_Timer.AddTaskByFunc("handleChannelStatisTask", "55 17 * * *", func() {
+		//	err = task.HandleChannelStatisTask()
+		//	if err != nil {
+		//		fmt.Println("timer error:", err)
+		//	}
+		//
+		//})
+		//if err != nil {
+		//	fmt.Println("add timer error:", err)
+		//}
+	}()
 
-		_, err = global.GVA_Timer.AddTaskByFunc("handleAccLimitCheck", "@every 5s", func() {
-			err = task.HandleAccLimitCheck()
-			if err != nil {
-				fmt.Println("timer error:", err)
+	go func() {
+		defer func() { //保持程序运行态，而不是中断程序
+			if err := recover(); err != nil {
+				fmt.Println("Timer() 发生了 panic ex：", err)
+				// 可以在这里进行一些处理操作
 			}
-		})
-		if err != nil {
-			fmt.Println("add timer error:", err)
-		}
+		}()
 
-		_, err = global.GVA_Timer.AddTaskByFunc("handleShopMoneyAvailable", "@every 55s", func() {
-			err = task.HandleShopMoneyAvailable()
+		var option []cron.Option
+		option = append(option, cron.WithSeconds())
+		_, err := global.GVA_Timer.AddTaskByFunc("handleOrderCallCheck", "@every 30s", func() {
+			err := task.HandleOrderCallCheck()
 			if err != nil {
 				fmt.Println("timer error:", err)
 			}
-		})
-		if err != nil {
-			fmt.Println("add timer error:", err)
-		}
-
-		_, err = global.GVA_Timer.AddTaskByFunc("handleChannelStatisTask", "55 17 * * *", func() {
-			err = task.HandleChannelStatisTask()
-			if err != nil {
-				fmt.Println("timer error:", err)
-			}
-		})
+			global.GVA_LOG.Info("执行【call back check】")
+		}, option...)
 		if err != nil {
 			fmt.Println("add timer error:", err)
 		}
 	}()
 
+	go func() {
+		defer func() { //保持程序运行态，而不是中断程序
+			if err := recover(); err != nil {
+				fmt.Println("Timer() 发生了 panic ex：", err)
+				// 可以在这里进行一些处理操作
+			}
+		}()
+		var option []cron.Option
+		option = append(option, cron.WithSeconds())
+		_, err := global.GVA_Timer.AddTaskByFunc("handleAccLimitCheck", "@every 5s", func() {
+			err := task.HandleAccLimitCheck()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+			global.GVA_LOG.Info("执行【AccLimitCheck】")
+		}, option...)
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
+	}()
+
+	go func() {
+		defer func() { //保持程序运行态，而不是中断程序
+			if err := recover(); err != nil {
+				fmt.Println("Timer() 发生了 panic ex：", err)
+				// 可以在这里进行一些处理操作
+			}
+		}()
+		var option []cron.Option
+		option = append(option, cron.WithSeconds())
+
+		_, err := global.GVA_Timer.AddTaskByFunc("handleShopMoneyAvailable", "@every 30s", func() {
+			err := task.HandleShopMoneyAvailable()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+			global.GVA_LOG.Info("执行【ShopMoneyAvailable】")
+		}, option...)
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
+	}()
 }

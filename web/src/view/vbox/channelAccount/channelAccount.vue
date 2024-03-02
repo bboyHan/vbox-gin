@@ -61,13 +61,13 @@
               <el-input v-model.number="searchInfo.cid" placeholder="搜索通道ID"/>
             </el-form-item>
             <el-form-item label="开关状态" prop="status">
-              <el-select v-model="searchInfo.status" placeholder="选择状态">
+              <el-select v-model="searchInfo.status" placeholder="选择状态" style="width: 100px">
                 <el-option label="已开启" value="1"/>
                 <el-option label="已关闭" value="0"/>
               </el-select>
             </el-form-item>
             <el-form-item label="系统状态" prop="sysStatus">
-              <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态">
+              <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态" style="width: 100px">
                 <el-option label="已开启" value="1"/>
                 <el-option label="已关闭" value="0"/>
               </el-select>
@@ -125,25 +125,32 @@
           </template>
         </el-popover>
         <el-button type="primary" icon="wallet" @click="showCostOrderAcc('')">核算</el-button>
-      </div>
-      <div class="gva-btn-list">
         <el-row :gutter="12">
           <span v-for="item in countItem">
             <el-col :span="12">
               <el-popover trigger="hover" placement="right-end" width="450">
                 <el-row>
-                  <el-col :span="24">团队可取用池子实况（剩余）：</el-col>
-                  <el-col v-for="ele in item.list" :span="6">
-                  <span>{{ ele.money }}元(<span style="color: red;">{{ ele.unused }}</span>个)</span>
+                  <el-col v-for="ele in item.list" :span="24">
+                  <el-button>
+                    <el-col :span="24">
+                      <div>
+                      【通道ID：{{ ele.cid }}】<el-icon class="is-loading" style="margin-right: 2px"><Loading/> </el-icon>
+                    已开启 <span style="color: red"><b>{{ ele.total }} </b></span> 个
+                      </div>
+                    </el-col>
+                  </el-button>
+                    <div style="margin: 5px">
+                      <span v-for="em in ele.list">
+                        <span style="padding: 5px">{{ em.money }}元(<span
+                            style="color: red;">{{ em.unused }}</span>个)</span>
+                      </span>
+                    </div>
                   </el-col>
                 </el-row>
                 <div style="text-align: right; margin-top: 8px;">
                 </div>
                 <template #reference>
-                  <el-button>
-                        【通道ID：{{ item.cid }}】<el-icon class="is-loading" style="margin-right: 2px"><Loading/> </el-icon>
-                        已开启 <span style="color: red"><b>{{ item.total }} </b></span> 个
-                    </el-button>
+                  <el-button icon="search">池标识【{{ item.orgId }}】</el-button>
                 </template>
               </el-popover>
             </el-col>
@@ -399,11 +406,13 @@
                 <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
               </div>
               <div v-else>
-                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                  请点击"获取二维码"
+                </div>
               </div>
             </el-col>
             <el-col :span="24">
-              <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+              <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
             </el-col>
 
             <el-col :span="18">
@@ -414,7 +423,8 @@
               <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
             </el-col>
             <el-col :span="24">
-              <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+              <el-input v-model="formData.token" type="textarea" :clearable="true"
+                        placeholder="请输入CK或点击【获取CK】自动获取"/>
             </el-col>
           </el-row>
         </el-form-item>
@@ -489,9 +499,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-<!--        <el-form-item label="报文" prop="token">
-          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
-        </el-form-item>-->
+        <!--        <el-form-item label="报文" prop="token">
+                  <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
+                </el-form-item>-->
         <el-form-item label="扫码授权" prop="token">
           <el-row :gutter="12">
             <el-col :span="24">
@@ -499,11 +509,13 @@
                 <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
               </div>
               <div v-else>
-                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                  请点击"获取二维码"
+                </div>
               </div>
             </el-col>
             <el-col :span="24">
-              <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+              <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
             </el-col>
 
             <el-col :span="18">
@@ -514,7 +526,8 @@
               <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
             </el-col>
             <el-col :span="24">
-              <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+              <el-input v-model="formData.token" type="textarea" :clearable="true"
+                        placeholder="请输入CK或点击【获取CK】自动获取"/>
             </el-col>
           </el-row>
         </el-form-item>
@@ -589,9 +602,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-<!--        <el-form-item label="报文" prop="token">
-          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
-        </el-form-item>-->
+        <!--        <el-form-item label="报文" prop="token">
+                  <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
+                </el-form-item>-->
         <el-form-item label="扫码授权" prop="token">
           <el-row :gutter="12">
             <el-col :span="24">
@@ -599,11 +612,13 @@
                 <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
               </div>
               <div v-else>
-                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                  请点击"获取二维码"
+                </div>
               </div>
             </el-col>
             <el-col :span="24">
-              <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+              <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
             </el-col>
 
             <el-col :span="18">
@@ -614,7 +629,8 @@
               <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
             </el-col>
             <el-col :span="24">
-              <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+              <el-input v-model="formData.token" type="textarea" :clearable="true"
+                        placeholder="请输入CK或点击【获取CK】自动获取"/>
             </el-col>
           </el-row>
         </el-form-item>
@@ -759,9 +775,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-<!--        <el-form-item label="报文" prop="token">
-          <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-        </el-form-item>-->
+        <!--        <el-form-item label="报文" prop="token">
+                  <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                </el-form-item>-->
         <el-form-item label="扫码授权" prop="token">
           <el-row :gutter="12">
             <el-col :span="24">
@@ -769,11 +785,13 @@
                 <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
               </div>
               <div v-else>
-                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                  请点击"获取二维码"
+                </div>
               </div>
             </el-col>
             <el-col :span="24">
-              <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+              <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
             </el-col>
 
             <el-col :span="18">
@@ -784,7 +802,8 @@
               <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
             </el-col>
             <el-col :span="24">
-              <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+              <el-input v-model="formData.token" type="textarea" :clearable="true"
+                        placeholder="请输入CK或点击【获取CK】自动获取"/>
             </el-col>
           </el-row>
         </el-form-item>
@@ -905,7 +924,8 @@
     </el-dialog>
 
     <!--  创建 5000 -->
-    <el-dialog v-model="dialog5000FormVisible" :before-close="close5000Dialog" :draggable="true" :title="typeTitle" destroy-on-close>
+    <el-dialog v-model="dialog5000FormVisible" :before-close="close5000Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -1077,9 +1097,9 @@
               </el-form-item>
             </el-col>
           </el-row>
-<!--          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>-->
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
           <el-form-item label="扫码授权" prop="token">
             <el-row :gutter="12">
               <el-col :span="24">
@@ -1087,11 +1107,13 @@
                   <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
                 </div>
                 <div v-else>
-                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                    请点击"获取二维码"
+                  </div>
                 </div>
               </el-col>
               <el-col :span="24">
-                <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+                <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
               </el-col>
 
               <el-col :span="18">
@@ -1102,7 +1124,8 @@
                 <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
               </el-col>
               <el-col :span="24">
-                <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入CK或点击【获取CK】自动获取"/>
               </el-col>
             </el-row>
           </el-form-item>
@@ -1167,9 +1190,9 @@
               </el-form-item>
             </el-col>
           </el-row>
-<!--          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>-->
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
           <el-form-item label="扫码授权" prop="token">
             <el-row :gutter="12">
               <el-col :span="24">
@@ -1177,11 +1200,13 @@
                   <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
                 </div>
                 <div v-else>
-                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                    请点击"获取二维码"
+                  </div>
                 </div>
               </el-col>
               <el-col :span="24">
-                <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+                <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
               </el-col>
 
               <el-col :span="18">
@@ -1192,7 +1217,8 @@
                 <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
               </el-col>
               <el-col :span="24">
-                <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入CK或点击【获取CK】自动获取"/>
               </el-col>
             </el-row>
           </el-form-item>
@@ -1257,9 +1283,9 @@
               </el-form-item>
             </el-col>
           </el-row>
-<!--          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>-->
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
           <el-form-item label="扫码授权" prop="token">
             <el-row :gutter="12">
               <el-col :span="24">
@@ -1267,11 +1293,13 @@
                   <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
                 </div>
                 <div v-else>
-                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                    请点击"获取二维码"
+                  </div>
                 </div>
               </el-col>
               <el-col :span="24">
-                <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+                <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
               </el-col>
 
               <el-col :span="18">
@@ -1282,7 +1310,8 @@
                 <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
               </el-col>
               <el-col :span="24">
-                <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入CK或点击【获取CK】自动获取"/>
               </el-col>
             </el-row>
           </el-form-item>
@@ -1347,9 +1376,9 @@
               </el-form-item>
             </el-col>
           </el-row>
-<!--          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>-->
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
           <el-form-item label="扫码授权" prop="token">
             <el-row :gutter="12">
               <el-col :span="24">
@@ -1357,11 +1386,13 @@
                   <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
                 </div>
                 <div v-else>
-                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                    请点击"获取二维码"
+                  </div>
                 </div>
               </el-col>
               <el-col :span="24">
-                <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+                <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
               </el-col>
 
               <el-col :span="18">
@@ -1372,7 +1403,8 @@
                 <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
               </el-col>
               <el-col :span="24">
-                <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入CK或点击【获取CK】自动获取"/>
               </el-col>
             </el-row>
           </el-form-item>
@@ -1437,9 +1469,9 @@
               </el-form-item>
             </el-col>
           </el-row>
-<!--          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
-          </el-form-item>-->
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
           <el-form-item label="扫码授权" prop="token">
             <el-row :gutter="12">
               <el-col :span="24">
@@ -1447,11 +1479,13 @@
                   <img :src="imageQrCode" alt="qr" style="width: 180px;height: 180px"/>
                 </div>
                 <div v-else>
-                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">请点击"获取二维码"</div>
+                  <div style="width: 180px;height: 180px;font-size: 12px;color:grey;border: 1px solid grey">
+                    请点击"获取二维码"
+                  </div>
                 </div>
               </el-col>
               <el-col :span="24">
-                <el-button type="primary" link  @click="loginQr">重新获取二维码</el-button>
+                <el-button type="primary" link @click="loginQr">重新获取二维码</el-button>
               </el-col>
 
               <el-col :span="18">
@@ -1462,7 +1496,8 @@
                 <el-button type="primary" @click="getQrCookie" style="width: 100%">获取CK</el-button>
               </el-col>
               <el-col :span="24">
-                <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK或点击【获取CK】自动获取"/>
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入CK或点击【获取CK】自动获取"/>
               </el-col>
             </el-row>
           </el-form-item>
@@ -2323,11 +2358,11 @@ const getQrCookie = async () => {
   let res = await loginQrStatusCheck({sig: imageQrSig.value})
   if (res.code === 0) {
     console.log(res.data.ret)
-    formData.value.token = 'openid='+res.data.ret.OpenID + ';openkey=' + res.data.ret.OpenKey
+    formData.value.token = 'openid=' + res.data.ret.OpenID + ';openkey=' + res.data.ret.OpenKey
     formData.value.acAccount = res.data.ret.qq
     imageQrStatusMsg.value = "获取成功，自动填入账号与CK信息"
 
-  }else if (res.code === 7){
+  } else if (res.code === 7) {
     imageQrStatusMsg.value = res.msg
   }
 }

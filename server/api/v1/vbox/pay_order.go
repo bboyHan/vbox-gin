@@ -37,7 +37,7 @@ func (vpoApi *PayOrderApi) CreateOrder2PayAcc(c *gin.Context) {
 		return
 	}
 	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
-	if order, err := payOrderService.CreateOrder2PayAcc(&vpo); err != nil {
+	if order, err := payOrderService.CreateOrder2PayAcc(&vpo, c); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
@@ -88,7 +88,7 @@ func (vpoApi *PayOrderApi) CreateOrderTest(c *gin.Context) {
 
 	vpo.Username = user.Username
 	vpo.UserId = user.ID
-	if order, err := payOrderService.CreateOrderTest(&vpo); err != nil {
+	if order, err := payOrderService.CreateOrderTest(&vpo, c); err != nil {
 		global.GVA_LOG.Error("测试订单创建失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
@@ -182,7 +182,7 @@ func (vpoApi *PayOrderApi) CallbackOrderExt(c *gin.Context) {
 	vpo.PayDevice = utils.GetDeviceSimpleInfo(vpo.UserAgent)
 
 	global.GVA_LOG.Info("请求参数", zap.Any("param", vpo))
-	if order, err := payOrderService.CallbackOrderExt(&vpo); err != nil {
+	if order, err := payOrderService.CallbackOrderExt(&vpo, c); err != nil {
 		global.GVA_LOG.Error("查询失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {

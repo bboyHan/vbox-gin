@@ -53,7 +53,7 @@ package main
 //	//	"pageSize":              "15",
 //	//}
 //
-//	content := "https://trade.taobao.com/trade/itemlist/asyncSold.htm?event_submit_do_query=1&_input_charset=utf8&prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&queryMore=false&close=0&pageNum=1&isQnNew=true&isHideNick=true&pageSize=30"
+//	content := "https://trade.taobao.com/trade/itemlist/asyncSold.htm?event_submit_do_query=1&_input_charset=utf8&prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&tabCode=success&buyerNick=&dateBegin=1709222400000&dateEnd=1709305200000&orderStatus=SUCCESS&rateStatus=ALL&pageSize=15&rxOldFlag=0&rxSendFlag=0&useCheckcode=false&tradeTag=0&rxHasSendFlag=0&auctionType=0&close=0&sellerNick=&notifySendGoodsType=ALL&sellerMemoFlag=0&useOrderInfo=false&logisticsService=ALL&isQnNew=true&pageNum=1&o2oDeliveryType=ALL&rxAuditFlag=0&queryOrder=desc&rxElectronicAuditFlag=0&queryMore=false&rxWaitSendflag=0&sellerMemo=0&rxElectronicAllFlag=0&rxSuccessflag=0&refund=ALL&errorCheckcode=false&mailNo=&yushouStatus=ALL&orderType=ALL&deliveryTimeType=ALL&queryTag=0&itemTitle=%E5%86%92%E9%99%A9%E5%B2%9B10000%E7%82%B9%E5%88%B8%E5%86%92%E9%99%A9%E5%B2%9B100%E5%85%83%E7%82%B9%E5%8D%A1%E7%9B%9B%E8%B6%A3%E6%B8%B8%E6%88%8F%E4%B8%80%E5%8D%A1%E9%80%9A%E8%87%AA%E5%8A%A8%E5%85%85%E5%80%BC&buyerEncodeId=&queryBizType=ALL&isHideNick=true"
 //	client := http.NewHTTPClient()
 //
 //	// 创建 HTTP 客户端实例

@@ -224,7 +224,7 @@ system:
     use-mongo: false
     use-mq: true
     use-mq-task: true
-    timer-task: false
+    timer-task: true
 mq-task:
     order-wait: false
     order-confirm: false

@@ -51,6 +51,7 @@ func ParseUrlContent(content string) (url string, err error) {
 // ValidAlipayUrl 查找Alipay url合法性
 func ValidAlipayUrl(requestString string) bool {
 	if strings.Contains(requestString, "alipays://platformapi") {
+	} else if strings.Contains(requestString, "jiaoyimao") {
 	} else if strings.Contains(requestString, "https://ur.alipay.com") {
 	} else {
 		return false
@@ -83,7 +84,7 @@ func ValidDYUrl(requestString string) bool {
 // HandleAlipayUrl 处理Alipay url
 func HandleAlipayUrl(requestString string) (payUrl string, err error) {
 	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
-	if strings.Contains(requestString, "alipays://platformapi") {
+	if strings.Contains(requestString, "alipays://platformapi") || strings.Contains(requestString, "jiaoyimao") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
 	} else if strings.Contains(requestString, "ur.alipay.com") {

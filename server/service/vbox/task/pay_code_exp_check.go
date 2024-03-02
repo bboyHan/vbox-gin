@@ -101,7 +101,7 @@ func PayCodeExpCheck() {
 					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
 					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 
 					global.GVA_LOG.Info("预产码已经过期或失效了，处理掉", zap.Any("预产码MID", v.Mid))
@@ -116,7 +116,7 @@ func PayCodeExpCheck() {
 					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
 					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 
 					continue
@@ -126,7 +126,7 @@ func PayCodeExpCheck() {
 					orgTmp := utils2.GetSelfOrg(pcDB.CreatedBy)
 					pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 						pcDB.Cid, pcDB.Money, pcDB.Operator, pcDB.Location)
-					pcMem := fmt.Sprintf("%d", pcDB.ID) + "_" + pcDB.Mid + "_" + pcDB.AcAccount + "_" + pcDB.ImgContent
+					pcMem := fmt.Sprintf("%d,%s,%s,%s", pcDB.ID, pcDB.Mid, pcDB.AcAccount, pcDB.ImgContent)
 					global.GVA_REDIS.ZRem(context.Background(), pcKey, pcMem)
 
 					global.GVA_LOG.Info("预产码已经过期或失效了，处理掉", zap.Any("预产码MID", v.Mid))

@@ -38,12 +38,12 @@
                       </div>
                       <div class="card_header_title"><span>{{ item.shopRemark }}</span></div>
                       <div class="card_header_description">
-                        <div>商铺ID：{{ item.productId }}</div>
+                        <div>商铺数量： <span style="color: red">{{ lengthFunc(item.list) }}</span></div>
                       </div>
                     </div>
                     <div class="card_content">
                       <div class="label">
-                        <span class="label_item">商铺数量： {{ lengthFunc(item.list) }}</span>
+                        <span class="label_item">商铺ID：{{ item.productId }}</span>
                       </div>
                     </div>
                     <div class="card_footer">
@@ -53,10 +53,10 @@
                       </div>
                       <div class="list_wrap">
                         <div class="percent">
-                          <div class="font-num en3">102%</div>
+                          <div class="font-num en3">66.6%</div>
                           <div class="percent_des">
                             <span>成率</span>
-                            <span class="org_percent">10/100</span>
+                            <span class="org_percent">66 / 100</span>
                           </div>
                         </div>
                         <div class="buy btn_wrap">
@@ -1134,7 +1134,7 @@ const deletePFormSelected = () => {
 }
 
 .card_warp.hot .card_header .card_header_description {
-  color: #fff;
+  color: #1d1585;
 }
 
 .card_header {
@@ -1150,7 +1150,7 @@ const deletePFormSelected = () => {
 
 .card_header_tag.new_customers {
   color: #ffffff;
-  background-image: linear-gradient(130deg, rgb(255, 62, 31) 40%, rgb(255, 50, 170) 100%);
+  background-image: linear-gradient(130deg, rgb(131, 128, 208) 40%, rgb(94, 50, 255) 100%);
 }
 
 .card_header_tag.new_customers::before {
@@ -1158,7 +1158,7 @@ const deletePFormSelected = () => {
 }
 
 .card_header_tag.new_customers::after {
-  background: rgb(255, 62, 31);
+  background: rgb(131, 128, 208);
 }
 
 .card_header_tag::after {
@@ -1216,15 +1216,16 @@ const deletePFormSelected = () => {
   font-size: 18px;
   font-weight: 700;
   line-height: 36px;
-  color: #ffffff;
+  color: rgb(131, 128, 208);
 }
 
 .card_header_description {
   padding-left: 24px;
   padding-right: 24px;
+  margin-bottom: -20px;
   font-size: 14px;
   line-height: 28px;
-  color: #ffffff;
+  color: rgb(121, 118, 206);
 }
 
 .card-header {
@@ -1237,6 +1238,11 @@ const deletePFormSelected = () => {
 
 .card_content {
   padding: 16px 24px;
+}
+
+.label .label_item{
+  color: #0a0e31;
+  margin-bottom: -20px
 }
 
 .card_footer::before {
@@ -1261,7 +1267,7 @@ const deletePFormSelected = () => {
 }
 
 .card_footer .label .label_item {
-  background-color: rgba(252, 241, 235, 1);
+  background-color: rgb(41, 21, 107);
   color: rgba(254, 95, 71, 1);
 }
 
@@ -1333,7 +1339,8 @@ const deletePFormSelected = () => {
 
 .card_footer .list_wrap .percent .font-num {
   font-size: 50px;
-  color: #f66a14;
+  padding-right: 8px;
+  color: #8294ee;
 }
 
 .card_footer .list_wrap .percent .percent_des {
@@ -1390,12 +1397,12 @@ const deletePFormSelected = () => {
 }
 
 .card.button-base.yellow {
-  background: linear-gradient(to right, #ffcb87, #ffab76);
+  background: linear-gradient(to right, #8f87ff, #769dff);
   color: #4e342e;
 }
 
 .card.button-base.red {
-  background: linear-gradient(to right, #ec8c8c, #ef4949);
+  background: linear-gradient(to right, #2a54e1, #49a4ef);
   color: #4e342e;
 }
 
