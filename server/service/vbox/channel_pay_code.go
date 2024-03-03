@@ -20,7 +20,6 @@ import (
 	"gorm.io/gorm"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -176,56 +175,12 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 	pcKey := fmt.Sprintf(global.ChanOrgPayCodeLocZSet, orgTmp[0],
 		vboxChannelPayCode.Cid, vboxChannelPayCode.Money, vboxChannelPayCode.Operator, vboxChannelPayCode.Location)
 
-	pattern := fmt.Sprintf(global.ChanOrgPayCodePrefix, orgTmp[0], vboxChannelPayCode.Cid, vboxChannelPayCode.Money)
-	keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
+	vboxChannelPayCode.CodeStatus = 2
 
-	var flag bool
-	for _, key := range keys {
-		waitMembers := global.GVA_REDIS.ZRangeByScore(context.Background(), key, &redis.ZRangeBy{Min: "4", Max: "4", Offset: 0, Count: -1}).Val()
+	err = global.GVA_DB.Create(vboxChannelPayCode).Error
 
-		for _, member := range waitMembers {
-			if strings.Contains(member, vboxChannelPayCode.AcAccount) {
-				flag = true
-				break
-			}
-		}
-	}
-	if flag {
-		global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("acc", vboxChannelPayCode.AcAccount))
-		vboxChannelPayCode.CodeStatus = 4
-		err = global.GVA_DB.Create(vboxChannelPayCode).Error
-
-		waitAccPcKey := fmt.Sprintf(global.PcAccWaiting, vboxChannelPayCode.AcId)
-
-		// 设置一个冷却时间
-		var cdTime time.Duration
-		ttl := global.GVA_REDIS.TTL(context.Background(), waitAccPcKey).Val()
-		if ttl > 0 {
-			global.GVA_LOG.Info("当前添加的账号正在冷却中（有预产正在处理中）", zap.Any("ttl", ttl))
-			cdTime = ttl
-		} else {
-			duration, _ := HandleExpTime2Product(vboxChannelPayCode.Cid)
-			cdTime = duration + 60*time.Second
-		}
-
-		// 把当前acAccount下所有的预产等待队列置为冷却状态
-		waitIDsTmp := strings.Join([]string{fmt.Sprintf("%d", vboxChannelPayCode.ID)}, ",")
-		global.GVA_REDIS.Set(context.Background(), waitAccPcKey, waitIDsTmp, cdTime)
-
-		waitMsg := strings.Join([]string{waitAccPcKey, waitIDsTmp}, "-")
-		err = ch.PublishWithDelay(task.PayCodeCDCheckDelayedExchange, task.PayCodeCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-
-		pcMem := fmt.Sprintf("%d,%s,%s,%s", vboxChannelPayCode.ID, vboxChannelPayCode.Mid, vboxChannelPayCode.AcAccount, vboxChannelPayCode.ImgContent)
-		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 4, Member: pcMem})
-	} else {
-		global.GVA_LOG.Info("当前添加的账号没有冷却中（没有预产正在处理中）")
-		vboxChannelPayCode.CodeStatus = 2
-
-		err = global.GVA_DB.Create(vboxChannelPayCode).Error
-
-		pcMem := fmt.Sprintf("%d,%s,%s,%s", vboxChannelPayCode.ID, vboxChannelPayCode.Mid, vboxChannelPayCode.AcAccount, vboxChannelPayCode.ImgContent)
-		global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
-	}
+	pcMem := fmt.Sprintf("%d,%s,%s,%s", vboxChannelPayCode.ID, vboxChannelPayCode.Mid, vboxChannelPayCode.AcAccount, vboxChannelPayCode.ImgContent)
+	global.GVA_REDIS.ZAdd(context.Background(), pcKey, redis.Z{Score: 0, Member: pcMem})
 
 	//根据expTime 处理到期的消息校验，放到PayCodeDelayedRoutingKey
 	if vboxChannelPayCode.ExpTime.Unix() > 0 {

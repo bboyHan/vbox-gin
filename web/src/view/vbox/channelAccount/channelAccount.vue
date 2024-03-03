@@ -61,13 +61,13 @@
               <el-input v-model.number="searchInfo.cid" placeholder="搜索通道ID"/>
             </el-form-item>
             <el-form-item label="开关状态" prop="status">
-              <el-select v-model="searchInfo.status" placeholder="选择状态" style="width: 100px">
+              <el-select v-model="searchInfo.status" placeholder="选择状态" style="width: 120px">
                 <el-option label="已开启" value="1"/>
                 <el-option label="已关闭" value="0"/>
               </el-select>
             </el-form-item>
             <el-form-item label="系统状态" prop="sysStatus">
-              <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态" style="width: 100px">
+              <el-select v-model="searchInfo.sysStatus" placeholder="选择系统状态" style="width: 120px">
                 <el-option label="已开启" value="1"/>
                 <el-option label="已关闭" value="0"/>
               </el-select>
@@ -173,9 +173,9 @@
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="通道ID" prop="cid" width="80"/>
-        <el-table-column align="left" label="账户备注" prop="acRemark" width="180"/>
-        <el-table-column align="left" label="通道账户" prop="acAccount" width="180"/>
+        <el-table-column align="center" label="通道ID" prop="cid" width="80"/>
+        <el-table-column align="center" label="账户备注" prop="acRemark" width="180"/>
+        <el-table-column align="center" label="通道账户" prop="acAccount" width="180"/>
         <el-table-column align="left" label="账户密钥" prop="acPwd" width="120"/>
         <el-table-column align="left" label="CK" prop="token" width="260">
           <template #default="scope">
@@ -186,10 +186,10 @@
             </el-input>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="状态 / 系统开关" prop="status" width="140">
+        <el-table-column align="center" label="状态 / 系统开关" prop="status" width="200">
           <template #default="scope">
             <el-row :gutter="12">
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-popover trigger="hover" placement="top" width="240">
                   <p><span style="color: red;">注意</span>：操作后将通过系统审核，<span style="color: red;">审核通过后开启（或关闭）账号关联资源；</span><span
                       style="color: blue;">未通过系统审核请查看"操作日志"</span>核查原因，确定操作？</p>
@@ -200,9 +200,16 @@
                   </template>
                 </el-popover>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-switch v-model="scope.row.sysStatus" inline-prompt :active-value="1" active-text="开启"
                            :inactive-value="0" inactive-text="关闭" size="large" disabled/>
+              </el-col>
+              <el-col :span="8">
+                <el-button v-if="scope.row.sysStatus === 1" type="primary" circle link icon="info-filled"
+                           @click="getDetails(scope.row)">
+                </el-button>
+                <el-button v-else type="danger" size="small" circle icon="info-filled" color="red" @click="getDetails(scope.row)">
+                </el-button>
               </el-col>
             </el-row>
           </template>
@@ -214,15 +221,15 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查询" width="180">
+        <el-table-column align="center" label="查询" width="120">
           <template #default="scope">
-            <el-row :gutter="12">
+            <el-row>
               <el-col :span="12">
-                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">官方记录
+                <el-button type="primary" link class="table-button" @click="openOrderHisShow(scope.row)">记录
                 </el-button>
               </el-col>
               <el-col :span="12">
-                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">系统核查
+                <el-button type="primary" link class="table-button" @click="openOrderSysShow(scope.row)">成单
                 </el-button>
               </el-col>
             </el-row>
@@ -925,7 +932,7 @@
 
     <!--  创建 5000 -->
     <el-dialog v-model="dialog5000FormVisible" :before-close="close5000Dialog" :draggable="true" :title="typeTitle"
-               destroy-on-close>
+               destroy-on-close overflow>
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -942,20 +949,20 @@
           </el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :span="24">
-            <el-form-item label="商品链接" prop="acAccount">
+          <el-col :span="12">
+            <el-form-item label="账户" prop="acAccount">
               <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="商品备注" prop="acRemark">
+          <el-col :span="12">
+            <el-form-item label="备注" prop="acRemark">
               <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="商品链接" prop="token">
+        <el-form-item label="CK" prop="token">
           <el-input v-model="formData.token" type="textarea" :clearable="true"
-                    placeholder="输入示例：https://yaoshi.sdo.com/apipool?system_deviceId=83241004891122-40caee54f545f373&sequence=7&isHttp=0&netFlag=WIFI&method=txz_bs_mixed.dqOrder.list&ticket=cFFHWkDhsIx112NhvcX09FFaDUm3p%2F4Pk146eTWCS7IdU34mtVVI8rgoCVXnJmTJ9kfSiHkT0BP8SXK1sdeLempgKsItWc2F3FPn3BMsa6stXomxFjDNyaOieJADp3NapOnjl9Qnh7n9zi%2BavTlWAxE45Y9R38iCZz6x98tLMu0%3D&txzDeviceId=861110048918892&sndaId=1122890350&maxCount=10&version=a.9.4.8&timestampMs=-1"/>
+                    placeholder="输入CK"/>
         </el-form-item>
         <el-row>
           <el-col :span="1"></el-col>
@@ -1616,18 +1623,19 @@
           </el-row>
           <el-row>
             <el-col :span="12">
-              <el-form-item label="账户备注" prop="acRemark">
-                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              <el-form-item label="账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入账户" disabled/>
               </el-form-item>
             </el-col>
+
             <el-col :span="12">
-              <el-form-item label="通道账户" prop="acAccount">
-                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+              <el-form-item label="备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入备注"/>
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item label="报文" prop="token">
-            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+          <el-form-item label="CK" prop="token">
+            <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入CK"/>
           </el-form-item>
           <el-row>
             <el-col :span="1"></el-col>
@@ -1720,29 +1728,77 @@
     </el-dialog>
 
     <!-- 查看详情 -->
-    <el-dialog v-model="detailShow" style="width: 800px" lock-scroll :draggable="true" :before-close="closeDetailShow"
-               title="查看详情"
+    <el-dialog v-model="detailShow" width="60%" lock-scroll :draggable="true" :before-close="closeDetailShow"
+               title="查看详情" overflow
                destroy-on-close>
-      <el-scrollbar height="550px">
-        <el-descriptions :column="6" border>
-          <el-descriptions-item label="用户归属" :span="6">{{ formData.username }}</el-descriptions-item>
-          <el-descriptions-item label="账户ID" :span="6">{{ formData.acId }}</el-descriptions-item>
-          <el-descriptions-item label="账户备注" :span="6">{{ formData.acRemark }}</el-descriptions-item>
-          <el-descriptions-item label="通道账户" :span="3">{{ formData.acAccount }}</el-descriptions-item>
-          <el-descriptions-item label="账户密码" :span="3">{{ formData.acPwd }}</el-descriptions-item>
-          <el-descriptions-item label="ck" :span="6">
-            <el-input v-model="formData.token" type="textarea" readonly/>
-          </el-descriptions-item>
-          <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
-          <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
-          <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
-          <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
-          <el-descriptions-item label="状态开关" :span="3">{{ formData.status === 0 ? '关闭' : '开启' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-scrollbar>
+      <div v-if="stepDataShow">
+        <el-row :gutter="24">
+          <el-col :span="14">
+            <el-scrollbar height="550px">
+              <el-descriptions :column="6" border>
+                <el-descriptions-item label="用户归属" :span="6">{{ formData.username }}</el-descriptions-item>
+                <el-descriptions-item label="账户ID" :span="6">{{ formData.acId }}</el-descriptions-item>
+                <el-descriptions-item label="账户备注" :span="6">{{ formData.acRemark }}</el-descriptions-item>
+                <el-descriptions-item label="通道账户" :span="3">{{ formData.acAccount }}</el-descriptions-item>
+                <el-descriptions-item label="账户密码" :span="3">{{ formData.acPwd }}</el-descriptions-item>
+                <el-descriptions-item label="ck" :span="6">
+                  <el-input v-model="formData.token" type="textarea" readonly/>
+                </el-descriptions-item>
+                <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
+                <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
+                <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
+                <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
+                <el-descriptions-item label="状态开关" :span="3">{{ formData.status === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+              </el-descriptions>
+            </el-scrollbar>
+          </el-col>
+          <el-col :span="10">
+            <el-scrollbar height="550px">
+              <el-timeline style="max-width: 600px; margin-top: 20px">
+                <el-timeline-item
+                    v-for="(activity, index) in stepData"
+                    :key="index"
+                    :timestamp="activity.CreatedAt"
+                >
+                  {{ activity.resp }}
+                </el-timeline-item>
+              </el-timeline>
+            </el-scrollbar>
+          </el-col>
+        </el-row>
+      </div>
+
+      <div v-else>
+        <el-row :gutter="24">
+          <el-col :span="24">
+            <el-scrollbar>
+              <el-descriptions :column="6" border>
+                <el-descriptions-item label="用户归属" :span="6">{{ formData.username }}</el-descriptions-item>
+                <el-descriptions-item label="账户ID" :span="6">{{ formData.acId }}</el-descriptions-item>
+                <el-descriptions-item label="账户备注" :span="6">{{ formData.acRemark }}</el-descriptions-item>
+                <el-descriptions-item label="通道账户" :span="3">{{ formData.acAccount }}</el-descriptions-item>
+                <el-descriptions-item label="账户密码" :span="3">{{ formData.acPwd }}</el-descriptions-item>
+                <el-descriptions-item label="ck" :span="6">
+                  <el-input v-model="formData.token" type="textarea" readonly/>
+                </el-descriptions-item>
+                <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
+                <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
+                <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
+                <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
+                <el-descriptions-item label="状态开关" :span="3">{{ formData.status === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+              </el-descriptions>
+            </el-scrollbar>
+          </el-col>
+        </el-row>
+
+      </div>
+
     </el-dialog>
 
     <!-- 查看充值详情 1000 3000 -->
@@ -1823,6 +1879,25 @@
           <el-table-column align="left" label="时间" prop="PayTime" width="160">
             <template #default="scope">
               {{ formatUtcTimestamp(scope.row.timestampMs / 1000) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-dialog>
+
+    <!-- 查看充值详情 5000 -->
+    <el-dialog v-model="orderHis5000Visible" style="width: 1100px" :draggable="true" lock-scroll
+               :before-close="closeOrderHis5000Show"
+               title="查看充值详情" destroy-on-close>
+      <el-scrollbar height="550px">
+        <el-table tooltip-effect="dark" :data="orderHis5000TableData" row-key="ID" style="width: 100%">
+          <el-table-column align="left" label="付款人" prop="buyer" width="160"/>
+          <el-table-column align="left" label="上游商品" prop="skuTitle"/>
+          <el-table-column align="left" label="金额" prop="money" width="80"/>
+          <el-table-column align="left" label="订单状态" prop="orderStatus" width="100"/>
+          <el-table-column align="left" label="时间" prop="createTime" width="160">
+            <template #default="scope">
+              {{ formatDate(scope.row.createTime) }}
             </template>
           </el-table-column>
         </el-table>
@@ -2394,6 +2469,10 @@ const queryAccOrderHisFunc = async (row, cid) => {
   } else if (cid >= 4000 && cid <= 4099) {
     if (res.code === 0) {
       orderHis4000TableData.value = res.data.list
+    }
+  }else if (cid >= 5000 && cid <= 5099) {
+    if (res.code === 0) {
+      orderHis5000TableData.value = res.data.list
     }
   }
 }
@@ -2983,12 +3062,23 @@ const openDetailShow = () => {
   detailShow.value = true
 }
 
+const stepData = ref([])
+const stepDataShow = ref(false)
+
 // 打开详情
 const getDetails = async (row) => {
   // 打开弹窗
   const res = await findChannelAccount({ID: row.ID})
   if (res.code === 0) {
     formData.value = res.data.revca
+    stepData.value = res.data.revca.ext.records
+
+    if (stepData.value !== null) {
+      for (let i = 0; i < stepData.value.length; i++) {
+        stepData.value[i].CreatedAt = formatDate(stepData.value[i].CreatedAt)
+      }
+      stepDataShow.value = true
+    }
     openDetailShow()
   }
 }
@@ -3529,6 +3619,7 @@ const updateTokenInfoFunc = async (row) => {
 const orderHisVisible = ref(false)
 const orderHis2000Visible = ref(false)
 const orderHis4000Visible = ref(false)
+const orderHis5000Visible = ref(false)
 // 系统记录查询
 const orderSysVisible = ref(false)
 // 产码统计查询
@@ -3536,6 +3627,7 @@ const payCodeOverviewVisible = ref(false)
 const channelCode = ref("")
 const orderHisTableData = ref([])
 const orderHis4000TableData = ref([])
+const orderHis5000TableData = ref([])
 const orderHis2000Info = ref([])
 const orderHis2000List = ref([])
 const orderSysTableData = ref([])
@@ -3558,6 +3650,10 @@ const closeOrderHis4000Show = () => {
   orderHis4000Visible.value = false
   orderHis4000TableData.value = []
 }
+const closeOrderHis5000Show = () => {
+  orderHis5000Visible.value = false
+  orderHis5000TableData.value = []
+}
 const closePayCodeOverviewShow = () => {
   payCodeOverviewVisible.value = false
   payCodeTableData.value = []
@@ -3578,6 +3674,8 @@ const openOrderHisShow = async (row) => {
     orderHis2000Visible.value = true;
   } else if (cid >= 4000 && cid <= 4099) {
     orderHis4000Visible.value = true;
+  } else if (cid >= 5000 && cid <= 5099) {
+    orderHis5000Visible.value = true;
   }
 
   await queryAccOrderHisFunc(req, cid)

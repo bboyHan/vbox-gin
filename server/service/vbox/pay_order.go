@@ -1197,7 +1197,7 @@ func (vpoService *PayOrderService) GetPayOrder(id uint) (payOrder vbox.PayOrder,
 				IFNULL(COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE NULL END), 0) AS x3,
 				IFNULL(COUNT(CASE WHEN DATE(created_at) = CURDATE() AND order_status = 1 THEN 1 ELSE NULL END), 0) AS x4
 			`).
-				Where("event_id like ?", "%"+split[0]+"%").Scan(&vo)
+				Where("event_id like ?", split[0]+"%").Scan(&vo)
 			if len(vo) > 0 {
 				ext["shop"] = shop
 				ext["dv"] = vo[0]

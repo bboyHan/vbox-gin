@@ -121,6 +121,8 @@ func ChanAccEnableCheckTask() {
 							Method:  v.Ctx.Method,
 							Path:    v.Ctx.UrlPath,
 							Agent:   v.Ctx.UserAgent,
+							MarkId:  fmt.Sprintf(global.AccRecord, acId),
+							Type:    global.AccType,
 							Status:  500,
 							Latency: time.Since(now),
 							Resp:    fmt.Sprintf(global.BalanceNotEnough, acId, v.Obj.AcAccount),
@@ -143,13 +145,6 @@ func ChanAccEnableCheckTask() {
 					if v.Obj.DailyLimit > 0 {
 
 						var dailySum int
-						//// 获取今天的时间范围
-						//startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
-						//endOfDay := startOfDay.Add(24 * time.Hour)
-						//// 获取本地时区
-						//loc, _ := time.LoadLocation("Asia/Shanghai") // 请替换为你实际使用的时区
-						//startOfDay = startOfDay.In(loc)
-						//endOfDay = endOfDay.In(loc)
 
 						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as dailySum").
 							Where("ac_id = ?", acId).
@@ -172,6 +167,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccDailyLimitNotEnough, acId, v.Obj.AcAccount, dailySum, v.Obj.DailyLimit),
@@ -214,6 +211,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccTotalLimitNotEnough, acId, v.Obj.AcAccount, totalSum, v.Obj.TotalLimit),
@@ -255,6 +254,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccInCntLimitNotEnough, acId, v.Obj.AcAccount, count, v.Obj.InCntLimit),
@@ -296,6 +297,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccCountLimitNotEnough, acId, v.Obj.AcAccount, count, v.Obj.CountLimit),
@@ -327,6 +330,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
@@ -356,6 +361,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccQryJ3RecordsEx, acId, v.Obj.AcAccount),
@@ -383,6 +390,8 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
@@ -401,7 +410,7 @@ func ChanAccEnableCheckTask() {
 							continue
 
 						}
-					} else if global.ECContains(cid) { //sdo
+					} else if global.ECContains(cid) { //ec
 						_, errQ := product.JDValidCookie(v.Obj.Token)
 						if errQ != nil {
 							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
@@ -411,6 +420,38 @@ func ChanAccEnableCheckTask() {
 								Method:  v.Ctx.Method,
 								Path:    v.Ctx.UrlPath,
 								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
+							}
+
+							errR := operationRecordService.CreateSysOperationRecord(record)
+							if errR != nil {
+								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+							}
+
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0)
+							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
+
+					} else if global.QNContains(cid) { //qn
+						_, errQ := product.QNValidCookie(v.Obj.Token)
+						if errQ != nil {
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
 								Status:  500,
 								Latency: time.Since(now),
 								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
@@ -453,6 +494,8 @@ func ChanAccEnableCheckTask() {
 									Method:  v.Ctx.Method,
 									Path:    v.Ctx.UrlPath,
 									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
 									Status:  500,
 									Latency: time.Since(now),
 									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
@@ -511,6 +554,8 @@ func ChanAccEnableCheckTask() {
 									Method:  v.Ctx.Method,
 									Path:    v.Ctx.UrlPath,
 									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
 									Status:  500,
 									Latency: time.Since(now),
 									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
@@ -567,6 +612,8 @@ func ChanAccEnableCheckTask() {
 									Method:  v.Ctx.Method,
 									Path:    v.Ctx.UrlPath,
 									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
 									Status:  500,
 									Latency: time.Since(now),
 									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
@@ -625,6 +672,8 @@ func ChanAccEnableCheckTask() {
 									Method:  v.Ctx.Method,
 									Path:    v.Ctx.UrlPath,
 									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
 									Status:  500,
 									Latency: time.Since(now),
 									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
@@ -682,6 +731,8 @@ func ChanAccEnableCheckTask() {
 									Method:  v.Ctx.Method,
 									Path:    v.Ctx.UrlPath,
 									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
 									Status:  500,
 									Latency: time.Since(now),
 									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
@@ -719,9 +770,14 @@ func ChanAccEnableCheckTask() {
 							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
 
+					} else if global.QNContains(cid) { //qn
+						//TODO
+						//var shopDBList []vbox.ChannelShop
+						//global.GVA_DB.Model(&vbox.ChannelShop{}).Where("created_by = ?")
+
 					} else if global.PcContains(cid) { //QB直付，查一下有没有还没被禁用的预产，把还没过期的恢复
 						var pcDBList []vbox.ChannelPayCode
-						global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("ac_id = ? and code_status = 5", acId).Find(&pcDBList)
+						global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("ac_id = ? and code_status = 5", v.Obj.CreatedBy).Find(&pcDBList)
 						if len(pcDBList) == 0 {
 							global.GVA_LOG.Info("开启过程校验..暂无需要处理的预产", zap.Any("当前账号", acId))
 						} else {
@@ -887,6 +943,8 @@ func ChanAccEnableCheckTask() {
 							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
+
+					} else if global.QNContains(cid) { //
 
 					} else if global.PcContains(cid) { //QB直付，查一下有没有还没关闭的预产，处理掉
 						var pcDBList []vbox.ChannelPayCode

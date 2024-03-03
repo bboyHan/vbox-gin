@@ -195,7 +195,14 @@ func OrderConfirmTask() {
 				switch {
 				case strings.Contains(prodInfo.ProductId, "qb") || strings.Contains(prodInfo.ProductId, "dnf"):
 					var waterList []prod.Payment
-					waterList, errX, qryURL = product.QryQQRecordsBetween(vca, startTime, endTime)
+					if global.PcContains(vca.Cid) {
+						global.GVA_LOG.Info("pc 核对订单", zap.Any("od plat", v.Obj.PlatId))
+						var recordList *prod.Records
+						recordList, errX = product.QryQQRecordsByID(vca, v.Obj.PlatId)
+						waterList = recordList.WaterList
+					} else {
+						waterList, errX, qryURL = product.QryQQRecordsBetween(vca, startTime, endTime)
+					}
 
 					if len(waterList) <= 0 {
 						global.GVA_LOG.Info("waterList 0,还没有QB的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", orderId))
@@ -218,6 +225,7 @@ func OrderConfirmTask() {
 								if flag {
 									global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
 									global.GVA_LOG.Info("核对官方订单", zap.Any("platID", platID), zap.Any("订单ID", orderId), zap.Any("查单起始时间", startTime), zap.Any("结束时间", endTime))
+									v.Obj.PlatId = platID
 								}
 							}
 						}
@@ -292,6 +300,7 @@ func OrderConfirmTask() {
 								if flag {
 									global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
 									global.GVA_LOG.Info("核对官方订单", zap.Any("platID", platID), zap.Any("订单ID", orderId), zap.Any("查单起始时间", startTime), zap.Any("结束时间", endTime))
+									v.Obj.PlatId = platID
 								}
 							}
 						}
@@ -318,6 +327,7 @@ func OrderConfirmTask() {
 									if strings.Contains(tg, vca.AcAccount) {
 										flag = true
 										platID = strings.Split(tg, "_")[1]
+										v.Obj.PlatId = platID
 										break
 									}
 								}
@@ -537,7 +547,7 @@ func OrderConfirmTask() {
 						Type:    global.OrderType,
 						Status:  200,
 						Latency: time.Since(time.Now()),
-						Resp:    fmt.Sprintf(global.OrderConfirmMsg),
+						Resp:    fmt.Sprintf(global.OrderConfirmMsg, v.Obj.PlatId),
 						UserID:  v.Ctx.UserID,
 					}
 

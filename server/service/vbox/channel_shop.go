@@ -82,10 +82,11 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidTBUrl(c.Address)
 		case "1202": //dnf jd
 			flag = utils.ValidJDUrl(c.Address)
-
 		case "2001": //j3 tb
 			flag = utils.ValidTBUrl(c.Address)
 		case "4001": //sdo tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "5001": //qn tb
 			flag = utils.ValidTBUrl(c.Address)
 		case "6001": //ec jd
 			flag = utils.ValidJDUrl(c.Address)
@@ -141,17 +142,33 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			global.GVA_LOG.Info("更新店铺信息", zap.Any("shopDB", shopDB))
 		}
 
-		key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
-		keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-		if c.Status == 1 {
+		if channelShop.Cid != "5001" {
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+			if c.Status == 1 {
 
-			global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-				Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
-				Member: keyMem,
-			})
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+					Member: keyMem,
+				})
+			} else {
+				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+			}
 		} else {
-			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+			if c.Status == 1 {
+
+				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+					Member: keyMem,
+				})
+			} else {
+				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+			}
+
 		}
+
 	}
 
 	if err == nil {

@@ -9,11 +9,17 @@
             <el-form-item label="付方单号" prop="orderId">
               <el-input v-model="searchInfo.orderId" placeholder="搜索付方单号"/>
             </el-form-item>
+            <el-form-item label="通道账号" prop="acAccount">
+              <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
+            </el-form-item>
+            <el-form-item label="通道ID" prop="channelCode">
+              <el-input v-model="searchInfo.channelCode" placeholder="搜索通道ID"/>
+            </el-form-item>
             <el-form-item label="付方ID" prop="pAccount">
               <el-input v-model="searchInfo.pAccount" placeholder="搜索付方ID"/>
             </el-form-item>
             <el-form-item label="订单状态" prop="orderStatus">
-              <el-select v-model="searchInfo.orderStatus" placeholder="选择状态" style="width: 100px">
+              <el-select v-model="searchInfo.orderStatus" placeholder="选择状态" style="width: 120px">
                 <el-option label="已支付" value="1"/>
                 <el-option label="未支付" value="2"/>
                 <el-option label="超时" value="3"/>
@@ -21,22 +27,16 @@
               </el-select>
             </el-form-item>
             <el-form-item label="回调状态" prop="cbStatus">
-              <el-select v-model="searchInfo.cbStatus" placeholder="选择状态" style="width: 100px">
+              <el-select v-model="searchInfo.cbStatus" placeholder="选择状态" style="width: 120px">
                 <el-option label="已回调" value="1"/>
                 <el-option label="未回调" value="2"/>
               </el-select>
             </el-form-item>
             <el-form-item label="补单状态" prop="handStatus">
-              <el-select v-model="searchInfo.handStatus" placeholder="选择状态" style="width: 100px">
+              <el-select v-model="searchInfo.handStatus" placeholder="选择状态" style="width: 120px">
                 <el-option label="已补单" value="1"/>
                 <el-option label="默认" value="2"/>
               </el-select>
-            </el-form-item>
-            <el-form-item label="通道账号" prop="acAccount">
-              <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
-            </el-form-item>
-            <el-form-item label="通道ID" prop="channelCode">
-              <el-input v-model="searchInfo.channelCode" placeholder="搜索通道ID"/>
             </el-form-item>
             <el-form-item>
               <el-button icon="refresh" @click="onReset"></el-button>
@@ -55,9 +55,10 @@
               tooltip-effect="dark"
               :data="tableData"
               row-key="ID"
-              border :table-layout="'fixed'"
+
+              border
           >
-            <el-table-column align="center" label="通道ID" prop="channelCode" width="70"/>
+            <el-table-column align="center" label="通道ID" prop="channelCode" width="80"/>
             <el-table-column align="center" label="充值账号" prop="acAccount" width="200">
               <template #default="scope">
                 <div v-if="isPendingAcc(scope.row)">
@@ -79,7 +80,7 @@
               </template>
             </el-table-column>
             <el-table-column align="center" label="订单ID" prop="orderId" width="260"/>
-            <el-table-column align="center" label="金额" prop="money" width="120"/>
+            <el-table-column align="center" label="金额" prop="money"/>
             <el-table-column align="center" label="订单状态" prop="orderStatus" width="120">
               <template #default="scope">
                 <el-button style="width: 90px"
@@ -99,7 +100,7 @@
             <el-table-column align="center" label="创建时间" width="180">
               <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
             </el-table-column>
-            <el-table-column align="left" label="操作" width="260">
+            <el-table-column align="left" label="操作" width="200">
               <template #default="scope">
                 <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
                   <el-icon style="margin-right: 5px">
@@ -128,7 +129,7 @@
           <!--   详情版   -->
           <el-table v-else ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID"
                     border>
-            <el-table-column align="center" label="通道编码" prop="channelCode" width="100"/>
+            <el-table-column align="center" label="通道ID" prop="channelCode" width="80"/>
             <el-table-column align="center" label="充值账号" prop="acAccount" width="200">
               <template #default="scope">
                 <div v-if="isPendingAcc(scope.row)">
@@ -226,74 +227,129 @@
         <!-- 订单查看详情 -->
         <el-dialog v-model="detailShow" style="width: 70%" :draggable="true" lock-scroll
                    :before-close="closeDetailShow"
-                   title="查看详情"
+                   title="查看详情" overflow
                    destroy-on-close>
-          <el-row :gutter="24">
-            <el-col :span="14">
-              <el-scrollbar height="550px">
-                <el-descriptions :column="6" border>
-                  <el-descriptions-item label="订单ID" :span="6">{{ formData.orderId }}</el-descriptions-item>
-                  <el-descriptions-item label="平台ID" :span="6">{{ formData.platId }}</el-descriptions-item>
-                  <el-descriptions-item label="付方ID" :span="6">{{ formData.pAccount }}</el-descriptions-item>
-                  <el-descriptions-item label="账号ID" :span="3">{{ formData.acId }}</el-descriptions-item>
-                  <el-descriptions-item label="通道账号" :span="3">{{ formData.acAccount }}</el-descriptions-item>
-                  <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
-                  <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
-                  <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
-                  <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
-                  <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
-                  <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
-                  <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
-                  <el-descriptions-item label="商铺ID" :span="3">{{
-                      formData.ext.shop.productId
-                    }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="商铺备注" :span="3">{{
-                      formData.ext.shop.shopRemark
-                    }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="商铺成率" :span="6">
-                    <div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{ formData.ext.dv.x1 }}
-                      成率：{{ calculatePercentage(formData.ext.dv.x2, formData.ext.dv.x1) }}%
-                    </div>
-                    <div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{ formData.ext.dv.x3 }}
-                      成率：{{ calculatePercentage(formData.ext.dv.x4, formData.ext.dv.x3) }}%
-                    </div>
-                  </el-descriptions-item>
-                  <el-descriptions-item label="订单状态" :span="3">{{
-                      formatPayed(formData.orderStatus)
-                    }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="回调状态" :span="3">{{
-                      formatNotify(formData.cbStatus)
-                    }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="回调时间" :span="3">{{
-                      formatDate(formData.cbTime)
-                    }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="过期时间" :span="3">{{
-                      formatDate(formData.expTime)
-                    }}
-                  </el-descriptions-item>
-                </el-descriptions>
-              </el-scrollbar>
-            </el-col>
-            <el-col :span="10">
-              <el-scrollbar height="550px">
-                <el-timeline style="max-width: 600px">
-                  <el-timeline-item
-                      v-for="(activity, index) in stepData"
-                      :key="index"
-                      :timestamp="activity.CreatedAt"
-                  >
-                    {{ activity.resp }}
-                  </el-timeline-item>
-                </el-timeline>
-              </el-scrollbar>
-            </el-col>
-          </el-row>
-
+          <div v-if="stepDataShow">
+            <el-row :gutter="24">
+              <el-col :span="14">
+                <el-scrollbar height="550px">
+                  <el-descriptions :column="6" border>
+                    <el-descriptions-item label="订单ID" :span="6">{{ formData.orderId }}</el-descriptions-item>
+                    <el-descriptions-item label="平台ID" :span="6">{{ formData.platId }}</el-descriptions-item>
+                    <el-descriptions-item label="付方ID" :span="6">{{ formData.pAccount }}</el-descriptions-item>
+                    <el-descriptions-item label="账号ID" :span="3">{{ formData.acId }}</el-descriptions-item>
+                    <el-descriptions-item label="通道账号" :span="3">{{ formData.acAccount }}</el-descriptions-item>
+                    <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
+                    <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
+                    <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
+                    <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
+                    <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
+                    <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
+                    <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
+                    <el-descriptions-item label="商铺ID" :span="3">{{
+                        formData.ext.shop.productId
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="商铺备注" :span="3">{{
+                        formData.ext.shop.shopRemark
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="商铺成率" :span="6">
+                      <div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{ formData.ext.dv.x1 }}
+                        成率：{{ calculatePercentage(formData.ext.dv.x2, formData.ext.dv.x1) }}%
+                      </div>
+                      <div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{ formData.ext.dv.x3 }}
+                        成率：{{ calculatePercentage(formData.ext.dv.x4, formData.ext.dv.x3) }}%
+                      </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="订单状态" :span="3">{{
+                        formatPayed(formData.orderStatus)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="回调状态" :span="3">{{
+                        formatNotify(formData.cbStatus)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="回调时间" :span="3">{{
+                        formatDate(formData.cbTime)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="过期时间" :span="3">{{
+                        formatDate(formData.expTime)
+                      }}
+                    </el-descriptions-item>
+                  </el-descriptions>
+                </el-scrollbar>
+              </el-col>
+              <el-col :span="10">
+                <el-scrollbar height="550px">
+                  <el-timeline style="max-width: 600px; margin-top: 20px">
+                    <el-timeline-item
+                        v-for="(activity, index) in stepData"
+                        :key="index"
+                        :timestamp="activity.CreatedAt"
+                    >
+                      {{ activity.resp }}
+                    </el-timeline-item>
+                  </el-timeline>
+                </el-scrollbar>
+              </el-col>
+            </el-row>
+          </div>
+          <div v-else>
+            <el-row>
+              <el-col :span="24">
+                <el-scrollbar height="550px">
+                  <el-descriptions :column="6" border>
+                    <el-descriptions-item label="订单ID" :span="6">{{ formData.orderId }}</el-descriptions-item>
+                    <el-descriptions-item label="平台ID" :span="6">{{ formData.platId }}</el-descriptions-item>
+                    <el-descriptions-item label="付方ID" :span="6">{{ formData.pAccount }}</el-descriptions-item>
+                    <el-descriptions-item label="账号ID" :span="3">{{ formData.acId }}</el-descriptions-item>
+                    <el-descriptions-item label="通道账号" :span="3">{{ formData.acAccount }}</el-descriptions-item>
+                    <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
+                    <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
+                    <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
+                    <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
+                    <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
+                    <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
+                    <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
+                    <el-descriptions-item label="商铺ID" :span="3">{{
+                        formData.ext.shop.productId
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="商铺备注" :span="3">{{
+                        formData.ext.shop.shopRemark
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="商铺成率" :span="6">
+                      <div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{ formData.ext.dv.x1 }}
+                        成率：{{ calculatePercentage(formData.ext.dv.x2, formData.ext.dv.x1) }}%
+                      </div>
+                      <div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{ formData.ext.dv.x3 }}
+                        成率：{{ calculatePercentage(formData.ext.dv.x4, formData.ext.dv.x3) }}%
+                      </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="订单状态" :span="3">{{
+                        formatPayed(formData.orderStatus)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="回调状态" :span="3">{{
+                        formatNotify(formData.cbStatus)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="回调时间" :span="3">{{
+                        formatDate(formData.cbTime)
+                      }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="过期时间" :span="3">{{
+                        formatDate(formData.expTime)
+                      }}
+                    </el-descriptions-item>
+                  </el-descriptions>
+                </el-scrollbar>
+              </el-col>
+            </el-row>
+          </div>
         </el-dialog>
 
         <!--  补单  -->
@@ -438,6 +494,25 @@
           </el-scrollbar>
         </el-dialog>
 
+        <!-- 查看充值详情 5000 -->
+        <el-dialog v-model="orderHis5000Visible" style="width: 1100px" :draggable="true" lock-scroll
+                   :before-close="closeOrderHis5000Show"
+                   title="查看充值详情" destroy-on-close>
+          <el-scrollbar height="550px">
+            <el-table tooltip-effect="dark" :data="orderHis5000TableData" row-key="ID" style="width: 100%">
+              <el-table-column align="left" label="付款人" prop="buyer" width="160"/>
+              <el-table-column align="left" label="上游商品" prop="skuTitle"/>
+              <el-table-column align="left" label="金额" prop="money" width="80"/>
+              <el-table-column align="left" label="订单状态" prop="orderStatus" width="100"/>
+              <el-table-column align="left" label="时间" prop="createTime" width="160">
+                <template #default="scope">
+                  {{ formatDate(scope.row.createTime) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-scrollbar>
+        </el-dialog>
+
         <!--  核对  -->
         <el-dialog v-model="dialogCardSubmitVisible" :before-close="closeSubmitCard" title="核对" :draggable="true"
                    destroy-on-close style="width: 850px">
@@ -526,6 +601,7 @@ const resetSimple = (status) => {
 }
 
 const stepData = ref([])
+const stepDataShow = ref(false)
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -673,9 +749,13 @@ const getDetails = async (row) => {
   if (res.code === 0) {
     formData.value = res.data.repayOrder
     stepData.value = res.data.repayOrder.ext.records
-    for (let i = 0; i < stepData.value.length; i++) {
-      stepData.value[i].CreatedAt = formatDate(stepData.value[i].CreatedAt)
+    if (stepData.value !== null) {
+      for (let i = 0; i < stepData.value.length; i++) {
+        stepData.value[i].CreatedAt = formatDate(stepData.value[i].CreatedAt)
+      }
+      stepDataShow.value = true
     }
+
     openDetailShow()
   }
 }
@@ -821,10 +901,12 @@ const closeAccDetailShow = () => {
 const orderHisVisible = ref(false)
 const orderHis2000Visible = ref(false)
 const orderHis4000Visible = ref(false)
-const orderHisTableData = ref([])
-const orderHis4000TableData = ref([])
+const orderHis5000Visible = ref(false)
 const orderHis2000Info = ref([])
 const orderHis2000List = ref([])
+const orderHisTableData = ref([])
+const orderHis4000TableData = ref([])
+const orderHis5000TableData = ref([])
 const openOrderHisShow = async (row) => {
   // orderHisVisible.value = true
   let req = {...row}
@@ -842,6 +924,8 @@ const openOrderHisShow = async (row) => {
     orderHis2000Visible.value = true;
   } else if (cid >= 4000 && cid <= 4099) {
     orderHis4000Visible.value = true;
+  } else if (cid >= 5000 && cid <= 5099) {
+    orderHis5000Visible.value = true;
   }
   await queryAccOrderHisFunc(req)
 }
@@ -858,6 +942,10 @@ const closeOrderHis4000Show = () => {
   orderHis4000Visible.value = false
   orderHis4000TableData.value = []
 }
+const closeOrderHis5000Show = () => {
+  orderHis5000Visible.value = false
+  orderHis5000TableData.value = []
+}
 const queryAccOrderHisFunc = async (row) => {
   const req = {...row}
   const resAcc = await findChannelAccount({acId: req.acId})
@@ -865,11 +953,7 @@ const queryAccOrderHisFunc = async (row) => {
   let res = await queryAccOrderHis(resAcc.data.revca)
   console.log(res.data)
   let cid = resAcc.data.revca.cid
-  if (cid >= 3000 && cid <= 3099) {
-    if (res.code === 0) {
-      orderHisTableData.value = res.data.list.WaterList
-    }
-  } else if (cid >= 1000 && cid <= 1099) {
+  if (cid >= 1000 && cid <= 1099) {
     if (res.code === 0) {
       orderHisTableData.value = res.data.list.WaterList
     }
@@ -877,14 +961,22 @@ const queryAccOrderHisFunc = async (row) => {
     if (res.code === 0) {
       orderHisTableData.value = res.data.list.WaterList
     }
-  } else if (cid >= 4000 && cid <= 4099) {
-    if (res.code === 0) {
-      orderHis4000TableData.value = res.data.list
-    }
   } else if (cid >= 2000 && cid <= 2099) {
     if (res.code === 0) {
       orderHis2000Info.value = res.data.list.info
       orderHis2000List.value = res.data.list.list
+    }
+  }else if (cid >= 3000 && cid <= 3099) {
+    if (res.code === 0) {
+      orderHisTableData.value = res.data.list.WaterList
+    }
+  } else if (cid >= 4000 && cid <= 4099) {
+    if (res.code === 0) {
+      orderHis4000TableData.value = res.data.list
+    }
+  } else if (cid >= 5000 && cid <= 5099) {
+    if (res.code === 0) {
+      orderHis5000TableData.value = res.data.list
     }
   }
 }

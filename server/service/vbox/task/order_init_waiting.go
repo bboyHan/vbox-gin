@@ -188,17 +188,18 @@ func OrderWaitingTask() {
 
 						// 判断一下当前的账号tm的有没有同时拉单
 						split := strings.Split(accSetMem, ",")
+						var pcDB vbox.ChannelPayCode
 						if global.PcContains(cid) {
 							ID = split[0] // pc id
 							MID = split[1]
 							acAccount = split[2]
 							imgContent = split[3]
-							var pcDB vbox.ChannelPayCode
 							err = global.GVA_DB.Model(&vbox.ChannelPayCode{}).Where("id = ?", ID).First(&pcDB).Error
 							if err != nil {
 								global.GVA_LOG.Error("pc 匹配预产异常", zap.Error(err))
 								continue
 							}
+							accID = pcDB.AcId
 						} else {
 							ID = split[0]
 							accID = split[1]
@@ -220,7 +221,7 @@ func OrderWaitingTask() {
 						} else {
 							// 查一下限额情况
 							var vca vbox.ChannelAccount
-							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("id = ?", ID).First(&vca).Error
+							err = global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("ac_id = ?", accID).First(&vca).Error
 							if err != nil {
 								//return nil, fmt.Errorf("匹配通道账号不存在！ 请核查：%v", err.Error())
 								global.GVA_LOG.Error("数据库查账号异常", zap.Error(err))
@@ -282,6 +283,10 @@ func OrderWaitingTask() {
 								Member: accSetMem,
 							})
 
+							if global.PcContains(cid) {
+								global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id = ?", pcDB.ID).Update("code_status", 1)
+							}
+
 							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, t.CDTime)
 
 							var accWaitYdKey, accInfoVal string
@@ -306,6 +311,8 @@ func OrderWaitingTask() {
 							v.Obj.AcAccount = vca.AcAccount
 							if cid == "1101" || cid == "6001" || cid == "2001" {
 
+							} else if cid == "3000" {
+								v.Obj.PlatId = pcDB.PlatId
 							} else {
 								v.Obj.PlatId = utils.GenerateID(global.WalletEventOrderPrefix)
 							}

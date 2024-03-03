@@ -5,6 +5,8 @@ package main
 //	"fmt"
 //	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 //	"golang.org/x/text/encoding/simplifiedchinese"
+//	"net/url"
+//	"regexp"
 //)
 //
 //func main() {
@@ -57,6 +59,24 @@ package main
 //	client := http.NewHTTPClient()
 //
 //	// 创建 HTTP 客户端实例
+//	ck := "Cookie: DI_T_=CvCyYhs4fx1SHMLxwCHxDHh5AoWsb; unb=291897500; lgc=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; cancelledSubSites=empty; dnk=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; tracknick=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; _l_g_=Ug%3D%3D; sg=%E6%B3%AE00; cookie1=BYe81wL1aEcXISEX05eGKFLHATjgHSMwpdZLh%2Bonxys%3D; lid=%E5%AE%9D%E5%AE%9D%E6%B3%AE%E6%B3%AE; cna=FGlaHnsb10QCAXU+tSXEiMHd; thw=cn; cookie2=10623e205f58c7e968229f67304d1d02; tbcp=e=UoM%2BHFG%2BH40YFva9%2BW9MM%2Bo%3D&f=UUjZeloosIiw2%2BCvtr5iVE1G0QM%3D; xlly_s=1; cookie17=UUGjOpdJllU9; _nk_=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; uc1=existShop=true&cookie21=U%2BGCWk%2F7owY2UcgNjKoRpw%3D%3D&cookie15=VT5L2FSpMGV7TQ%3D%3D&cookie14=UoYenMybgOipZw%3D%3D&pas=0&cookie16=W5iHLLyFPlMGbLDwA%2BdvAGZqLg%3D%3D; sn=; uc3=nk2=0uNrG6CNYqo%3D&vt3=F8dD3er%2F0loI8jNL%2Fno%3D&lg2=VFC%2FuZ9ayeYq2g%3D%3D&id2=UUGjOpdJllU9; csg=1fe052a3; t=a4b6b35c23815dd0ed51c362682a4ba9; skt=2e755f87f775e356; existShop=MTcwOTEyMDgzNg%3D%3D; uc4=nk4=0%400FJ7kRcJ2hk1GuZTgLlt5gCbyA%3D%3D&id4=0%40U2OU9SmOE7zVKGEpEatYkPdWeiI%3D; publishItemObj=; _cc_=Vq8l%2BKCLiw%3D%3D; _tb_token_=e3333e9164eee; sgcookie=P100y%2FFjvfaJ%2FFNhpfPE1vitYYowDBTiaTDBy77VTLYDlikqsdMRVGsQ0u%2FZwzdZOIp4ZwfMa702n1HY3k1iZkJfrWNuLsbvSbPBvs19V%2B%2FTj89Bn3ihwJsDkpklVDcXAk%2BT; lc=V3ic9Tykb4JHIbVnVQ%3D%3D; mtop_partitioned_detect=1; _m_h5_tk=967854cac29d1dba60bf9474c0bd6e25_1709128037680; _m_h5_tk_enc=f23e6c71538f5a41a7597826731973e6; tfstk=eXvHRev66B5CKfyXXeBIBPtmvVhORy65mUeRyTQr_N71v_KPyTYkrUbda26pEFYB56dp4LIyEN-V2DgSAdxy5U2Jw9CJEFxX4wydpUIuAdY0eJ3IO3yleTuxkxHvAMB5UqUt7umpAoMFa-kxHHtUvMovbxnBkpd1x7D-3a49EDXGoo2JpJ9T7K_2Yw-pvdSQkZ-F58yP-Mfh9H7gU8J142Vag9c0FGoJQ7N5TGsGkDH9aYdTsUYrjcVvV6S1cZnij7iNTGsMwcmgGGCFfMVA.; isg=BLm5V_y9-HcaNqTvMIujGDVF0CWTxq14kI6uPdvuN-BfYtn0Ixb7SFY04GaUWkWw"
+//
+//	re := regexp.MustCompile(`lid=([^;]+)`)
+//	match := re.FindStringSubmatch(ck)
+//	if len(match) > 1 {
+//		lidValue := match[1]
+//		// 使用 QueryUnescape 函数进行解码
+//		decodedLidValue, err := url.QueryUnescape(lidValue)
+//		if err != nil {
+//			fmt.Println("解码失败:", err)
+//			return
+//		}
+//
+//		fmt.Println("lid的值为:", lidValue)
+//		fmt.Println("lid的解码值为:", decodedLidValue)
+//	} else {
+//		fmt.Println("未找到lid的值")
+//	}
 //
 //	var headers = map[string]string{
 //		"Content-Type":    "application/x-www-form-urlencoded",
@@ -64,57 +84,8 @@ package main
 //		"Accept-Language": "zh-CN,zh;q=0.9",
 //		"Referer":         "https://myseller.taobao.com/",
 //		"User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-//		"Cookie":          "Cookie: DI_T_=CvCyYhs4fx1SHMLxwCHxDHh5AoWsb; unb=291897500; lgc=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; cancelledSubSites=empty; dnk=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; tracknick=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; _l_g_=Ug%3D%3D; sg=%E6%B3%AE00; cookie1=BYe81wL1aEcXISEX05eGKFLHATjgHSMwpdZLh%2Bonxys%3D; lid=%E5%AE%9D%E5%AE%9D%E6%B3%AE%E6%B3%AE; cna=FGlaHnsb10QCAXU+tSXEiMHd; thw=cn; cookie2=10623e205f58c7e968229f67304d1d02; tbcp=e=UoM%2BHFG%2BH40YFva9%2BW9MM%2Bo%3D&f=UUjZeloosIiw2%2BCvtr5iVE1G0QM%3D; xlly_s=1; cookie17=UUGjOpdJllU9; _nk_=%5Cu5B9D%5Cu5B9D%5Cu6CEE%5Cu6CEE; uc1=existShop=true&cookie21=U%2BGCWk%2F7owY2UcgNjKoRpw%3D%3D&cookie15=VT5L2FSpMGV7TQ%3D%3D&cookie14=UoYenMybgOipZw%3D%3D&pas=0&cookie16=W5iHLLyFPlMGbLDwA%2BdvAGZqLg%3D%3D; sn=; uc3=nk2=0uNrG6CNYqo%3D&vt3=F8dD3er%2F0loI8jNL%2Fno%3D&lg2=VFC%2FuZ9ayeYq2g%3D%3D&id2=UUGjOpdJllU9; csg=1fe052a3; t=a4b6b35c23815dd0ed51c362682a4ba9; skt=2e755f87f775e356; existShop=MTcwOTEyMDgzNg%3D%3D; uc4=nk4=0%400FJ7kRcJ2hk1GuZTgLlt5gCbyA%3D%3D&id4=0%40U2OU9SmOE7zVKGEpEatYkPdWeiI%3D; publishItemObj=; _cc_=Vq8l%2BKCLiw%3D%3D; _tb_token_=e3333e9164eee; sgcookie=P100y%2FFjvfaJ%2FFNhpfPE1vitYYowDBTiaTDBy77VTLYDlikqsdMRVGsQ0u%2FZwzdZOIp4ZwfMa702n1HY3k1iZkJfrWNuLsbvSbPBvs19V%2B%2FTj89Bn3ihwJsDkpklVDcXAk%2BT; lc=V3ic9Tykb4JHIbVnVQ%3D%3D; mtop_partitioned_detect=1; _m_h5_tk=967854cac29d1dba60bf9474c0bd6e25_1709128037680; _m_h5_tk_enc=f23e6c71538f5a41a7597826731973e6; tfstk=eXvHRev66B5CKfyXXeBIBPtmvVhORy65mUeRyTQr_N71v_KPyTYkrUbda26pEFYB56dp4LIyEN-V2DgSAdxy5U2Jw9CJEFxX4wydpUIuAdY0eJ3IO3yleTuxkxHvAMB5UqUt7umpAoMFa-kxHHtUvMovbxnBkpd1x7D-3a49EDXGoo2JpJ9T7K_2Yw-pvdSQkZ-F58yP-Mfh9H7gU8J142Vag9c0FGoJQ7N5TGsGkDH9aYdTsUYrjcVvV6S1cZnij7iNTGsMwcmgGGCFfMVA.; isg=BLm5V_y9-HcaNqTvMIujGDVF0CWTxq14kI6uPdvuN-BfYtn0Ixb7SFY04GaUWkWw",
+//		"Cookie":          ck,
 //	}
-//
-//	//prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&tabCode=success&rateStatus=&orderStatus=SUCCESS&payDateBegin=0&buyerNick=&pageSize=15&dateEnd=0&rxOldFlag=0&rxSendFlag=0&useCheckcode=false&dateBegin=0&tradeTag=0&rxHasSendFlag=0&auctionType=0&close=0&sellerNick=&notifySendGoodsType=ALL&sellerMemoFlag=0&useOrderInfo=false&logisticsService=&isQnNew=true&pageNum=1&o2oDeliveryType=ALL&rxAuditFlag=0&queryOrder=desc&rxElectronicAuditFlag=0&queryMore=false&payDateEnd=0&rxWaitSendflag=0&sellerMemo=0&rxElectronicAllFlag=0&rxSuccessflag=0&refund=&errorCheckcode=false&isHideNick=true
-//	//data := `{
-//	//	"prePageNo":             1,
-//	//	"sifg":                  0,
-//	//	"action":                "itemlist/SoldQueryAction",
-//	//	"tabCode":               "success",
-//	//	"rateStatus":            "",
-//	//	"orderStatus":           "SUCCESS",
-//	//	"payDateBegin":          0,
-//	//	"buyerNick":             "",
-//	//	"pageSize":              15,
-//	//	"dateEnd":               0,
-//	//	"rxOldFlag":             0,
-//	//	"rxSendFlag":            0,
-//	//	"useCheckcode":          false,
-//	//	"dateBegin":             0,
-//	//	"tradeTag":              0,
-//	//	"rxHasSendFlag":         0,
-//	//	"auctionType":           0,
-//	//	"close":                 0,
-//	//	"sellerNick":            "",
-//	//	"notifySendGoodsType":   "ALL",
-//	//	"sellerMemoFlag":        0,
-//	//	"useOrderInfo":          false,
-//	//	"logisticsService":      "",
-//	//	"isQnNew":               true,
-//	//	"pageNum":               1,
-//	//	"o2oDeliveryType":       "ALL",
-//	//	"rxAuditFlag":           0,
-//	//	"queryOrder":            "desc",
-//	//	"rxElectronicAuditFlag": 0,
-//	//	"queryMore":             false,
-//	//	"payDateEnd":            0,
-//	//	"rxWaitSendflag":        0,
-//	//	"sellerMemo":            0,
-//	//	"rxElectronicAllFlag":   0,
-//	//	"rxSuccessflag":         0,
-//	//	"refund":                "",
-//	//	"errorCheckcode":        false,
-//	//	"isHideNick":            true
-//	//}`
-//	//
-//	//var query product.QueryData
-//	//err := json.Unmarshal([]byte(data), &query)
-//	//if err != nil {
-//	//	fmt.Println("Error:", err)
-//	//	return
-//	//}
 //
 //	var options = &http.RequestOptions{
 //		Headers:      headers,
@@ -132,6 +103,11 @@ package main
 //	fmt.Println(s)
 //	fmt.Println(resp.StatusCode)
 //	fmt.Println(resp.Headers)
+//
+//	if resp.StatusCode == 302 {
+//		fmt.Println("302")
+//		return
+//	}
 //
 //	var m map[string]interface{}
 //	err = json.Unmarshal(readerBody, &m)

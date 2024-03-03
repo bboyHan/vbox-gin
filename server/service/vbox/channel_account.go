@@ -255,7 +255,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		if c == 0 {
 			channelCode = "qb_proxy"
 
-			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan= ?", 1, channelCode).
 				First(&urlQ).Error
 
 			if err != nil {
@@ -263,17 +263,15 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			}
 
 			global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, urlQ, 10*time.Minute)
-
 		} else {
 			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
-
 		}
 	} else if global.SdoContains(vca.Cid) {
 		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordSdoPrefix).Result()
 		if c == 0 {
 			channelCode = "sdo_proxy"
 
-			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan= ?", 1, channelCode).
 				First(&urlQ).Error
 
 			if err != nil {
@@ -281,18 +279,15 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			}
 
 			global.GVA_REDIS.Set(context.Background(), global.ProductRecordSdoPrefix, urlQ, 10*time.Minute)
-
 		} else {
 			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordSdoPrefix).Result()
-
 		}
-
 	} else if global.J3Contains(vca.Cid) {
 		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordJ3Prefix).Result()
 		if c == 0 {
 			channelCode = "j3_proxy"
 
-			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan=?", 1, channelCode).
 				First(&urlQ).Error
 
 			if err != nil {
@@ -300,12 +295,28 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			}
 
 			global.GVA_REDIS.Set(context.Background(), global.ProductRecordJ3Prefix, urlQ, 10*time.Minute)
-
 		} else {
 			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordJ3Prefix).Result()
-
 		}
 
+	} else if global.QNContains(vca.Cid) {
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQNPrefix).Result()
+		if c == 0 {
+			channelCode = "qn_proxy"
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan=?", 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordQNPrefix, urlQ, 10*time.Minute)
+
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQNPrefix).Result()
+
+		}
 	}
 
 	if global.TxContains(vca.Cid) || global.PcContains(vca.Cid) || global.DnfContains(vca.Cid) { // tx系
@@ -368,6 +379,14 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		records, err := product.QrySdoDaoYuRecords(*vca)
 		if err != nil {
 			return nil, err
+		}
+		return records, nil
+	} else if global.QNContains(vca.Cid) {
+		endTime := time.Now()
+		startTime := endTime.Add(-time.Hour * 24 * 10)
+		records, err := product.QryQNRecords(urlQ, *vca, startTime, endTime, "")
+		if err != nil {
+			return nil, fmt.Errorf("ck失效，请重新上传, err: " + err.Error())
 		}
 		return records, nil
 	}
@@ -560,6 +579,17 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		if !isNum {
 			return errors.New("QQ账号输入不合法")
 		}
+	} else if global.QNContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		account, errX := product.FindAccNick(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("未能解析到nick lid的值， 进行随机赋值")
+		}
+		vca.AcAccount = account
+
 	} else if global.SdoContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
 		if !isCK {
@@ -881,6 +911,17 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		if !b {
 			return errors.New("传入的ck不合法，请核查")
 		}
+	} else if global.QNContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		account, errX := product.FindAccNick(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("未能解析到nick lid的值， 进行随机赋值")
+		}
+		vca.AcAccount = account
+
 	} else if global.J3Contains(vca.Cid) {
 		parsedURL, errX := url.Parse(token)
 		if errX != nil {
@@ -901,19 +942,27 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		}
 		vca.AcAccount = account
 	} else {
-		return errors.New("该信道暂不支持创建账号")
+		return errors.New("该信道暂不支持更新账号")
 	}
 	err = global.GVA_DB.Save(&vca).Error
 	return err
 }
 
 // GetChannelAccount 根据id获取通道账号记录
-// Author [piexlmax](https://github.com/piexlmax)
 func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.ChannelAccount, err error) {
 	err = global.GVA_DB.Unscoped().Where("id = ?", id).First(&vca).Error
 	var sysUser sysModel.SysUser
 	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
 	vca.Username = sysUser.Username
+
+	rdAccId := fmt.Sprintf(global.OrderRecord, vca.AcId)
+	var records []sysModel.SysOperationRecord
+	global.GVA_DB.Model(&sysModel.SysOperationRecord{}).Distinct("resp,created_at").Where("mark_id = ?", rdAccId).Scan(&records)
+
+	ext := map[string]interface{}{
+		"records": records,
+	}
+	vca.Ext = ext
 	return
 }
 
@@ -923,6 +972,15 @@ func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (v
 	var sysUser sysModel.SysUser
 	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
 	vca.Username = sysUser.Username
+
+	rdAccId := fmt.Sprintf(global.OrderRecord, acId)
+	var records []sysModel.SysOperationRecord
+	global.GVA_DB.Model(&sysModel.SysOperationRecord{}).Distinct("resp,created_at").Where("mark_id = ?", rdAccId).Scan(&records)
+
+	ext := map[string]interface{}{
+		"records": records,
+	}
+	vca.Ext = ext
 	return
 }
 

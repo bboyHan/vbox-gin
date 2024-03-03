@@ -38,7 +38,7 @@ const (
 	OrderStartMsg            = "创建订单，等待用户进行访问..."
 	OrderWaitingMsg          = "用户访问订单页，开始进行库存匹配"
 	OrderWaitingFinishedMsg  = "库存匹配完成，匹配账号：%s，ID:%s，等待支付..."
-	OrderConfirmMsg          = "订单核验充值已到账，等待发起回调..."
+	OrderConfirmMsg          = "订单核验充值已到账【%s】，等待发起回调..."
 	OrderConfirmErrMsg       = "系统无法正确查单，通过CK查验充值记录异常，账号：%s，ID:%s，进行关闭账号处理，该订单置为失败单"
 	OrderTimeoutMsg          = "订单已过期，关闭订单"
 	OrderCallbackMsg         = "开始执行回调任务..."
@@ -62,7 +62,7 @@ const (
 	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	CardAccQryRecordsEx    = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
-	AccQryShopEx           = "当前组织无商铺地址匹配，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryShopEx           = "当前组织需开启至少一个商铺地址，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 
 	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
@@ -97,6 +97,8 @@ const (
 	ChanOrgECPoolAccZSet    = "vb_acc_ec_checkPool_set:org_%d:chan_%s"   // 同组织通道下查单池（ec）
 	ChanOrgShopAddrZSet     = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
+	ChanOrgQNShopZSet = "vb_acc_qn_set:org_%d:chan_%s:money_%v" // 同组织通道下可用账号（剑三）
+
 	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodeMoneyPrefix = "vb_pay_code_set:org_%d:chan_%s:money_*"                     // 同组织通道下可用付款码（取用池）
@@ -124,9 +126,10 @@ const (
 	YdDnfAccWaiting = "vb_acc_dnf_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
-	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
-	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
-	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
+	YdQNShopWaiting    = "vb_acc_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
+	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"           // 引导类-等待开启的账户(冷却中)
+	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"           // 引导类-等待开启的账户(冷却中)
+	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 
 	YdECJdCodeZSet = "vb_acc_ec_jd_code" // 引导类-等待开启的账户(冷却中)
 
@@ -137,6 +140,7 @@ const (
 	ProductRecordQBPrefix  = "product_record:qb:proxy"  // QB查询
 	ProductRecordJ3Prefix  = "product_record:j3:proxy"  // QB查询
 	ProductRecordSdoPrefix = "product_record:sdo:proxy" // sdo 查询
+	ProductRecordQNPrefix  = "product_record:qn:proxy"  // sdo 查询
 )
 
 const (

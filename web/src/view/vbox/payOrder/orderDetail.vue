@@ -378,14 +378,14 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
-              </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
-              </el-col>
+                <el-col style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">充值须知
+                </el-col>
+                <el-col style="text-align: left">
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">1. 仅支持<b style="color: blue;">【后置摄像头扫码】</b></div>
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【PC端】<b style="color: blue;">直接微信</b>扫一扫</div>
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【手机端】<b style="color: blue;">使用其他设备,微信扫一扫支付, 不支持相册识别</b></div>
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">4.<b style="color: blue;"> 一个设备展示二维码, </b>另一个设备<b style="color: blue;">进行扫描</b></div>
+                </el-col>
               <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>

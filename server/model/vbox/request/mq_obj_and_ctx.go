@@ -9,6 +9,11 @@ type ChanAccAndCtx struct {
 	Ctx Context             `json:"ctx" form:"ctx" url:"ctx"`
 }
 
+type ChanQNShopAndCtx struct {
+	Obj vbox.ChannelShop `json:"obj" form:"obj" url:"obj"`
+	Ctx Context          `json:"ctx" form:"ctx" url:"ctx"`
+}
+
 type ChanCardAccAndCtx struct {
 	Obj vbox.ChannelCardAcc `json:"obj" form:"obj" url:"obj"`
 	Ctx Context             `json:"ctx" form:"ctx" url:"ctx"`
