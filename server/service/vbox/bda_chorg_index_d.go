@@ -244,18 +244,21 @@ func (bdaChOrgIndexDService *BdaChorgIndexDService) CronVboxBdaChOrgIndexD() (er
 
 func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealList(info vboxReq.OrgSelectForm) (
 	list []vboxResp.ChaOrgRealCardResp, total int64, err error) {
-	//var yys []organization.Organization
-	//err = global.GVA_DB.Model(&yys).Where("id = ?", info.OrganizationID).Error
-	//if err != nil {
-	//	panic(err)
-	//}
-	//var yy = yys[0]
-	//var parentId = yy.ParentID
+	var parentId int
 	var orgs []organization.Organization
 	var orgIds []int
-	err = global.GVA_DB.Model(&orgs).Select("id").Where("parent_id = ?", info.OrganizationID).Pluck("id", &orgIds).Error
+
+	err = global.GVA_DB.Model(&orgs).Select("parent_id").Where("id = ?", info.OrganizationID).Pluck("parent_id", &parentId).Error
 	if err != nil {
 		panic(err)
+	}
+	if parentId != 0 {
+		orgIds = append(orgIds, info.OrganizationID)
+	} else {
+		err = global.GVA_DB.Model(&orgs).Select("id").Where("parent_id = ?", info.OrganizationID).Pluck("id", &orgIds).Error
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
@@ -521,7 +524,7 @@ func getCidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, 
 		on a.channel_code = c.channel_code  
 	`
 
-	fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
+	//fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryCidSql, dt, dt, orgs).Rows()
 	if err != nil {
@@ -915,7 +918,7 @@ func getCidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 		on a.channel_code = c.channel_code  
 	`
 
-	fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
+	//fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryCidSql, dt, dt, orgs, info.Cid).Rows()
 	if err != nil {

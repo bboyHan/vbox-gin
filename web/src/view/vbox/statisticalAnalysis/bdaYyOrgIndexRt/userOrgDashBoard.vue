@@ -429,9 +429,21 @@ const getYyCards = async() => {
   }
 }
 
+const parentID = ref(0)
+const getParentId = async() => {
+  console.log('orgSelectForm.value.organizationID', orgSelectForm.value.organizationID)
+  const res = await findOrganization({ID: orgSelectForm.value.organizationID})
+  // console.log('getParentId.value res', JSON.stringify(res))
+  if (res.code === 0) {
+    console.log('getParentId.value', JSON.stringify(res.data.reorg.parentID))
+    parentID.value = res.data.reorg.parentID
+  }
+}
+
 
 const orgShow = async() => {
   getYyCards()
+  
 }
 
 
@@ -586,6 +598,7 @@ const getNowOrg = (e) => {
   orgSelectForm.value.organizationID = currentOrg.value
   getYyCardsBySelect()
   console.log('getNowOrg',currentOrg.value)
+  // getParentId()
 }
 
 // 组织树组件获取
