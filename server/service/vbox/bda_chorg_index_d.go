@@ -116,6 +116,128 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexDInfoList(info vbo
 	return bdaChorgs, total, err
 }
 
+func (bdaChOrgIndexDService *BdaChorgIndexDService) CronRltnWidePayOrderD() (err error) {
+	querySql := `
+		INSERT INTO vbox_rltn_wide_pay_order_d
+		SELECT 
+			a1.id,
+			created_at,
+			updated_at,
+			deleted_at,
+			order_id,
+			money,
+			unit_price,
+			unit_id,
+			event_id,
+			event_type,
+			ac_id,
+			ac_account,
+			a1.channel_code,
+			a5.product_id,
+			a5.product_name,
+			pay_ip,
+			pay_region,
+			pay_device,
+			a1.p_account,
+			a3.p_remark,
+			plat_id,
+			order_status,
+			cb_status,
+			hand_status,
+			exp_time,
+			cb_time,
+			a4.nickname,
+			a2.org_id,
+			a2.org_name,
+			a2.org_parent_id,
+			'2024-03-04' as dt,
+			a1.created_by,
+			updated_by,
+			deleted_by
+		from 
+		(
+			select 
+				id,
+				created_at,
+				updated_at,
+				deleted_at,
+				order_id,
+				money,
+				unit_price,
+				unit_id,
+				event_id,
+				event_type,
+				ac_id,
+				ac_account,
+				channel_code,
+				pay_ip,
+				pay_region,
+				pay_device,
+				p_account,
+				plat_id,
+				order_status,
+				cb_status,
+				hand_status,
+				exp_time,
+				cb_time,
+				created_by,
+				updated_by,
+				deleted_by
+			from vbox_pay_order
+			where ( DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+				and event_type = 1  
+		) a1 
+		left join(
+				 SELECT 
+						organization_id as org_id,
+						name as org_name,
+						sys_user_id,
+						parent_id as org_parent_id
+					from
+						(
+						select
+							organization_id,
+							sys_user_id
+						from
+							org_user
+					) o1
+					join 
+					(
+						select
+							id,
+							name,
+							parent_id
+						from
+							organization
+					) o2
+					on
+						o1.organization_id = o2.id						
+		) a2
+		on a1.created_by = a2.sys_user_id
+		left join (
+			SELECT DISTINCT p_account,p_remark
+			FROM vbox_pay_account  
+		)a3
+		on a1.p_account = a3.p_account  
+		left join (
+			SELECT DISTINCT id,nickname
+			FROM sys_users 
+		) a4
+		on a1.created_by = a4.id  
+		left join (
+		SELECT DISTINCT channel_code,product_id,product_name 
+		FROM vbox_channel_product where channel_code !=''
+		) a5
+		on a1.channel_code = a5.channel_code  
+
+		`
+
+	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	db := global.GVA_DB.Model(&vbox.RltnWidePayOrderD{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
+	err = db.Exec(querySql, dt).Error
+	return err
+}
+
 func (bdaChOrgIndexDService *BdaChorgIndexDService) CronVboxBdaChOrgIndexD() (err error) {
 
 	querySql := `

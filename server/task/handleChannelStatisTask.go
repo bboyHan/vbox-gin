@@ -46,3 +46,18 @@ func HandleChannelStatisTask() (err error) {
 	return err
 
 }
+
+func HandlePayOrderBakTask() (err error) {
+
+	global.GVA_LOG.Info("支付数据备份 --> 备份开始")
+	err = service.ServiceGroupApp.VboxServiceGroup.CronRltnWidePayOrderD()
+	if err != nil {
+		global.GVA_LOG.Error("支付数据备份 --> 备份失败 ", zap.Error(err))
+		return
+	} else {
+		global.GVA_LOG.Info("支付数据备份 --> 备份成功")
+	}
+
+	return err
+
+}

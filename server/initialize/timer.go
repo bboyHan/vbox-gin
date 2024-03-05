@@ -73,6 +73,16 @@ func Timer() {
 		//if err != nil {
 		//	fmt.Println("add timer error:", err)
 		//}
+
+		_, err = global.GVA_Timer.AddTaskByFunc("HandlePayOrderBakTask", "18 01 * * *", func() {
+			err := task.HandlePayOrderBakTask() // 定时任务方法定在task文件包中
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+		})
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
 	}()
 
 	go func() {
@@ -139,4 +149,5 @@ func Timer() {
 			fmt.Println("add timer error:", err)
 		}
 	}()
+
 }

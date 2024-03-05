@@ -67,6 +67,7 @@ func RegisterTables() {
 		vbox.BdaChaccIndexD{},
 		vbox.BdaChShopIndexD{},
 		vbox.BdaChorgIndexD{},
+		vbox.RltnWidePayOrderD{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))
