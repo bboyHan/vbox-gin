@@ -264,11 +264,12 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealList(info vbox
 	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
 	uids, err := getYyUids(orgIds)
 
-	//fmt.Println("orgIds = ", orgIds)
-	//fmt.Println("uid = ", *info.SysUserID)
-	//fmt.Println("OrganizationID = ", info.OrganizationID)
-	//fmt.Println("uids = ", uids)
+	fmt.Println("orgIds = ", orgIds)
+	fmt.Println("uid = ", *info.SysUserID)
+	fmt.Println("OrganizationID = ", info.OrganizationID)
+	fmt.Println("uids = ", uids)
 	if info.PAccount != "" {
+		fmt.Println("1--->")
 		resp, err := getPaccCardResp(dt, uids)
 		return resp, int64(len(resp)), err
 	}
@@ -339,7 +340,7 @@ func getPaccCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp,
 		SELECT
 			a.p_account as pAccount,
 			'' as stepTime,
-			c.p_remark as userName,
+			coalesce(c.p_remark, a.p_account) as userName,
 			a.cnt as orderQuantify,
 			a.ok_cnt as okOrderQuantify,
 			a.ok_income as okIncome
