@@ -150,7 +150,7 @@ func (bdaChOrgIndexDService *BdaChorgIndexDService) CronRltnWidePayOrderD() (err
 			a2.org_id,
 			a2.org_name,
 			a2.org_parent_id,
-			'2024-03-04' as dt,
+			? as dt,
 			a1.created_by,
 			updated_by,
 			deleted_by
@@ -234,7 +234,7 @@ func (bdaChOrgIndexDService *BdaChorgIndexDService) CronRltnWidePayOrderD() (err
 
 	dt := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 	db := global.GVA_DB.Model(&vbox.RltnWidePayOrderD{}).Where("DATE_FORMAT(created_at, '%Y-%m-%d') = ? ", dt)
-	err = db.Exec(querySql, dt).Error
+	err = db.Exec(querySql, dt, dt).Error
 	return err
 }
 
