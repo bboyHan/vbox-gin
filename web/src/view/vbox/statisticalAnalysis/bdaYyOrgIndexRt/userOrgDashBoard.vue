@@ -1,7 +1,19 @@
 <template>
   <div class="organization">
-    <div class="gva-search-box org-top">
+    <!-- <div class="gva-search-box org-top">
       组织人员管理
+    </div> -->
+    <div class="gva-search-box org-top" >
+      <span class="demonstration">选择查看日期：</span>
+      <el-date-picker
+        v-model="dt"
+        type="date"
+        placeholder="选择日期"
+        :size="size"
+        value-format="YYYY-MM-DD"
+        @change="selectDt"
+        :disabled-date="disabledDate"
+      />
     </div>
     <div class="gva-organization-box">
       <div class="gva-organization-box-left">
@@ -313,12 +325,28 @@ const cardsDataValue = ref({
         dt: '',
 })
 
+
+
+const dt = ref('')
+// 切换选中组织
+const selectDt = (e) => {
+  dt.value = e
+  console.log('dt',dt.value)
+  // getParentId()
+}
+const disabledDate = (time) => {
+  return time.getTime() > Date.now()
+}
+
 const orgSelectForm = ref({
   sysUserID: '',
   organizationID: 0,
   cid: '',
   pAccount: '',
+  dt: dt,
 })
+
+
 
 
 // 所有付款列表
@@ -421,6 +449,8 @@ const getYyCardsBySelect = async() => {
 
 
 const getYyCards = async() => {
+  console.log('orgSelectForm.value', JSON.stringify(orgSelectForm.value))
+
   const res = await getBdaChorgIndexRealList(orgSelectForm.value)
   if (res.code === 0) {
     total.value = res.data.total
@@ -453,6 +483,7 @@ const cidShow = async() => {
                 organizationID: orgSelectForm.value.organizationID,
                 cid: '1001',
                 pAccount: '',
+                dt:dt
               } )
 
  const res = await getBdaChorgIndexRealList(selectForm.value)
@@ -469,6 +500,7 @@ const uidShow = async() => {
                 organizationID: orgSelectForm.value.organizationID,
                 cid: '',
                 pAccount: '',
+                dt:dt
               } )
 
   const res = await getBdaChorgIndexRealList(selectForm.value)
@@ -485,6 +517,7 @@ const paccShow = async() => {
                 organizationID: orgSelectForm.value.organizationID,
                 cid: '',
                 pAccount: '10000',
+                dt:dt
               }) 
 
   const res = await getBdaChorgIndexRealList(selectForm.value)
@@ -676,6 +709,13 @@ const order1CustomStyle = ref({
 <style scope lang="scss">
 .org-top{
   padding-bottom: 20px;
+}
+
+.demonstration {
+  // display: block;
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
 }
 
 .gva-organization-box{

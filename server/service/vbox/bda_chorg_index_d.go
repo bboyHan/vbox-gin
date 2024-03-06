@@ -383,7 +383,12 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealList(info vbox
 		}
 	}
 
-	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
+	var dt string
+	if info.Dt != "" {
+		dt = info.Dt
+	} else {
+		dt = time.Now().AddDate(0, 0, 0).Format("2006-01-02")
+	}
 	uids, err := getYyUids(orgIds)
 
 	fmt.Println("orgIds = ", orgIds)
@@ -816,7 +821,12 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealListBySelect(i
 		}
 	}
 
-	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
+	var dt string
+	if info.Dt != "" {
+		dt = info.Dt
+	} else {
+		dt = time.Now().AddDate(0, 0, 0).Format("2006-01-02")
+	}
 	uids, err := getYyUids(orgIds)
 
 	//fmt.Println("orgIds = ", orgIds)

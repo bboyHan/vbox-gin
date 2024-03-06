@@ -19,4 +19,5 @@ type OrgSelectForm struct {
 	Cid            string `json:"cid" form:"cid"`
 	PAccount       string `json:"pAccount" form:"pAccount"`
 	Uid            uint   `json:"uid" form:"uid"`
+	Dt             string `json:"dt" form:"dt"`
 }
