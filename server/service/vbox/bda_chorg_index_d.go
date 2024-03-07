@@ -391,29 +391,37 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealList(info vbox
 	}
 	uids, err := getYyUids(orgIds)
 
-	fmt.Println("orgIds = ", orgIds)
-	fmt.Println("uid = ", *info.SysUserID)
-	fmt.Println("OrganizationID = ", info.OrganizationID)
-	fmt.Println("uids = ", uids)
+	//fmt.Println("orgIds = ", orgIds)
+	//fmt.Println("uid = ", *info.SysUserID)
+	//fmt.Println("OrganizationID = ", info.OrganizationID)
+	//fmt.Println("uids = ", uids)
+	dtTime, err := time.Parse("2006-01-02", dt)
+	if err != nil {
+		fmt.Println("Error parsing target date:", err)
+		return
+	}
+	threeDaysAgo := time.Now().AddDate(0, 0, -3)
+	isThreeDaysAgo := dtTime.Before(threeDaysAgo)
+
 	if info.PAccount != "" {
-		fmt.Println("1--->")
-		resp, err := getPaccCardResp(dt, uids)
+		//fmt.Println("1--->")
+		resp, err := getPaccCardResp(dt, uids, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.SysUserID != nil && *info.SysUserID != 0 {
-		resp, err := getUidCardResp(dt, uids)
+		resp, err := getUidCardResp(dt, uids, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.Cid != "" {
-		resp, err := getCidCardResp(dt, uids)
+		resp, err := getCidCardResp(dt, uids, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.OrganizationID != 0 {
-		resp, err := getOrgCardResp(dt, uids, info)
+		resp, err := getOrgCardResp(dt, uids, info, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	// 默认方法
-	resp, err := getOrgCardResp(dt, uids, info)
+	resp, err := getOrgCardResp(dt, uids, info, isThreeDaysAgo)
 	return resp, int64(len(resp)), err
 }
 
@@ -461,7 +469,7 @@ func getYyUids(orgs []int) (sysUserIDs []int, err error) {
 	//fmt.Println(list)
 }
 
-func getPaccCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getPaccCardResp(dt string, orgs []int, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 成员维度统计
 	queryPaccSql := `
 		SELECT
@@ -500,6 +508,33 @@ func getPaccCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp,
 		on a.p_account = c.p_account  
 	`
 
+	queryThreeDaysSql := `
+			SELECT
+			 p_account as pAccount,
+			 userName,
+			 '' as stepTime,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					p_account,
+					coalesce(p_remark, p_account) as userName,
+					channel_code,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in  ?
+			)aa
+			GROUP BY p_account,userName
+`
+	if isThreeDaysAgo {
+		queryPaccSql = queryThreeDaysSql
+		fmt.Println("is three days ago")
+	}
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryPaccSql, dt, dt, orgs).Rows()
@@ -535,7 +570,7 @@ func getPaccCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp,
 	//fmt.Println(list)
 }
 
-func getUidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getUidCardResp(dt string, orgs []int, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 成员维度统计
 	queryUidSql := `
 
@@ -575,6 +610,31 @@ func getUidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, 
 			on a.uid = c.id  
 `
 
+	queryThreeDaysSql := `
+				SELECT
+				 uid,
+				 '' as stepTime,
+				 nickname as userName,
+				 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+				 count(*) as orderQuantify,
+				 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+				FROM(
+				SELECT
+						created_by as uid,
+						nickname,
+						order_status,
+						cb_status,
+						money	
+					from vbox_rltn_wide_pay_order_d 
+					where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+				and event_type = 1  and created_by in  ?
+				)aa
+				GROUP BY nickname,userName
+`
+	if isThreeDaysAgo {
+		queryUidSql = queryThreeDaysSql
+		fmt.Println("is three days ago")
+	}
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryUidSql, dt, dt, orgs).Rows()
@@ -612,7 +672,7 @@ func getUidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, 
 	//fmt.Println(list)
 }
 
-func getCidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getCidCardResp(dt string, orgs []int, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 通道产品维度统计
 	queryCidSql := `
 		SELECT
@@ -652,6 +712,34 @@ func getCidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, 
 		on a.channel_code = c.channel_code  
 	`
 
+	queryThreeDaysSql := `
+			SELECT
+			 channel_code  as channelCode,
+			 '' as stepTime,
+			 product_id as productId,
+			 product_name as productName,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					channel_code,
+					product_id,
+					product_name,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in  ?
+			)aa
+			GROUP BY channel_code,product_id,product_name
+`
+	if isThreeDaysAgo {
+		queryCidSql = queryThreeDaysSql
+		fmt.Println("is three days ago")
+	}
 	//fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryCidSql, dt, dt, orgs).Rows()
@@ -690,7 +778,7 @@ func getCidCardResp(dt string, orgs []int) (list []vboxResp.ChaOrgRealCardResp, 
 	//fmt.Println(list)
 }
 
-func getOrgCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getOrgCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 团队维度统计
 	queryOrgSql := `
 			
@@ -756,6 +844,33 @@ func getOrgCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []v
 				)aa
 				GROUP BY organization_id,organization_name
 			`
+
+	queryThreeDaysSql := `
+			SELECT
+			 org_id as organizationId,
+			 org_name as organizationName,
+			 '' as stepTime,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					org_id,
+					org_name,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in ?
+			)aa
+			GROUP BY org_id,org_name
+`
+	if isThreeDaysAgo {
+		queryOrgSql = queryThreeDaysSql
+		fmt.Println("is three days ago")
+	}
 
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
@@ -833,32 +948,41 @@ func (bdaChorgService *BdaChorgIndexDService) GetBdaChorgIndexRealListBySelect(i
 	//fmt.Println("uid = ", *info.SysUserID)
 	//fmt.Println("OrganizationID = ", info.OrganizationID)
 	//fmt.Println("uids = ", uids)
+
+	dtTime, err := time.Parse("2006-01-02", dt)
+	if err != nil {
+		fmt.Println("Error parsing target date:", err)
+		return
+	}
+	threeDaysAgo := time.Now().AddDate(0, 0, -3)
+	isThreeDaysAgo := dtTime.Before(threeDaysAgo)
+
 	if info.PAccount != "" {
 		//fmt.Println("1", info.PAccount)
-		resp, err := getPaccSelectCardResp(dt, uids, info)
+		resp, err := getPaccSelectCardResp(dt, uids, info, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.SysUserID != nil && *info.SysUserID != 0 {
 		//fmt.Println("2", info.PAccount)
-		resp, err := getUidSelectCardResp(dt, uids, info)
+		resp, err := getUidSelectCardResp(dt, uids, info, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.Cid != "" {
 		//fmt.Println("3", info.PAccount)
-		resp, err := getCidSelectCardResp(dt, uids, info)
+		resp, err := getCidSelectCardResp(dt, uids, info, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	if info.OrganizationID != 0 {
 		//fmt.Println("4", info.PAccount)
-		resp, err := getOrgSelectCardResp(dt, uids, info)
+		resp, err := getOrgSelectCardResp(dt, uids, info, isThreeDaysAgo)
 		return resp, int64(len(resp)), err
 	}
 	// 默认方法
-	resp, err := getOrgSelectCardResp(dt, uids, info)
+	resp, err := getOrgSelectCardResp(dt, uids, info, isThreeDaysAgo)
 	return resp, int64(len(resp)), err
 }
 
-func getPaccSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getPaccSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 成员维度统计
 	queryPaccSql := `
 		SELECT
@@ -896,7 +1020,32 @@ func getPaccSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (l
 		) c
 		on a.p_account = c.p_account  
 	`
-
+	queryThreeDaysSql := `
+			SELECT
+			 p_account as pAccount,
+			 userName,
+			 '' as stepTime,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					p_account,
+					coalesce(p_remark, p_account) as userName,
+					channel_code,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in  ? and p_account = ? 
+			)aa
+			GROUP BY p_account,userName
+`
+	if isThreeDaysAgo {
+		queryPaccSql = queryThreeDaysSql
+	}
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryPaccSql, dt, dt, orgs, info.PAccount).Rows()
@@ -932,7 +1081,7 @@ func getPaccSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (l
 	//fmt.Println(list)
 }
 
-func getUidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getUidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 成员维度统计
 	queryUidSql := `
 
@@ -960,7 +1109,7 @@ func getUidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 								money
 						from vbox_pay_order 
 						where (DATE_FORMAT(cb_time, '%Y-%m-%d') = ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
-						and event_type = 1   and created_by in ?
+						and event_type = 1   
 						and created_by = ?
 					
 				)aa
@@ -973,9 +1122,33 @@ func getUidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 			on a.uid = c.id  
 `
 
+	queryThreeDaysSql := `
+				SELECT
+				 uid,
+				 '' as stepTime,
+				 nickname as userName,
+				 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+				 count(*) as orderQuantify,
+				 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+				FROM(
+				SELECT
+						created_by as uid,
+						nickname,
+						order_status,
+						cb_status,
+						money	
+					from vbox_rltn_wide_pay_order_d 
+					where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+				and event_type = 1   and created_by = ?
+				)aa
+				GROUP BY nickname,userName
+`
+	if isThreeDaysAgo {
+		queryUidSql = queryThreeDaysSql
+	}
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
-	rows, err := db.Raw(queryUidSql, dt, dt, orgs, info.SysUserID).Rows()
+	rows, err := db.Raw(queryUidSql, dt, dt, info.SysUserID).Rows()
 	if err != nil {
 		panic(err)
 	}
@@ -1010,7 +1183,7 @@ func getUidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 	//fmt.Println(list)
 }
 
-func getCidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getCidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 通道产品维度统计
 	queryCidSql := `
 		SELECT
@@ -1050,7 +1223,33 @@ func getCidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 		) c
 		on a.channel_code = c.channel_code  
 	`
-
+	queryThreeDaysSql := `
+			SELECT
+			 channel_code  as channelCode,
+			 '' as stepTime,
+			 product_id as productId,
+			 product_name as productName,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					channel_code,
+					product_id,
+					product_name,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in  ? and channel_code = ?
+			)aa
+			GROUP BY channel_code,product_id,product_name
+`
+	if isThreeDaysAgo {
+		queryCidSql = queryThreeDaysSql
+	}
 	//fmt.Println("dt-->", dt, "uid-->", orgs, "querySql-->", queryCidSql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
 	rows, err := db.Raw(queryCidSql, dt, dt, orgs, info.Cid).Rows()
@@ -1089,7 +1288,7 @@ func getCidSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 	//fmt.Println(list)
 }
 
-func getOrgSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (list []vboxResp.ChaOrgRealCardResp, err error) {
+func getOrgSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm, isThreeDaysAgo bool) (list []vboxResp.ChaOrgRealCardResp, err error) {
 	// 团队维度统计
 	queryOrgSql := `
 			
@@ -1157,6 +1356,31 @@ func getOrgSelectCardResp(dt string, orgs []int, info vboxReq.OrgSelectForm) (li
 				)aa
 				GROUP BY organization_id,organization_name
 			`
+	queryThreeDaysSql := `
+			SELECT
+			 org_id as organizationId,
+			 org_name as organizationName,
+			 '' as stepTime,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as okIncome,
+			 count(*) as orderQuantify,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as okOrderQuantify
+			FROM(
+			SELECT
+					created_by as uid,
+					org_id,
+					org_name,
+					order_status,
+					cb_status,
+					money	
+				from vbox_rltn_wide_pay_order_d 
+				where (DATE_FORMAT(cb_time, '%Y-%m-%d') =  ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?)
+			and event_type = 1  and created_by in ?
+			)aa
+			GROUP BY org_id,org_name
+`
+	if isThreeDaysAgo {
+		queryOrgSql = queryThreeDaysSql
+	}
 
 	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
 	db := global.GVA_DB.Model(&vboxResp.ChaOrgRealCardResp{})
