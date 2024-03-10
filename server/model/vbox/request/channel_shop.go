@@ -29,6 +29,10 @@ type ChannelShop struct {
 	ShopRemark      string           `json:"shopRemark" form:"shopRemark"` //店铺备注
 	ChannelShopList []ChannelShopSub `json:"list" form:"list"`
 	CreatedBy       uint             `json:"createdBy" form:"createdBy"`
+	OrderQuantify   int              `json:"orderQuantify" form:"orderQuantify"`
+	OkOrderQuantify int              `json:"okOrderQuantify" form:"okOrderQuantify"`
+	Ratio           float64          `json:"ratio" form:"ratio"`
+	OkIncome        int              `json:"okIncome" form:"okIncome"` //
 }
 
 type ChannelShopSub struct {

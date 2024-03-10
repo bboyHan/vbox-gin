@@ -2,11 +2,13 @@ package vbox
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
+	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
@@ -464,7 +466,34 @@ func (channelShopService *ChannelShopService) GetChannelShopInfoList(info vboxRe
 		shopMap[shop.ProductId] = append(shopMap[shop.ProductId], shop)
 	}
 
+	num := 0
 	for productID, v := range shopMap {
+		// 将获取的值进行反序列化到 ShopIncomeResp 类型
+		var item vboxResp.ShopIncomeResp
+		key := "statis:chShop:" + productID
+		if num == 0 {
+
+			result, err := global.GVA_REDIS.Get(context.Background(), key).Result()
+			if err != nil {
+				fmt.Println(err)
+			}
+			//fmt.Println("result=", result == "")
+			if result == "" {
+				getShopOkstatisResp(ids)
+			}
+
+		}
+
+		resultExists, errExists := global.GVA_REDIS.Get(context.Background(), key).Result()
+		if errExists != nil {
+			fmt.Println(errExists)
+		}
+		//fmt.Println("resultExists=", resultExists)
+		err = json.Unmarshal([]byte(resultExists), &item)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		if len(v) == 0 {
 			continue
 		}
@@ -472,7 +501,12 @@ func (channelShopService *ChannelShopService) GetChannelShopInfoList(info vboxRe
 			ProductId:       productID,
 			ShopRemark:      v[0].ShopRemark,
 			Cid:             v[0].Cid,
-			ChannelShopList: []vboxReq.ChannelShopSub{}}
+			ChannelShopList: []vboxReq.ChannelShopSub{},
+			OrderQuantify:   item.OrderQuantify,
+			OkOrderQuantify: item.OkOrderQuantify,
+			Ratio:           item.Ratio,
+			OkIncome:        item.OkIncome,
+		}
 
 		for _, record := range v {
 			csNew.ChannelShopList = append(csNew.ChannelShopList, vboxReq.ChannelShopSub{
@@ -486,9 +520,87 @@ func (channelShopService *ChannelShopService) GetChannelShopInfoList(info vboxRe
 		}
 
 		res = append(res, csNew)
+		num++
 	}
 
 	sort.Sort(vboxReq.ChannelShopList(res))
 
 	return res, err
+}
+
+func getShopOkstatisResp(ids []uint) (err error) {
+	querySql := `
+		SELECT
+			c.product_id as shopId,
+			c.shop_remark as shopName,
+			COALESCE (a.cnt,0) as orderQuantify,
+			COALESCE (a.ok_cnt,0) as okOrderQuantify,
+			0 as ratio,
+			COALESCE (a.ok_income,0) as okIncome
+		FROM
+		(
+			SELECT
+			 event_id,
+			 sum(if (order_status=1 and cb_status=1,money,0)) as ok_income,
+			 count(*) as cnt,
+			 sum(if(order_status=1 and cb_status=1,1,0)) as ok_cnt
+			FROM(
+					SELECT
+							substring_index(event_id,'_',1) as event_id,
+							order_status,
+							cb_status,
+							money,
+							created_at,
+							cb_time	
+					from vbox_pay_order 
+					where DATE_FORMAT(cb_time, '%Y-%m-%d') = ? or DATE_FORMAT(created_at, '%Y-%m-%d') = ?
+					and event_type = 1 and created_by in  ?
+			)a1
+			GROUP BY event_id
+		)a 
+		right join (
+		SELECT DISTINCT product_id,shop_remark
+		FROM vbox_channel_shop 
+		) c
+		on a.event_id = c.product_id  
+	`
+	//shopMap := make(map[string]vboxResp.ShopIncomeResp)
+	dt := time.Now().AddDate(0, 0, 0).Format("2006-01-02")
+
+	//fmt.Println("dt-->", dt, "uid-->", uid, "querySql-->", querySql)
+	db := global.GVA_DB.Model(&vboxResp.ShopIncomeResp{})
+	rows, err := db.Raw(querySql, dt, dt, ids).Rows()
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println(rows.Next())
+	defer rows.Close()
+	// 如果有下一行数据，继续循环
+	for rows.Next() {
+		// 遍历查询结果并将值映射到结构体中
+		var item vboxResp.ShopIncomeResp
+		err := rows.Scan(&item.ShopId, &item.ShopName, &item.OrderQuantify, &item.OkOrderQuantify, &item.Ratio, &item.OkIncome)
+		if err != nil {
+			panic(err)
+		}
+		defaultItem := vboxResp.ShopIncomeResp{
+			ShopId:          item.ShopId,
+			ShopName:        item.ShopName,
+			OrderQuantify:   item.OrderQuantify,
+			OkOrderQuantify: item.OkOrderQuantify,
+			Ratio:           item.Ratio,
+			OkIncome:        item.OkIncome,
+		}
+
+		//shopMap[item.ShopId] = defaultItem
+		key := "statis:chShop:" + item.ShopId
+		jsonStr, err := json.Marshal(defaultItem)
+		fmt.Println("redis set,", jsonStr)
+		err = global.GVA_REDIS.Set(context.Background(), key, jsonStr, 5*time.Minute).Err()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return err
 }

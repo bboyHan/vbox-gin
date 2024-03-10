@@ -310,6 +310,19 @@ export function calculatePercentage(num, total) {
     return percentage;
 }
 
+
+export function calculatePercentageInt(num, total) {
+    if (isNaN(num) || isNaN(total)) {
+        return 0;
+    }
+
+    num = parseFloat(num);
+    total = parseFloat(total);
+    const percentage = total <= 0 ? 0 : Math.round((num / total) * 100) ;
+
+    return percentage;
+}
+
 export function formatMoney(num, prefix) {
     if (isNaN(num)) {
         num = 0

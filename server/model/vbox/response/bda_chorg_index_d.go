@@ -72,3 +72,12 @@ type PaccRealStatisicsResp struct {
 	OkOrderQuantify int    `json:"okOrderQuantify" form:"okOrderQuantify"`
 	OkIncome        int    `json:"okIncome" form:"okIncome"` //
 }
+
+type ShopIncomeResp struct {
+	ShopId          string  `json:"shopId" form:"shopId"`
+	ShopName        string  `json:"shopName" form:"shopName"`
+	OrderQuantify   int     `json:"orderQuantify" form:"orderQuantify"`
+	OkOrderQuantify int     `json:"okOrderQuantify" form:"okOrderQuantify"`
+	Ratio           float64 `json:"ratio" form:"ratio"`
+	OkIncome        int     `json:"okIncome" form:"okIncome"` //
+}

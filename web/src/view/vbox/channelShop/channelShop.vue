@@ -53,10 +53,10 @@
                       </div>
                       <div class="list_wrap">
                         <div class="percent">
-                          <div class="font-num en3">66.6%</div>
+                          <div class="font-num en3">{{ calculatePercentageInt(item.okOrderQuantify,item.orderQuantify) }}%</div>
                           <div class="percent_des">
                             <span>成率</span>
-                            <span class="org_percent">66 / 100</span>
+                            <span class="org_percent">{{ item.okOrderQuantify }} / {{ item.orderQuantify }}</span>
                           </div>
                         </div>
                         <div class="buy btn_wrap">
@@ -470,6 +470,8 @@ import {CircleCheck, CircleClose, Delete, Edit, InfoFilled, Plus, Select} from '
 import {setUserInfo} from "@/api/user";
 import bgImage from "@/assets/od_info_bg.png";
 import shopBgImage from '@/assets/shop_bg.png'
+
+import {calculatePercentage, formatMoney,calculatePercentageInt} from "@/utils/format";
 
 defineOptions({
   name: 'ChannelShop'
