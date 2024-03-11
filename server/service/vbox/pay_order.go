@@ -371,8 +371,22 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			defer mq.MQ.ConnPool.ReturnConnection(conn)
 
 			ch, errC := conn.Channel()
-			if errC != nil {
+			if errC != nil || ch == nil {
 				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				//重试一次
+				conn, errX = mq.MQ.ConnPool.GetConnection()
+				if errX != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+				}
+				ch, errC = conn.Channel()
+				if errC != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				}
+				global.GVA_LOG.Warn("cn == nil 重试一次获取")
+				if ch == nil {
+					global.GVA_LOG.Warn("cn tnn 还是没取到")
+					return nil, err
+				}
 			}
 
 			body := http2.DoGinContextBody(ctx)
@@ -392,6 +406,15 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 					UserAgent: ctx.Request.UserAgent(),
 					UserID:    int(order.CreatedBy),
 				},
+			}
+			if ch == nil {
+				//重试一次
+				ch, errC = conn.Channel()
+				if errC != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+				}
+				global.GVA_LOG.Warn("cn == nil 重试一次获取")
+
 			}
 
 			marshal, _ := json.Marshal(od)
@@ -682,6 +705,17 @@ func (vpoService *PayOrderService) CreateOrder2PayAcc(vpo *vboxReq.CreateOrder2P
 		return nil, fmt.Errorf("库存不足，请联系对接人")
 	}
 
+	if cid == "5001" {
+		shopSetKey := fmt.Sprintf(global.ChanOrgQNShopZSet, orgID, cid, money)
+		canShopUseCount := global.GVA_REDIS.ZCount(context.Background(), shopSetKey, "0", "0").Val()
+		if canShopUseCount > 0 {
+			global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("canShopUseCount", canShopUseCount))
+		} else {
+			fmt.Printf("当前组织无qn shop可用, org : %d", orgID)
+			return nil, fmt.Errorf("库存不足，请联系对接人")
+		}
+	}
+
 	var eventID, rsUrl string
 	if prodInfo.Type == 1 { // 引导类，查
 		eventID, err = vbUtil.HandleEventID2chShop(vpo.ChannelCode, vpo.Money, orgTmp)
@@ -850,6 +884,7 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest,
 	default:
 		accSetKey = fmt.Sprintf(prodInfo.Ext, orgID, cid)
 	}
+
 	canUseCount := global.GVA_REDIS.ZCount(context.Background(), accSetKey, "0", "0").Val()
 	if canUseCount > 0 {
 		global.GVA_LOG.Info("当前后台剩余可以匹配资源", zap.Any("canUseCount", canUseCount))
@@ -1220,7 +1255,7 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
 	if info.OrderId != "" {
-		db = db.Where("order_id = ?", info.OrderId)
+		db = db.Where("order_id like ?", info.OrderId+"%")
 	}
 	if info.PAccount != "" {
 		db = db.Where("p_account =?", info.PAccount)
@@ -1242,6 +1277,9 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id =?", info.AcId)
+	}
+	if info.PlatId != "" {
+		db = db.Where("plat_id =?", info.PlatId)
 	}
 	if info.AcAccount != "" {
 		db = db.Where("ac_account = ?", info.AcAccount)

@@ -199,9 +199,17 @@ func OrderConfirmTask() {
 						global.GVA_LOG.Info("pc 核对订单", zap.Any("od plat", v.Obj.PlatId))
 						var recordList *prod.Records
 						recordList, errX = product.QryQQRecordsByID(vca, v.Obj.PlatId)
+						if errX != nil {
+							global.GVA_LOG.Error("获取订单信息异常", zap.Error(errX))
+							break
+						}
 						waterList = recordList.WaterList
 					} else {
 						waterList, errX, qryURL = product.QryQQRecordsBetween(vca, startTime, endTime)
+						if errX != nil {
+							global.GVA_LOG.Error("获取订单信息异常", zap.Error(errX))
+							break
+						}
 					}
 
 					if len(waterList) <= 0 {
@@ -274,7 +282,6 @@ func OrderConfirmTask() {
 							}
 						}
 					}
-
 				case strings.Contains(prodInfo.ProductId, "dnf"):
 					var waterList []prod.Payment
 					waterList, errX, qryURL = product.QryQQRecordsBetween(vca, startTime, endTime)
@@ -331,6 +338,22 @@ func OrderConfirmTask() {
 										break
 									}
 								}
+							}
+						}
+					}
+				case strings.Contains(prodInfo.ProductId, "qn"):
+					var waterList []prod.QNRecord
+					waterList, errX = product.QryQNRecords(vca, startTime, endTime, v.Obj.PlatId)
+					if len(waterList) <= 0 {
+						global.GVA_LOG.Info("waterList 0,还没有qn shop的充值记录", zap.Any("查询对应账号ID", accID), zap.Any("查询对应订单", orderId))
+					} else {
+						global.GVA_LOG.Info("查询sku Title", zap.Any("water list len", len(waterList)), zap.Any("markID", v.Obj.PlatId))
+						shopInfo := waterList[0]
+						if shopInfo.Money == strconv.FormatInt(int64(money), 10) {
+							if flag {
+								global.GVA_LOG.Info("核对官方订单", zap.Any("markID", shopInfo.SkuTitle), zap.Any("订单ID", orderId),
+									zap.Any("plat money", shopInfo.Money), zap.Any("od money", money), zap.Any("查单起始时间", startTime), zap.Any("结束时间", endTime))
+								v.Obj.PlatId = platID
 							}
 						}
 					}
@@ -527,8 +550,18 @@ func OrderConfirmTask() {
 					global.GVA_REDIS.Set(context.Background(), odKey, jsonString, 300*time.Second)
 
 					//支付成功后，释放本号
-					accWaitYdKey := fmt.Sprintf(global.YdProdMoneyAccWaiting, prodInfo.ProductId, accID, money)
-					accInfoVal := fmt.Sprintf("%d,%s,%s,%v", vca.ID, accID, vca.AcAccount, money)
+					//accWaitYdKey := fmt.Sprintf(global.YdProdMoneyAccWaiting, prodInfo.ProductId, accID, money)
+					//accInfoVal := fmt.Sprintf("%d,%s,%s,%v", vca.ID, accID, vca.AcAccount, money)
+
+					var accWaitYdKey, accInfoVal string
+					switch {
+					case strings.Contains(prodInfo.Ext, "money"):
+						accWaitYdKey = fmt.Sprintf(global.ProdAccMoneyWaiting, prodInfo.ProductId, accID, money)
+						accInfoVal = fmt.Sprintf("%v,%s,%s,%v", vca.ID, accID, vca.AcAccount, money)
+					default:
+						accWaitYdKey = fmt.Sprintf(global.ProdAccWaiting, prodInfo.ProductId, accID)
+						accInfoVal = fmt.Sprintf("%v,%s,%s", vca.ID, accID, vca.AcAccount)
+					}
 
 					// 设置一个释放时间
 					cdTime := t.PreTime

@@ -92,6 +92,8 @@ export const formatPayCodeStatus = (status) => {
         return '已失效'
     } else if (status === 4) {
         return '冷却中'
+    } else if (status === 5) {
+        return '禁用'
     } else {
         return '-'
     }
@@ -114,7 +116,7 @@ export const formatRegionCode = (locationCode, isStrict) => {
 
 // 付款码样式
 export const formatPayCodeColor = (status) => {
-    if (status === 3) {
+    if (status === 3 || status === 5) {
         return '#606266'
     } else if (status === 4) {
         return '#2b7fff'

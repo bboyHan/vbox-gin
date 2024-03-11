@@ -43,7 +43,7 @@
                             <el-tag effect="dark">团队归属: {{ props.row.organization.name }}</el-tag>
                           </el-col>
                           <el-col :span="6">
-                            <el-tag effect="dark">团队长: {{ props.row.sysUser.username }}</el-tag>
+                            <el-tag effect="dark">团队长: {{ props.row.leader.username }}</el-tag>
                           </el-col>
                           <el-col :span="6">
                           </el-col>
@@ -81,14 +81,13 @@
                             </div>
                           </el-col>
                         </el-row>
-
                       </div>
                     </template>
                   </el-table-column>
                   <el-table-column prop="organization.name" label="团队" width="160"></el-table-column>
-                  <el-table-column prop="sysUser.username" label="负责人" width="160"></el-table-column>
-                  <el-table-column align="center" prop="x9" label="积分" width="90"/>
-                  <el-table-column label="操作列">
+                  <el-table-column prop="leader.username" label="负责人"></el-table-column>
+                  <!-- <el-table-column align="center" prop="x9" label="积分"/>
+                 <el-table-column label="操作列">
                     <template #default="{row}">
                       <el-button v-auth="btnAuth.rechargeBtn" link type="primary" icon="wallet"
                                  @click="showOperateRecharge(row)"> 充值
@@ -107,7 +106,7 @@
                         </template>
                       </el-popover>
                     </template>
-                  </el-table-column>
+                  </el-table-column>-->
 
                 </el-table>
               </div>
@@ -527,8 +526,8 @@ const getUserTable = async () => {
     }
 
     treeData.value = generateTreeData(userTable.value);
-    // console.log(treeData.value)
-    // console.log(userTable.value)
+    console.log('userTable',userTable.value)
+    console.log('treeData',treeData.value)
   }
 }
 
@@ -853,7 +852,8 @@ const generateTreeData = (list) => {
     }
 
     if (authorityId === 1001) {
-      // map.get(organizationID).leader = sysUser;
+      map.get(organizationID).leader = sysUser;
+      map.get(organizationID).children.push(item);
     } else if (authorityId === 1002) {
       map.get(organizationID).children.push(item);
     }

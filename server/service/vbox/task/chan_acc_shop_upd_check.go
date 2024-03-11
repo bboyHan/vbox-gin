@@ -139,78 +139,6 @@ func ChanAccShopUpdCheckTask() {
 
 				if global.TxContains(cid) { //QB yd
 
-					/*pattern := fmt.Sprintf(global.ChanOrgQBAccZSetPrefix, orgID, cid)
-					keys := global.GVA_REDIS.Keys(context.Background(), pattern).Val()
-
-					global.GVA_LOG.Info("", zap.Any("keys", keys))
-
-					if len(moneyList) >= len(keys) { // 把多出来的新的子集过滤出来，把可用的账号都添加进去
-						var subMoneyList []string
-						for _, key := range keys {
-							m := strings.Split(key, ":")[3]
-							myEle := strings.Split(m, "_")[1]
-							subMoneyList = append(subMoneyList, myEle)
-						}
-						global.GVA_LOG.Info("", zap.Any("subMoneyList", subMoneyList))
-						// 先过滤出
-						notList := utils.FilterNotContains(moneyList, subMoneyList)
-
-						for _, money := range notList {
-							for _, acDB := range acDBList {
-								ID := acDB.ID
-								acId := acDB.AcId
-								acAccount := acDB.AcAccount
-								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-								waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-								if ttl > 0 { //该账号正在冷却中
-									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
-									cdTime := ttl
-									_ = ch.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
-									global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
-								} else {
-									global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
-									accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
-									global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-									global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-								}
-							}
-						}
-
-					} else { // 把多出来的新的子集过滤出来，把账号都清除掉
-						var keyMoneyList []string
-						for _, key := range keys {
-							m := strings.Split(key, ":")[3]
-							myEle := strings.Split(m, "_")[1]
-							keyMoneyList = append(keyMoneyList, myEle)
-						}
-						global.GVA_LOG.Info("", zap.Any("subMoneyList", keyMoneyList))
-
-						notList := utils.FilterNotContains(keyMoneyList, moneyList)
-
-						for _, money := range notList {
-							for _, acDB := range acDBList {
-								ID := acDB.ID
-								acId := acDB.AcId
-								acAccount := acDB.AcAccount
-								waitAccYdKey := fmt.Sprintf(global.YdQBAccWaiting, acId, money)
-								waitAccMem := fmt.Sprintf("%v_%s_%s_%v", ID, acId, acAccount, money)
-								//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
-								ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
-								if ttl > 0 { //该账号正在冷却中，直接处理删掉
-									accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
-									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-									global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-								} else {
-									accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
-									global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-									global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
-								}
-							}
-						}
-					}*/
-
 					// 处理重置开启的money
 					for _, money := range moneyList {
 						accKey := fmt.Sprintf(global.ChanOrgQBAccZSet, orgID, cid, money)
@@ -490,6 +418,37 @@ func ChanAccShopUpdCheckTask() {
 						}(acDBTmp)
 
 					}
+
+				} else if global.QNContains(cid) { // qn
+
+					//accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgID, cid)
+					//
+					////先删掉所有的，重新加一次
+					//global.GVA_REDIS.Del(context.Background(), accKey)
+					//
+					//for _, acDB := range acDBList {
+					//	acDBTmp := acDB
+					//	go func(acDBTmp vbox.ChannelAccount) {
+					//		ID := acDBTmp.ID
+					//		acId := acDBTmp.AcId
+					//		acAccount := acDBTmp.AcAccount
+					//		waitAccYdKey := fmt.Sprintf(global.YdQNAccWaiting, acId)
+					//		waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+					//		waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+					//		ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+					//		if ttl > 0 { //该账号正在冷却中
+					//			global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+					//			cdTime := ttl
+					//			_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+					//			global.GVA_LOG.Info("商铺开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+					//		} else {
+					//			global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+					//			global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+					//			global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+					//		}
+					//	}(acDBTmp)
+					//
+					//}
 
 				} else if global.PcContains(cid) {
 					global.GVA_LOG.Info("非引导类，无需处理", zap.Any("cid", cid))

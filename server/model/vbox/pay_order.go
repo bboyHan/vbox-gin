@@ -12,8 +12,8 @@ type PayOrder struct {
 	Money       int        `json:"money" form:"money" gorm:"column:money;comment:金额;size:16;"`                                                       //金额
 	UnitPrice   int        `json:"unitPrice" form:"unitPrice" gorm:"column:unit_price;comment:单价积分;size:16;"`                                        //单价积分
 	UnitId      int        `json:"unitId" form:"unitId" gorm:"column:unit_id;comment:积分关联ID;size:16;"`                                               //用户ID
-	EventId     string     `json:"eventId" form:"eventId" gorm:"column:event_id;comment:事件关联ID;size:32;"`                                            //账号ID
-	EventType   int        `json:"eventType" form:"eventType" gorm:"column:event_type;comment:事件类型（1-商铺关联，2-付码关联）;size:2;"`                          //账号ID
+	EventId     string     `json:"eventId" form:"eventId" gorm:"column:event_id;comment:事件关联ID;size:32;"`                                            //事件ID
+	EventType   int        `json:"eventType" form:"eventType" gorm:"column:event_type;comment:事件类型（1-商铺关联,2-付码关联,4-商品）;size:2;"`                     //事件类型
 	AcId        string     `json:"acId" form:"acId" gorm:"column:ac_id;comment:账号ID;size:32;index;"`                                                 //账号ID
 	AcAccount   string     `json:"acAccount" form:"acAccount" gorm:"column:ac_account;comment:通道账号;size:128;"`                                       //通道账号
 	ChannelCode string     `json:"channelCode" form:"channelCode" gorm:"column:channel_code;comment:通道编码;size:32;"`                                  //通道编码

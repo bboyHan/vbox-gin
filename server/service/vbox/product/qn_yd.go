@@ -1,8 +1,10 @@
 package product
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
@@ -10,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -206,7 +209,7 @@ func FindAccNick(ck string) (nickname string, err error) {
 //	return qnRecords, err
 //}
 
-func QryQNRecords(rawURL string, vca vbox.ChannelAccount, start time.Time, end time.Time, titleID string) ([]product.QNRecord, error) {
+func QryQNRecords(vca vbox.ChannelAccount, start time.Time, end time.Time, titleID string) ([]product.QNRecord, error) {
 
 	//content := "https://trade.taobao.com/trade/itemlist/asyncSold.htm?event_submit_do_query=1&_input_charset=utf8&prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&tabCode=success&buyerNick=" +
 	//	"&dateBegin=1709222400000&dateEnd=1709305200000" +
@@ -214,6 +217,29 @@ func QryQNRecords(rawURL string, vca vbox.ChannelAccount, start time.Time, end t
 	//	"&rateStatus=ALL&pageSize=15&rxOldFlag=0&rxSendFlag=0&useCheckcode=false&tradeTag=0&rxHasSendFlag=0&auctionType=0&close=0&sellerNick=&notifySendGoodsType=ALL&sellerMemoFlag=0&useOrderInfo=false&logisticsService=ALL&isQnNew=true&pageNum=1&o2oDeliveryType=ALL&rxAuditFlag=0&queryOrder=desc&rxElectronicAuditFlag=0&queryMore=false&rxWaitSendflag=0&sellerMemo=0&rxElectronicAllFlag=0&rxSuccessflag=0&refund=ALL&errorCheckcode=false&mailNo=&yushouStatus=ALL&orderType=ALL&deliveryTimeType=ALL&queryTag=0" +
 	//	"&itemTitle=" + titleID +
 	//	"&buyerEncodeId=&queryBizType=ALL&isHideNick=true"
+
+	var rawURL string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQNPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.QNContains(vca.Cid) { // tx系
+			channelCode = "qn_proxy"
+		}
+
+		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+			Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&rawURL).Error
+
+		if err != nil {
+			return nil, fmt.Errorf("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQNPrefix, rawURL, 10*time.Minute)
+
+	} else {
+		rawURL, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQNPrefix).Result()
+	}
 
 	u, _ := url.Parse(rawURL)
 	queryParams := u.Query()
@@ -288,8 +314,17 @@ func QryQNRecords(rawURL string, vca vbox.ChannelAccount, start time.Time, end t
 
 				if payInfo, ok := e["payInfo"]; ok {
 					if actualFee, ok := payInfo.(map[string]interface{})["actualFee"]; ok {
-						qnRecord.Money = actualFee.(string)
-						fmt.Printf(", %v", actualFee.(string))
+						orderAmount := actualFee.(string)
+						parts := strings.Split(orderAmount, ".")
+
+						var intStrAmount string
+						if len(parts) > 0 {
+							intStrAmount = parts[0]
+						} else {
+							intStrAmount = orderAmount
+						}
+						qnRecord.Money = intStrAmount
+						fmt.Printf(", %v", qnRecord.Money)
 					} else {
 						fmt.Println("Error:", err)
 						flag = true
@@ -401,8 +436,18 @@ func QryQNRecords(rawURL string, vca vbox.ChannelAccount, start time.Time, end t
 
 				if payInfo, ok := e["payInfo"]; ok {
 					if actualFee, ok := payInfo.(map[string]interface{})["actualFee"]; ok {
-						qnRecord.Money = actualFee.(string)
-						fmt.Printf(", %v", actualFee.(string))
+
+						orderAmount := actualFee.(string)
+						parts := strings.Split(orderAmount, ".")
+
+						var intStrAmount string
+						if len(parts) > 0 {
+							intStrAmount = parts[0]
+						} else {
+							intStrAmount = orderAmount
+						}
+						qnRecord.Money = intStrAmount
+						fmt.Printf(", %v", qnRecord.Money)
 					} else {
 						fmt.Println("Error:", err)
 						flag = true
@@ -480,7 +525,7 @@ func QryQNRecords(rawURL string, vca vbox.ChannelAccount, start time.Time, end t
 	return qnRecords, err
 }
 
-func QryQNRecordsByTitleID(rawURL string, vca vbox.ChannelAccount, start time.Time, end time.Time, titleID string) ([]product.QNRecord, error) {
+func QryQNRecordsByTitleID(vca vbox.ChannelAccount, start time.Time, end time.Time, titleID string) ([]product.QNRecord, error) {
 
 	//content := "https://trade.taobao.com/trade/itemlist/asyncSold.htm?event_submit_do_query=1&_input_charset=utf8&prePageNo=1&sifg=0&action=itemlist%2FSoldQueryAction&tabCode=success&buyerNick=" +
 	//	"&dateBegin=1709222400000&dateEnd=1709305200000" +
@@ -488,6 +533,29 @@ func QryQNRecordsByTitleID(rawURL string, vca vbox.ChannelAccount, start time.Ti
 	//	"&rateStatus=ALL&pageSize=15&rxOldFlag=0&rxSendFlag=0&useCheckcode=false&tradeTag=0&rxHasSendFlag=0&auctionType=0&close=0&sellerNick=&notifySendGoodsType=ALL&sellerMemoFlag=0&useOrderInfo=false&logisticsService=ALL&isQnNew=true&pageNum=1&o2oDeliveryType=ALL&rxAuditFlag=0&queryOrder=desc&rxElectronicAuditFlag=0&queryMore=false&rxWaitSendflag=0&sellerMemo=0&rxElectronicAllFlag=0&rxSuccessflag=0&refund=ALL&errorCheckcode=false&mailNo=&yushouStatus=ALL&orderType=ALL&deliveryTimeType=ALL&queryTag=0" +
 	//	"&itemTitle=" + titleID +
 	//	"&buyerEncodeId=&queryBizType=ALL&isHideNick=true"
+
+	var rawURL string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQNPrefix).Result()
+	if c == 0 {
+		var channelCode string
+		if global.QNContains(vca.Cid) { // tx系
+			channelCode = "qn_proxy"
+		}
+
+		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+			Where("status = ? and type = ? and chan=?", 1, 1, channelCode).
+			First(&rawURL).Error
+
+		if err != nil {
+			return nil, fmt.Errorf("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQNPrefix, rawURL, 10*time.Minute)
+
+	} else {
+		rawURL, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQNPrefix).Result()
+	}
 
 	u, _ := url.Parse(rawURL)
 	queryParams := u.Query()
@@ -562,8 +630,17 @@ func QryQNRecordsByTitleID(rawURL string, vca vbox.ChannelAccount, start time.Ti
 
 				if payInfo, ok := e["payInfo"]; ok {
 					if actualFee, ok := payInfo.(map[string]interface{})["actualFee"]; ok {
-						qnRecord.Money = actualFee.(string)
-						fmt.Printf(", %v", actualFee.(string))
+						orderAmount := actualFee.(string)
+						parts := strings.Split(orderAmount, ".")
+
+						var intStrAmount string
+						if len(parts) > 0 {
+							intStrAmount = parts[0]
+						} else {
+							intStrAmount = orderAmount
+						}
+						qnRecord.Money = intStrAmount
+						fmt.Printf(", %v", qnRecord.Money)
 					} else {
 						fmt.Println("Error:", err)
 						flag = true
@@ -674,8 +751,17 @@ func QryQNRecordsByTitleID(rawURL string, vca vbox.ChannelAccount, start time.Ti
 
 				if payInfo, ok := e["payInfo"]; ok {
 					if actualFee, ok := payInfo.(map[string]interface{})["actualFee"]; ok {
-						qnRecord.Money = actualFee.(string)
-						fmt.Printf(", %v", actualFee.(string))
+						orderAmount := actualFee.(string)
+						parts := strings.Split(orderAmount, ".")
+
+						var intStrAmount string
+						if len(parts) > 0 {
+							intStrAmount = parts[0]
+						} else {
+							intStrAmount = orderAmount
+						}
+						qnRecord.Money = intStrAmount
+						fmt.Printf(", %v", qnRecord.Money)
 					} else {
 						fmt.Println("Error:", err)
 						flag = true

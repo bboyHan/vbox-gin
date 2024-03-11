@@ -35,16 +35,17 @@ const (
 	UserRecord  = "userID,%v"
 	OrderRecord = "orderID,%v"
 
-	OrderStartMsg            = "创建订单，等待用户进行访问..."
-	OrderWaitingMsg          = "用户访问订单页，开始进行库存匹配"
-	OrderWaitingFinishedMsg  = "库存匹配完成，匹配账号：%s，ID:%s，等待支付..."
-	OrderConfirmMsg          = "订单核验充值已到账【%s】，等待发起回调..."
-	OrderConfirmErrMsg       = "系统无法正确查单，通过CK查验充值记录异常，账号：%s，ID:%s，进行关闭账号处理，该订单置为失败单"
-	OrderTimeoutMsg          = "订单已过期，关闭订单"
-	OrderCallbackMsg         = "开始执行回调任务..."
-	OrderCallbackRespMsg     = "回调完成，响应状态码：%v，响应数据: %v"
-	OrderCallbackFinishedMsg = "更新回调状态，订单交易完成"
-	OrderManualOperationMsg  = "人工核实，进行手动补单入库，订单交易完成"
+	OrderStartMsg               = "创建订单，等待用户进行访问..."
+	OrderWaitingMsg             = "用户访问订单页，开始进行库存匹配"
+	OrderWaitingFinishedMsg     = "库存匹配完成，匹配账号：%s，ID:%s，等待支付..."
+	OrderWaitingShopFinishedMsg = "QN库存匹配完成，匹配商品：%s，链接:%s"
+	OrderConfirmMsg             = "订单核验充值已到账【%s】，等待发起回调..."
+	OrderConfirmErrMsg          = "系统无法正确查单，通过CK查验充值记录异常，账号：%s，ID:%s，进行关闭账号处理，该订单置为失败单"
+	OrderTimeoutMsg             = "订单已过期，关闭订单"
+	OrderCallbackMsg            = "开始执行回调任务..."
+	OrderCallbackRespMsg        = "回调完成，响应状态码：%v，响应数据: %v"
+	OrderCallbackFinishedMsg    = "更新回调状态，订单交易完成"
+	OrderManualOperationMsg     = "人工核实，进行手动补单入库，订单交易完成"
 
 	OrderConfirmBindMsg           = "订单核验已绑定卡密，卡密信息：%v，等待发起回调..."
 	OrderConfirmBindOtherMoneyMsg = "订单核验已绑定卡密，卡密信息：%v，但与订单金额不符，需人工核实"
@@ -69,6 +70,7 @@ const (
 	ResourceShopNotEnough    = "当前库存不足，请及时核查匹配【引导商铺情况】，请求通道：%s，请求金额：%v"
 	ResourcePayCodeNotEnough = "当前库存不足，请及时核查匹配【预产码剩余情况】，请求通道：%s，请求金额：%v"
 	ResourceAccNotEnough     = "当前库存不足，请及时核查匹配【通道账号情况】，请求通道：%s，请求金额：%v"
+	ResourceQNShopNotEnough  = "当前库存不足，请及时核查匹配【通道商品情况】，请求通道：%s，请求金额：%v"
 
 	NotifyEx          = "付方回调异常, err: %v， 付方响应信息： %v"
 	NotifyHandSuccess = "【候补单】付方回调成功， 付方响应信息： 状态码：%v，数据包：%v"
@@ -93,11 +95,12 @@ const (
 	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
+	ChanOrgQNAccZSet        = "vb_acc_qn_set:org_%d:chan_%s"             // 同组织通道下可用账号（qn）
 	ChanOrgECAccZSet        = "vb_acc_ec_set:org_%d:chan_%s"             // 同组织通道下可用账号（ec）
 	ChanOrgECPoolAccZSet    = "vb_acc_ec_checkPool_set:org_%d:chan_%s"   // 同组织通道下查单池（ec）
 	ChanOrgShopAddrZSet     = "vb_shop_addr_set:org_%d:chan_%s:money_%d" // 同组织通道下可用店铺地址
 
-	ChanOrgQNShopZSet = "vb_acc_qn_set:org_%d:chan_%s:money_%v" // 同组织通道下可用账号（剑三）
+	ChanOrgQNShopZSet = "vb_qn_shop_set:org_%d:chan_%s:money_%v" // 同组织通道下可用账号（qn acc）
 
 	ChanOrgPayCodeLocZSet     = "vb_pay_code_set:org_%d:chan_%s:money_%d:operator_%s:loc_%s" // 同组织通道下可用付款码（取用池）
 	ChanOrgPayCodePrefix      = "vb_pay_code_set:org_%d:chan_%s:money_%d:*"                  // 同组织通道下可用付款码（取用池）
@@ -107,6 +110,7 @@ const (
 	ProdTypeKey = "vb_prod_type:%v"
 	ProductKey  = "vb_prod_info:%v"
 
+	PayQNShopMoneyKey   = "vb_qn_shop_id:%s:%v"
 	PayAccMoneyKey      = "vb_ac_id:%s:%v"
 	PayAccKey           = "vb_ac_id:%s"
 	PayOrderKey         = "vb_order:%s"
@@ -126,10 +130,12 @@ const (
 	YdDnfAccWaiting = "vb_acc_dnf_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	YdSdoAccWaiting = "vb_acc_sdo_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 
-	YdQNShopWaiting    = "vb_acc_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
-	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"           // 引导类-等待开启的账户(冷却中)
-	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"           // 引导类-等待开启的账户(冷却中)
-	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdQNAccWaiting  = "vb_acc_qn_waiting_yd:acid_%s"            // 引导类-等待开启的账户(冷却中)
+	YdQNShopWaiting = "vb_shop_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
+
+	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
 	YdECJdCodeZSet = "vb_acc_ec_jd_code" // 引导类-等待开启的账户(冷却中)
 

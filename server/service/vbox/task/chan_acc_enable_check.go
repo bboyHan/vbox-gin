@@ -320,36 +320,36 @@ func ChanAccEnableCheckTask() {
 					// 3. 筛选匹配是哪个产品，查一下对应产品的账户是否能够正常官方使用
 					if global.TxContains(cid) || global.DnfContains(cid) || global.PcContains(cid) { //腾讯
 
-						errQ := product.QryQQRecords(v.Obj)
-						if errQ != nil {
-							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败...", zap.Error(errQ))
-
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								MarkId:  fmt.Sprintf(global.AccRecord, acId),
-								Type:    global.AccType,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
-							}
-
-							err = operationRecordService.CreateSysOperationRecord(record)
-							if err != nil {
-								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
-							}
-
-							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0).Error
-							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
-
-						}
+						//errQ := product.QryQQRecords(v.Obj)
+						//if errQ != nil {
+						//	global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败...", zap.Error(errQ))
+						//
+						//	//入库操作记录
+						//	record := sysModel.SysOperationRecord{
+						//		Ip:      v.Ctx.ClientIP,
+						//		Method:  v.Ctx.Method,
+						//		Path:    v.Ctx.UrlPath,
+						//		Agent:   v.Ctx.UserAgent,
+						//		MarkId:  fmt.Sprintf(global.AccRecord, acId),
+						//		Type:    global.AccType,
+						//		Status:  500,
+						//		Latency: time.Since(now),
+						//		Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
+						//		UserID:  v.Ctx.UserID,
+						//	}
+						//
+						//	err = operationRecordService.CreateSysOperationRecord(record)
+						//	if err != nil {
+						//		global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + err.Error())
+						//	}
+						//
+						//	err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+						//		Update("sys_status", 0).Error
+						//	global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+						//	_ = msg.Reject(false)
+						//	continue
+						//
+						//}
 
 					} else if global.J3Contains(cid) { //剑三
 						_, errQ := product.QryJ3Record(v.Obj)
@@ -772,8 +772,23 @@ func ChanAccEnableCheckTask() {
 
 					} else if global.QNContains(cid) { //qn
 						//TODO
-						//var shopDBList []vbox.ChannelShop
-						//global.GVA_DB.Model(&vbox.ChannelShop{}).Where("created_by = ?")
+						accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
+						waitAccYdKey := fmt.Sprintf(global.YdQNAccWaiting, acId)
+
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						if ttl > 0 { //该账号正在冷却中
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+							cdTime := ttl
+							_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+						} else {
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 
 					} else if global.PcContains(cid) { //QB直付，查一下有没有还没被禁用的预产，把还没过期的恢复
 						var pcDBList []vbox.ChannelPayCode
@@ -945,6 +960,20 @@ func ChanAccEnableCheckTask() {
 						}
 
 					} else if global.QNContains(cid) { //
+
+						waitAccYdKey := fmt.Sprintf(global.YdQNAccWaiting, acId)
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+						//waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						if ttl > 0 { //该账号正在冷却中，直接处理删掉
+							accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
+							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("关闭过程校验..账号在冷却中..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("ttl", ttl))
+						} else {
+							accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
+							global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("关闭过程校验..处理掉waitAccMem", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 
 					} else if global.PcContains(cid) { //QB直付，查一下有没有还没关闭的预产，处理掉
 						var pcDBList []vbox.ChannelPayCode

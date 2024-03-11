@@ -13,6 +13,8 @@ import (
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	http2 "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
@@ -25,7 +27,7 @@ type ChannelShopService struct {
 }
 
 // CreateChannelShop 创建引导商铺记录
-func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vboxReq.ChannelShop) (err error) {
+func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vboxReq.ChannelShop, cc *gin.Context) (err error) {
 	length := len(channelShop.ChannelShopList)
 	if length < 1 {
 		err = fmt.Errorf("创建的店铺地址至少包含1个")
@@ -102,6 +104,18 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		}
 	}
 
+	conn, err := mq.MQ.ConnPool.GetConnection()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+	ch, err := conn.Channel()
+	if err != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
+	body := http2.DoGinContextBody(cc)
+
 	for _, c := range channelShop.ChannelShopList {
 
 		var shopDB vbox.ChannelShop
@@ -157,16 +171,26 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
 			}
 		} else {
-			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], channelShop.Cid, c.Money)
-			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
 			if c.Status == 1 {
+				var sDB vbox.ChannelShop
+				err = global.GVA_DB.Model(vbox.ChannelShop{}).Where("id =?", shopDB.ID).First(&sDB).Error
 
-				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
-					Member: keyMem,
-				})
-			} else {
-				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+				oc := vboxReq.ChanQNShopAndCtx{
+					Obj: sDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  cc.ClientIP(),
+						Method:    cc.Request.Method,
+						UrlPath:   cc.Request.URL.Path,
+						UserAgent: cc.Request.UserAgent(),
+						UserID:    int(sDB.CreatedBy),
+					},
+				}
+
+				marshal, _ := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanQNShopEnableCheckExchange, task.ChanQNShopEnableCheckKey, marshal)
+
 			}
 
 		}
@@ -174,15 +198,15 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 	}
 
 	if err == nil {
-		conn, errC := mq.MQ.ConnPool.GetConnection()
-		if errC != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
-		ch, errN := conn.Channel()
-		if errN != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
+		//conn, errC := mq.MQ.ConnPool.GetConnection()
+		//if errC != nil {
+		//	global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		//}
+		//defer mq.MQ.ConnPool.ReturnConnection(conn)
+		//ch, errN := conn.Channel()
+		//if errN != nil {
+		//	global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		//}
 
 		orgTmpX := utils2.GetSelfOrg(channelShop.CreatedBy)
 
@@ -197,36 +221,59 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 
 // DeleteChannelShop 删除引导商铺记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox.ChannelShop) (err error) {
+func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox.ChannelShop, c *gin.Context) (err error) {
 	var shopDB vbox.ChannelShop
+	conn, errC := mq.MQ.ConnPool.GetConnection()
+	if errC != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+	ch, errN := conn.Channel()
+	if errN != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
+
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 		tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).First(&shopDB)
 
 		orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
 
-		key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
-		keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-		global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+		if shopDB.Cid != "5001" {
+			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
 
-		if err := tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).Update("deleted_by", channelShop.DeletedBy).Error; err != nil {
-			return err
+			if err := tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).Update("deleted_by", channelShop.DeletedBy).Error; err != nil {
+				return err
+			}
+			if err = tx.Delete(&channelShop).Error; err != nil {
+				return err
+			}
+
+		} else {
+
+			body := http2.DoGinContextBody(c)
+
+			oc := vboxReq.ChanQNShopAndCtx{
+				Obj: shopDB,
+				Ctx: vboxReq.Context{
+					Body:      string(body),
+					ClientIP:  c.ClientIP(),
+					Method:    c.Request.Method,
+					UrlPath:   c.Request.URL.Path,
+					UserAgent: c.Request.UserAgent(),
+					UserID:    int(channelShop.DeletedBy),
+				},
+			}
+			marshal, _ := json.Marshal(oc)
+
+			err = ch.Publish(task.ChanQNShopDelCheckExchange, task.ChanQNShopDelCheckKey, marshal)
 		}
-		if err = tx.Delete(&channelShop).Error; err != nil {
-			return err
-		}
+
 		return nil
 	})
 
 	if err == nil {
-		conn, errC := mq.MQ.ConnPool.GetConnection()
-		if errC != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
-		ch, errN := conn.Channel()
-		if errN != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
 
 		orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
 
@@ -240,8 +287,18 @@ func (channelShopService *ChannelShopService) DeleteChannelShop(channelShop vbox
 
 // DeleteChannelShopByIds 批量删除引导商铺记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request.IdsReq, deletedBy uint) (err error) {
+func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request.IdsReq, c *gin.Context, deletedBy uint) (err error) {
 	var cidList []string
+	conn, errC := mq.MQ.ConnPool.GetConnection()
+	if errC != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+	}
+	defer mq.MQ.ConnPool.ReturnConnection(conn)
+	ch, errN := conn.Channel()
+	if errN != nil {
+		global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+	}
+
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 
 		var shopDBList []vbox.ChannelShop
@@ -250,10 +307,30 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 		for _, shopDB := range shopDBList {
 			orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
 
-			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
-			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-			global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
-			cidList = append(cidList, shopDB.Cid)
+			if shopDB.Cid != "5001" {
+				key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+				keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+				cidList = append(cidList, shopDB.Cid)
+			} else {
+				body := http2.DoGinContextBody(c)
+
+				oc := vboxReq.ChanQNShopAndCtx{
+					Obj: shopDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(deletedBy),
+					},
+				}
+				marshal, _ := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanQNShopDelCheckExchange, task.ChanQNShopDelCheckKey, marshal)
+			}
+
 		}
 
 		if err := tx.Model(&vbox.ChannelShop{}).Where("id in ?", ids.Ids).Update("deleted_by", deletedBy).Error; err != nil {
@@ -268,15 +345,6 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 	uniqCIDs := utils2.UniqStr(cidList)
 
 	if err == nil {
-		conn, errC := mq.MQ.ConnPool.GetConnection()
-		if errC != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-		}
-		defer mq.MQ.ConnPool.ReturnConnection(conn)
-		ch, errN := conn.Channel()
-		if errN != nil {
-			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-		}
 
 		orgTmp := utils2.GetSelfOrg(deletedBy)
 
@@ -292,29 +360,63 @@ func (channelShopService *ChannelShopService) DeleteChannelShopByIds(ids request
 }
 
 // UpdateChannelShop 更新引导商铺记录（ type: 1-更新店名 2-开关单条 3-开关整个店 ）
-func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vboxReq.ChannelShopReq) (err error) {
+func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vboxReq.ChannelShopReq, c *gin.Context) (err error) {
 	// 1-更新店名 2-开关单条 3-开关整个店
 	if channelShop.Type == 1 {
 		err = global.GVA_DB.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).
 			Update("shop_remark", channelShop.ShopRemark).
 			Update("updated_by", channelShop.UpdatedBy).Error
 	} else if channelShop.Type == 2 {
+
+		conn, err := mq.MQ.ConnPool.GetConnection()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+		}
+		defer mq.MQ.ConnPool.ReturnConnection(conn)
+
+		ch, err := conn.Channel()
+		if err != nil {
+			global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+		}
+
 		err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 
 			var shopDB vbox.ChannelShop
 			tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).First(&shopDB)
 			orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
-			key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
-			keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
-			channelShop.Cid = shopDB.Cid
-			if channelShop.Status == 1 {
 
-				global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-					Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
-					Member: keyMem,
-				})
+			if shopDB.Cid != "5001" {
+				key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+				keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+				channelShop.Cid = shopDB.Cid
+				if channelShop.Status == 1 {
+
+					global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+						Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+						Member: keyMem,
+					})
+				} else {
+					global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+				}
+
 			} else {
-				global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+
+				body := http2.DoGinContextBody(c)
+				shopDB.Status = channelShop.Status
+				oc := vboxReq.ChanQNShopAndCtx{
+					Obj: shopDB,
+					Ctx: vboxReq.Context{
+						Body:      string(body),
+						ClientIP:  c.ClientIP(),
+						Method:    c.Request.Method,
+						UrlPath:   c.Request.URL.Path,
+						UserAgent: c.Request.UserAgent(),
+						UserID:    int(shopDB.CreatedBy),
+					},
+				}
+				marshal, _ := json.Marshal(oc)
+
+				err = ch.Publish(task.ChanQNShopEnableCheckExchange, task.ChanQNShopEnableCheckKey, marshal)
 			}
 
 			err = tx.Model(&vbox.ChannelShop{}).Where("id = ?", channelShop.ID).
@@ -325,15 +427,6 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 		})
 
 		if err == nil {
-			conn, errC := mq.MQ.ConnPool.GetConnection()
-			if errC != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
-			}
-			defer mq.MQ.ConnPool.ReturnConnection(conn)
-			ch, errN := conn.Channel()
-			if errN != nil {
-				global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
-			}
 
 			orgTmp := utils2.GetSelfOrg(channelShop.UpdatedBy)
 
@@ -348,20 +441,51 @@ func (channelShopService *ChannelShopService) UpdateChannelShop(channelShop vbox
 			var shopDBList []vbox.ChannelShop
 			tx.Model(&vbox.ChannelShop{}).Where("product_id = ?", channelShop.ProductId).Find(&shopDBList)
 
+			conn, err := mq.MQ.ConnPool.GetConnection()
+			if err != nil {
+				global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+			}
+			defer mq.MQ.ConnPool.ReturnConnection(conn)
+
 			for _, shopDB := range shopDBList {
 				orgTmp := utils2.GetSelfOrg(shopDB.CreatedBy)
 
-				key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
-				keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
+				if shopDB.Cid != "5001" {
+					key := fmt.Sprintf(global.ChanOrgShopAddrZSet, orgTmp[0], shopDB.Cid, shopDB.Money)
+					keyMem := fmt.Sprintf("%s_%v", shopDB.ProductId, shopDB.ID)
 
-				if channelShop.Status == 1 {
+					if channelShop.Status == 1 {
 
-					global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
-						Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
-						Member: keyMem,
-					})
+						global.GVA_REDIS.ZAdd(context.Background(), key, redis.Z{
+							Score:  float64(time.Now().Unix()), // 重新放进去，score设置最新的时间
+							Member: keyMem,
+						})
+					} else {
+						global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+					}
 				} else {
-					global.GVA_REDIS.ZRem(context.Background(), key, keyMem)
+					ch, err := conn.Channel()
+					if err != nil {
+						global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))
+						continue
+					}
+					body := http2.DoGinContextBody(c)
+					shopDB.Status = channelShop.Status
+
+					oc := vboxReq.ChanQNShopAndCtx{
+						Obj: shopDB,
+						Ctx: vboxReq.Context{
+							Body:      string(body),
+							ClientIP:  c.ClientIP(),
+							Method:    c.Request.Method,
+							UrlPath:   c.Request.URL.Path,
+							UserAgent: c.Request.UserAgent(),
+							UserID:    int(shopDB.CreatedBy),
+						},
+					}
+					marshal, err := json.Marshal(oc)
+
+					err = ch.Publish(task.ChanQNShopEnableCheckExchange, task.ChanQNShopEnableCheckKey, marshal)
 				}
 
 				channelShop.Cid = shopDB.Cid

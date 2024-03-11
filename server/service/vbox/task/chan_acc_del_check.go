@@ -218,6 +218,13 @@ func ChanAccDelCheckTask() {
 					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
+				} else if global.QNContains(cid) { //QNB引导，
+
+					accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
+					waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
 				} else if global.ECContains(cid) { //QB引导，
 
 					accKey := fmt.Sprintf(global.ChanOrgECAccZSet, orgTmp[0], cid)

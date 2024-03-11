@@ -10,8 +10,7 @@
               <li><span style="color: blue;">【规避方法】</span>1、自行核对避免同类型通道创建相同账号；2、引导类商铺管理，对不同通道的商铺金额进行隔离管理（如1003开启10元金额，1004则不开启10元金额）；如产生影响，后台正常计分，请自行保障风险!
               </li>
               <li><span style="color: blue;">【系统开关】</span>当选择通道账号开启时，状态开关栏中显示的<span
-                  style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span @click="goWorkLog"
-                                                                                          style="color: blue;text-decoration: underline;"><b>操作日志</b></span>】核查原因！
+                  style="color: blue;">"系统开关"</span>如未能正常开启，请先自行查看【<span style="color: blue;text-decoration: underline;"><b>账号详情</b></span>】核查原因！
               </li>
               <li><span style="color: blue;">【限额说明】</span>针对添加通道账号的限额设置，包括<span style="color: blue;">"总额限制"、"日额限制"、"进单限制"、"拉单限制"</span>，系统计算规则：当前账号进单的累计金额或累计笔数<span
                   style="color: blue;">大于或等于限制时</span>，系统进行自动关号。<span

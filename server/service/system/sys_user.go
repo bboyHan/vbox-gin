@@ -36,6 +36,10 @@ func (userService *UserService) OpenAccRegister(u systemReq.OpenAccRegister) (us
 		return userInter, errors.New("两次输入密码不一致")
 	}
 
+	if utils.IsAlphaNumericUnderscore(u.Username) {
+		return userInter, errors.New("用户名只能包含字母、数字、下划线")
+	}
+
 	// 只允许建 当前角色的子角色账户(目前只支持 子角色为单一角色，多角色不支持)
 	roleID := uint(1001)
 
@@ -168,6 +172,10 @@ func (userService *UserService) SelfRegister(u systemReq.SelfRegister) (userInte
 
 	if u.NewPassword != u.ConfirmPassword {
 		return userInter, errors.New("两次输入密码不一致")
+	}
+
+	if !utils.IsAlphaNumericUnderscore(u.Username) {
+		return userInter, errors.New("用户名只能包含字母、数字、下划线")
 	}
 
 	// 只允许建 当前角色的子角色账户(目前只支持 子角色为单一角色，多角色不支持)

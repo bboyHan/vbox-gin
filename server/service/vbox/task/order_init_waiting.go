@@ -15,6 +15,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/flipped-aurora/gin-vue-admin/server/vbUtil"
 	"github.com/redis/go-redis/v9"
+	"github.com/songzhibin97/gkit/tools/rand_string"
 	"go.uber.org/zap"
 	"log"
 	"strings"
@@ -269,25 +270,146 @@ func OrderWaitingTask() {
 
 								v.Obj.PlatId = keyMem
 
-								global.GVA_LOG.Info("当前余额情况", zap.Any("j3Record", j3Record))
+								global.GVA_LOG.Info("当前余额情况", zap.Any("orderID", orderId), zap.Any("j3Record", j3Record))
 							}
 
+							//pc code预产
 							if v.Obj.EventType == 2 {
 								v.Obj.EventId = MID
 								v.Obj.ResourceUrl = imgContent
 							}
+							//shop 商品
+							if v.Obj.EventType == 4 {
+								var shopSetKey, shopSetMem string
+								shopSetKey = fmt.Sprintf(global.ChanOrgQNShopZSet, orgID, cid, money)
+								// 获取集合中可用的商品
+								var resProdList []string
+								resProdList, err = global.GVA_REDIS.ZRangeByScore(context.Background(), shopSetKey, &redis.ZRangeBy{
+									Min:    "0",
+									Max:    "0",
+									Offset: 0,
+									Count:  -1,
+								}).Result()
+								if err != nil {
+									global.GVA_LOG.Error("获取集合中可用的商品匹配异常, redis err", zap.Error(err))
+									if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+										global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+									}
+									_ = msg.Ack(true)
+									continue
+								}
+								if resProdList != nil && len(resProdList) > 0 {
+									randomShopList := utils.NewRandomList(resProdList)
+									var useShopFlag bool
+									for len(randomShopList.List) > 0 {
+										shopSetMem = randomShopList.GetRandom()
+										global.GVA_LOG.Info("取出的shopSetMem值", zap.Any("shopSetMem", shopSetMem), zap.Any("orderId", orderId))
 
-							// 把账号设置为已用
-							global.GVA_REDIS.ZAdd(context.Background(), accSetKey, redis.Z{
-								Score:  1,
-								Member: accSetMem,
-							})
+										// 判断一下当前的shop tm的有没有同时拉单
+										//waitQNShopMem := fmt.Sprintf("%v,%v,%v,%v,%v,%v", ID, uid, money, mid, markID, URL)
+										shopSplit := strings.Split(shopSetMem, ",")
+										shopID := shopSplit[0]
+										mid := shopSplit[3]
+										markID := shopSplit[4]
+										URL := shopSplit[5]
+										qnShopJucKey := fmt.Sprintf(global.PayQNShopMoneyKey, shopID, money)
+
+										jucShopTTL := global.GVA_REDIS.TTL(context.Background(), qnShopJucKey).Val()
+										if jucShopTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+											global.GVA_LOG.Error("tm的已经有qn shop在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+											continue
+										} else {
+
+											// 把QN shop设置为已用
+											global.GVA_REDIS.ZAdd(context.Background(), shopSetKey, redis.Z{
+												Score:  1,
+												Member: shopSetMem,
+											})
+
+											global.GVA_REDIS.Set(context.Background(), qnShopJucKey, v.Obj.OrderId, t.CDTime)
+
+											waitQNShopYdKey := fmt.Sprintf(global.YdQNShopWaiting, mid, ID)
+											waitQNShopMem := shopSetMem
+
+											waitMsg := strings.Join([]string{waitQNShopYdKey, waitQNShopMem}, "-")
+											err = chX.PublishWithDelay(QNShopCDCheckDelayedExchange, QNShopCDCheckDelayedRoutingKey, []byte(waitMsg), t.CDTime)
+
+											global.GVA_LOG.Info("qn shop 正常取用", zap.Any("acID", accID), zap.Any("account", acAccount),
+												zap.Any("orderId", orderId))
+
+											useShopFlag = true
+
+											record = sysModel.SysOperationRecord{
+												Ip:      v.Ctx.ClientIP,
+												Method:  v.Ctx.Method,
+												Path:    v.Ctx.UrlPath,
+												Agent:   v.Ctx.UserAgent,
+												MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+												Type:    global.OrderType,
+												Status:  200,
+												Latency: time.Since(now),
+												Resp:    fmt.Sprintf(global.OrderWaitingShopFinishedMsg, markID, URL),
+												UserID:  v.Ctx.UserID,
+											}
+											err = operationRecordService.CreateSysOperationRecord(record)
+
+											v.Obj.EventId = fmt.Sprintf("%s_%s", mid, shopID)
+											v.Obj.ResourceUrl = URL
+											v.Obj.PlatId = markID
+
+											break
+										}
+
+									}
+									if !useShopFlag { //轮询一遍了，还是没取到的话，就失败
+										if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+											global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+										}
+										record = sysModel.SysOperationRecord{
+											Ip:      v.Ctx.ClientIP,
+											Method:  v.Ctx.Method,
+											Path:    v.Ctx.UrlPath,
+											Agent:   v.Ctx.UserAgent,
+											MarkId:  fmt.Sprintf(global.OrderRecord, orderId),
+											Type:    global.OrderType,
+											Status:  500,
+											Latency: time.Since(now),
+											Resp:    fmt.Sprintf(global.ResourceQNShopNotEnough, cid, money),
+											UserID:  v.Ctx.UserID,
+										}
+										err = operationRecordService.CreateSysOperationRecord(record)
+										_ = msg.Ack(true)
+
+										continue
+									}
+								} else {
+									global.GVA_LOG.Error("当前渠道QN shop库存不足, channel", zap.Any("code", cid), zap.Any("pacc", pacc))
+									// 如果解析消息失败，则直接丢弃消息
+									_ = msg.Reject(false)
+									continue
+								}
+							}
+
+							if cid != "5001" {
+								jucTTL = global.GVA_REDIS.TTL(context.Background(), accJucKey).Val()
+								if jucTTL > 0 { // tm的已经有这个号在这个时间段被拉单了
+									global.GVA_LOG.Error("tm的已经有这个号在这个时间段被拉单了", zap.Any("acID", accID), zap.Any("account", acAccount))
+									continue
+								} else {
+									// 把账号设置为已用
+									global.GVA_REDIS.ZAdd(context.Background(), accSetKey, redis.Z{
+										Score:  1,
+										Member: accSetMem,
+									})
+									global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, t.CDTime)
+								}
+							} else {
+								// 对账号不设置卡限
+							}
 
 							if global.PcContains(cid) {
 								global.GVA_DB.Debug().Model(&vbox.ChannelPayCode{}).Where("id = ?", pcDB.ID).Update("code_status", 1)
 							}
-
-							global.GVA_REDIS.Set(context.Background(), accJucKey, v.Obj.OrderId, t.CDTime)
 
 							var accWaitYdKey, accInfoVal string
 							switch {
@@ -298,10 +420,17 @@ func OrderWaitingTask() {
 								accWaitYdKey = fmt.Sprintf(global.ProdAccWaiting, productInfo.ProductId, accID)
 								accInfoVal = fmt.Sprintf("%s,%s,%s", ID, accID, acAccount)
 							}
-							// 设置一个冷却时间
-							global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, t.CDTime)
-							waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
-							err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), t.CDTime)
+
+							global.GVA_LOG.Info("yd key", zap.Any("accWait Key", accWaitYdKey), zap.Any("accInfoVal", accInfoVal))
+
+							if cid != "5001" {
+
+								// 设置一个冷却时间
+								global.GVA_REDIS.Set(context.Background(), accWaitYdKey, accInfoVal, t.CDTime)
+								waitMsg := strings.Join([]string{accWaitYdKey, accInfoVal}, "-")
+								err = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), t.CDTime)
+
+							}
 
 							global.GVA_LOG.Info("正常取用", zap.Any("acID", accID), zap.Any("account", acAccount), zap.Any("orderId", orderId))
 
@@ -311,6 +440,8 @@ func OrderWaitingTask() {
 							v.Obj.AcAccount = vca.AcAccount
 							if cid == "1101" || cid == "6001" || cid == "2001" {
 
+							} else if cid == "5001" {
+								v.Obj.AcAccount = rand_string.RandomLetter(6)
 							} else if cid == "3000" {
 								v.Obj.PlatId = pcDB.PlatId
 							} else {

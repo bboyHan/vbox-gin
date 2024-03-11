@@ -36,7 +36,7 @@
                       <div class="card_header_tag new_customers">
                         <span>通道ID: {{ item.cid }}</span>
                       </div>
-                      <div class="card_header_title"><span>{{ item.shopRemark }}</span></div>
+                      <div class="card_header_title"><span>{{ fmtSimpleBodyByWidth(item.shopRemark, 6) }}</span></div>
                       <div class="card_header_description">
                         <div>商铺数量： <span style="color: red">{{ lengthFunc(item.list) }}</span></div>
                       </div>
@@ -151,7 +151,7 @@
                     <span v-else>{{ scope.row.device }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="标识" prop="markId" width="120px">
+                <el-table-column label="标识" prop="markId" width="180px">
                   <template #default="scope">
                     <el-input v-if="activeIndex === scope.$index" v-model="scope.row.markId"></el-input>
                     <span v-else>{{ scope.row.markId }}</span>
@@ -310,7 +310,7 @@
                     <el-input v-model="scope.row.device" readonly v-else></el-input>
                   </template>
                 </el-table-column>
-                <el-table-column label="标识" prop="markId" width="120px">
+                <el-table-column label="标识" prop="markId" width="180px">
                   <template #default="scope">
                     <el-input v-if="editUpdFieldVisible(scope.row, scope.$index)" v-model="scope.row.markId"></el-input>
                     <el-input v-else v-model="scope.row.markId" readonly></el-input>
@@ -463,7 +463,15 @@ import {
 } from '@/api/channelProduct'
 
 // 全量引入格式化工具 请按需保留
-import {getDictFunc, formatDate, formatBoolean, filterDict, ReturnArrImg, onDownloadFile} from '@/utils/format'
+import {
+  getDictFunc,
+  formatDate,
+  formatBoolean,
+  filterDict,
+  ReturnArrImg,
+  onDownloadFile,
+  fmtSimpleBodyByWidth
+} from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, nextTick} from 'vue'
 import {CircleCheck, CircleClose, Delete, Edit, InfoFilled, Plus, Select} from '@element-plus/icons-vue';

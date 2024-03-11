@@ -383,8 +383,8 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		return records, nil
 	} else if global.QNContains(vca.Cid) {
 		endTime := time.Now()
-		startTime := endTime.Add(-time.Hour * 24 * 10)
-		records, err := product.QryQNRecords(urlQ, *vca, startTime, endTime, "")
+		startTime := endTime.Add(-time.Hour * 24 * 5)
+		records, err := product.QryQNRecords(*vca, startTime, endTime, "")
 		if err != nil {
 			return nil, fmt.Errorf("ck失效，请重新上传, err: " + err.Error())
 		}
@@ -715,7 +715,7 @@ func (vcaService *ChannelAccountService) DeleteChannelAccount(vca vbox.ChannelAc
 				Method:    c.Request.Method,
 				UrlPath:   c.Request.URL.Path,
 				UserAgent: c.Request.UserAgent(),
-				UserID:    int(vcaDB.DeletedBy),
+				UserID:    int(vca.DeletedBy),
 			},
 		}
 		marshal, err := json.Marshal(oc)
@@ -955,7 +955,7 @@ func (vcaService *ChannelAccountService) GetChannelAccount(id uint) (vca vbox.Ch
 	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
 	vca.Username = sysUser.Username
 
-	rdAccId := fmt.Sprintf(global.OrderRecord, vca.AcId)
+	rdAccId := fmt.Sprintf(global.AccRecord, vca.AcId)
 	var records []sysModel.SysOperationRecord
 	global.GVA_DB.Model(&sysModel.SysOperationRecord{}).Distinct("resp,created_at").Where("mark_id = ?", rdAccId).Scan(&records)
 
@@ -973,7 +973,7 @@ func (vcaService *ChannelAccountService) GetChannelAccountByAcId(acId string) (v
 	err = global.GVA_DB.Unscoped().Where("id = ?", vca.CreatedBy).First(&sysUser).Error
 	vca.Username = sysUser.Username
 
-	rdAccId := fmt.Sprintf(global.OrderRecord, acId)
+	rdAccId := fmt.Sprintf(global.AccRecord, acId)
 	var records []sysModel.SysOperationRecord
 	global.GVA_DB.Model(&sysModel.SysOperationRecord{}).Distinct("resp,created_at").Where("mark_id = ?", rdAccId).Scan(&records)
 

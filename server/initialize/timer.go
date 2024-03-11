@@ -49,20 +49,6 @@ func Timer() {
 		//	fmt.Println("add timer error:", err)
 		//}
 
-		//_, err = global.GVA_Timer.AddTaskByFunc("handleEcJDCodeAdd", "@every 3s", func() {
-		//	err = task.HandleEcJDCodeAdd()
-		//	//if err != nil {
-		//	//	fmt.Println("timer error:", err)
-		//	//}
-		//	err = task.HandleEcJDCodeDel()
-		//	//if err != nil {
-		//	//	fmt.Println("timer error:", err)
-		//	//}
-		//})
-		//if err != nil {
-		//	fmt.Println("add timer error:", err)
-		//}
-
 		//_, err = global.GVA_Timer.AddTaskByFunc("handleChannelStatisTask", "55 17 * * *", func() {
 		//	err = task.HandleChannelStatisTask()
 		//	if err != nil {
@@ -150,4 +136,20 @@ func Timer() {
 		}
 	}()
 
+	go func() {
+		_, err := global.GVA_Timer.AddTaskByFunc("handleEcJDCodeAdd", "@every 5s", func() {
+			err := task.HandleEcJDCodeAdd()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+			err = task.HandleEcJDCodeDel()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+			global.GVA_LOG.Info("执行【handleEcJDCodeAdd AND DEL】")
+		})
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
+	}()
 }

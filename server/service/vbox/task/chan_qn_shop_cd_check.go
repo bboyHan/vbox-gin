@@ -87,16 +87,18 @@ func QNShopCDCheckTask() {
 				v := string(msg.Body)
 
 				split := strings.Split(v, "-")
-				waitAccYdKey := split[0]
-				waitAccMem := split[1]
-				var accInfo []string
-				accInfo = strings.Split(waitAccMem, ",")
+				waitQNShopYdKey := split[0]
+				waitQNShopMem := split[1]
+				var shopInfo []string
+				shopInfo = strings.Split(waitQNShopMem, ",")
 
-				ID := accInfo[0]
-				MID := accInfo[1]
-				markID := accInfo[2]
-				money := accInfo[3]
-				uid := accInfo[4]
+				ID := shopInfo[0]
+				uid := shopInfo[1]
+				money := shopInfo[2]
+				mid := shopInfo[3]
+				markID := shopInfo[4]
+				URL := shopInfo[5]
+
 				var vcaList []vbox.ChannelAccount
 				global.GVA_DB.Model(&vbox.ChannelAccount{}).Where("created_by =?", uid).Scan(&vcaList)
 
@@ -112,8 +114,9 @@ func QNShopCDCheckTask() {
 				UID, _ := strconv.ParseUint(uid, 10, 64)
 				orgTmp := utils2.GetSelfOrg(uint(UID))
 
-				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的QN shop", zap.Any("ID", ID), zap.Any("MID", MID), zap.Any("money", money),
-					zap.Any("markID", markID), zap.Any("waitAccYdKey", waitAccYdKey))
+				global.GVA_LOG.Info("【引导类】收到一条需要处理查询冷却状态的QN shop", zap.Any("ID", ID),
+					zap.Any("MID", mid), zap.Any("money", money),
+					zap.Any("markID", markID), zap.Any("url", URL), zap.Any("waitQNShopYdKey", waitQNShopYdKey))
 
 				//查一下订单是否超出账户限制
 				var flag bool
@@ -242,18 +245,19 @@ func QNShopCDCheckTask() {
 					}
 				}
 
-				ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+				ttl := global.GVA_REDIS.TTL(context.Background(), waitQNShopYdKey).Val()
 
 				if ttl <= 0 { //冷却结束，直接置为已用
 
-					accKey := fmt.Sprintf(global.ChanOrgQNShopZSet, orgTmp[0], "5001", money)
+					QNShopKey := fmt.Sprintf(global.ChanOrgQNShopZSet, orgTmp[0], "5001", money)
 
 					if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
-						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-						global.GVA_LOG.Info("CD超限或关闭QN shop，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+						_ = global.GVA_REDIS.ZRem(context.Background(), QNShopKey, waitQNShopMem)
+						global.GVA_LOG.Info("CD超限或关闭QN shop，删掉处理", zap.Any("QNShopKey", QNShopKey), zap.Any("waitAccMem", waitQNShopMem),
+							zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
 					} else {
-						global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
-						global.GVA_LOG.Info("QN shop CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						global.GVA_REDIS.ZAdd(context.Background(), QNShopKey, redis.Z{Score: 0, Member: waitQNShopMem})
+						global.GVA_LOG.Info("QN shop CD置为可用", zap.Any("QNShopKey", QNShopKey), zap.Any("waitQNShopMem", waitQNShopMem))
 					}
 
 					_ = msg.Ack(true)
@@ -262,13 +266,13 @@ func QNShopCDCheckTask() {
 					if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限或者当前账号已经关闭，删掉处理
 
 						accKey := fmt.Sprintf(global.ChanOrgQNShopZSet, orgTmp[0], "5001", money)
-						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
-						global.GVA_LOG.Info("qn shop CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitQNShopMem)
+						global.GVA_LOG.Info("qn shop CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitQNShopMem))
 
 					} else {
 						waitMsg := v
 
-						ttlN := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						ttlN := global.GVA_REDIS.TTL(context.Background(), waitQNShopYdKey).Val()
 						err = chX.PublishWithDelay(QNShopCDCheckDelayedExchange, QNShopCDCheckDelayedRoutingKey, []byte(waitMsg), ttlN)
 						global.GVA_LOG.Info("qn shop 还在冷却中，重新放回cd check mq", zap.Any("msg", waitMsg), zap.Any("ttlN", ttlN))
 					}

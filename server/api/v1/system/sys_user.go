@@ -188,6 +188,7 @@ func (b *BaseApi) SelfRegister(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+
 	r.CreateBy = utils.GetUserID(c)
 	userReturn, err := userService.SelfRegister(r)
 	if err != nil {

@@ -44,7 +44,7 @@ func (channelShopApi *ChannelShopApi) CreateChannelShop(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := channelShopService.CreateChannelShop(&channelShop); err != nil {
+	if err := channelShopService.CreateChannelShop(&channelShop, c); err != nil {
 		global.GVA_LOG.Error("创建/更新失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
@@ -69,7 +69,7 @@ func (channelShopApi *ChannelShopApi) DeleteChannelShop(c *gin.Context) {
 		return
 	}
 	channelShop.DeletedBy = utils.GetUserID(c)
-	if err := channelShopService.DeleteChannelShop(channelShop); err != nil {
+	if err := channelShopService.DeleteChannelShop(channelShop, c); err != nil {
 		global.GVA_LOG.Error("删除失败!", zap.Error(err))
 		response.FailWithMessage("删除失败", c)
 	} else {
@@ -94,7 +94,7 @@ func (channelShopApi *ChannelShopApi) DeleteChannelShopByIds(c *gin.Context) {
 		return
 	}
 	deletedBy := utils.GetUserID(c)
-	if err := channelShopService.DeleteChannelShopByIds(IDS, deletedBy); err != nil {
+	if err := channelShopService.DeleteChannelShopByIds(IDS, c, deletedBy); err != nil {
 		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
 		response.FailWithMessage("批量删除失败", c)
 	} else {
@@ -119,7 +119,7 @@ func (channelShopApi *ChannelShopApi) UpdateChannelShop(c *gin.Context) {
 		return
 	}
 	channelShop.UpdatedBy = utils.GetUserID(c)
-	if err := channelShopService.UpdateChannelShop(channelShop); err != nil {
+	if err := channelShopService.UpdateChannelShop(channelShop, c); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))
 		response.FailWithMessage("更新失败", c)
 	} else {

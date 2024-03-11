@@ -13,6 +13,15 @@ import (
 	"strings"
 )
 
+// IsAlphaNumericUnderscore // 匹配规则：只包含英文字母、数字和下划线
+func IsAlphaNumericUnderscore(str string) bool {
+	// 匹配规则：只包含英文字母、数字和下划线
+	pattern := "^[a-zA-Z0-9_]+$"
+
+	match, _ := regexp.MatchString(pattern, str)
+	return match
+}
+
 // IsNumeric 判断字符串是否为数值
 func IsNumeric(s string) bool {
 	// 编译正则表达式

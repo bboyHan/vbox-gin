@@ -9,6 +9,9 @@
             <el-form-item label="付方单号" prop="orderId">
               <el-input v-model="searchInfo.orderId" placeholder="搜索付方单号"/>
             </el-form-item>
+            <el-form-item label="平台单号" prop="platId">
+              <el-input v-model="searchInfo.platId" placeholder="搜索平台单号"/>
+            </el-form-item>
             <el-form-item label="通道账号" prop="acAccount">
               <el-input v-model="searchInfo.acAccount" placeholder="搜索通道账号"/>
             </el-form-item>
@@ -77,6 +80,11 @@
                 <div v-else>
                   <el-button type="info" :loading-icon="Eleme" loading link class="table-button">匹配中</el-button>
                 </div>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="平台ID" prop="platId" width="260">
+              <template #default="scope">
+                {{ fmtSimpleBodyByWidth(scope.row.platId, 26) }}
               </template>
             </el-table-column>
             <el-table-column align="center" label="订单ID" prop="orderId" width="260"/>
@@ -242,26 +250,27 @@
                     <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
                     <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
                     <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
-                    <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
                     <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
                     <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
                     <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
-                    <el-descriptions-item label="商铺ID" :span="3">{{
-                        formData.ext.shop.productId
-                      }}
-                    </el-descriptions-item>
-                    <el-descriptions-item label="商铺备注" :span="3">{{
-                        formData.ext.shop.shopRemark
-                      }}
-                    </el-descriptions-item>
-                    <el-descriptions-item label="商铺成率" :span="6">
-                      <div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{ formData.ext.dv.x1 }}
-                        成率：{{ calculatePercentage(formData.ext.dv.x2, formData.ext.dv.x1) }}%
-                      </div>
-                      <div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{ formData.ext.dv.x3 }}
-                        成率：{{ calculatePercentage(formData.ext.dv.x4, formData.ext.dv.x3) }}%
-                      </div>
-                    </el-descriptions-item>
+                    <div v-if="formData.ext.shop">
+                      <el-descriptions-item label="商铺ID" :span="3">{{
+                          formData.ext.shop.productId
+                        }}
+                      </el-descriptions-item>
+                      <el-descriptions-item label="商铺备注" :span="3">{{
+                          formData.ext.shop.shopRemark
+                        }}
+                      </el-descriptions-item>
+                      <el-descriptions-item label="商铺成率" :span="6">
+                        <div>近一小时：成单 / 总成单 - {{ formData.ext.dv.x2 }} / {{ formData.ext.dv.x1 }}
+                          成率：{{ calculatePercentage(formData.ext.dv.x2, formData.ext.dv.x1) }}%
+                        </div>
+                        <div>今日：成单 / 总成单 - {{ formData.ext.dv.x4 }} / {{ formData.ext.dv.x3 }}
+                          成率：{{ calculatePercentage(formData.ext.dv.x4, formData.ext.dv.x3) }}%
+                        </div>
+                      </el-descriptions-item>
+                    </div>
                     <el-descriptions-item label="订单状态" :span="3">{{
                         formatPayed(formData.orderStatus)
                       }}
@@ -309,7 +318,6 @@
                     <el-descriptions-item label="金额" :span="3">{{ formData.money }}</el-descriptions-item>
                     <el-descriptions-item label="单价积分" :span="3">{{ formData.unitPrice }}</el-descriptions-item>
                     <el-descriptions-item label="通道编码" :span="3">{{ formData.channelCode }}</el-descriptions-item>
-                    <el-descriptions-item label="平台id" :span="6">{{ formData.platId }}</el-descriptions-item>
                     <el-descriptions-item label="客户ip" :span="3">{{ formData.payIp }}</el-descriptions-item>
                     <el-descriptions-item label="客户端设备" :span="3">{{ formData.payDevice }}</el-descriptions-item>
                     <el-descriptions-item label="区域" :span="6">{{ formData.payRegion }}</el-descriptions-item>
@@ -563,7 +571,7 @@ import {
   formatNotifyColor,
   formatHandNotify,
   formatHandNotifyColor,
-  formatUtcTimestamp, calculatePercentage, formatPayCodeStatus
+  formatUtcTimestamp, calculatePercentage, formatPayCodeStatus, fmtSimpleBodyByWidth
 } from '@/utils/format'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ref, reactive, onMounted} from 'vue'
