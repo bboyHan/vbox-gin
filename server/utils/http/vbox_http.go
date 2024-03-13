@@ -3,7 +3,9 @@ package http
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
@@ -132,12 +134,8 @@ func ProxyAddress2DB() string {
 		return ""
 	}
 	// 创建 HTTP 客户端实例
-	headers := map[string]string{
-		"Content-Type": "application/json",
-	}
 	options := &RequestOptions{
-		Headers:      headers,
-		MaxRedirects: 3,
+		MaxRedirects: 0,
 	}
 
 	c := NewHTTPClient()
@@ -170,6 +168,36 @@ func ProxyAddress2DB() string {
 	return ipAddr
 }
 
+// SetLimitWithTime 设置访问次数
+func SetLimitWithTime(key string, limit int, expiration time.Duration) (cnt int, err error) {
+	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+	if err != nil {
+		return cnt, err
+	}
+	if count == 0 {
+		pipe := global.GVA_REDIS.TxPipeline()
+		pipe.Incr(context.Background(), key)
+		pipe.Expire(context.Background(), key, expiration)
+		_, err = pipe.Exec(context.Background())
+		return cnt + 1, err
+	} else {
+		// 次数
+		if times, err := global.GVA_REDIS.Get(context.Background(), key).Int(); err != nil {
+			return times, err
+		} else {
+			if times >= limit {
+				if t, err := global.GVA_REDIS.PTTL(context.Background(), key).Result(); err != nil {
+					return times, errors.New("请求太过频繁，请稍后再试")
+				} else {
+					return times, errors.New("请求太过频繁, 请 " + t.String() + " 秒后尝试")
+				}
+			} else {
+				return times + 1, global.GVA_REDIS.Incr(context.Background(), key).Err()
+			}
+		}
+	}
+}
+
 func NewProxyHTTPClient() *FastHttpClient {
 
 	//1. cache
@@ -180,10 +208,35 @@ func NewProxyHTTPClient() *FastHttpClient {
 	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	//var proxyDB map[string]interface{}
 	//err = db.Where("status = ?", 1).First(&proxyDB).Error
+	var ipAddr string
 
-	s := ProxyAddress2DB()
+	// 设置150s缓冲池（复用150s ip）
+	ttl := global.GVA_REDIS.TTL(context.Background(), global.SysProxyIPPrefix).Val()
+	if ttl > 0 {
+		//复用ip
+		ipAddr = global.GVA_REDIS.Get(context.Background(), global.SysProxyIPPrefix).Val()
+		global.GVA_LOG.Info("复用ip", zap.Any("addr", ipAddr), zap.Any("剩余可用时间", ttl))
 
-	return NewHTTPClient(s)
+	} else {
+
+		cnt, err := SetLimitWithTime(global.SysProxyIPLimit, 1, 3*time.Second)
+		if err != nil {
+			global.GVA_LOG.Info("已经有资源在请求获取代理中...", zap.Any("err", err))
+			return NewHTTPClient()
+		}
+
+		ipAddr = ProxyAddress2DB()
+
+		if ipAddr == "" {
+			global.GVA_LOG.Error("获取代理地址失败，改非代理模式获取client", zap.Any("cnt", cnt))
+			return NewHTTPClient()
+		} else {
+			global.GVA_REDIS.Set(context.Background(), global.SysProxyIPPrefix, ipAddr, 150*time.Second)
+			global.GVA_LOG.Info("使用新代理ip，并设置复用池", zap.Any("addr", ipAddr), zap.Any("cnt", cnt))
+		}
+	}
+	return NewHTTPClient(ipAddr)
+
 }
 
 // NewHTTPClient 创建一个新的 httpClient 实例

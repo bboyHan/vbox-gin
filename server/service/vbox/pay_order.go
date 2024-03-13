@@ -134,7 +134,7 @@ func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq,
 
 	//设置提交次数限制
 	limitKey := fmt.Sprintf(global.PayOrderExtLimitKey, order.OrderId)
-	limitCnt, err := utils.SetLimitWithTime(limitKey, 3, 8*time.Minute)
+	limitCnt, err := vbUtil.SetLimitWithTime(limitKey, 3, 8*time.Minute)
 	if err != nil {
 		record := sysModel.SysOperationRecord{
 			Ip:      c.ClientIP(),
@@ -409,6 +409,11 @@ func (vpoService *PayOrderService) QueryOrderSimple(vpo *vboxReq.QueryOrderSimpl
 			}
 			if ch == nil {
 				//重试一次
+				conn, errX = mq.MQ.ConnPool.GetConnection()
+				if errX != nil {
+					global.GVA_LOG.Warn(fmt.Sprintf("Failed to get connection from pool: %v", err))
+				}
+				defer mq.MQ.ConnPool.ReturnConnection(conn)
 				ch, errC = conn.Channel()
 				if errC != nil {
 					global.GVA_LOG.Warn(fmt.Sprintf("new mq channel err: %v", err))

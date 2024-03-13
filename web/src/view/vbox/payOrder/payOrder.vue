@@ -852,7 +852,7 @@ const enterDialog = async () => {
 
 // ------ 账户匹配 ------
 const isPendingAcc = (row) => {
-  console.log(row.adId)
+  console.log(row.acId)
   return row.acId !== "";
 }
 // ------ 账户匹配 ------

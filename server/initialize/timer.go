@@ -137,6 +137,28 @@ func Timer() {
 	}()
 
 	go func() {
+		defer func() { //保持程序运行态，而不是中断程序
+			if err := recover(); err != nil {
+				fmt.Println("Timer() 发生了 panic ex：", err)
+				// 可以在这里进行一些处理操作
+			}
+		}()
+		var option []cron.Option
+		option = append(option, cron.WithSeconds())
+
+		_, err := global.GVA_Timer.AddTaskByFunc("handleProxyIP", "@every 150s", func() {
+			err := task.HandleProxyIP()
+			if err != nil {
+				fmt.Println("timer error:", err)
+			}
+			global.GVA_LOG.Info("执行【handleProxyIP】")
+		}, option...)
+		if err != nil {
+			fmt.Println("add timer error:", err)
+		}
+	}()
+
+	go func() {
 		_, err := global.GVA_Timer.AddTaskByFunc("handleEcJDCodeAdd", "@every 5s", func() {
 			err := task.HandleEcJDCodeAdd()
 			if err != nil {

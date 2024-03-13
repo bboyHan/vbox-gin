@@ -5,19 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
 	utils2 "github.com/flipped-aurora/gin-vue-admin/server/plugin/organization/utils"
-	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
-	"github.com/flipped-aurora/gin-vue-admin/server/service/vbox/product"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
 	"strings"
 	"sync"
-	"time"
 )
 
 // 账号开启查询
@@ -29,7 +25,7 @@ const (
 
 // ChanCardAccEnableCheckTask 查单池账号开启状态核查
 func ChanCardAccEnableCheckTask() {
-	var operationRecordService system.OperationRecordService
+	//var operationRecordService system.OperationRecordService
 
 	// 示例：发送消息
 	conn, err := mq.MQ.ConnPool.GetConnection()
@@ -76,7 +72,7 @@ func ChanCardAccEnableCheckTask() {
 			if err != nil {
 				global.GVA_LOG.Error("err", zap.Error(err), zap.Any("queue", ChanCardAccEnableCheckQueue))
 			}
-			now := time.Now()
+			//now := time.Now()
 
 			for msg := range deliveries {
 				//v := &map[string]interface{}{}
@@ -105,34 +101,34 @@ func ChanCardAccEnableCheckTask() {
 					global.GVA_LOG.Info("收到一条需要处理的查单池账号【开启】", zap.Any("ID", v.Obj.ID), zap.Any("cid", v.Obj.Cid), zap.Any("acId", v.Obj.AcId), zap.Any("acAccount", v.Obj.AcAccount))
 
 					// 3. 筛选匹配是哪个产品，查一下对应产品的账户是否能够正常官方使用
-					if global.ECContains(cid) { //ec
-						_, errQ := product.JDValidCookie(v.Obj.Token)
-						if errQ != nil {
-							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.CardAccQryRecordsEx, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
-							}
-
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
-							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
-						}
-					}
+					//if global.ECContains(cid) { //ec
+					//	_, errQ := product.JDValidCookie(v.Obj.Token)
+					//	if errQ != nil {
+					//		global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+					//		//入库操作记录
+					//		record := sysModel.SysOperationRecord{
+					//			Ip:      v.Ctx.ClientIP,
+					//			Method:  v.Ctx.Method,
+					//			Path:    v.Ctx.UrlPath,
+					//			Agent:   v.Ctx.UserAgent,
+					//			Status:  500,
+					//			Latency: time.Since(now),
+					//			Resp:    fmt.Sprintf(global.CardAccQryRecordsEx, acId, v.Obj.AcAccount),
+					//			UserID:  v.Ctx.UserID,
+					//		}
+					//
+					//		errR := operationRecordService.CreateSysOperationRecord(record)
+					//		if errR != nil {
+					//			global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+					//		}
+					//
+					//		global.GVA_DB.Unscoped().Model(&vbox.ChannelCardAcc{}).Where("id = ?", v.Obj.ID).
+					//			Update("sys_status", 0)
+					//		global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+					//		_ = msg.Reject(false)
+					//		continue
+					//	}
+					//}
 
 					//2.
 					if global.ECContains(cid) { //e card

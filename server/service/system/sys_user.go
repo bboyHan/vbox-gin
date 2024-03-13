@@ -36,7 +36,7 @@ func (userService *UserService) OpenAccRegister(u systemReq.OpenAccRegister) (us
 		return userInter, errors.New("两次输入密码不一致")
 	}
 
-	if utils.IsAlphaNumericUnderscore(u.Username) {
+	if !utils.IsAlphaNumericUnderscore(u.Username) {
 		return userInter, errors.New("用户名只能包含字母、数字、下划线")
 	}
 

@@ -92,7 +92,7 @@ func ValidDYUrl(requestString string) bool {
 
 // HandleAlipayUrl 处理Alipay url
 func HandleAlipayUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 	if strings.Contains(requestString, "alipays://platformapi") || strings.Contains(requestString, "jiaoyimao") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", payUrl))
@@ -107,7 +107,7 @@ func HandleAlipayUrl(requestString string) (payUrl string, err error) {
 
 // HandleJDUrl 处理jd url
 func HandleJDUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 
 	if strings.Contains(requestString, "openapp.jdmobile://") {
 		payUrl = requestString
@@ -176,7 +176,7 @@ func ValidPddUrl(requestString string) bool {
 
 // HandleDYUrl 处理dy url
 func HandleDYUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 
 	if strings.Contains(requestString, "snssdk1128://") {
 		payUrl = requestString
@@ -211,7 +211,7 @@ func HandleDYUrl(requestString string) (payUrl string, err error) {
 
 // HandleXCXUrl 处理wx xcx
 func HandleXCXUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 	if strings.Contains(requestString, "#小程序://") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
@@ -223,7 +223,7 @@ func HandleXCXUrl(requestString string) (payUrl string, err error) {
 
 // HandlePddUrl 处理pdd url
 func HandlePddUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 	if strings.Contains(requestString, "pingduoduo://") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
@@ -237,7 +237,7 @@ func HandlePddUrl(requestString string) (payUrl string, err error) {
 }
 
 func HandleTBUrl(requestString string) (payUrl string, err error) {
-	global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
+	//global.GVA_LOG.Info("处理前链接", zap.Any("payUrl", requestString))
 
 	if strings.Contains(requestString, "m.tb.cn") {
 		// 先请求一次,获取 html body

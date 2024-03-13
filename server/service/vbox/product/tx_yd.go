@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -220,14 +221,25 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 
 	u.RawQuery = queryParams.Encode()
 	newURL := u.String()
-	client := vbHttp.NewHTTPClient()
+	client := vbHttp.NewProxyHTTPClient()
 
 	//global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
 
 	resp, err := client.Get(newURL, options)
 	if err != nil {
 		global.GVA_LOG.Error("err:  ->", zap.Error(err), zap.Any("resp", resp))
-		return nil, newURL
+		s := err.Error()
+		if strings.Contains(s, "connection") {
+			global.GVA_LOG.Info("代理获取异常，清除缓存池，重新获取1次")
+			global.GVA_REDIS.Del(context.Background(), global.SysProxyIPPrefix)
+			client = vbHttp.NewProxyHTTPClient()
+			resp, err = client.Get(newURL, options)
+			if err != nil {
+				return nil, newURL
+			}
+		} else {
+			return nil, newURL
+		}
 	}
 
 	var records product.Records

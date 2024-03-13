@@ -411,34 +411,34 @@ func ChanAccEnableCheckTask() {
 
 						}
 					} else if global.ECContains(cid) { //ec
-						_, errQ := product.JDValidCookie(v.Obj.Token)
-						if errQ != nil {
-							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
-							//入库操作记录
-							record := sysModel.SysOperationRecord{
-								Ip:      v.Ctx.ClientIP,
-								Method:  v.Ctx.Method,
-								Path:    v.Ctx.UrlPath,
-								Agent:   v.Ctx.UserAgent,
-								MarkId:  fmt.Sprintf(global.AccRecord, acId),
-								Type:    global.AccType,
-								Status:  500,
-								Latency: time.Since(now),
-								Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
-								UserID:  v.Ctx.UserID,
-							}
-
-							errR := operationRecordService.CreateSysOperationRecord(record)
-							if errR != nil {
-								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
-							}
-
-							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
-								Update("sys_status", 0)
-							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
-							_ = msg.Reject(false)
-							continue
-						}
+						//_, errQ := product.JDValidCookie(v.Obj.Token)
+						//if errQ != nil {
+						//	global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+						//	//入库操作记录
+						//	record := sysModel.SysOperationRecord{
+						//		Ip:      v.Ctx.ClientIP,
+						//		Method:  v.Ctx.Method,
+						//		Path:    v.Ctx.UrlPath,
+						//		Agent:   v.Ctx.UserAgent,
+						//		MarkId:  fmt.Sprintf(global.AccRecord, acId),
+						//		Type:    global.AccType,
+						//		Status:  500,
+						//		Latency: time.Since(now),
+						//		Resp:    fmt.Sprintf(global.AccQryRecordsEx, acId, v.Obj.AcAccount),
+						//		UserID:  v.Ctx.UserID,
+						//	}
+						//
+						//	errR := operationRecordService.CreateSysOperationRecord(record)
+						//	if errR != nil {
+						//		global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+						//	}
+						//
+						//	global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+						//		Update("sys_status", 0)
+						//	global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+						//	_ = msg.Reject(false)
+						//	continue
+						//}
 
 					} else if global.QNContains(cid) { //qn
 						_, errQ := product.QNValidCookie(v.Obj.Token)

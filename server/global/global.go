@@ -151,6 +151,9 @@ const (
 
 const (
 	SysUserOrgPrefix = "sys_user:%d"
+
+	SysProxyIPPrefix = "sys_proxy"
+	SysProxyIPLimit  = "sys_proxy_limit"
 )
 
 // PAcc 相关

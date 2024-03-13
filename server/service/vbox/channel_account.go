@@ -383,7 +383,7 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		return records, nil
 	} else if global.QNContains(vca.Cid) {
 		endTime := time.Now()
-		startTime := endTime.Add(-time.Hour * 24 * 5)
+		startTime := endTime.Add(-time.Hour * 24 * 7)
 		records, err := product.QryQNRecords(*vca, startTime, endTime, "")
 		if err != nil {
 			return nil, fmt.Errorf("ck失效，请重新上传, err: " + err.Error())

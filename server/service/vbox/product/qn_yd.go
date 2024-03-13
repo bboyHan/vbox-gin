@@ -8,6 +8,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/http"
+	"go.uber.org/zap"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"net/url"
 	"regexp"
@@ -279,6 +280,7 @@ func QryQNRecords(vca vbox.ChannelAccount, start time.Time, end time.Time, title
 		//QueryParams:  params,
 	}
 
+	global.GVA_LOG.Info("qn newURL --> ", zap.Any("newURL", newURL))
 	resp, _ := client.Post(newURL, qnOptions)
 
 	if resp.StatusCode == 302 {
