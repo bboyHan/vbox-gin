@@ -1019,6 +1019,9 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 	if info.SysStatus != nil {
 		db = db.Where("sys_status = ?", info.SysStatus)
 	}
+	if info.CtlStatus != nil {
+		db = db.Where("ctl_status = ?", info.CtlStatus)
+	}
 	if info.AcId != "" {
 		db = db.Where("ac_id = ?", info.AcId)
 	}

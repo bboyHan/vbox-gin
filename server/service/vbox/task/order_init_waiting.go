@@ -228,11 +228,49 @@ func OrderWaitingTask() {
 								global.GVA_LOG.Error("数据库查账号异常", zap.Error(err))
 								continue
 							}
+							//
+							if vca.CtlStatus == 2 {
+								errM := vbUtil.CheckAccLimit(vca, money)
+								if errM != nil {
+									global.GVA_LOG.Error(errM.Error(), zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("money", money))
 
-							errM := vbUtil.CheckAccLimit(vca, money)
-							if errM != nil {
-								global.GVA_LOG.Error(errM.Error(), zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("money", money))
-								continue
+									err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+										Update("sys_status", 0).Error
+
+									vca.Status = 0
+									oc := request.ChanAccAndCtx{
+										Obj: vca,
+										Ctx: request.Context{
+											Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+											ClientIP:  "127.0.0.1",
+											Method:    "POST",
+											UrlPath:   "/vca/switchEnable",
+											UserAgent: "",
+											UserID:    int(vca.CreatedBy),
+										},
+									}
+									marshal, _ := json.Marshal(oc)
+
+									_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+									global.GVA_LOG.Error("发起一条关号清理资源", zap.Any("orderID", orderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
+									record = sysModel.SysOperationRecord{
+										Ip:      v.Ctx.ClientIP,
+										Method:  v.Ctx.Method,
+										Path:    v.Ctx.UrlPath,
+										Agent:   v.Ctx.UserAgent,
+										MarkId:  fmt.Sprintf(global.AccRecord, vca.AcId),
+										Type:    global.AccType,
+										Status:  500,
+										Latency: time.Since(now),
+										Resp:    fmt.Sprintf(global.AccLimitNotEnough, accID, acAccount, errM.Error()),
+										UserID:  v.Ctx.UserID,
+									}
+									err = operationRecordService.CreateSysOperationRecord(record)
+
+									continue
+								}
 							}
 
 							if global.J3Contains(cid) {

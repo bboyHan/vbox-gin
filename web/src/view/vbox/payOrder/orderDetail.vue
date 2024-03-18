@@ -206,7 +206,7 @@
                   <div v-if="card1100Number && password1100" class="result-container">
                     <el-row :gutter="12">
                       <el-col :span="24">
-                        <button class="btn-copy p_submit_success_button" @click="openCard1100Visible">③ 提交卡密
+                        <button class="btn-copy p_submit_success_button" @click="open1100CardVisible">③ 提交卡密
                         </button>
                       </el-col>
                     </el-row>

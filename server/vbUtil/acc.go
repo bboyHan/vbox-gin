@@ -11,7 +11,7 @@ import (
 func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 
 	global.GVA_LOG.Info("当前账号限制情况", zap.Any("dailyLimit", vca.DailyLimit), zap.Any("totalLimit", vca.TotalLimit),
-		zap.Any("inLimit", vca.InCntLimit), zap.Any("cntLimit", vca.CountLimit))
+		zap.Any("inLimit", vca.InCntLimit), zap.Any("cntLimit", vca.CountLimit), zap.Any("当前请求金额", money))
 
 	if vca.TotalLimit > 0 {
 		var totalSum int
@@ -23,7 +23,7 @@ func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 
 		if totalSum+money > vca.TotalLimit {
 			//global.GVA_LOG.Error("总限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("totalSum", totalSum), zap.Any("money", money), zap.Any("TotalLimit", vca.TotalLimit))
-			return fmt.Errorf("总限额不足")
+			return fmt.Errorf("总限额不足, 限额参数:%v, 当前消费:%v, 请求金额:%v", vca.TotalLimit, totalSum, money)
 		}
 	}
 	if vca.DailyLimit > 0 {
@@ -36,7 +36,7 @@ func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 
 		if dailySum+money > vca.DailyLimit {
 			//global.GVA_LOG.Error("每日限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dailySum", dailySum), zap.Any("money", money), zap.Any("dailyLimit", vca.DailyLimit))
-			return fmt.Errorf("每日限额不足")
+			return fmt.Errorf("每日限额不足, 限额参数:%v, 当前消费:%v, 请求金额:%v", vca.DailyLimit, dailySum, money)
 		}
 	}
 	if vca.InCntLimit > 0 {
@@ -48,7 +48,7 @@ func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 
 		if inCnt+1 > vca.InCntLimit {
 			//global.GVA_LOG.Error("入单数限额不足", zap.Any("orderId", v.Obj.OrderId), zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("inCnt", inCnt), zap.Any("money", money), zap.Any("inCntLimit", vca.InCntLimit))
-			return fmt.Errorf("入单数限额不足")
+			return fmt.Errorf("入单数限额不足, 限额参数:%v, 当前笔数:%v", vca.InCntLimit, inCnt)
 		}
 	}
 	if vca.CountLimit > 0 {
@@ -60,7 +60,7 @@ func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 
 		if cnt+1 > vca.CountLimit {
 			//global.GVA_LOG.Error("总拉单限额不足", zap.Any())
-			return fmt.Errorf("总拉单限额不足")
+			return fmt.Errorf("总拉单限额不足, 限额参数:%v, 当前笔数:%v", vca.CountLimit, cnt)
 		}
 	}
 	return nil

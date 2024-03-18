@@ -60,9 +60,10 @@ const (
 	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前总消费：%v, 当前限额： %v"
 	AccInCntLimitNotEnough = "当前账户进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
 	AccCountLimitNotEnough = "当前账户拉单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前拉单数：%v, 当前限额数： %v"
-	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+	AccLimitNotEnough      = "当前账户已经超出限额策略，无法使用账号，ID: %s, 关闭账号： %s, 限额信息： %v"
+	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法使用账号，ID: %s, 关闭账号： %s"
 	CardAccQryRecordsEx    = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
-	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法使用账号，ID: %s, 关闭账号： %s"
 	AccQryShopEx           = "当前组织需开启至少一个商铺地址，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
 

@@ -108,8 +108,10 @@ func (vpoService *PayOrderService) QryOrderAccOverview(info vboxReq.PayOrderSear
 func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq, c *gin.Context) (rep *vboxRep.OrderSimpleRes, err error) {
 	var order vbox.PayOrder
 	// 校验传入卡密合法性
+	var card, pwd string
 	if vpo.ChannelCode == "1101" {
-		if _, errX := product.ParseJWCardRecord(vpo.Ext); errX != nil {
+		var errX error
+		if card, pwd, errX = product.ParseJWCardRecord(vpo.Ext); errX != nil {
 			return nil, errX
 		}
 	} else if vpo.ChannelCode == "6001" {
@@ -157,38 +159,49 @@ func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq,
 		return nil, errors.New(fmt.Sprintf("您已提交过输入的卡密，无法重复提交，当前已提交%d次", limitCnt))
 	}
 
-	//校验卡密
-	if vpo.ChannelCode == "6001" {
-		//1.0 核查商户
-		var vpa vbox.PayAccount
-		if strings.Contains(order.PAccount, "TEST") {
-			global.GVA_LOG.Info("测试单，商户检测跳过", zap.Any("入参商户", order.PAccount))
-			vpa = vbox.PayAccount{
-				PAccount: order.PAccount,
-				Uid:      order.CreatedBy,
-			}
-		} else {
-			var count int64
-			count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+order.PAccount).Result()
-			if count == 0 {
-				if err != nil {
-					global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
-				}
-				global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", order.PAccount))
-
-				err = global.GVA_DB.Table("vbox_pay_account").
-					Where("p_account = ?", order.PAccount).First(&vpa).Error
-				jsonStr, _ := json.Marshal(vpa)
-				global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+order.PAccount, jsonStr, 10*time.Minute)
-			} else {
-				jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+order.PAccount).Bytes()
-				err = json.Unmarshal(jsonStr, &vpa)
-			}
-			if err != nil {
-				global.GVA_LOG.Error("订单匹配消息处理失败，MqOrderWaitingTask...", zap.Any("err", err.Error()))
-			}
+	//1.0 核查商户
+	var vpa vbox.PayAccount
+	if strings.Contains(order.PAccount, "TEST") {
+		global.GVA_LOG.Info("测试单，商户检测跳过", zap.Any("入参商户", order.PAccount))
+		vpa = vbox.PayAccount{
+			PAccount: order.PAccount,
+			Uid:      order.CreatedBy,
 		}
-		orgTmp := utils2.GetSelfOrg(vpa.Uid)
+	} else {
+		var count int64
+		count, err = global.GVA_REDIS.Exists(context.Background(), global.PayAccPrefix+order.PAccount).Result()
+		if count == 0 {
+			if err != nil {
+				global.GVA_LOG.Error("当前缓存池无此商户，redis err", zap.Error(err))
+			}
+			global.GVA_LOG.Info("当前缓存池无此商户，查一下库。。。", zap.Any("入参商户ID", order.PAccount))
+
+			err = global.GVA_DB.Table("vbox_pay_account").
+				Where("p_account = ?", order.PAccount).First(&vpa).Error
+			jsonStr, _ := json.Marshal(vpa)
+			global.GVA_REDIS.Set(context.Background(), global.PayAccPrefix+order.PAccount, jsonStr, 10*time.Minute)
+		} else {
+			jsonStr, _ := global.GVA_REDIS.Get(context.Background(), global.PayAccPrefix+order.PAccount).Bytes()
+			err = json.Unmarshal(jsonStr, &vpa)
+		}
+		if err != nil {
+			global.GVA_LOG.Error("非法订单，无法提交，请联系管理员...", zap.Any("err", err.Error()))
+			return nil, errors.New(fmt.Sprintf("非法订单，无法提交，请联系管理员"))
+		}
+	}
+	orgTmp := utils2.GetSelfOrg(vpa.Uid)
+
+	//校验卡密
+	if vpo.ChannelCode == "1101" {
+
+		account := order.AcAccount
+		errE := product.ValidAndBindJWCard(account, card, pwd, order.Money)
+		if errE != nil {
+			global.GVA_LOG.Error("卡密类绑卡异常,  err", zap.Error(errE))
+			return nil, errors.New(fmt.Sprintf("卡密类绑卡异常, %v", errE.Error()))
+		}
+
+	} else if vpo.ChannelCode == "6001" {
 
 		accPoolKey := fmt.Sprintf(global.ChanOrgECPoolAccZSet, orgTmp[0], "6001")
 
@@ -1311,7 +1324,7 @@ func (vpoService *PayOrderService) GetPayOrderRate(info vboxReq.PayOrderSearch, 
 		location, _ := time.LoadLocation("Asia/Shanghai")
 		start := time.Unix(info.StartTime, 0).In(location)
 		end := time.Unix(info.EndTime, 0).In(location)
-		db = db.Where("created_at BETWEEN ? AND ?", start, end)
+		db = db.Debug().Where("created_at BETWEEN ? AND ?", start, end)
 
 		if info.ChannelCode != "" {
 			db = db.Where("channel_code =?", info.ChannelCode)

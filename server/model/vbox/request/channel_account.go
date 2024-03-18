@@ -12,6 +12,7 @@ type ChannelAccountSearch struct {
 	EndCreatedAt   *time.Time `json:"endCreatedAt" form:"endCreatedAt"`
 	Status         *int       `json:"status" form:"status"`
 	SysStatus      *int       `json:"sysStatus" form:"sysStatus"`
+	CtlStatus      *int       `json:"ctlStatus" form:"ctlStatus"`
 	Sig            string     `json:"sig" form:"sig"`
 	request.PageInfo
 }
