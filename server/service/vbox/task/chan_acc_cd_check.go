@@ -55,7 +55,7 @@ func AccCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 30
+	consumerCount := 3
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -319,6 +319,16 @@ func AccCDCheckTask() {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
+					} else if global.DyContains(cid) { // 抖音引导
+						accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgTmp[0], cid)
+
+						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 					} else if global.QNContains(cid) { // QN引导
 						accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
 
@@ -335,7 +345,7 @@ func AccCDCheckTask() {
 
 					_ = msg.Ack(true)
 					continue
-				} else {                                                   //仍然处于冷却状态，重新丢回ck check mq
+				} else { //仍然处于冷却状态，重新丢回ck check mq
 					if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限或者当前账号已经关闭，删掉处理
 
 						// 更新账号为正常状态
@@ -368,6 +378,11 @@ func AccCDCheckTask() {
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
+						} else if global.DyContains(cid) { // 剑三引导
+							accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgTmp[0], cid)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
 						} else if global.QNContains(cid) { // QN引导
 							accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgTmp[0], cid)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
@@ -383,6 +398,9 @@ func AccCDCheckTask() {
 						} else if global.SdoContains(cid) { // sdo引导
 						} else if global.ECContains(cid) { // e card卡密
 						} else if global.J3Contains(cid) { // 剑三引导
+							// 更新账号为冷却状态
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
+						} else if global.DyContains(cid) { // 抖音引导
 							// 更新账号为冷却状态
 							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id =?", ID).Update("cd_status", 2)
 						} else if global.QNContains(cid) { // 剑三引导

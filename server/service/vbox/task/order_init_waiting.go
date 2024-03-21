@@ -53,7 +53,7 @@ func OrderWaitingTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 20
+	consumerCount := 2
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -273,6 +273,44 @@ func OrderWaitingTask() {
 								global.GVA_LOG.Info("当前余额情况", zap.Any("orderID", orderId), zap.Any("j3Record", j3Record))
 							}
 
+							// 抖音
+							if global.DyContains(cid) {
+								// 查一下当前余额
+								dyRecord, errQy := product.QryDyRecord(vca.Token)
+								if errQy != nil {
+									// 查单有问题，直接订单要置为超时，消息置为处理完毕
+									global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
+									if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+										global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+									}
+									record = sysModel.SysOperationRecord{
+										Ip:      v.Ctx.ClientIP,
+										Method:  v.Ctx.Method,
+										Path:    v.Ctx.UrlPath,
+										Agent:   v.Ctx.UserAgent,
+										Status:  500,
+										Latency: time.Since(now),
+										Resp:    fmt.Sprintf(global.AccQryDyRecordsEx, accID, acAccount),
+										UserID:  v.Ctx.UserID,
+									}
+									err = operationRecordService.CreateSysOperationRecord(record)
+									continue
+								}
+
+								balance := dyRecord.Diamond
+								dyAccBalanceKey := fmt.Sprintf(global.DyAccBalanceZSet, vca.AcId)
+								nowTimeUnix := v.Obj.CreatedAt.Unix()
+								keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, balance, 0, 0)
+
+								global.GVA_REDIS.ZAdd(context.Background(), dyAccBalanceKey, redis.Z{
+									Score:  float64(nowTimeUnix),
+									Member: keyMem,
+								})
+
+								v.Obj.PlatId = keyMem
+
+								global.GVA_LOG.Info("当前余额情况", zap.Any("orderID", orderId), zap.Any("dyRecord", dyRecord))
+							}
 							//pc code预产
 							if v.Obj.EventType == 2 {
 								v.Obj.EventId = MID

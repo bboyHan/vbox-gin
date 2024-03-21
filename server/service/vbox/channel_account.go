@@ -375,6 +375,43 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			List:          accRecords,
 		}
 		return ret, nil
+	} else if global.DyContains(vca.Cid) {
+
+		//record, err := product.QryDyRecord(vca.Token)
+		//if err != nil {
+		//	return nil, err
+		//}
+
+		timeMax := strconv.FormatInt(time.Now().Unix(), 10)
+		global.GVA_LOG.Info("", zap.Any("timeMax", timeMax))
+		accKey := fmt.Sprintf(global.DyAccBalanceZSet, vca.AcId)
+
+		list := global.GVA_REDIS.ZRevRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+			Min:    "0",
+			Max:    timeMax,
+			Offset: 0,
+			Count:  100,
+		}).Val()
+		var accRecords []j3.DyAccountRecord
+		for _, mem := range list {
+			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+			keyMem := strings.Split(mem, ",")
+			money, _ := strconv.Atoi(keyMem[2])
+
+			accRecord := j3.DyAccountRecord{
+				OrderID:    keyMem[0],
+				AcAccount:  keyMem[1],
+				Money:      money,
+				NowTime:    keyMem[3],
+				HisBalance: keyMem[4],
+				CheckTime:  keyMem[5],
+				NowBalance: keyMem[6],
+			}
+
+			accRecords = append(accRecords, accRecord)
+		}
+
+		return accRecords, nil
 	} else if global.SdoContains(vca.Cid) {
 		records, err := product.QrySdoDaoYuRecords(*vca)
 		if err != nil {
@@ -614,6 +651,17 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 			return errors.New("仅支持双线二区参数，请核查")
 		}
 		vca.AcAccount = account
+	} else if global.DyContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		if vca.AcAccount == "" {
+			pin := http2.ParseCookie(token, "pin")
+			if pin != "" {
+				vca.AcAccount = pin
+			}
+		}
 	} else if global.ECContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
 		if !isCK {

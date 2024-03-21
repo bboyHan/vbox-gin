@@ -136,6 +136,17 @@ func ECContains(target string) bool {
 	return found
 }
 
+// 剑三
+
+func DyContains(target string) bool {
+	set := map[string]bool{
+		"8000": true,
+		"8001": true,
+	}
+	_, found := set[target]
+	return found
+}
+
 func ISPContains(target string) bool {
 	//写一个函数判断是否包含 yidong|liantong|dianxin,包含返回true，反之false
 	if target == "yidong" || target == "liantong" || target == "dianxin" {

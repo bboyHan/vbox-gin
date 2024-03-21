@@ -49,7 +49,7 @@ func ChanAccDelCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 10
+	consumerCount := 3
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -214,6 +214,13 @@ func ChanAccDelCheckTask() {
 				} else if global.J3Contains(cid) { //QB引导，
 
 					accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
+					waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+				} else if global.DyContains(cid) { //抖音引导，
+
+					accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgTmp[0], cid)
 					waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 					global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 					global.GVA_LOG.Info("账号删除过程..处理删除剩余资源", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))

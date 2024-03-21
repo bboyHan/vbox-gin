@@ -66,7 +66,7 @@ func OrderConfirmTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 30
+	consumerCount := 3
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -275,6 +275,51 @@ func OrderConfirmTask() {
 									Member: keyMem,
 								})
 								global.GVA_REDIS.ZRem(context.Background(), J3AccBalanceKey, delMem)
+
+								v.Obj.PlatId = keyMem
+
+								flag = true
+							}
+						}
+					}
+
+				case strings.Contains(prodInfo.ProductId, "dy_"):
+					var dyRecord *prod.DyWalletInfoRecord
+					dyRecord, errX = product.QryDyRecord(vca.Token)
+					if dyRecord != nil {
+						nowBalance := dyRecord.Diamond
+						DyAccBalanceKey := fmt.Sprintf(global.DyAccBalanceZSet, vca.AcId)
+						nowTimeUnix := odDB.CreatedAt.Unix()
+						//对账时间
+						checkTime := time.Now().Unix()
+						valMembers, errZ := global.GVA_REDIS.ZRangeByScore(context.Background(), DyAccBalanceKey, &redis.ZRangeBy{
+							Min:    strconv.FormatInt(nowTimeUnix, 10),
+							Max:    strconv.FormatInt(nowTimeUnix, 10),
+							Offset: 0,
+							Count:  1,
+						}).Result()
+						if errZ != nil {
+							global.GVA_LOG.Error("redis err", zap.Error(errZ))
+						}
+						if len(valMembers) > 0 {
+							mem := valMembers[0]
+							split := strings.Split(mem, ",")
+							hisBalance, _ := strconv.Atoi(split[4])
+							global.GVA_LOG.Info("查单金额", zap.Any("应为金额", hisBalance+money*10), zap.Any("实际金额", nowBalance))
+							if hisBalance+money*10 == nowBalance { // 充值成功的情况
+								qryURL = vca.Token
+
+								keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+								delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+
+								global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
+								global.GVA_LOG.Info("核对官方订单", zap.Any("核准", keyMem))
+
+								global.GVA_REDIS.ZAdd(context.Background(), DyAccBalanceKey, redis.Z{
+									Score:  float64(nowTimeUnix),
+									Member: keyMem,
+								})
+								global.GVA_REDIS.ZRem(context.Background(), DyAccBalanceKey, delMem)
 
 								v.Obj.PlatId = keyMem
 
@@ -605,6 +650,8 @@ func OrderConfirmTask() {
 				if global.TxContains(v.Obj.ChannelCode) {
 					_ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)
 				} else if global.J3Contains(v.Obj.ChannelCode) {
+					_ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 15*time.Second)
+				} else if global.DyContains(v.Obj.ChannelCode) {
 					_ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 15*time.Second)
 				} else {
 					_ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 25*time.Second)

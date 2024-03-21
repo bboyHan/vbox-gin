@@ -380,6 +380,35 @@ func ChanAccEnableCheckTask() {
 							_ = msg.Reject(false)
 							continue
 						}
+					} else if global.DyContains(cid) { //抖音
+						_, errQ := product.QryDyRecord(v.Obj.Token)
+						if errQ != nil {
+							global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errQ.Error())
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccQryDyRecordsEx, acId, v.Obj.AcAccount),
+								UserID:  v.Ctx.UserID,
+							}
+
+							errR := operationRecordService.CreateSysOperationRecord(record)
+							if errR != nil {
+								global.GVA_LOG.Error("当前账号查官方记录异常情况下，record 入库失败..." + errR.Error())
+							}
+
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0)
+							global.GVA_LOG.Warn("当前账号查官方记录异常了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
 					} else if global.SdoContains(cid) { //sdo
 						_, errQ := product.QrySdoDaoYuRecords(v.Obj)
 						if errQ != nil {
@@ -754,6 +783,64 @@ func ChanAccEnableCheckTask() {
 
 						accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
 						waitAccYdKey := fmt.Sprintf(global.YdJ3AccWaiting, acId)
+
+						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+						ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+						if ttl > 0 { //该账号正在冷却中
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+							cdTime := ttl
+							_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+							global.GVA_LOG.Info("开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+						} else {
+							global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
+
+					} else if global.DyContains(cid) { //抖音
+
+						moneyKey := fmt.Sprintf(global.OrgShopMoneySet, orgTmp[0], cid)
+						moneyList := global.GVA_REDIS.SMembers(context.Background(), moneyKey).Val()
+						if len(moneyList) < 1 {
+							global.GVA_LOG.Error("商铺没有匹配资源...查下库，复核一遍")
+							userIDs := utils2.GetUsersByOrgIds(orgTmp)
+							if errQ := global.GVA_DB.Model(&vbox.ChannelShop{}).Distinct("money").Select("money").
+								Where("cid = ? and status = ? and created_by in ?", cid, 1, userIDs).Scan(&moneyList).Error; errQ != nil {
+								global.GVA_LOG.Error("查该组织下数据money异常", zap.Error(errQ))
+							}
+							if moneyList == nil || len(moneyList) < 1 {
+								global.GVA_LOG.Error("复核一遍还是没有")
+								//入库操作记录
+								record := sysModel.SysOperationRecord{
+									Ip:      v.Ctx.ClientIP,
+									Method:  v.Ctx.Method,
+									Path:    v.Ctx.UrlPath,
+									Agent:   v.Ctx.UserAgent,
+									MarkId:  fmt.Sprintf(global.AccRecord, acId),
+									Type:    global.AccType,
+									Status:  500,
+									Latency: time.Since(now),
+									Resp:    fmt.Sprintf(global.AccQryShopEx, cid, acId, v.Obj.AcAccount),
+									UserID:  v.Ctx.UserID,
+								}
+
+								errR := operationRecordService.CreateSysOperationRecord(record)
+								if errR != nil {
+									global.GVA_LOG.Error("商铺没有匹配资源，record 入库失败..." + errR.Error())
+								}
+
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+									Update("sys_status", 0)
+								global.GVA_LOG.Warn("商铺没有匹配资源，结束...", zap.Any("ac info", v.Obj))
+								_ = msg.Reject(false)
+								continue
+							}
+						}
+
+						accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgTmp[0], cid)
+						waitAccYdKey := fmt.Sprintf(global.YdDyAccWaiting, acId)
 
 						waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
 						waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")

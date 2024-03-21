@@ -55,7 +55,7 @@ func CardAccCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 10
+	consumerCount := 3
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)

@@ -65,6 +65,7 @@ const (
 	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
 	AccQryShopEx           = "当前组织需开启至少一个商铺地址，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
 	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
+	AccQryDyRecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
 
 	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
 	ResourceShopNotEnough    = "当前库存不足，请及时核查匹配【引导商铺情况】，请求通道：%s，请求金额：%v"
@@ -95,6 +96,7 @@ const (
 	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
+	ChanOrgDyAccZSet        = "vb_acc_dy_set:org_%d:chan_%s"             // 同组织通道下可用账号（抖音）
 	ChanOrgQNAccZSet        = "vb_acc_qn_set:org_%d:chan_%s"             // 同组织通道下可用账号（qn）
 	ChanOrgECAccZSet        = "vb_acc_ec_set:org_%d:chan_%s"             // 同组织通道下可用账号（ec）
 	ChanOrgECPoolAccZSet    = "vb_acc_ec_checkPool_set:org_%d:chan_%s"   // 同组织通道下查单池（ec）
@@ -123,6 +125,9 @@ const (
 	PcAccWaiting     = "vb_acc_waiting_pc:acid_%s"  // 预产类-等待开启的账户(冷却中)
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
+	//dy
+	DyAccBalanceZSet = "vb_acc_dy_balance:ac_id:%s" // 抖音账户余额
+
 	ProdAccMoneyWaiting = "vb_acc_%s_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	ProdAccWaiting      = "vb_acc_%s_waiting_yd:acid_%s"          // 引导类-等待开启的账户(冷却中)
 
@@ -134,6 +139,7 @@ const (
 	YdQNShopWaiting = "vb_shop_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdDyAccWaiting     = "vb_acc_dy_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 

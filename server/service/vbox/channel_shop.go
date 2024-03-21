@@ -97,6 +97,9 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 
 		case "7001": //qn tb
 			flag = utils.ValidTBUrl(c.Address)
+
+		case "8001": //ec jd
+			flag = utils.ValidJDUrl(c.Address)
 		}
 
 		if !flag {
