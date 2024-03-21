@@ -221,7 +221,8 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 
 	u.RawQuery = queryParams.Encode()
 	newURL := u.String()
-	client := vbHttp.NewProxyHTTPClient()
+	//client := vbHttp.NewProxyHTTPClient()
+	client := vbHttp.NewHTTPClient()
 
 	//global.GVA_LOG.Info("当前查询用的url", zap.Any("url", newURL))
 
@@ -232,7 +233,8 @@ func RecordsBetween(rawURL string, openID string, openKey string, start time.Tim
 		if strings.Contains(s, "connection") {
 			global.GVA_LOG.Info("代理获取异常，清除缓存池，重新获取1次")
 			global.GVA_REDIS.Del(context.Background(), global.SysProxyIPPrefix)
-			client = vbHttp.NewProxyHTTPClient()
+			//client = vbHttp.NewProxyHTTPClient()
+			client := vbHttp.NewHTTPClient()
 			resp, err = client.Get(newURL, options)
 			if err != nil {
 				return nil, newURL

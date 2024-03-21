@@ -528,6 +528,15 @@ func OrderConfirmTask() {
 				if errX != nil {
 					// 查单有问题，直接订单要置为超时，消息置为处理完毕
 					global.GVA_LOG.Error("查询充值记录异常", zap.Error(errX), zap.Any("orderID", orderId))
+					es := errX.Error()
+					if strings.Contains(es, "timed out") {
+						global.GVA_LOG.Warn("查官方记录超时，重试一次...")
+						// 重新丢回去 下一个20s再查一次
+						marshal, _ := json.Marshal(v)
+						_ = chX.PublishWithDelay(OrderConfirmDelayedExchange, OrderConfirmDelayedRoutingKey, marshal, 1*time.Second)
+						_ = msg.Ack(true)
+						continue
+					}
 
 					if errX = global.GVA_DB.Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; err != nil {
 						global.GVA_LOG.Error("更新订单异常", zap.Error(errX))

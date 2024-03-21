@@ -75,7 +75,7 @@ func (vcpService *ChannelProductService) GetChannelProductSelf(ids []uint, searc
 	var channelProducts []vbox.ChannelProduct
 
 	if search.Type != 0 {
-		db.Where("type = ?", search.Type)
+		db.Where("type = ? or type = 4", search.Type)
 	}
 	if search.ProductId != "" {
 		db.Where("product_id like ?", "%"+search.ProductId+"%")

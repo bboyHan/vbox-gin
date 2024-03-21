@@ -437,7 +437,12 @@ func (c *FastHttpClient) sendRequest(method, url string, options *RequestOptions
 
 	// 获取响应头
 	resp.Header.VisitAll(func(key, value []byte) {
-		response.Headers[string(key)] = string(value)
+		// 如果key存在，继续append追加，以;隔开
+		if msg, ok := response.Headers[string(key)]; ok {
+			response.Headers[string(key)] = msg + ";" + string(value)
+		} else {
+			response.Headers[string(key)] = string(value)
+		}
 	})
 
 	return response, nil

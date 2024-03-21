@@ -71,6 +71,12 @@
                 <el-option label="已关闭" value="0"/>
               </el-select>
             </el-form-item>
+            <el-form-item label="控制策略" prop="sysStatus">
+              <el-select v-model="searchInfo.ctlStatus" placeholder="选择控制策略" style="width: 120px">
+                <el-option label="模糊控制" value="1"/>
+                <el-option label="精准控制" value="2"/>
+              </el-select>
+            </el-form-item>
             <el-form-item label="归属用户" prop="username">
               <el-input v-model.number="searchInfo.username" placeholder="搜索归属用户"/>
             </el-form-item>
@@ -185,6 +191,13 @@
             </el-input>
           </template>
         </el-table-column>
+        <el-table-column align="center" label="控制策略" prop="ctlStatus" width="100">
+          <template #default="scope">
+            <el-switch v-model="scope.row.ctlStatus" inline-prompt :active-value="2" active-text="精准"
+                       :inactive-value="1" inactive-text="模糊" size="large"
+                       @change="()=>{switchCtlEnable(scope.row)}"/>
+          </template>
+        </el-table-column>
         <el-table-column align="center" label="状态 / 系统开关" prop="status" width="200">
           <template #default="scope">
             <el-row :gutter="12">
@@ -271,7 +284,7 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="操作" width="120">
+        <el-table-column align="center" label="操作" min-width="120">
           <template #default="scope">
             <el-row>
               <el-col :span="24">
@@ -299,7 +312,7 @@
     </div>
 
     <el-dialog v-model="dialogChanFormVisible" :before-close="closeChanDialog" :title="typeTitle" destroy-on-close
-               style="width: 1000px">
+               style="width: 85%;min-width: 1000px">
       <el-scrollbar height="700px">
         <div>
           <div>
@@ -461,10 +474,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态开关" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -564,10 +587,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态开关" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -667,10 +700,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态开关" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -737,10 +780,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态开关" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -840,10 +893,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -915,10 +978,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -990,10 +1063,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -1065,10 +1148,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
-                     inactive-text="关闭"></el-switch>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -1920,12 +2013,15 @@
                   <el-input v-model="formData.token" type="textarea" readonly/>
                 </el-descriptions-item>
                 <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
-                <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
-                <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
-                <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
-                <el-descriptions-item label="状态开关" :span="3">{{ formData.status === 0 ? '关闭' : '开启' }}
+                <el-descriptions-item label="拉单限制" :span="3">{{ formData.countLimit }}</el-descriptions-item>
+                <el-descriptions-item label="进单限制" :span="3">{{ formData.inCntLimit }}</el-descriptions-item>
+                <el-descriptions-item label="日限额" :span="3">{{ formData.dailyLimit }}</el-descriptions-item>
+                <el-descriptions-item label="总限额" :span="3">{{ formData.totalLimit }}</el-descriptions-item>
+                <el-descriptions-item label="状态开关" :span="2">{{ formData.status === 0 ? '关闭' : '开启' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                <el-descriptions-item label="系统开关" :span="2">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="限额策略" :span="2">{{ formData.status === 1 ? '模糊控制' : '精准控制' }}
                 </el-descriptions-item>
               </el-descriptions>
             </el-scrollbar>
@@ -1960,12 +2056,15 @@
                   <el-input v-model="formData.token" type="textarea" readonly/>
                 </el-descriptions-item>
                 <el-descriptions-item label="通道id" :span="6">{{ formData.cid }}</el-descriptions-item>
-                <el-descriptions-item label="笔数限制" :span="2">{{ formData.countLimit }}</el-descriptions-item>
-                <el-descriptions-item label="日限额" :span="2">{{ formData.dailyLimit }}</el-descriptions-item>
-                <el-descriptions-item label="总限额" :span="2">{{ formData.totalLimit }}</el-descriptions-item>
-                <el-descriptions-item label="状态开关" :span="3">{{ formData.status === 0 ? '关闭' : '开启' }}
+                <el-descriptions-item label="拉单限制" :span="3">{{ formData.countLimit }}</el-descriptions-item>
+                <el-descriptions-item label="进单限制" :span="3">{{ formData.inCntLimit }}</el-descriptions-item>
+                <el-descriptions-item label="日限额" :span="3">{{ formData.dailyLimit }}</el-descriptions-item>
+                <el-descriptions-item label="总限额" :span="3">{{ formData.totalLimit }}</el-descriptions-item>
+                <el-descriptions-item label="状态开关" :span="2">{{ formData.status === 0 ? '关闭' : '开启' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="系统开关" :span="3">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                <el-descriptions-item label="系统开关" :span="2">{{ formData.sysStatus === 0 ? '关闭' : '开启' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="限额策略" :span="2">{{ formData.status === 1 ? '模糊控制' : '精准控制' }}
                 </el-descriptions-item>
               </el-descriptions>
             </el-scrollbar>
@@ -2887,6 +2986,7 @@ const formData = ref({
   type: 0,
   status: 0,
   sysStatus: 0,
+  ctlStatus: 0,
   cbStatus: 0,
   username: '',
 })
@@ -3730,6 +3830,7 @@ const enterDialog = async () => {
   elFormRef.value?.validate(async (valid) => {
     if (!valid) return
     formData.value.status = Number(formData.value.status)
+    formData.value.ctlStatus = Number(formData.value.ctlStatus)
     let res
     switch (type.value) {
       case 'create':
@@ -3755,6 +3856,26 @@ const enterDialog = async () => {
       getTableData()
     }
   });
+}
+
+// 精准/模糊控制
+const caCtlInfo = ref({
+  status: 1,
+  id: '',
+})
+
+const switchCtlEnable = async (row) => {
+  console.log(row)
+  caCtlInfo.value = JSON.parse(JSON.stringify(row))
+  await nextTick()
+  const req = {
+    ...caCtlInfo.value
+  }
+  const res = await updateChannelAccount(req)
+  if (res.code === 0) {
+    ElMessage({type: 'success', message: `开启${req.status === 1 ? '模糊控制' : '精准控制'}成功`})
+    await getTableData()
+  }
 }
 
 // 通道账号开关（批量）
