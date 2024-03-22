@@ -55,18 +55,19 @@ const (
 	OrderConfirmBindPoolErrMsg    = "查单池CK账户不足，请及时核查"
 	OrderConfirmBindErrMsg        = "第【%d】次上传卡密信息，提交卡密信息：%v，执行结果：%v"
 
-	BalanceNotEnough       = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
-	AccDailyLimitNotEnough = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前日消费：%v, 当前限额： %v"
-	AccTotalLimitNotEnough = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前总消费：%v, 当前限额： %v"
-	AccInCntLimitNotEnough = "当前账户进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
-	AccCountLimitNotEnough = "当前账户拉单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前拉单数：%v, 当前限额数： %v"
-	AccLimitNotEnough      = "当前账户已经超出限额策略，无法使用账号，ID: %s, 关闭账号： %s, 限额信息： %v"
-	AccQryRecordsEx        = "当前账户查官方记录异常，请核查CK，无法使用账号，ID: %s, 关闭账号： %s"
-	CardAccQryRecordsEx    = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
-	AccQryJ3RecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法使用账号，ID: %s, 关闭账号： %s"
-	AccQryShopEx           = "当前组织需开启至少一个商铺地址，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
-	AccDelSuccess          = "删除通道账号成功，ID：%v, 通道账号：%s"
-	AccQryDyRecordsEx      = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
+	BalanceNotEnough        = "当前账户余额不足，请及时充值积分后再开启账号，关闭账号ID: %s, 关闭账号： %s"
+	AccDailyLimitNotEnough  = "当前账户日消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前日消费：%v, 当前限额： %v"
+	AccTotalLimitNotEnough  = "当前账户总消费已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前总消费：%v, 当前限额： %v"
+	AccInCntLimitNotEnough  = "当前账户进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
+	AccDlyCntLimitNotEnough = "当前账户日进单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前进单数：%v, 当前限额数： %v"
+	AccCountLimitNotEnough  = "当前账户拉单数已经超出限额，无法开启账号，ID: %s, 关闭账号： %s, 当前拉单数：%v, 当前限额数： %v"
+	AccLimitNotEnough       = "当前账户已经超出限额策略，无法使用账号，ID: %s, 关闭账号： %s, 限额信息： %v"
+	AccQryRecordsEx         = "当前账户查官方记录异常，请核查CK，无法使用账号，ID: %s, 关闭账号： %s"
+	CardAccQryRecordsEx     = "【查单池】当前账户查官方记录异常，请核查CK，无法开启账号，ID: %s, 关闭账号： %s"
+	AccQryJ3RecordsEx       = "当前账户查官方记录异常，请核查报文链接，无法使用账号，ID: %s, 关闭账号： %s"
+	AccQryShopEx            = "当前组织需开启至少一个商铺地址，请核查商铺信息【通道ID: %s】，无法开启账号，ID: %s, 关闭账号： %s"
+	AccDelSuccess           = "删除通道账号成功，ID：%v, 通道账号：%s"
+	AccQryDyRecordsEx       = "当前账户查官方记录异常，请核查报文链接，无法开启账号，ID: %s, 关闭账号： %s"
 
 	ResourceNotEnough        = "当前库存不足，请及时核查匹配资源剩余情况"
 	ResourceShopNotEnough    = "当前库存不足，请及时核查匹配【引导商铺情况】，请求通道：%s，请求金额：%v"
@@ -97,7 +98,7 @@ const (
 	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
-	ChanOrgDyAccZSet        = "vb_acc_dy_set:org_%d:chan_%s"             // 同组织通道下可用账号（抖音）
+	ChanOrgDyAccZSet        = "vb_acc_db_set:org_%d:chan_%s"             // 同组织通道下可用账号（抖音）
 	ChanOrgQNAccZSet        = "vb_acc_qn_set:org_%d:chan_%s"             // 同组织通道下可用账号（qn）
 	ChanOrgECAccZSet        = "vb_acc_ec_set:org_%d:chan_%s"             // 同组织通道下可用账号（ec）
 	ChanOrgECPoolAccZSet    = "vb_acc_ec_checkPool_set:org_%d:chan_%s"   // 同组织通道下查单池（ec）
@@ -127,7 +128,7 @@ const (
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
 
 	//dy
-	DyAccBalanceZSet = "vb_acc_dy_balance:ac_id:%s" // 抖音账户余额
+	DyAccBalanceZSet = "vb_acc_db_balance:ac_id:%s" // 抖音账户余额
 
 	ProdAccMoneyWaiting = "vb_acc_%s_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
 	ProdAccWaiting      = "vb_acc_%s_waiting_yd:acid_%s"          // 引导类-等待开启的账户(冷却中)
@@ -140,7 +141,7 @@ const (
 	YdQNShopWaiting = "vb_shop_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
-	YdDyAccWaiting     = "vb_acc_dy_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdDyAccWaiting     = "vb_acc_db_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
 
@@ -152,6 +153,7 @@ const (
 const (
 	ProductRecordQBPrefix  = "product_record:qb:proxy"  // QB查询
 	ProductRecordJ3Prefix  = "product_record:j3:proxy"  // QB查询
+	ProductRecordDYPrefix  = "product_record:dy:proxy"  // QB查询
 	ProductRecordSdoPrefix = "product_record:sdo:proxy" // sdo 查询
 	ProductRecordQNPrefix  = "product_record:qn:proxy"  // sdo 查询
 )

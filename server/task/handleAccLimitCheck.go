@@ -116,6 +116,23 @@ func HandleAccLimitCheck() (err error) {
 					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
 				}
 			}
+			//日进单限制
+			if accDBTmp.DlyCntLimit > 0 {
+				var count int64
+				err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("channel_code = ? and ac_id = ? and order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", accDBTmp.Cid, accDBTmp.AcId, 1).Count(&count).Error
+				if err != nil {
+					global.GVA_LOG.Error("当前账号日进单消耗查mysql错误，直接丢了..." + err.Error())
+				}
+				if int(count) >= accDBTmp.DlyCntLimit { // 如果日进单消费已经超了，不允许开启了，直接结束
+					flag = true
+					msgX := fmt.Sprintf(global.AccDlyCntLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, count, accDBTmp.DlyCntLimit)
+
+					global.GVA_LOG.Error("当前账号日进单消耗已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDBTmp.DlyCntLimit))
+					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
+						Update("status", 0).Update("sys_status", 0).Error
+					global.GVA_LOG.Warn("当前账号日进单消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))
+				}
+			}
 			// 2.4 拉单限制
 			if accDBTmp.CountLimit > 0 {
 
@@ -130,9 +147,9 @@ func HandleAccLimitCheck() (err error) {
 				if int(count) >= accDBTmp.CountLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
 
 					flag = true
-					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, count, accDBTmp.InCntLimit)
+					msgX := fmt.Sprintf(global.AccCountLimitNotEnough, accDBTmp.AcId, accDBTmp.AcAccount, count, accDBTmp.CountLimit)
 
-					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDBTmp.InCntLimit))
+					global.GVA_LOG.Error("当前账号笔数消耗已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDBTmp.CountLimit))
 					err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDBTmp.ID).
 						Update("status", 0).Update("sys_status", 0).Error
 					global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDBTmp))

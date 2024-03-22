@@ -108,7 +108,7 @@
             <el-table-column align="center" label="创建时间" width="180">
               <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
             </el-table-column>
-            <el-table-column align="left" label="操作" width="200">
+            <el-table-column align="left" label="操作" min-width="220">
               <template #default="scope">
                 <el-button type="primary" link class="table-button" @click="getDetails(scope.row)">
                   <el-icon style="margin-right: 5px">
@@ -122,7 +122,7 @@
                   </el-icon>
                   补单
                 </el-button>
-                <el-button v-if="Number(scope.row.channelCode) === 1101" type="primary" link class="table-button"
+                <el-button v-if="Number(scope.row.channelCode) >= 1101 && Number(scope.row.channelCode) <= 1105" type="primary" link class="table-button"
                            @click="openSubmitCard(scope.row)">
                   <el-icon style="margin-right: 5px">
                     <Notification/>

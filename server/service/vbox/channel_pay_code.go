@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"math"
-	"strconv"
 	"time"
 )
 
@@ -613,56 +612,56 @@ func (channelPayCodeService *ChannelPayCodeService) GetChannelPayCodeNumsByLocat
 
 }
 
-func HandleExpTime2Product(chanID string) (time.Duration, error) {
-	var key string
-
-	if global.TxContains(chanID) {
-		key = "1000"
-		if chanID == "1101" {
-			key = "1100"
-		}
-	} else if global.DnfContains(chanID) {
-		key = "1200"
-	} else if global.J3Contains(chanID) {
-		key = "2000"
-	} else if global.PcContains(chanID) {
-		key = "3000"
-	}
-
-	var expTimeStr string
-	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
-	if count == 0 {
-		if err != nil {
-			global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		}
-
-		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
-
-		var proxy vbox.Proxy
-		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
-		err = db.Where("status = ?", 1).Where("chan = ?", key).
-			First(&proxy).Error
-		if err != nil || proxy.Url == "" {
-			return 0, err
-		}
-		expTimeStr = proxy.Url
-		seconds, _ := strconv.Atoi(expTimeStr)
-		duration := time.Duration(seconds) * time.Second
-
-		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
-		global.GVA_LOG.Info("数据库取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
-
-		return duration, nil
-	} else if err != nil {
-		global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		return 0, err
-	} else {
-		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
-		seconds, _ := strconv.Atoi(expTimeStr)
-
-		duration := time.Duration(seconds) * time.Second
-
-		//global.GVA_LOG.Info("缓存池取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
-		return duration, err
-	}
-}
+//func HandleExpTime2Product(chanID string) (time.Duration, error) {
+//	var key string
+//
+//	if global.TxContains(chanID) {
+//		key = "1000"
+//		if chanID == "1101" {
+//			key = "1100"
+//		}
+//	} else if global.DnfContains(chanID) {
+//		key = "1200"
+//	} else if global.J3Contains(chanID) {
+//		key = "2000"
+//	} else if global.PcContains(chanID) {
+//		key = "3000"
+//	}
+//
+//	var expTimeStr string
+//	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+//	if count == 0 {
+//		if err != nil {
+//			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+//		}
+//
+//		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+//
+//		var proxy vbox.Proxy
+//		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+//		err = db.Where("status = ?", 1).Where("chan = ?", key).
+//			First(&proxy).Error
+//		if err != nil || proxy.Url == "" {
+//			return 0, err
+//		}
+//		expTimeStr = proxy.Url
+//		seconds, _ := strconv.Atoi(expTimeStr)
+//		duration := time.Duration(seconds) * time.Second
+//
+//		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
+//		global.GVA_LOG.Info("数据库取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
+//
+//		return duration, nil
+//	} else if err != nil {
+//		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+//		return 0, err
+//	} else {
+//		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+//		seconds, _ := strconv.Atoi(expTimeStr)
+//
+//		duration := time.Duration(seconds) * time.Second
+//
+//		//global.GVA_LOG.Info("缓存池取出该产品的有效时长", zap.Any("channel code", chanID), zap.Any("过期时间(s)", seconds))
+//		return duration, err
+//	}
+//}

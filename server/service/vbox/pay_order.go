@@ -22,7 +22,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -109,7 +108,7 @@ func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq,
 	var order vbox.PayOrder
 	// 校验传入卡密合法性
 	var card, pwd string
-	if vpo.ChannelCode == "1101" {
+	if vpo.ChannelCode == "1101" || vpo.ChannelCode == "1102" || vpo.ChannelCode == "1103" || vpo.ChannelCode == "1104" || vpo.ChannelCode == "1105" {
 		var errX error
 		if card, pwd, errX = product.ParseJWCardRecord(vpo.Ext); errX != nil {
 			return nil, errX
@@ -192,13 +191,43 @@ func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq,
 	orgTmp := utils2.GetSelfOrg(vpa.Uid)
 
 	//校验卡密
-	if vpo.ChannelCode == "1101" {
+	if vpo.ChannelCode == "1101" || vpo.ChannelCode == "1102" || vpo.ChannelCode == "1103" || vpo.ChannelCode == "1104" || vpo.ChannelCode == "1105" {
 
 		account := order.AcAccount
 		errE := product.ValidAndBindJWCard(account, card, pwd, order.Money)
 		if errE != nil {
 			global.GVA_LOG.Error("卡密类绑卡异常,  err", zap.Error(errE))
+
+			record := sysModel.SysOperationRecord{
+				Ip:      c.ClientIP(),
+				Method:  c.Request.Method,
+				Path:    c.Request.URL.Path,
+				Agent:   c.Request.UserAgent(),
+				MarkId:  fmt.Sprintf(global.OrderRecord, order.OrderId),
+				Type:    global.OrderType,
+				Status:  500,
+				Latency: time.Since(time.Now()),
+				Resp:    fmt.Sprintf(global.OrderConfirmBindErrMsg, limitCnt, vpo.Ext, errE.Error()),
+				UserID:  int(order.CreatedBy),
+			}
+			err = operationRecordService.CreateSysOperationRecord(record)
+
 			return nil, errors.New(fmt.Sprintf("卡密类绑卡异常, %v", errE.Error()))
+		} else {
+
+			record := sysModel.SysOperationRecord{
+				Ip:      c.ClientIP(),
+				Method:  c.Request.Method,
+				Path:    c.Request.URL.Path,
+				Agent:   c.Request.UserAgent(),
+				MarkId:  fmt.Sprintf(global.OrderRecord, order.OrderId),
+				Type:    global.OrderType,
+				Status:  200,
+				Latency: time.Since(time.Now()),
+				Resp:    fmt.Sprintf(global.OrderConfirmBindErrMsg, limitCnt, vpo.Ext, "成功提交，等待核实"),
+				UserID:  int(order.CreatedBy),
+			}
+			err = operationRecordService.CreateSysOperationRecord(record)
 		}
 
 	} else if vpo.ChannelCode == "6001" {
@@ -1016,61 +1045,61 @@ func (vpoService *PayOrderService) CreateOrderTest(vpo *vboxReq.CreateOrderTest,
 	return rep, err
 }
 
-func (vpoService *PayOrderService) HandleExpTime2Product(chanID string) (time.Duration, error) {
-	var key string
-
-	if global.TxContains(chanID) {
-		key = "1000"
-		if chanID == "1101" {
-			key = "1100"
-		}
-	} else if global.DnfContains(chanID) {
-		key = "1200"
-	} else if global.J3Contains(chanID) {
-		key = "2000"
-	} else if global.PcContains(chanID) {
-		key = "3000"
-	} else if global.SdoContains(chanID) {
-		key = "4000"
-	} else if global.ECContains(chanID) {
-		key = "6000"
-	}
-
-	var expTimeStr string
-	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
-	if count == 0 {
-		if err != nil {
-			global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		}
-
-		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
-
-		var proxy vbox.Proxy
-		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
-		err = db.Where("status = ?", 1).Where("chan = ?", key).
-			First(&proxy).Error
-		if err != nil || proxy.Url == "" {
-			return 0, err
-		}
-		expTimeStr = proxy.Url
-		seconds, _ := strconv.Atoi(expTimeStr)
-		duration := time.Duration(seconds) * time.Second
-
-		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
-		return duration, nil
-	} else if err != nil {
-		global.GVA_LOG.Error("redis ex：", zap.Error(err))
-		return 0, err
-	} else {
-		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
-		seconds, _ := strconv.Atoi(expTimeStr)
-
-		duration := time.Duration(seconds) * time.Second
-
-		global.GVA_LOG.Info("缓存池取出：", zap.Any("HandleExpTime2Product", chanID))
-		return duration, err
-	}
-}
+//func (vpoService *PayOrderService) HandleExpTime2Product(chanID string) (time.Duration, error) {
+//	var key string
+//
+//	if global.TxContains(chanID) {
+//		key = "1000"
+//		if chanID == "1101" {
+//			key = "1100"
+//		}
+//	} else if global.DnfContains(chanID) {
+//		key = "1200"
+//	} else if global.J3Contains(chanID) {
+//		key = "2000"
+//	} else if global.PcContains(chanID) {
+//		key = "3000"
+//	} else if global.SdoContains(chanID) {
+//		key = "4000"
+//	} else if global.ECContains(chanID) {
+//		key = "6000"
+//	}
+//
+//	var expTimeStr string
+//	count, err := global.GVA_REDIS.Exists(context.Background(), key).Result()
+//	if count == 0 {
+//		if err != nil {
+//			global.GVA_LOG.Error("redis ex：", zap.Error(err))
+//		}
+//
+//		global.GVA_LOG.Warn("当前key不存在", zap.Any("key", key))
+//
+//		var proxy vbox.Proxy
+//		db := global.GVA_DB.Model(&vbox.Proxy{}).Table("vbox_proxy")
+//		err = db.Where("status = ?", 1).Where("chan = ?", key).
+//			First(&proxy).Error
+//		if err != nil || proxy.Url == "" {
+//			return 0, err
+//		}
+//		expTimeStr = proxy.Url
+//		seconds, _ := strconv.Atoi(expTimeStr)
+//		duration := time.Duration(seconds) * time.Second
+//
+//		global.GVA_REDIS.Set(context.Background(), key, int64(duration.Seconds()), 0)
+//		return duration, nil
+//	} else if err != nil {
+//		global.GVA_LOG.Error("redis ex：", zap.Error(err))
+//		return 0, err
+//	} else {
+//		expTimeStr, err = global.GVA_REDIS.Get(context.Background(), key).Result()
+//		seconds, _ := strconv.Atoi(expTimeStr)
+//
+//		duration := time.Duration(seconds) * time.Second
+//
+//		global.GVA_LOG.Info("缓存池取出：", zap.Any("HandleExpTime2Product", chanID))
+//		return duration, err
+//	}
+//}
 
 //// 付方获取支付url
 //func (vpoService *PayOrderService) HandlePayUrl2PAcc(orderId string) (string, error) {
@@ -1278,26 +1307,23 @@ func (vpoService *PayOrderService) GetPayOrderInfoList(info vboxReq.PayOrderSear
 	if info.PAccount != "" {
 		db = db.Where("p_account =?", info.PAccount)
 	}
-	if info.HandStatus != 0 {
+	if info.HandStatus != nil {
 		db = db.Where("hand_status =?", info.HandStatus)
 	}
 	if info.ChannelCode != "" {
 		db = db.Where("channel_code =?", info.ChannelCode)
 	}
-	if info.OrderStatus != 0 {
-		if info.OrderStatus == -1 {
-			info.OrderStatus = 0
-		}
+	if info.OrderStatus != nil {
 		db = db.Where("order_status =?", info.OrderStatus)
 	}
-	if info.CbStatus != 0 {
+	if info.CbStatus != nil {
 		db = db.Where("cb_status =?", info.CbStatus)
 	}
 	if info.AcId != "" {
 		db = db.Where("ac_id =?", info.AcId)
 	}
 	if info.PlatId != "" {
-		db = db.Where("plat_id =?", info.PlatId)
+		db = db.Where("plat_id like ?", info.PlatId+"%")
 	}
 	if info.AcAccount != "" {
 		db = db.Where("ac_account = ?", info.AcAccount)
@@ -1398,7 +1424,7 @@ func (vpoService *PayOrderService) GetPayOrderOverview(info vboxReq.PayOrderSear
 			if info.PAccount != "" {
 				db = db.Where("p_account =?", info.PAccount)
 			}
-			if info.OrderStatus != 0 {
+			if info.OrderStatus != nil {
 				db = db.Where("order_status =?", info.OrderStatus)
 			}
 

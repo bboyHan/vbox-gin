@@ -1,12 +1,15 @@
 package product
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"go.uber.org/zap"
+	"time"
 )
 
 func QryDyRecord(Cookie string) (*product.DyWalletInfoRecord, error) {
@@ -19,7 +22,27 @@ func QryDyRecord(Cookie string) (*product.DyWalletInfoRecord, error) {
 		MaxRedirects: 0,
 		PayloadType:  "url",
 	}
-	URL := "https://www.douyin.com/webcast/wallet/info/?account_type=0&aid=1128&fp=verify_ltn6aev0_ac0e6781_4dc4_f5cd_0898_3949e4d4e049&msToken=M3s0ZH3LcA8tFkmaDsbwgb4gWvbaUoT67QIuGDCJ_6C0UHqlMH4iV6Cl7Guoe7KbuxSGJ6CdJJXVX0x4DhoDco4Ild0EqOdc9gf4ORd6HfJr9iBO_f5rAEraskMgL4A=&X-Bogus=DFSzswVOLTxANGyItLh8eORXoR8b&_signature=_02B4Z6wo0000143SVaAAAIDCY.eRXRtit.ON0lEAAIaJnrtEq5NyECCkynLnKA4oGKd49c9XAQTOKVexwGPqsRsHfqF7ARB8RQM44ii6sAWhAc5n4kkU0NgJhdhi5pCGdVzqO2emvJa2Hg8M7c"
+
+	//URL := "https://www.douyin.com/webcast/wallet/info/?account_type=0&aid=1128&fp=verify_ltn6aev0_ac0e6781_4dc4_f5cd_0898_3949e4d4e049&msToken=M3s0ZH3LcA8tFkmaDsbwgb4gWvbaUoT67QIuGDCJ_6C0UHqlMH4iV6Cl7Guoe7KbuxSGJ6CdJJXVX0x4DhoDco4Ild0EqOdc9gf4ORd6HfJr9iBO_f5rAEraskMgL4A=&X-Bogus=DFSzswVOLTxANGyItLh8eORXoR8b&_signature=_02B4Z6wo0000143SVaAAAIDCY.eRXRtit.ON0lEAAIaJnrtEq5NyECCkynLnKA4oGKd49c9XAQTOKVexwGPqsRsHfqF7ARB8RQM44ii6sAWhAc5n4kkU0NgJhdhi5pCGdVzqO2emvJa2Hg8M7c"
+	var URL string
+
+	c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQBPrefix).Result()
+	if c == 0 {
+		channelCode := "db_proxy"
+
+		err = global.GVA_DB.Model(&vbox.Proxy{}).Select("url").
+			Where("status = ? and chan=?", 1, channelCode).
+			First(&URL).Error
+
+		if err != nil {
+			return nil, fmt.Errorf("该信道无资源配置")
+		}
+
+		global.GVA_REDIS.Set(context.Background(), global.ProductRecordQBPrefix, URL, 10*time.Minute)
+
+	} else {
+		URL, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordQBPrefix).Result()
+	}
 
 	client := vbHttp.NewHTTPClient()
 

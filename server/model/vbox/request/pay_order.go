@@ -13,6 +13,10 @@ type PayOrderSearch struct {
 	Interval       string    `json:"interval" form:"interval"`
 	AcRemark       string    `json:"acRemark" form:"acRemark"`
 	ToUid          uint      `json:"toUid" form:"toUid" url:"toUid"`
+	OrderStatus    *int      `json:"orderStatus" form:"orderStatus"`
+	CbStatus       *int      `json:"cbStatus" form:"cbStatus"`
+	HandStatus     *int      `json:"handStatus" form:"handStatus"`
+
 	request.PageInfo
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/vbox"
-	j3 "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
+	prod "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/product"
 	vboxReq "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/request"
 	vboxResp "github.com/flipped-aurora/gin-vue-admin/server/model/vbox/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/mq"
@@ -299,6 +299,23 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordJ3Prefix).Result()
 		}
 
+	} else if global.DyContains(vca.Cid) {
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordDYPrefix).Result()
+		if c == 0 {
+			channelCode = "db_proxy"
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan=?", 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordDYPrefix, urlQ, 10*time.Minute)
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordDYPrefix).Result()
+		}
+
 	} else if global.QNContains(vca.Cid) {
 		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordQNPrefix).Result()
 		if c == 0 {
@@ -352,13 +369,13 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			Offset: 0,
 			Count:  100,
 		}).Val()
-		var accRecords []j3.J3AccountRecord
+		var accRecords []prod.J3AccountRecord
 		for _, mem := range list {
 			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
 			keyMem := strings.Split(mem, ",")
 			money, _ := strconv.Atoi(keyMem[2])
 
-			accRecord := j3.J3AccountRecord{
+			accRecord := prod.J3AccountRecord{
 				OrderID:    keyMem[0],
 				AcAccount:  keyMem[1],
 				Money:      money,
@@ -370,17 +387,17 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 
 			accRecords = append(accRecords, accRecord)
 		}
-		ret := &j3.J3Records{
+		ret := &prod.J3Records{
 			J3BalanceData: *record,
 			List:          accRecords,
 		}
 		return ret, nil
 	} else if global.DyContains(vca.Cid) {
 
-		//record, err := product.QryDyRecord(vca.Token)
-		//if err != nil {
-		//	return nil, err
-		//}
+		record, err := product.QryDyRecord(vca.Token)
+		if err != nil {
+			return nil, err
+		}
 
 		timeMax := strconv.FormatInt(time.Now().Unix(), 10)
 		global.GVA_LOG.Info("", zap.Any("timeMax", timeMax))
@@ -392,13 +409,13 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			Offset: 0,
 			Count:  100,
 		}).Val()
-		var accRecords []j3.DyAccountRecord
+		var accRecords []prod.DyAccountRecord
 		for _, mem := range list {
 			// 原格式 keyMem := fmt.Sprintf("%s_%s_%v_%d_%d_%d_%d", v.Obj.OrderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
 			keyMem := strings.Split(mem, ",")
 			money, _ := strconv.Atoi(keyMem[2])
 
-			accRecord := j3.DyAccountRecord{
+			accRecord := prod.DyAccountRecord{
 				OrderID:    keyMem[0],
 				AcAccount:  keyMem[1],
 				Money:      money,
@@ -410,8 +427,11 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 
 			accRecords = append(accRecords, accRecord)
 		}
-
-		return accRecords, nil
+		ret := &prod.DYRecords{
+			DyWalletInfoRecord: *record,
+			List:               accRecords,
+		}
+		return ret, nil
 	} else if global.SdoContains(vca.Cid) {
 		records, err := product.QrySdoDaoYuRecords(*vca)
 		if err != nil {
@@ -647,20 +667,17 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		if account == "" || zoneCode == "" || SN == "" || sign == "" {
 			return errors.New("账号信息不完整")
 		}
-		if zoneCode != "z22" {
+		if vca.Cid == "2001" && zoneCode != "z22" {
 			return errors.New("仅支持双线二区参数，请核查")
+		}
+		if vca.Cid == "2002" && zoneCode != "z05" {
+			return errors.New("仅支持电信五区参数，请核查")
 		}
 		vca.AcAccount = account
 	} else if global.DyContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
 		if !isCK {
 			return errors.New("ck信息不合法")
-		}
-		if vca.AcAccount == "" {
-			pin := http2.ParseCookie(token, "pin")
-			if pin != "" {
-				vca.AcAccount = pin
-			}
 		}
 	} else if global.ECContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
@@ -985,10 +1002,18 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		if account == "" || zoneCode == "" || SN == "" || sign == "" {
 			return errors.New("账号信息不完整")
 		}
-		if zoneCode != "z22" {
+		if vca.Cid == "2001" && zoneCode != "z22" {
 			return errors.New("仅支持双线二区参数，请核查")
 		}
+		if vca.Cid == "2002" && zoneCode != "z05" {
+			return errors.New("仅支持电信五区参数，请核查")
+		}
 		vca.AcAccount = account
+	} else if global.DyContains(vca.Cid) {
+		b := http2.IsValidCookie(token)
+		if !b {
+			return errors.New("传入的ck不合法，请核查")
+		}
 	} else {
 		return errors.New("该信道暂不支持更新账号")
 	}
@@ -1053,10 +1078,10 @@ func (vcaService *ChannelAccountService) GetChannelAccountInfoList(info vboxReq.
 		}
 	}
 	if info.AcRemark != "" {
-		db = db.Where("ac_remark LIKE ?", "%"+info.AcRemark+"%")
+		db = db.Where("ac_remark LIKE ?", info.AcRemark+"%")
 	}
 	if info.AcAccount != "" {
-		db = db.Where("ac_account LIKE ?", "%"+info.AcAccount+"%")
+		db = db.Where("ac_account LIKE ?", info.AcAccount+"%")
 	}
 	if info.Cid != "" {
 		db = db.Where("cid = ?", info.Cid)

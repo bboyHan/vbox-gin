@@ -222,6 +222,25 @@ func QNShopCDCheckTask() {
 						global.GVA_LOG.Warn("当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", accDB))
 					}
 				}
+				//日进单限制
+				if accDB.DlyCntLimit > 0 {
+					var count int64
+					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", accDB.AcId).
+						Where("channel_code = ?", accDB.Cid).
+						Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Count(&count).Error
+					if err != nil {
+						global.GVA_LOG.Error("当前账号日进单限制查mysql错误，直接丢了..." + err.Error())
+					}
+					if int(count) >= accDB.DlyCntLimit { // 如果进单数消费已经超了，不允许开启了，直接结束
+						flag = true
+						msgX := fmt.Sprintf(global.AccDlyCntLimitNotEnough, accDB.AcId, accDB.AcAccount, count, accDB.DlyCntLimit)
+
+						global.GVA_LOG.Error("当前账号日进单限制已经超限额...", zap.Any("msg", msgX), zap.Any("cnt", count), zap.Any("limit", accDB.DlyCntLimit))
+						err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", accDB.ID).
+							Update("sys_status", 0).Error
+						global.GVA_LOG.Warn("当前账号日进单限制已经超限额了，结束...", zap.Any("ac info", accDB))
+					}
+				}
 				// 2.4 拉单限制
 				if accDB.CountLimit > 0 {
 

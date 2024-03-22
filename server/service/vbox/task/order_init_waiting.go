@@ -514,7 +514,7 @@ func OrderWaitingTask() {
 							v.Obj.CreatedBy = vca.CreatedBy
 							v.Obj.AcId = vca.AcId
 							v.Obj.AcAccount = vca.AcAccount
-							if cid == "1101" || cid == "6001" || cid == "2001" {
+							if cid == "1101" || cid == "1102" || cid == "1103" || cid == "1104" || cid == "1105" || cid == "6001" || cid == "2001" {
 
 							} else if cid == "5001" {
 								v.Obj.AcAccount = rand_string.RandomLetter(6)

@@ -283,7 +283,7 @@ func OrderConfirmTask() {
 						}
 					}
 
-				case strings.Contains(prodInfo.ProductId, "dy_"):
+				case strings.Contains(prodInfo.ProductId, "db"):
 					var dyRecord *prod.DyWalletInfoRecord
 					dyRecord, errX = product.QryDyRecord(vca.Token)
 					if dyRecord != nil {
@@ -312,8 +312,8 @@ func OrderConfirmTask() {
 								keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
 								delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
 
-								global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
-								global.GVA_LOG.Info("核对官方订单", zap.Any("核准", keyMem))
+								//global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
+								global.GVA_LOG.Info("核对官方订单", zap.Any("订单ID", orderId), zap.Any("核准", keyMem))
 
 								global.GVA_REDIS.ZAdd(context.Background(), DyAccBalanceKey, redis.Z{
 									Score:  float64(nowTimeUnix),

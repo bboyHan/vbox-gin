@@ -5,8 +5,10 @@ import (
 	"fmt"
 	vbHttp "github.com/flipped-aurora/gin-vue-admin/server/utils/http"
 	"go.uber.org/zap"
+	"html"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -37,28 +39,35 @@ func ValidAndBindJWCard(account string, card string, pwd string, money int) erro
 
 	// 1. 首次获取图片同频 CK
 	client := vbHttp.NewHTTPClient()
-	var content string
+	var content, product string
 	switch money {
 	case 10:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG010CZ`
+		product = `AAJSUPHNZG010CZ`
 	case 20:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG020CZ`
+		product = `AAJSUPHNZG020CZ`
 	case 30:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG030CZ`
+		product = `AAJSUPHNZG030CZ`
 	case 50:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG050CZ`
+		product = `AAJSUPHNZG050CZ`
 	case 100:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG100CZ`
+		product = `AAJSUPHNZG100CZ`
 	case 200:
 		content = `https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG200CZ`
+		product = `AAJSUPHNZG200CZ`
 	default:
 		return fmt.Errorf("充值金额不合法,仅支持10,20,30,50,100,200")
 	}
-	payload := `__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=rNLyvB4r%2FTh%2B5j0%2BViV6yBNaoTfdGp4C9iZtcQzMAKk%2FJsGH1hOjnMUYeb3vjv6Qnh28T2VzLlg%2FjfQwH1wXhIVEotSoJoZjmxHcaQd%2FgK0WfPmD9dG4GKQitRoS8hkbtIEgHHfivAke8JNgO7CnDf7uL8SpSCzBgxuJ96zfAsr7GjJx4kgIUMsS%2Bns%2Bq%2FdIYh8n2qEz82SQFLm%2FEZqPqKZFH9WQ%2F%2Fl%2BaLX0eqT%2B9ECYFvgbqY3U1GV%2FemdmVQtFuM0PPI8M6p4TUg8Qt127hMaPLS6tk8TQecWDCgzGq6P2jVU%2F%2B1UoRPMU4LnnEw%2BuOzvxhUoGmYwipN%2BZtkir%2FPUDpc5jcZ0AlilIB2YyylFf%2FGOJ4ncZzKGdDbfpDg7gz3Ln7VF7pUorKWmo9uMQ1UClg35HkeVexJH7wlnoAtBRwlQjAholyGZqDwNFSHIBNaj%2F1rDm7U65WhAFUZUiFpOW%2FXqCNClgq6N3YHzZuwOu6hLek0AwFZCaErRZxJw2UDROSQNC1IhJbhQ%2Ff%2Boz0W2iL3lxdVqi25AGkV4yJbPKusTqwdcyxOipMafOKWjPLj6%2Fj%2FNSdTePhPUU4gR1%2B5FijhgupcTv6xEdSCDwUyypKOBg4kOqO6PrnwEHY%2FvyE%2B09RMJX%2BKi3APHgraxbwO0Qa9TOLo%2FVuJZpvNEIZrg8NFPXQDEIC9dHZs6HQJJDDne32uwncshXDHKg0rvcHoheIR14sUJshRyhwkKWqCtoRkzAAfFeBL%2BI6hSKkP8B3j4P5vGYMVhLeQCq6qARxdtsRAQrLGc2LDc9BzSmbWiSuLHtKdnOl8T7jrKKPKsYnaDGpfvr4fjiVfWXb%2B1GuGLKtC2k8ASOK5B1gdNr00oZ2PpXWH1cS8fxroFvMYgWC8mXmOIsguOS3xPiqb4D%2BWMe8xkdLKtq70cn6M4sZqj99f5wd9Ut%2BGK%2ByEIiqJnZXsTMKKIEKAAAvuKf5b1%2BynCIFpDNX9rLF4nVD6IwagSc8Jhwr5VPter5eytjd6k%2Fqz6tEe3ZKvC97qblZwlpqnRAuIS5Tt4bSGALXNjKhoGOLtjniZ6uXxRgr8asoxpJlGmbaAW4h%2FFBXTfu0uBQjDkG4C%2FI71%2FsD6IsmOX5rE08VrYlEcvQfTHvlioDQc7LHymCXW5nMDiL4DyMBaPLyjA3OXX234IWUOcOoaPNbOC%2FVNkv1wg5TbG4tqIvWKnB1SyaTjd0ly7K0PhWrMtCYEE8Xk3zzm%2Bdho7MUxNC9Cdq12XwmmorzpJ92h05gFV4nnzFrvlQhpsLbGNsmNM9Y2p4Ao3fKqzSg0oHrmK8bAUjk1ZW7TGKDJ1YrL%2FWDPALLsKcSRWPeZeVZyJNQp7HDJ3ogge5tiyZOtQlhvL%2BmOcZ90s1PtI1y2dVmMzlHbkUEFnY8zYUWTian3CHkiTyopGrx1iQDwtuGMWzMsEe9KNEqc4mqWzcugd7VWrcZeMHHCpJJchMHaxLHDrKVwUm8ESV2O391KhKKs%2FCseyPMQ%2FeqSqepymz62EyqiEJitby%2Fc3sRhTApbah%2B4ez11wffxZEf9St9gGY5pkdGkeb8Cb1qmL7SAF5ejKFYHVh4XlWkKTKXTC58SOxig0cPnvQwOqRnWQ%2BCaYiXqpQTKaiX3cPE9hz1ciKTFgq%2FxmEjvrQAagT67A%2BQbQycsi%2FB%2Fddly5IhxWR867S%2BFvEN%2B%2FnaCQK%2BJUl192tLrIcykXunDjCKXmd0RogQtsMTUpz5Iwzv0oDL0x%2Bz2NnwmiIRJm4yd3cA7F5moJSidzGMrHf0z5%2BnSdnkg%3D%3D&__VIEWSTATEGENERATOR=DCA79EE2&__VIEWSTATEENCRYPTED=&ctl00%24rblSaleType=3&ctl00%24cboProductList=AAJSUPHNZG010CZ&ctl00%24cboProductNum=1&ctl00%24hidCardPwdSign=&ctl00%24junUCard%24UCardType=OneUCardType&ctl00%24junUCard%24FirstUCardNo=2312081559857109&ctl00%24junUCard%24FirstUCardPassword=2312081559857109&ctl00%24junUCard%24SecondUCardNo=&ctl00%24junUCard%24SecondUCardPassword=&ctl00%24junUCard%24ThirdUCardNo=&ctl00%24junUCard%24ThirdUCardPassword=&ctl00%24MiddleTemplate%24hidFromType=&ctl00%24MiddleTemplate%24hidCategory=AAJSUPHNZG&ctl00%24MiddleTemplate%24hidRegionName=&ctl00%24MiddleTemplate%24hidRegionValue=&ctl00%24MiddleTemplate%24hidServerName=&ctl00%24MiddleTemplate%24hidServerValue=&ctl00%24MiddleTemplate%24junCharge%24txtUserAccount=446794914&ctl00%24MiddleTemplate%24junCharge%24txtUserAccountOk=446794914&ctl00%24MiddleTemplate%24txtRandomCode=l1jq&ctl00%24MiddleTemplate%24btnChargeOK=%E7%AB%8B%E5%8D%B3%E5%85%85%E5%80%BC&ctl00%24txtRealityUserName=&ctl00%24txtRealityIDCard=&ctl00%24txtEmail=`
+	//	payload := `__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=rNLyvB4r%2FTh%2B5j0%2BViV6yBNaoTfdGp4C9iZtcQzMAKk%2FJsGH1hOjnMUYeb3vjv6Qnh28T2VzLlg%2FjfQwH1wXhIVEotSoJoZjmxHcaQd%2FgK0WfPmD9dG4GKQitRoS8hkbtIEgHHfivAke8JNgO7CnDf7uL8SpSCzBgxuJ96zfAsr7GjJx4kgIUMsS%2Bns%2Bq%2FdIYh8n2qEz82SQFLm%2FEZqPqKZFH9WQ%2F%2Fl%2BaLX0eqT%2B9ECYFvgbqY3U1GV%2FemdmVQtFuM0PPI8M6p4TUg8Qt127hMaPLS6tk8TQecWDCgzGq6P2jVU%2F%2B1UoRPMU4LnnEw%2BuOzvxhUoGmYwipN%2BZtkir%2FPUDpc5jcZ0AlilIB2YyylFf%2FGOJ4ncZzKGdDbfpDg7gz3Ln7VF7pUorKWmo9uMQ1UClg35HkeVexJH7wlnoAtBRwlQjAholyGZqDwNFSHIBNaj%2F1rDm7U65WhAFUZUiFpOW%2FXqCNClgq6N3YHzZuwOu6hLek0AwFZCaErRZxJw2UDROSQNC1IhJbhQ%2Ff%2Boz0W2iL3lxdVqi25AGkV4yJbPKusTqwdcyxOipMafOKWjPLj6%2Fj%2FNSdTePhPUU4gR1%2B5FijhgupcTv6xEdSCDwUyypKOBg4kOqO6PrnwEHY%2FvyE%2B09RMJX%2BKi3APHgraxbwO0Qa9TOLo%2FVuJZpvNEIZrg8NFPXQDEIC9dHZs6HQJJDDne32uwncshXDHKg0rvcHoheIR14sUJshRyhwkKWqCtoRkzAAfFeBL%2BI6hSKkP8B3j4P5vGYMVhLeQCq6qARxdtsRAQrLGc2LDc9BzSmbWiSuLHtKdnOl8T7jrKKPKsYnaDGpfvr4fjiVfWXb%2B1GuGLKtC2k8ASOK5B1gdNr00oZ2PpXWH1cS8fxroFvMYgWC8mXmOIsguOS3xPiqb4D%2BWMe8xkdLKtq70cn6M4sZqj99f5wd9Ut%2BGK%2ByEIiqJnZXsTMKKIEKAAAvuKf5b1%2BynCIFpDNX9rLF4nVD6IwagSc8Jhwr5VPter5eytjd6k%2Fqz6tEe3ZKvC97qblZwlpqnRAuIS5Tt4bSGALXNjKhoGOLtjniZ6uXxRgr8asoxpJlGmbaAW4h%2FFBXTfu0uBQjDkG4C%2FI71%2FsD6IsmOX5rE08VrYlEcvQfTHvlioDQc7LHymCXW5nMDiL4DyMBaPLyjA3OXX234IWUOcOoaPNbOC%2FVNkv1wg5TbG4tqIvWKnB1SyaTjd0ly7K0PhWrMtCYEE8Xk3zzm%2Bdho7MUxNC9Cdq12XwmmorzpJ92h05gFV4nnzFrvlQhpsLbGNsmNM9Y2p4Ao3fKqzSg0oHrmK8bAUjk1ZW7TGKDJ1YrL%2FWDPALLsKcSRWPeZeVZyJNQp7HDJ3ogge5tiyZOtQlhvL%2BmOcZ90s1PtI1y2dVmMzlHbkUEFnY8zYUWTian3CHkiTyopGrx1iQDwtuGMWzMsEe9KNEqc4mqWzcugd7VWrcZeMHHCpJJchMHaxLHDrKVwUm8ESV2O391KhKKs%2FCseyPMQ%2FeqSqepymz62EyqiEJitby%2Fc3sRhTApbah%2B4ez11wffxZEf9St9gGY5pkdGkeb8Cb1qmL7SAF5ejKFYHVh4XlWkKTKXTC58SOxig0cPnvQwOqRnWQ%2BCaYiXqpQTKaiX3cPE9hz1ciKTFgq%2FxmEjvrQAagT67A%2BQbQycsi%2FB%2Fddly5IhxWR867S%2BFvEN%2B%2FnaCQK%2BJUl192tLrIcykXunDjCKXmd0RogQtsMTUpz5Iwzv0oDL0x%2Bz2NnwmiIRJm4yd3cA7F5moJSidzGMrHf0z5%2BnSdnkg%3D%3D&__VIEWSTATEGENERATOR=DCA79EE2&__VIEWSTATEENCRYPTED=&ctl00%24rblSaleType=3
+	//&ctl00%24cboProductList=AAJSUPHNZG010CZ&ctl00%24cboProductNum=1&ctl00%24hidCardPwdSign=&ctl00%24junUCard%24UCardType=OneUCardType&ctl00%24junUCard%24FirstUCardNo=2312081559857109&ctl00%24junUCard%24FirstUCardPassword=2312081559857109&ctl00%24junUCard%24SecondUCardNo=&ctl00%24junUCard%24SecondUCardPassword=&ctl00%24junUCard%24ThirdUCardNo=&ctl00%24junUCard%24ThirdUCardPassword=&ctl00%24MiddleTemplate%24hidFromType=&ctl00%24MiddleTemplate%24hidCategory=AAJSUPHNZG&ctl00%24MiddleTemplate%24hidRegionName=&ctl00%24MiddleTemplate%24hidRegionValue=&ctl00%24MiddleTemplate%24hidServerName=&ctl00%24MiddleTemplate%24hidServerValue=&ctl00%24MiddleTemplate%24junCharge%24txtUserAccount=446794914&ctl00%24MiddleTemplate%24junCharge%24txtUserAccountOk=446794914&ctl00%24MiddleTemplate%24txtRandomCode=l1jq&ctl00%24MiddleTemplate%24btnChargeOK=%E7%AB%8B%E5%8D%B3%E5%85%85%E5%80%BC&ctl00%24txtRealityUserName=&ctl00%24txtRealityIDCard=&ctl00%24txtEmail=`
 	var options = &vbHttp.RequestOptions{
 		MaxRedirects: 0,
-		Payload:      payload,
-		PayloadType:  "url",
+		//Payload:      payload,
+		PayloadType: "url",
 	}
 	re := regexp.MustCompile(`((https?://)[^\s]+)`)
 	urlX := re.FindString(content)
@@ -95,15 +104,15 @@ func ValidAndBindJWCard(account string, card string, pwd string, money int) erro
 		"Sec-Fetch-Mode":            "navigate",
 		"Sec-Fetch-User":            "?1",
 		"Sec-Fetch-Dest":            "document",
-		"Referer":                   "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=AAJSUPHNZG010CZ",
+		"Referer":                   "https://www.junka.com/Official/JNetMapSup/CommonCharge.aspx?category=AAJSUPHNZG&product=" + product,
 		"Accept-Encoding":           "gzip, deflate, br, zstd",
 		"Accept-Language":           "zh-CN,zh;q=0.9",
 	}
 	var imgOptions = &vbHttp.RequestOptions{
 		Headers:      imgHeaders,
 		MaxRedirects: 0,
-		Payload:      payload,
-		PayloadType:  "url",
+		//Payload:      payload,
+		PayloadType: "url",
 	}
 	respImg, err := client.Get(imgURL, imgOptions)
 	if err != nil {
@@ -148,7 +157,8 @@ func ValidAndBindJWCard(account string, card string, pwd string, money int) erro
 	//account := "446794914"
 	//card := "2402071320021191"
 	//pwd := "1257101300227187"
-	p := `__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=` + url.QueryEscape(__VIEWSTATE) + `&__VIEWSTATEGENERATOR=DCA79EE2&__VIEWSTATEENCRYPTED=&ctl00%24rblSaleType=3&ctl00%24cboProductList=AAJSUPHNZG010CZ&ctl00%24cboProductNum=1&ctl00%24hidCardPwdSign=&ctl00%24junUCard%24UCardType=OneUCardType
+	p := `__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=` + url.QueryEscape(__VIEWSTATE) + `&__VIEWSTATEGENERATOR=DCA79EE2&__VIEWSTATEENCRYPTED=&ctl00%24rblSaleType=3
+&ctl00%24cboProductList=` + product + `&ctl00%24cboProductNum=1&ctl00%24hidCardPwdSign=&ctl00%24junUCard%24UCardType=OneUCardType
 &ctl00%24junUCard%24FirstUCardNo=` + card + `&ctl00%24junUCard%24FirstUCardPassword=` + pwd + `&ctl00%24junUCard%24SecondUCardNo=&ctl00%24junUCard%24SecondUCardPassword=&ctl00%24junUCard%24ThirdUCardNo=&ctl00%24junUCard%24ThirdUCardPassword=&ctl00%24MiddleTemplate%24hidFromType=&ctl00%24MiddleTemplate%24hidCategory=AAJSUPHNZG&ctl00%24MiddleTemplate%24hidRegionName=&ctl00%24MiddleTemplate%24hidRegionValue=&ctl00%24MiddleTemplate%24hidServerName=&ctl00%24MiddleTemplate%24hidServerValue=
 &ctl00%24MiddleTemplate%24junCharge%24txtUserAccount=` + account + `
 &ctl00%24MiddleTemplate%24junCharge%24txtUserAccountOk=` + account + `
@@ -191,14 +201,38 @@ func ValidAndBindJWCard(account string, card string, pwd string, money int) erro
 		}
 	}
 
-	if strings.Contains(hb, "正在为您充值") {
-		fmt.Println("正在为您充值")
-		return nil
-	} else if strings.Contains(hb, "充值已成功") {
-		fmt.Println("充值成功")
-		return nil
-	} else {
-		fmt.Println("充值失败")
-		return fmt.Errorf("充值失败")
+	if respEnd.StatusCode == 302 {
+		// 解码HTML实体字符
+		decodedHTML := html.UnescapeString(hb)
+
+		// 替换 &amp; 为 &
+		decodedHTML = strings.ReplaceAll(decodedHTML, "&amp;", "&")
+
+		// 解码非标准Unicode编码
+		decodedHTML = decodeNonStandardUnicode(decodedHTML)
+
+		fmt.Println(decodedHTML)
+
+		if strings.Contains(decodedHTML, "创建单据成功") {
+			fmt.Println("创建单据成功")
+			return nil
+		}
 	}
+
+	fmt.Println("充值失败", hb)
+	return fmt.Errorf("充值失败，请核查卡密")
+}
+
+func decodeNonStandardUnicode(input string) string {
+	re := regexp.MustCompile(`%u([0-9a-fA-F]{4})`)
+	decoded := re.ReplaceAllStringFunc(input, func(s string) string {
+		unicodeStr := s[2:]
+		unicodeInt, err := strconv.ParseInt(unicodeStr, 16, 32)
+		if err != nil {
+			return s
+		}
+		return string(rune(unicodeInt))
+	})
+
+	return decoded
 }

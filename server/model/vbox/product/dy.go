@@ -25,7 +25,7 @@ type DyWalletInfoResponse struct {
 
 type DyWalletInfoRecord struct {
 	Money   int   `json:"money"`
-	UserID  int64 `json:"user_id"`
+	UserID  int64 `json:"userId"`
 	Diamond int   `json:"diamond"`
 }
 
@@ -37,4 +37,9 @@ type DyAccountRecord struct {
 	HisBalance string `json:"hisBalance" form:"hisBalance" url:"hisBalance"` // 历史余额
 	CheckTime  string `json:"checkTime" form:"checkTime" url:"checkTime"`    // 核对时间
 	NowBalance string `json:"nowBalance" form:"nowBalance" url:"nowBalance"` // 当前余额
+}
+
+type DYRecords struct {
+	DyWalletInfoRecord DyWalletInfoRecord `json:"info" form:"info" url:"info"`
+	List               []DyAccountRecord  `json:"list" form:"list" url:"list"`
 }

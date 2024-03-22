@@ -274,6 +274,48 @@ func ChanAccEnableCheckTask() {
 						}
 					}
 
+					// 日进单限制
+					if v.Obj.DlyCntLimit > 0 {
+						var count int64
+
+						err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).
+							Where("channel_code = ?", cid).
+							Where("ac_id = ? and order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", acId, 1).Count(&count).Error
+
+						if err != nil {
+							global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
+							_ = msg.Reject(false)
+							continue
+						}
+
+						if int(count) >= v.Obj.DlyCntLimit { // 如果笔数消费已经超了，不允许开启了，直接结束
+
+							//入库操作记录
+							record := sysModel.SysOperationRecord{
+								Ip:      v.Ctx.ClientIP,
+								Method:  v.Ctx.Method,
+								Path:    v.Ctx.UrlPath,
+								Agent:   v.Ctx.UserAgent,
+								MarkId:  fmt.Sprintf(global.AccRecord, acId),
+								Type:    global.AccType,
+								Status:  500,
+								Latency: time.Since(now),
+								Resp:    fmt.Sprintf(global.AccDlyCntLimitNotEnough, acId, v.Obj.AcAccount, count, v.Obj.DlyCntLimit),
+								UserID:  v.Ctx.UserID,
+							}
+
+							err = operationRecordService.CreateSysOperationRecord(record)
+							if err != nil {
+								global.GVA_LOG.Error("当前账号笔数消耗已经超限额情况下，record 入库失败..." + err.Error())
+							}
+							err = global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", v.Obj.ID).
+								Update("sys_status", 0).Error
+							global.GVA_LOG.Error("【DlyCntLimit】当前账号笔数消耗已经超限额了，结束...", zap.Any("ac info", v.Obj))
+							_ = msg.Reject(false)
+							continue
+						}
+					}
+
 					// 2.4 拉单限制
 					if v.Obj.CountLimit > 0 {
 

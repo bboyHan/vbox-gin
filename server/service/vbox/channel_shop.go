@@ -81,6 +81,14 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 
 		case "1101": //jw qb tb
 			flag = utils.ValidTBUrl(c.Address)
+		case "1102": //jw qb tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "1103": //jw qb tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "1104": //jw qb tb
+			flag = utils.ValidTBUrl(c.Address)
+		case "1105": //jw qb tb
+			flag = utils.ValidTBUrl(c.Address)
 
 		case "1201": //dnf tb
 			flag = utils.ValidTBUrl(c.Address)

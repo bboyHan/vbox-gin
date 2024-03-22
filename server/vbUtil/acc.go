@@ -51,6 +51,17 @@ func CheckAccLimit(vca vbox.ChannelAccount, money int) (err error) {
 			return fmt.Errorf("入单数限额不足, 限额参数:%v, 当前笔数:%v", vca.InCntLimit, inCnt)
 		}
 	}
+	if vca.DlyCntLimit > 0 {
+		var dlyCnt int
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("count(1) as dlyCnt").
+			Where("ac_id = ?", vca.AcId).
+			Where("channel_code = ?", vca.Cid).
+			Where("order_status = ? AND created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", 1).Scan(&dlyCnt).Error
+		if dlyCnt+1 > vca.DlyCntLimit {
+			//global.GVA_LOG.Error("每日入单数限额不足", zap.Any("acID", accID), zap.Any("acAccount", vca.AcAccount), zap.Any("dlyCnt", dlyCnt), zap.Any("money", money), zap.Any("dlyCntLimit", vca.DlyCntLimit))
+			return fmt.Errorf("每日入单数限额不足, 限额参数:%v, 当前笔数:%v", vca.DlyCntLimit, dlyCnt)
+		}
+	}
 	if vca.CountLimit > 0 {
 		var cnt int
 		err = global.GVA_DB.Model(&vbox.PayOrder{}).Select("count(1) as cnt").

@@ -141,16 +141,27 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
+                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1101">【智选一卡通】</span>
+                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1102">【聚力一卡通】</span>
+                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1103">【泰岳卡】</span>
+                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1104">【乐游权益卡】</span>
+                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1105">【顺景卡】</span>
               </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>
+              <el-col style="text-align: left">
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">1. <b
+                    style="color: blue;">【点此付款】</b>跳转淘宝根据提示购买</div>
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【获取并复制卡密】<b
+                    style="color: blue;">联系淘宝客服</b>，获取并复制卡密信息，<b
+                    style="color: blue;">返回本页面！</b>
+                </div>
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【粘贴卡密】<b style="color: blue;">在下方输入框中, 粘贴卡密</b></div>
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">4. <b style="color: blue;"></b><b style="color: blue;">【提交卡密】</b>确认并提交卡密信息</div>
               </el-col>
               <el-col>
-                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+                <div style="color: #6B7687; margin-top: 10px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
                 <div style="color: #e81239; margin-top: 10px; font-size: 16px">
@@ -177,10 +188,30 @@
             </el-col>
           </el-row>
         </div>
-        <div class="p_content_card_info_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+        <div class="p_content_jw_card_info_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
           <el-row>
             <el-col>
-              <div style="height: 100px; margin-top: 20px">
+              <div style="height: 100px; margin-top: 5px">
+                <div style=" color: #0c87ec; padding: 5px">方式一：手动输入</div>
+                <div class="">
+                  <el-input
+                      v-model="inputStringCard"
+                      style="width: 240px"
+                      placeholder="输入卡号"
+                      maxlength="20"
+                      :formatter="(value) => `卡号： ${value}`"
+                      :parser="(value) => value.replace(/卡号：\s?|(-*)/g, '')"
+                  />
+                  <el-input
+                      v-model="inputStringPwd"
+                      style="width: 240px"
+                      maxlength="20"
+                      placeholder="输入密码"
+                      :formatter="(value) => `密码： ${value}`"
+                      :parser="(value) => value.replace(/密码：\s?|(-*)/g, '')"
+                  />
+                </div>
+                <div style=" color: #0c87ec; padding: 5px">方式二：复制卡密信息自动识别</div>
                 <div class="medicine-jw-bag">
                   <textarea v-model="inputString"
                             :placeholder="`粘贴示例：\n您已购买成功(订单号:205...)，如下：\n卡号：2312290766321121;\n密码：2732221581323347;`"></textarea>
@@ -202,7 +233,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="p_content_card_submit_button">
+                <div class="p_content_jw_card_submit_button">
                   <div v-if="card1100Number && password1100" class="result-container">
                     <el-row :gutter="12">
                       <el-col :span="24">
@@ -845,7 +876,7 @@
                 </div>
                 <div>
                   <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
-                  <div class="medicine-jw-card-info-bag">
+                  <div class="medicine-card-info-bag">
                     <div v-if="card6000Number" class="result-container">
                       <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b
                           style="color: blue;font-size: 16px"> {{ card6000Number }}</b></p>
@@ -874,7 +905,6 @@
           </el-row>
         </div>
       </div>
-
 
       <!--   jw卡密信息确认   -->
       <el-dialog width="360px" v-model="dialog1100CardVisible" :draggable="true" :before-close="close1100CardVisible"
@@ -1058,6 +1088,11 @@
             <div v-if="Number(payData.channel_code) === 1101">
               <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
                    src="@/assets/yd_qb_jw.png">
+            </div>
+            <div>
+              <div class="medicine-money-bag">
+                  <div><span style="color: red">【重要】复制卡密内容之后，一定要</span><span style="color: blue">【返回本页面进行提交！】</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1579,9 +1614,13 @@ const onEnd = async () => {
 // --------------- card --------------------
 // 输入的字符串
 const inputString = ref('');
+const inputStringCard = ref('');
+const inputStringPwd = ref('');
 // 提取卡号和密码的正则表达式
 const cardNumberRegex = /卡号[：:](\d{16})/;
+const cardNumberPreRegex = /(\d{16})/;
 const passwordRegex = /密码[：:](\d{16})/;
+const passwordPreRegex = /(\d{16})/;
 
 const card6000NumberRegex = /(\S{4}-\S{4}-\S{4}-\S{4})/;
 
@@ -1597,23 +1636,40 @@ watchEffect(() => {
   card6000Number.value = null;
   password1100.value = null;
 
-  // 匹配卡号
-  const matchCardNumber = inputString.value.match(cardNumberRegex);
-  if (matchCardNumber) {
-    card1100Number.value = matchCardNumber[1];
+  if (inputStringCard.value || inputStringPwd.value) {
+    console.log('inputStringCard.value', inputStringCard.value)
+    // 匹配卡号
+    const matchCardNumber = inputStringCard.value.match(cardNumberPreRegex);
+    if (matchCardNumber) {
+      card1100Number.value = matchCardNumber[1];
+    }
+
+    // 匹配密码
+    const matchPassword = inputStringPwd.value.match(passwordPreRegex);
+    if (matchPassword) {
+      password1100.value = matchPassword[1];
+    }
+  }else {
+    // 匹配卡号
+    const matchCardNumber = inputString.value.match(cardNumberRegex);
+    if (matchCardNumber) {
+      card1100Number.value = matchCardNumber[1];
+    }
+
+    // 匹配卡号
+    const matchCard6000Number = inputString.value.match(card6000NumberRegex);
+    if (matchCard6000Number) {
+      card6000Number.value = matchCard6000Number[0];
+    }
+
+    // 匹配密码
+    const matchPassword = inputString.value.match(passwordRegex);
+    if (matchPassword) {
+      password1100.value = matchPassword[1];
+    }
   }
 
-  // 匹配卡号
-  const matchCard6000Number = inputString.value.match(card6000NumberRegex);
-  if (matchCard6000Number) {
-    card6000Number.value = matchCard6000Number[0];
-  }
 
-  // 匹配密码
-  const matchPassword = inputString.value.match(passwordRegex);
-  if (matchPassword) {
-    password1100.value = matchPassword[1];
-  }
 });
 // --------------- card --------------------
 
@@ -1861,6 +1917,7 @@ const openPay = async () => {
     clipboardX.destroy(); // 销毁 ClipboardJS 实例
   });
 
+  await closeYdDialog()
 };
 
 // 添加一个空变量作为定时器的 ID
@@ -2459,6 +2516,19 @@ h1 {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.p_content_jw_card_info_inner {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 380px;
+  left: 5%;
+  right: 5%;
+  height: 360px;
+  background-color: #f2f2f2;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .p_content_card_info_button {
   text-align: center;
   color: #333;
@@ -2473,6 +2543,15 @@ h1 {
   color: #333;
   position: absolute;
   top: 240px;
+  left: 5%;
+  right: 5%;
+}
+
+.p_content_jw_card_submit_button {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 350px;
   left: 5%;
   right: 5%;
 }
@@ -2502,6 +2581,19 @@ h1 {
   width: 90%;
   font-size: 18px;
   height: 60px;
+}
+
+.medicine-card-info-bag {
+  background: rgba(220, 200, 200, 0.1);
+  border: 2px dashed rgba(59, 28, 23, 0.5);
+  margin-top: 8px;
+  border-radius: 5px;
+  padding-top: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  width: 90%;
+  font-size: 18px;
+  height: 50px;
 }
 
 .medicine-jw-card-info-bag {
