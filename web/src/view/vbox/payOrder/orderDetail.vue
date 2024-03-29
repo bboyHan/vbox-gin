@@ -498,7 +498,7 @@
       </div>
 
 
-           <!--   2000 引导   -->
+           <!--   8000- 引导   -->
            <div v-if="payTypeVisible >= 8000 && payTypeVisible < 8099">
         <div class="p_container">
           <div class="p_blue-section" v-for="index in 10" :key="index"

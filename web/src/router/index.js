@@ -21,6 +21,11 @@ const routes = [
         component: () => import('@/view/vbox/payOrder/orderDetail.vue')
     },
     {
+        path: '/pay2',
+        name: 'Pay2',
+        component: () => import('@/view/vbox/payOrder/orderDetailV2.vue')
+    },
+    {
         path: '/payTest',
         name: 'PayTest',
         component: () => import('@/view/vbox/payOrder/orderTest.vue')

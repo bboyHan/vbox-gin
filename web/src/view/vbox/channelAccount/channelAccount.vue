@@ -2869,6 +2869,7 @@ const queryAccOrderHisFunc = async (row, cid) => {
     }
   } else if (cid >= 8000 && cid <= 8099) {
     if (res.code === 0) {
+       console.log(JSON.stringify(res.data))
       orderHis8000Info.value = res.data.list.info
       orderHis8000List.value = res.data.list.list
     }
