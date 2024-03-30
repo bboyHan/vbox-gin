@@ -167,6 +167,7 @@ func ValidXCXUrl(requestString string) bool {
 // ValidPddUrl 校验PDD合法性
 func ValidPddUrl(requestString string) bool {
 	if strings.Contains(requestString, "pingduoduo://") {
+	} else if strings.Contains(requestString, "pinduoduo:") {
 	} else if strings.Contains(requestString, "mobile.yangkeduo.com") {
 	} else {
 		return false
@@ -228,6 +229,9 @@ func HandlePddUrl(requestString string) (payUrl string, err error) {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
 	} else if strings.Contains(requestString, "mobile.yangkeduo.com") {
+		payUrl = requestString
+		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
+	} else if strings.Contains(requestString, "pinduoduo:") {
 		payUrl = requestString
 		global.GVA_LOG.Info("无需处理", zap.Any("payUrl", requestString))
 	} else {

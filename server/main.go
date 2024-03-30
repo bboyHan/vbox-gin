@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/initialize"
@@ -21,12 +20,6 @@ import (
 // @name                        x-token
 // @BasePath                    /
 func main() {
-	defer func() { //保持程序运行态，而不是中断程序
-		if err := recover(); err != nil {
-			fmt.Println("发生了 panic ex：", err)
-			// 可以在这里进行一些处理操作
-		}
-	}()
 
 	global.GVA_VP = core.Viper() // 初始化Viper
 	initialize.OtherInit()
