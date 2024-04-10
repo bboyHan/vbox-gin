@@ -149,12 +149,23 @@ func ECContains(target string) bool {
 	return found
 }
 
-// 剑三
+// 抖音
 
 func DyContains(target string) bool {
 	set := map[string]bool{
 		"8000": true,
 		"8001": true,
+	}
+	_, found := set[target]
+	return found
+}
+
+// 网易
+
+func WYContains(target string) bool {
+	set := map[string]bool{
+		"9000": true,
+		"9001": true,
 	}
 	_, found := set[target]
 	return found

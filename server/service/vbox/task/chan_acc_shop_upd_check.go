@@ -419,6 +419,68 @@ func ChanAccShopUpdCheckTask() {
 
 					}
 
+				} else if global.WYContains(cid) { // WY
+
+					accKey := fmt.Sprintf(global.ChanOrgWYAccZSet, orgID, cid)
+
+					//先删掉所有的，重新加一次
+					global.GVA_REDIS.Del(context.Background(), accKey)
+
+					for _, acDB := range acDBList {
+						acDBTmp := acDB
+						go func(acDBTmp vbox.ChannelAccount) {
+							ID := acDBTmp.ID
+							acId := acDBTmp.AcId
+							acAccount := acDBTmp.AcAccount
+							waitAccYdKey := fmt.Sprintf(global.YdWYAccWaiting, acId)
+							waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+							waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+							ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+							if ttl > 0 { //该账号正在冷却中
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+								cdTime := ttl
+								_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+								global.GVA_LOG.Info("商铺开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+							} else {
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+								global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+								global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							}
+						}(acDBTmp)
+
+					}
+
+				} else if global.DyContains(cid) { // 抖音
+
+					accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgID, cid)
+
+					//先删掉所有的，重新加一次
+					global.GVA_REDIS.Del(context.Background(), accKey)
+
+					for _, acDB := range acDBList {
+						acDBTmp := acDB
+						go func(acDBTmp vbox.ChannelAccount) {
+							ID := acDBTmp.ID
+							acId := acDBTmp.AcId
+							acAccount := acDBTmp.AcAccount
+							waitAccYdKey := fmt.Sprintf(global.YdDyAccWaiting, acId)
+							waitAccMem := fmt.Sprintf("%v,%s,%s", ID, acId, acAccount)
+							waitMsg := strings.Join([]string{waitAccYdKey, waitAccMem}, "-")
+							ttl := global.GVA_REDIS.TTL(context.Background(), waitAccYdKey).Val()
+							if ttl > 0 { //该账号正在冷却中
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 2)
+								cdTime := ttl
+								_ = chX.PublishWithDelay(AccCDCheckDelayedExchange, AccCDCheckDelayedRoutingKey, []byte(waitMsg), cdTime)
+								global.GVA_LOG.Info("商铺开启过程校验..账号在冷却中,发起cd校验任务", zap.Any("waitMsg", waitMsg), zap.Any("cdTime", cdTime))
+							} else {
+								global.GVA_DB.Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", ID).Update("cd_status", 1)
+								global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+								global.GVA_LOG.Info("商铺开启过程校验..置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+							}
+						}(acDBTmp)
+
+					}
+
 				} else if global.QNContains(cid) { // qn
 
 					//accKey := fmt.Sprintf(global.ChanOrgQNAccZSet, orgID, cid)

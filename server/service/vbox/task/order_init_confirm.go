@@ -66,7 +66,7 @@ func OrderConfirmTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 3
+	consumerCount := 20
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -283,6 +283,48 @@ func OrderConfirmTask() {
 						}
 					}
 
+				case strings.Contains(prodInfo.ProductId, "wy"):
+					var wyRecord *prod.WYBalanceData
+					wyRecord, errX = product.QryWYRecord(vca.Token)
+					if wyRecord != nil {
+						nowBalance := wyRecord.JsBalance
+						WYAccBalanceKey := fmt.Sprintf(global.WYAccBalanceZSet, vca.AcId)
+						nowTimeUnix := odDB.CreatedAt.Unix()
+						//对账时间
+						checkTime := time.Now().Unix()
+						valMembers, errZ := global.GVA_REDIS.ZRangeByScore(context.Background(), WYAccBalanceKey, &redis.ZRangeBy{
+							Min:    strconv.FormatInt(nowTimeUnix, 10),
+							Max:    strconv.FormatInt(nowTimeUnix, 10),
+							Offset: 0,
+							Count:  1,
+						}).Result()
+						if errZ != nil {
+							global.GVA_LOG.Error("redis err", zap.Error(errZ))
+						}
+						if len(valMembers) > 0 {
+							mem := valMembers[0]
+							split := strings.Split(mem, ",")
+							hisBalance, _ := strconv.Atoi(split[4])
+							if hisBalance+money*10 == nowBalance { // 充值成功的情况
+								qryURL = vca.Token
+
+								keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, checkTime, nowBalance)
+								delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
+
+								global.GVA_LOG.Info("核对官方订单", zap.Any("订单ID", orderId), zap.Any("核准", keyMem), zap.Any("money", money))
+
+								global.GVA_REDIS.ZAdd(context.Background(), WYAccBalanceKey, redis.Z{
+									Score:  float64(nowTimeUnix),
+									Member: keyMem,
+								})
+								global.GVA_REDIS.ZRem(context.Background(), WYAccBalanceKey, delMem)
+
+								v.Obj.PlatId = keyMem
+
+								flag = true
+							}
+						}
+					}
 				case strings.Contains(prodInfo.ProductId, "db"):
 					var dyRecord *prod.DyWalletInfoRecord
 					dyRecord, errX = product.QryDyRecord(vca.Token)
@@ -313,7 +355,7 @@ func OrderConfirmTask() {
 								delMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, hisBalance, 0, 0)
 
 								//global.GVA_LOG.Info("查单链接", zap.Any("订单ID", orderId), zap.Any("url", qryURL))
-								global.GVA_LOG.Info("核对官方订单", zap.Any("订单ID", orderId), zap.Any("核准", keyMem))
+								global.GVA_LOG.Info("核对官方订单", zap.Any("订单ID", orderId), zap.Any("核准", keyMem), zap.Any("money", money))
 
 								global.GVA_REDIS.ZAdd(context.Background(), DyAccBalanceKey, redis.Z{
 									Score:  float64(nowTimeUnix),

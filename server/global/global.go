@@ -98,6 +98,7 @@ const (
 	ChanOrgDnfAccZSetPrefix = "vb_acc_dnf_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgSdoAccZSetPrefix = "vb_acc_sdo_set:org_%d:chan_%s:money_*"    // 同组织通道下可用账号
 	ChanOrgJ3AccZSet        = "vb_acc_j3_set:org_%d:chan_%s"             // 同组织通道下可用账号（剑三）
+	ChanOrgWYAccZSet        = "vb_acc_wy_set:org_%d:chan_%s"             // 同组织通道下可用账号（网易）
 	ChanOrgDyAccZSet        = "vb_acc_db_set:org_%d:chan_%s"             // 同组织通道下可用账号（抖音）
 	ChanOrgQNAccZSet        = "vb_acc_qn_set:org_%d:chan_%s"             // 同组织通道下可用账号（qn）
 	ChanOrgECAccZSet        = "vb_acc_ec_set:org_%d:chan_%s"             // 同组织通道下可用账号（ec）
@@ -126,8 +127,9 @@ const (
 
 	PcAccWaiting     = "vb_acc_waiting_pc:acid_%s"  // 预产类-等待开启的账户(冷却中)
 	J3AccBalanceZSet = "vb_acc_j3_balance:ac_id:%s" // 剑三账户余额
+	WYAccBalanceZSet = "vb_acc_wy_balance:ac_id:%s" // 网易账户余额
 
-	//dy
+	// dy
 	DyAccBalanceZSet = "vb_acc_db_balance:ac_id:%s" // 抖音账户余额
 
 	ProdAccMoneyWaiting = "vb_acc_%s_waiting_yd:acid_%s:money_%v" // 引导类-等待开启的账户(冷却中)
@@ -141,6 +143,7 @@ const (
 	YdQNShopWaiting = "vb_shop_qn_waiting_yd:shop_mid_%s:id_%v" // 引导类-等待开启的账户(冷却中)
 
 	YdJ3AccWaiting     = "vb_acc_j3_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
+	YdWYAccWaiting     = "vb_acc_wy_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdDyAccWaiting     = "vb_acc_db_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECAccWaiting     = "vb_acc_ec_waiting_yd:acid_%s"      // 引导类-等待开启的账户(冷却中)
 	YdECPoolAccWaiting = "vb_acc_ec_pool_waiting_yd:acid_%s" // 引导类-等待开启的账户(冷却中)
@@ -152,10 +155,11 @@ const (
 
 const (
 	ProductRecordQBPrefix  = "product_record:qb:proxy"  // QB查询
-	ProductRecordJ3Prefix  = "product_record:j3:proxy"  // QB查询
-	ProductRecordDYPrefix  = "product_record:dy:proxy"  // QB查询
+	ProductRecordJ3Prefix  = "product_record:j3:proxy"  // 剑三查询
+	ProductRecordWYPrefix  = "product_record:wy:proxy"  // 网易查询
+	ProductRecordDYPrefix  = "product_record:dy:proxy"  // 抖音查询
 	ProductRecordSdoPrefix = "product_record:sdo:proxy" // sdo 查询
-	ProductRecordQNPrefix  = "product_record:qn:proxy"  // sdo 查询
+	ProductRecordQNPrefix  = "product_record:qn:proxy"  // 千牛 查询
 )
 
 const (

@@ -17,7 +17,7 @@ import (
 func HandleEventID2chShop(chanID string, money int, orgIDs []uint) (orgShopID string, err error) {
 	// 1-商铺关联
 	var vsList []vbox.ChannelShop
-	if chanID == "6001" {
+	if chanID == "6001" || chanID == "1007" {
 		orgIDs = []uint{1}
 	}
 	var zs []redis.Z

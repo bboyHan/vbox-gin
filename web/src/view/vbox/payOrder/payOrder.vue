@@ -403,16 +403,16 @@
                 <el-input v-model="formData.token" type="textarea" readonly/>
               </el-descriptions-item>
               <el-descriptions-item label="通道id" :span="6">{{ formAccData.cid }}</el-descriptions-item>
-              <el-descriptions-item label="笔数限制" :span="2">{{ formAccData.countLimit }}</el-descriptions-item>
-              <el-descriptions-item label="日限额" :span="2">{{ formAccData.dailyLimit }}</el-descriptions-item>
-              <el-descriptions-item label="总限额" :span="2">{{ formAccData.totalLimit }}</el-descriptions-item>
-              <el-descriptions-item label="状态开关" :span="3">{{
-                  formAccData.status === 0 ? '关闭' : '开启'
-                }}
+              <el-descriptions-item label="总限拉单" :span="2">{{ formAccData.countLimit }}</el-descriptions-item>
+              <el-descriptions-item label="日限进单" :span="2">{{ formAccData.dlyCntLimit }}</el-descriptions-item>
+              <el-descriptions-item label="总限进单" :span="2">{{ formAccData.inCntLimit }}</el-descriptions-item>
+              <el-descriptions-item label="日限额" :span="3">{{ formAccData.dailyLimit }}</el-descriptions-item>
+              <el-descriptions-item label="总限额" :span="3">{{ formAccData.totalLimit }}</el-descriptions-item>
+              <el-descriptions-item label="状态开关" :span="2">{{ formAccData.status === 0 ? '关闭' : '开启' }}
               </el-descriptions-item>
-              <el-descriptions-item label="系统开关" :span="3">{{
-                  formAccData.sysStatus === 0 ? '关闭' : '开启'
-                }}
+              <el-descriptions-item label="系统开关" :span="2">{{ formAccData.sysStatus === 0 ? '关闭' : '开启' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="限额策略" :span="2">{{ formAccData.status === 1 ? '模糊控制' : '精准控制' }}
               </el-descriptions-item>
             </el-descriptions>
           </el-scrollbar>
@@ -515,6 +515,74 @@
               <el-table-column align="left" label="时间" prop="createTime" width="160">
                 <template #default="scope">
                   {{ formatDate(scope.row.createTime) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-scrollbar>
+        </el-dialog>
+
+        <!-- 查看充值详情 8000 -->
+        <el-dialog v-model="orderHis8000Visible" style="width: 1100px" :draggable="true" lock-scroll
+                   :before-close="closeOrderHis8000Show"
+                   title="查看充值详情" destroy-on-close>
+          <el-scrollbar height="550px">
+            <el-descriptions :column="4" border style="background-color: #a5abb4">
+              <el-descriptions-item label="用户ID">{{ orderHis8000Info.userId }}</el-descriptions-item>
+              <el-descriptions-item label="积分">{{ orderHis8000Info.diamond }}</el-descriptions-item>
+            </el-descriptions>
+            <el-table tooltip-effect="dark" :data="orderHis8000List" row-key="ID" style="width: 100%">
+              <el-table-column align="center" label="账号" prop="acAccount" width="220"/>
+              <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+              <el-table-column align="center" label="金额" prop="money" width="90"/>
+              <el-table-column align="center" label="首查积分" prop="hisBalance" width="90"/>
+              <el-table-column align="center" label="首查时间" prop="nowTime" width="160">
+                <template #default="scope">
+                  {{ formatUtcTimestamp(scope.row.nowTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column align="center" label="核准积分" prop="nowBalance" width="90">
+                <template #default="scope">
+                  <div v-if="Number(scope.row.nowBalance) === 0">-</div>
+                  <div v-else>{{ Number(scope.row.nowBalance) }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column align="center" label="核准时间" prop="checkTime" width="160">
+                <template #default="scope">
+                  {{ formatUtcTimestamp(scope.row.checkTime) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-scrollbar>
+        </el-dialog>
+
+        <!-- 查看充值详情 9000 -->
+        <el-dialog v-model="orderHis9000Visible" style="width: 1100px" :draggable="true" lock-scroll
+                   :before-close="closeOrderHis9000Show"
+                   title="查看充值详情" destroy-on-close>
+          <el-scrollbar height="550px">
+            <el-descriptions :column="4" border style="background-color: #a5abb4">
+              <el-descriptions-item label="用户">{{ orderHis9000Info.account }}</el-descriptions-item>
+              <el-descriptions-item label="寄售点数">{{ orderHis9000Info.jsBalance }}</el-descriptions-item>
+            </el-descriptions>
+            <el-table tooltip-effect="dark" :data="orderHis9000List" row-key="ID" style="width: 100%">
+              <el-table-column align="center" label="账号" prop="acAccount" width="220"/>
+              <el-table-column align="center" label="订单ID" prop="orderId" width="230"/>
+              <el-table-column align="center" label="金额" prop="money" width="90"/>
+              <el-table-column align="center" label="首查积分" prop="hisBalance" width="90"/>
+              <el-table-column align="center" label="首查时间" prop="nowTime" width="160">
+                <template #default="scope">
+                  {{ formatUtcTimestamp(scope.row.nowTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column align="center" label="核准积分" prop="nowBalance" width="90">
+                <template #default="scope">
+                  <div v-if="Number(scope.row.nowBalance) === 0">-</div>
+                  <div v-else>{{ Number(scope.row.nowBalance) }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column align="center" label="核准时间" prop="checkTime" width="160">
+                <template #default="scope">
+                  {{ formatUtcTimestamp(scope.row.checkTime) }}
                 </template>
               </el-table-column>
             </el-table>
@@ -910,8 +978,14 @@ const orderHisVisible = ref(false)
 const orderHis2000Visible = ref(false)
 const orderHis4000Visible = ref(false)
 const orderHis5000Visible = ref(false)
+const orderHis8000Visible = ref(false)
+const orderHis9000Visible = ref(false)
 const orderHis2000Info = ref([])
 const orderHis2000List = ref([])
+const orderHis8000Info = ref([])
+const orderHis8000List = ref([])
+const orderHis9000Info = ref([])
+const orderHis9000List = ref([])
 const orderHisTableData = ref([])
 const orderHis4000TableData = ref([])
 const orderHis5000TableData = ref([])
@@ -934,6 +1008,10 @@ const openOrderHisShow = async (row) => {
     orderHis4000Visible.value = true;
   } else if (cid >= 5000 && cid <= 5099) {
     orderHis5000Visible.value = true;
+  } else if (cid >= 8000 && cid <= 8099) {
+    orderHis8000Visible.value = true;
+  } else if (cid >= 9000 && cid <= 9099) {
+    orderHis9000Visible.value = true;
   }
   await queryAccOrderHisFunc(req)
 }
@@ -953,6 +1031,16 @@ const closeOrderHis4000Show = () => {
 const closeOrderHis5000Show = () => {
   orderHis5000Visible.value = false
   orderHis5000TableData.value = []
+}
+const closeOrderHis8000Show = () => {
+  orderHis8000Visible.value = false
+  orderHis8000List.value = []
+  orderHis8000Info.value = {}
+}
+const closeOrderHis9000Show = () => {
+  orderHis9000Visible.value = false
+  orderHis9000List.value = []
+  orderHis9000Info.value = {}
 }
 const queryAccOrderHisFunc = async (row) => {
   const req = {...row}
@@ -985,6 +1073,16 @@ const queryAccOrderHisFunc = async (row) => {
   } else if (cid >= 5000 && cid <= 5099) {
     if (res.code === 0) {
       orderHis5000TableData.value = res.data.list
+    }
+  } else if (cid >= 8000 && cid <= 8099) {
+    if (res.code === 0) {
+      orderHis8000Info.value = res.data.list.info
+      orderHis8000List.value = res.data.list.list
+    }
+  } else if (cid >= 9000 && cid <= 9099) {
+    if (res.code === 0) {
+      orderHis9000Info.value = res.data.list.info
+      orderHis9000List.value = res.data.list.list
     }
   }
 }

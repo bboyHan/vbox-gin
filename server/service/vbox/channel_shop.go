@@ -106,8 +106,10 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 		case "7001": //qn tb
 			flag = utils.ValidTBUrl(c.Address)
 
-		case "8001": //ec jd
+		case "8001": //抖币 jd
 			flag = utils.ValidJDUrl(c.Address)
+		case "9001": //网易 tb
+			flag = utils.ValidTBUrl(c.Address)
 		}
 
 		if !flag {

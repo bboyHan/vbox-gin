@@ -53,7 +53,7 @@ func OrderWaitingTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 2
+	consumerCount := 20
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -288,6 +288,8 @@ func OrderWaitingTask() {
 										Path:    v.Ctx.UrlPath,
 										Agent:   v.Ctx.UserAgent,
 										Status:  500,
+										MarkId:  fmt.Sprintf(global.AccRecord, vca.AcId),
+										Type:    global.AccType,
 										Latency: time.Since(now),
 										Resp:    fmt.Sprintf(global.AccQryJ3RecordsEx, accID, acAccount),
 										UserID:  v.Ctx.UserID,
@@ -309,10 +311,67 @@ func OrderWaitingTask() {
 								v.Obj.PlatId = keyMem
 
 								global.GVA_LOG.Info("当前余额情况", zap.Any("orderID", orderId), zap.Any("j3Record", j3Record))
-							}
+							} else if global.WYContains(cid) {
+								// 查一下当前余额
+								wyRecord, errQy := product.QryWYRecord(vca.Token)
+								if errQy != nil {
+									// 查单有问题，直接订单要置为超时，消息置为处理完毕
+									global.GVA_LOG.Error("查询充值记录异常", zap.Error(errQy))
+									if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
+										global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
+									}
+									err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+										Update("sys_status", 0).Error
 
-							// 抖音
-							if global.DyContains(cid) {
+									vca.Status = 0
+									oc := request.ChanAccAndCtx{
+										Obj: vca,
+										Ctx: request.Context{
+											Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+											ClientIP:  "127.0.0.1",
+											Method:    "POST",
+											UrlPath:   "/vca/switchEnable",
+											UserAgent: "",
+											UserID:    int(vca.CreatedBy),
+										},
+									}
+									marshal, _ := json.Marshal(oc)
+
+									_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+									global.GVA_LOG.Error("发起一条关号清理资源", zap.Any("orderID", orderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
+									record = sysModel.SysOperationRecord{
+										Ip:      v.Ctx.ClientIP,
+										Method:  v.Ctx.Method,
+										Path:    v.Ctx.UrlPath,
+										Agent:   v.Ctx.UserAgent,
+										MarkId:  fmt.Sprintf(global.AccRecord, vca.AcId),
+										Type:    global.AccType,
+										Status:  500,
+										Latency: time.Since(now),
+										Resp:    fmt.Sprintf(global.AccQryRecordsEx, accID, acAccount),
+										UserID:  v.Ctx.UserID,
+									}
+									err = operationRecordService.CreateSysOperationRecord(record)
+
+									continue
+								}
+
+								balance := wyRecord.JsBalance
+								WYAccBalanceKey := fmt.Sprintf(global.WYAccBalanceZSet, vca.AcId)
+								nowTimeUnix := v.Obj.CreatedAt.Unix()
+								keyMem := fmt.Sprintf("%s,%s,%v,%d,%d,%d,%d", orderId, vca.AcAccount, money, nowTimeUnix, balance, 0, 0)
+
+								global.GVA_REDIS.ZAdd(context.Background(), WYAccBalanceKey, redis.Z{
+									Score:  float64(nowTimeUnix),
+									Member: keyMem,
+								})
+
+								v.Obj.PlatId = keyMem
+
+								global.GVA_LOG.Info("当前余额情况", zap.Any("orderID", orderId), zap.Any("wyRecord", wyRecord))
+							} else if global.DyContains(cid) { // 抖音
 								// 查一下当前余额
 								dyRecord, errQy := product.QryDyRecord(vca.Token)
 								if errQy != nil {
@@ -321,14 +380,37 @@ func OrderWaitingTask() {
 									if errDB := global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("id = ?", v.Obj.ID).Update("order_status", 0).Error; errDB != nil {
 										global.GVA_LOG.Info("MqOrderWaitingTask...", zap.Error(errDB))
 									}
+									err = global.GVA_DB.Debug().Unscoped().Model(&vbox.ChannelAccount{}).Where("id = ?", vca.ID).
+										Update("sys_status", 0).Error
+
+									vca.Status = 0
+									oc := request.ChanAccAndCtx{
+										Obj: vca,
+										Ctx: request.Context{
+											Body:      fmt.Sprintf(global.AccQryEx, vca.AcId, vca.AcAccount),
+											ClientIP:  "127.0.0.1",
+											Method:    "POST",
+											UrlPath:   "/vca/switchEnable",
+											UserAgent: "",
+											UserID:    int(vca.CreatedBy),
+										},
+									}
+									marshal, _ := json.Marshal(oc)
+
+									_ = chX.Publish(ChanAccEnableCheckExchange, ChanAccEnableCheckKey, marshal)
+
+									global.GVA_LOG.Error("发起一条关号清理资源", zap.Any("orderID", orderId), zap.Any("ac_id", vca.AcId), zap.Any("ac_account", vca.AcAccount))
+
 									record = sysModel.SysOperationRecord{
 										Ip:      v.Ctx.ClientIP,
 										Method:  v.Ctx.Method,
 										Path:    v.Ctx.UrlPath,
 										Agent:   v.Ctx.UserAgent,
+										MarkId:  fmt.Sprintf(global.AccRecord, vca.AcId),
+										Type:    global.AccType,
 										Status:  500,
 										Latency: time.Since(now),
-										Resp:    fmt.Sprintf(global.AccQryDyRecordsEx, accID, acAccount),
+										Resp:    fmt.Sprintf(global.AccQryRecordsEx, accID, acAccount),
 										UserID:  v.Ctx.UserID,
 									}
 									err = operationRecordService.CreateSysOperationRecord(record)

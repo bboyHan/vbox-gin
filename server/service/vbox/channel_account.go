@@ -299,6 +299,23 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordJ3Prefix).Result()
 		}
 
+	} else if global.WYContains(vca.Cid) {
+		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordWYPrefix).Result()
+		if c == 0 {
+			channelCode = "wy_proxy"
+
+			err = global.GVA_DB.Debug().Model(&vbox.Proxy{}).Select("url").Where("status = ? and chan=?", 1, channelCode).
+				First(&urlQ).Error
+
+			if err != nil {
+				return nil, errors.New("该信道无资源配置")
+			}
+
+			global.GVA_REDIS.Set(context.Background(), global.ProductRecordWYPrefix, urlQ, 10*time.Minute)
+		} else {
+			urlQ, _ = global.GVA_REDIS.Get(context.Background(), global.ProductRecordWYPrefix).Result()
+		}
+
 	} else if global.DyContains(vca.Cid) {
 		c, err := global.GVA_REDIS.Exists(context.Background(), global.ProductRecordDYPrefix).Result()
 		if c == 0 {
@@ -389,6 +406,45 @@ func (vcaService *ChannelAccountService) QueryAccOrderHis(vca *vbox.ChannelAccou
 		}
 		ret := &prod.J3Records{
 			J3BalanceData: *record,
+			List:          accRecords,
+		}
+		return ret, nil
+	} else if global.WYContains(vca.Cid) {
+
+		record, err := product.QryWYRecord(vca.Token)
+		if err != nil {
+			return nil, err
+		}
+
+		timeMax := strconv.FormatInt(time.Now().Unix(), 10)
+		global.GVA_LOG.Info("", zap.Any("timeMax", timeMax))
+		accKey := fmt.Sprintf(global.WYAccBalanceZSet, vca.AcId)
+
+		list := global.GVA_REDIS.ZRevRangeByScore(context.Background(), accKey, &redis.ZRangeBy{
+			Min:    "0",
+			Max:    timeMax,
+			Offset: 0,
+			Count:  100,
+		}).Val()
+		var accRecords []prod.WYAccountRecord
+		for _, mem := range list {
+			keyMem := strings.Split(mem, ",")
+			money, _ := strconv.Atoi(keyMem[2])
+
+			accRecord := prod.WYAccountRecord{
+				OrderID:    keyMem[0],
+				AcAccount:  keyMem[1],
+				Money:      money,
+				NowTime:    keyMem[3],
+				HisBalance: keyMem[4],
+				CheckTime:  keyMem[5],
+				NowBalance: keyMem[6],
+			}
+
+			accRecords = append(accRecords, accRecord)
+		}
+		ret := &prod.WYRecords{
+			WYBalanceData: *record,
 			List:          accRecords,
 		}
 		return ret, nil
@@ -644,6 +700,7 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		account, errX := product.FindAccNick(token)
 		if errX != nil {
 			global.GVA_LOG.Warn("未能解析到nick lid的值， 进行随机赋值")
+			return errors.New("ck信息不合法")
 		}
 		vca.AcAccount = account
 
@@ -672,6 +729,17 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		}
 		if vca.Cid == "2002" && zoneCode != "z05" {
 			return errors.New("仅支持电信五区参数，请核查")
+		}
+		vca.AcAccount = account
+	} else if global.WYContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		account, errX := product.FindWYAccNick(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("未能解析到wy account的值")
+			return errors.New("ck信息不合法")
 		}
 		vca.AcAccount = account
 	} else if global.DyContains(vca.Cid) {
@@ -989,6 +1057,7 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		account, errX := product.FindAccNick(token)
 		if errX != nil {
 			global.GVA_LOG.Warn("未能解析到nick lid的值， 进行随机赋值")
+			return errors.New("ck信息不合法")
 		}
 		vca.AcAccount = account
 
@@ -1014,6 +1083,18 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 			return errors.New("仅支持电信五区参数，请核查")
 		}
 		vca.AcAccount = account
+	} else if global.WYContains(vca.Cid) {
+		isCK := http2.IsValidCookie(token)
+		if !isCK {
+			return errors.New("ck信息不合法")
+		}
+		account, errX := product.FindWYAccNick(token)
+		if errX != nil {
+			global.GVA_LOG.Warn("未能解析到wy account的值")
+			return errors.New("ck信息不合法")
+		}
+		vca.AcAccount = account
+
 	} else if global.DyContains(vca.Cid) {
 		b := http2.IsValidCookie(token)
 		if !b {

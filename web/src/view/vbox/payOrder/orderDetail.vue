@@ -144,21 +144,30 @@
               <el-col
                   style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
                 充值须知
-                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1101">【智选一卡通】</span>
-                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1102">【聚力一卡通】</span>
-                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1103">【泰岳卡】</span>
-                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1104">【乐游权益卡】</span>
-                <span style="color: #ff6200;margin-left: 5px" v-if="Number(payData.channel_code) === 1105">【顺景卡】</span>
+                <span style="color: #ff6200;margin-left: 5px"
+                      v-if="Number(payData.channel_code) === 1101">【智选一卡通】</span>
+                <span style="color: #ff6200;margin-left: 5px"
+                      v-if="Number(payData.channel_code) === 1102">【聚力一卡通】</span>
+                <span style="color: #ff6200;margin-left: 5px"
+                      v-if="Number(payData.channel_code) === 1103">【泰岳卡】</span>
+                <span style="color: #ff6200;margin-left: 5px"
+                      v-if="Number(payData.channel_code) === 1104">【乐游权益卡】</span>
+                <span style="color: #ff6200;margin-left: 5px"
+                      v-if="Number(payData.channel_code) === 1105">【顺景卡】</span>
               </el-col>
               <el-col style="text-align: left">
                 <div style="color: red;margin-right: 20px;margin-left: 20px;">1. <b
-                    style="color: blue;">【点此付款】</b>跳转淘宝根据提示购买</div>
+                    style="color: blue;">【点此付款】</b>跳转淘宝根据提示购买
+                </div>
                 <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【获取并复制卡密】<b
                     style="color: blue;">联系淘宝客服</b>，获取并复制卡密信息，<b
                     style="color: blue;">返回本页面！</b>
                 </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【粘贴卡密】<b style="color: blue;">在下方输入框中, 粘贴卡密</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">4. <b style="color: blue;"></b><b style="color: blue;">【提交卡密】</b>确认并提交卡密信息</div>
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【粘贴卡密】<b style="color: blue;">在下方输入框中,
+                  粘贴卡密</b></div>
+                <div style="color: red;margin-right: 20px;margin-left: 20px;">4. <b style="color: blue;"></b><b
+                    style="color: blue;">【提交卡密】</b>确认并提交卡密信息
+                </div>
               </el-col>
               <el-col>
                 <div style="color: #6B7687; margin-top: 10px; font-size: 60px">￥{{ payData.money }}.00</div>
@@ -262,11 +271,7 @@
             <el-row :gutter="12">
               <el-col style="width: 80px; height: 80px">
               </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
               <el-col>
-                <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
               </el-col>
               <el-col>
                 <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
@@ -341,15 +346,27 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
-                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              <el-col style="text-align: left">
+                <div v-if="Number(payData.channel_code) === 2001">
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">付款前核对金额并<b
+                      style="color: blue;">【复制账号】，</b>根据提示跳转淘宝购买
+                  </div>
+                </div>
+                <div v-if="Number(payData.channel_code) === 2002">
+                  <div style="color: red;margin-right: 20px;margin-left: 20px;">付款前核对金额并<b
+                      style="color: blue;">【复制账号】，</b>根据提示跳转淘宝，<b
+                      style="color: blue;">必须手动输入游戏大区【电信五区】</b>，粘贴指定账号付款即可
+                  </div>
+                </div>
               </el-col>
+<!--              <el-col>-->
+<!--                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b-->
+<!--                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>-->
+<!--              </el-col>-->
               <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
@@ -496,6 +513,9 @@
           </el-row>
         </div>
       </div>
+
+      <!--   4000 引导   -->
+      <div v-if="payTypeVisible >= 4000 && payTypeVisible < 4099">
    <!--   10000 交易猫   -->
    <div v-if="payTypeVisible >= 10000 && payTypeVisible < 10099">
         <div class="p_container">
@@ -505,7 +525,7 @@
             <el-row :gutter="12">
               <el-col style="width: 80px; height: 80px">
               </el-col>
-<!--              
+<!--
               <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col> -->
@@ -568,170 +588,6 @@
 
            <!--   8000- 引导   -->
            <div v-if="payTypeVisible >= 8000 && payTypeVisible < 8099">
-        <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
-          <div class="p_content" :style="backgroundImageStyle">
-            <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
-              </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
-                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
-              </el-col>
-              <el-col>
-                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
-              </el-col>
-              <el-col>
-                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px">
-                    <WarningFilled/>
-                  </el-icon>
-                  请在规定时间内付款！
-                  <div>
-                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
-                    <span v-else>-1 （已过期）</span>
-                  </div>
-                </div>
-              </el-col>
-              <el-col :span="24">
-              </el-col>
-            </el-row>
-          </div>
-        </div>
-        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
-          <el-row>
-            <el-col>
-              <div style="height: 100px; margin-top: 20px">
-                <div class="medicine-money-bag">
-                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
-                      payData.money
-                    }}.00</span></span>
-                </div>
-                <div class="medicine-bag">
-                  <span>{{ payData.account }}</span>
-                </div>
-                <div class="copy-tip">
-                  <span>长按框内</span>
-                  <span class="jtone"></span>
-                  <span>复制</span>
-                  <span class="jttwo"></span>
-                  <span>记金额</span>
-                  <span class="jtthree"></span>
-                  <span>打开跳转</span>
-                </div>
-                <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-        <div class="p_content_button">
-          <el-row :gutter="12">
-            <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
-            </el-col>
-          </el-row>
-        </div>
-      </div>
-
-      <!--   3000 直付   -->
-      <div v-if="payTypeVisible >= 3000 && payTypeVisible < 3099">
-        <div class="p_container">
-          <!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
-          <div class="p_content">
-            <el-row :gutter="12">
-              <el-col
-                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
-                充值须知
-              </el-col>
-              <el-col style="text-align: left">
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">1. 仅支持<b
-                    style="color: blue;">【后置摄像头扫码】</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【PC端】<b
-                    style="color: blue;">直接微信</b>扫一扫
-                </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【手机端】<b style="color: blue;">使用其他设备,微信扫一扫支付,
-                  不支持相册识别</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">4.<b style="color: blue;">
-                  一个设备展示二维码, </b>另一个设备<b style="color: blue;">进行扫描</b></div>
-              </el-col>
-              <el-col>
-                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
-              </el-col>
-              <el-col>
-                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px">
-                    <WarningFilled/>
-                  </el-icon>
-                  请在规定时间内付款！
-                  <div>
-                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
-                    <span v-else>-1 （已过期）</span>
-                  </div>
-                </div>
-              </el-col>
-              <el-col>
-                <div style="height: 100px;">
-                </div>
-              </el-col>
-              <el-col :span="24">
-                <!--                <el-button class="p_button" type="primary">复制充值账号 立即付款</el-button>-->
-              </el-col>
-            </el-row>
-          </div>
-        </div>
-        <div class="p_content_inner" style="margin-top: 20px;">
-          <el-row>
-            <el-col>
-              <div style="height: 5px; margin-top: 5px">
-              </div>
-            </el-col>
-            <el-col>
-              <div>
-                <div class="medicine-bag-qr">
-                  <div v-if="qrcodeUrl">
-                    <img :src="qrcodeUrl" alt="QR Code" style="height: 174px"/>
-                  </div>
-                  <div v-else>
-                    <span>暂无二维码</span>
-                  </div>
-                </div>
-                <div class="copy-tip">
-                  <span>切换手机</span>
-                  <span class="jtone"></span>
-                  <span>打开微信</span>
-                  <span class="jttwo"></span>
-                  <span>扫一扫</span>
-                  <span class="jtthree"></span>
-                  <span>扫码付款</span>
-                </div>
-                <!--                <button class="copy_button" @click="">一键复制</button>-->
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-        <div class="p_content_button_qr">
-          <el-row :gutter="12">
-            <el-col>
-              <button class="p_button" @click="">扫码直付</button>
-            </el-col>
-          </el-row>
-        </div>
-      </div>
-
-
-      <!--   4000 引导   -->
-      <div v-if="payTypeVisible >= 4000 && payTypeVisible < 4099">
         <div class="p_container">
           <div class="p_blue-section" v-for="index in 10" :key="index"
                :style="{ backgroundColor: generateColor(index) }"></div>
@@ -974,6 +830,158 @@
         </div>
       </div>
 
+      <!--   8000 引导   -->
+      <div v-if="payTypeVisible >= 8000 && payTypeVisible < 8099">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col style="width: 80px; height: 80px">
+              </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
+              <el-col>
+                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
+                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col>
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                </div>
+                <div class="medicine-bag">
+                  <span>{{ payData.account }}</span>
+                </div>
+                <div class="copy-tip">
+                  <span>长按框内</span>
+                  <span class="jtone"></span>
+                  <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
+                  <span class="jtthree"></span>
+                  <span>打开跳转</span>
+                </div>
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+
+      <!--   9000 引导   -->
+      <div v-if="payTypeVisible >= 9000 && payTypeVisible < 9099">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col style="width: 80px; height: 80px">
+              </el-col>
+              <!--              <el-col>
+                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
+                            </el-col>-->
+              <el-col>
+                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
+                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              </el-col>
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col>
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                </div>
+                <div class="medicine-bag">
+                  <span>{{ payData.account }}</span>
+                </div>
+                <div class="copy-tip">
+                  <span>长按框内</span>
+                  <span class="jtone"></span>
+                  <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
+                  <span class="jtthree"></span>
+                  <span>打开跳转</span>
+                </div>
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+
       <!--   jw卡密信息确认   -->
       <el-dialog width="360px" v-model="dialog1100CardVisible" :draggable="true" :before-close="close1100CardVisible"
                  :style="backgroundYdImageStyle" top="40vh" destroy-on-close>
@@ -1077,7 +1085,7 @@
             </div>
             <div v-else-if="Number(payData.channel_code) === 1007">
               <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                   src="@/assets/yd_qb_pdd.png">
+                   src="@/assets/yd_qb_pdd_1.png">
             </div>
           </div>
           <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
@@ -1159,7 +1167,8 @@
             </div>
             <div>
               <div class="medicine-money-bag">
-                  <div><span style="color: red">【重要】复制卡密内容之后，一定要</span><span style="color: blue">【返回本页面进行提交！】</span></div>
+                <div><span style="color: red">【重要】复制卡密内容之后，一定要</span><span
+                    style="color: blue">【返回本页面进行提交！】</span></div>
               </div>
             </div>
           </div>
@@ -1263,6 +1272,75 @@
                      src="@/assets/yd_j3_tb.png">
               </div>
             </div>
+            <div v-if="Number(payData.channel_code) === 2002">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_j3_tb_1.jpg">
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                    <div v-if="Number(payData.channel_code) === 2002">
+                      <div style="color: blue; padding: 2px">区服必须填写<span style="color: red">【电信五区】!</span></div>
+                    </div>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   步骤指导4000   -->
+      <el-dialog width="360px" v-model="dialogYd4000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 4001">
+              <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                   src="@/assets/yd_sdo_tb.png">
+            </div>
           </div>
           <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
             <el-row>
@@ -1314,16 +1392,20 @@
         </template>
       </el-dialog>
 
-  <!--   引导步骤8000   -->
-  <el-dialog width="360px" v-model="dialogYd8000Visible" :draggable="true" :before-close="closeYdDialog"
+      <!--   引导步骤5000   -->
+      <el-dialog width="360px" v-model="dialogYd5000Visible" :draggable="true" :before-close="closeYdDialog"
                  :style="backgroundYdImageStyle"
                  top="5vh" destroy-on-close>
         <div style="padding: 0; margin: -20px 0 0;">
           <div>
-            <div v-if="Number(payData.channel_code) === 8001">
-              <div>
+            <div v-if="Number(payData.channel_code) === 2001">
+              <div v-if="tmH5Visible">
                 <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                     src="@/assets/yd_dy_jd.png">
+                     src="@/assets/yd_j3_tm.png">
+              </div>
+              <div v-else>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_j3_tb.png">
               </div>
             </div>
           </div>
@@ -1332,51 +1414,6 @@
               <el-col>
                 <div style="height: 100px; margin-top: 20px">
                   <div class="medicine-money-bag">
-                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
-                      payData.money
-                    }}.00</span></span>
-                  </div>
-                  <div class="medicine-bag">
-                    <span>{{ payData.account }}</span>
-                  </div>
-                  <div class="copy-tip">
-                    <span>长按框内</span>
-                    <span class="jtone"></span>
-                    <span>复制</span>
-                    <span class="jttwo"></span>
-                    <span>记金额</span>
-                    <span class="jtthree"></span>
-                    <span>打开跳转</span>
-                  </div>
-                  <div v-if="!copyInfoVisible">
-                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
-                  </div>
-                  <div v-else>
-                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
-                  </div>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <div class="yd_p_content_button_qr">
-              <el-row :gutter="12">
-                <el-col>
-                  <div v-if="readInfoVisible">
-                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
-                  </div>
-                  <div v-else>
-                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
-        </template>
-      </el-dialog>
-
 
        <!--   引导步骤10000   -->
   <el-dialog width="360px" v-model="dialogYd10000Visible" :draggable="true" :before-close="closeYdDialog"
@@ -1463,191 +1500,250 @@
                   <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
                       payData.money
                     }}.00</span></span>
-                </div>
-                <div class="medicine-bag">
-                  <span>{{ payData.account }}</span>
-                </div>
-                <div class="copy-tip">
-                  <span>长按框内</span>
-                  <span class="jtone"></span>
-                  <span>复制</span>
-                  <span class="jttwo"></span>
-                  <span>记金额</span>
-                  <span class="jtthree"></span>
-                  <span>打开跳转</span>
-                </div>
-                <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <div class="yd_p_content_button_qr">
-            <el-row :gutter="12">
-              <el-col>
-                <div v-if="readInfoVisible">
-                  <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
                 </div>
               </el-col>
             </el-row>
           </div>
         </div>
-      </template>
-    </el-dialog>
-
-    <!--   引导步骤5000   -->
-    <el-dialog width="360px" v-model="dialogYd5000Visible" :draggable="true" :before-close="closeYdDialog"
-               :style="backgroundYdImageStyle"
-               top="5vh" destroy-on-close>
-      <div style="padding: 0; margin: -20px 0 0;">
-        <div>
-          <div v-if="Number(payData.channel_code) === 2001">
-            <div v-if="tmH5Visible">
-              <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                   src="@/assets/yd_j3_tm.png">
-            </div>
-            <div v-else>
-              <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                   src="@/assets/yd_j3_tb.png">
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                </el-col>
+              </el-row>
             </div>
           </div>
+        </template>
+      </el-dialog>
+
+      <!--   引导步骤6000   -->
+      <el-dialog width="360px" v-model="dialogYd6000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <el-carousel :interval="4000" height="500px">
+            <el-carousel-item>
+              <div>
+                <div v-if="Number(payData.channel_code) === 6001">
+                  <img alt
+                       style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                       src="@/assets/yd_ec_card.jpg">
+                </div>
+              </div>
+            </el-carousel-item>
+            <!--          <el-carousel-item>
+                        <div>
+                          <div v-if="Number(payData.channel_code) === 6001">
+                            <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                                 src="@/assets/yd_ec_card.png">
+                          </div>
+                        </div>
+                      </el-carousel-item>-->
+          </el-carousel>
+          <!--        <div>
+                    <div v-if="Number(payData.channel_code) === 6001">
+                      <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                           src="@/assets/yd_ec_card.png">
+                    </div>
+                  </div>-->
         </div>
-        <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
-          <el-row>
-            <el-col>
-              <div style="height: 100px; margin-top: 20px">
-                <div class="medicine-money-bag">
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_jd_button" @click="openPayHref('jd')">前往京东支付</button>
+                    <button class="btn-copy yd_p_tb_button" @click="openPayHref('tb')">前往淘宝支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!--   引导步骤8000   -->
+      <el-dialog width="360px" v-model="dialogYd8000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 8001">
+              <div>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_dy_jd.png">
+              </div>
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
                   <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
                       payData.money
                     }}.00</span></span>
-                </div>
-                <div class="medicine-bag">
-                  <span>{{ payData.account }}</span>
-                </div>
-                <div class="copy-tip">
-                  <span>长按框内</span>
-                  <span class="jtone"></span>
-                  <span>复制</span>
-                  <span class="jttwo"></span>
-                  <span>记金额</span>
-                  <span class="jtthree"></span>
-                  <span>打开跳转</span>
-                </div>
-                <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <div class="yd_p_content_button_qr">
-            <el-row :gutter="12">
-              <el-col>
-                <div v-if="readInfoVisible">
-                  <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
                 </div>
               </el-col>
             </el-row>
           </div>
         </div>
-      </template>
-    </el-dialog>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
 
-    <!--   引导步骤6000   -->
-    <el-dialog width="360px" v-model="dialogYd6000Visible" :draggable="true" :before-close="closeYdDialog"
-               :style="backgroundYdImageStyle"
-               top="5vh" destroy-on-close>
-      <div style="padding: 0; margin: -20px 0 0;">
-        <el-carousel :interval="4000" height="500px">
-          <el-carousel-item>
-            <div>
-              <div v-if="Number(payData.channel_code) === 6001">
-                <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                     src="@/assets/yd_ec_card.jpg">
+      <!--   引导步骤9000   -->
+      <el-dialog width="360px" v-model="dialogYd9000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 9001">
+              <div>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_wy_tb.png">
               </div>
             </div>
-          </el-carousel-item>
-          <!--          <el-carousel-item>
-                      <div>
-                        <div v-if="Number(payData.channel_code) === 6001">
-                          <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                               src="@/assets/yd_ec_card.png">
-                        </div>
-                      </div>
-                    </el-carousel-item>-->
-        </el-carousel>
-        <!--        <div>
-                  <div v-if="Number(payData.channel_code) === 6001">
-                    <img alt style="width: 100%; height: 100%;border-radius: 5px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
-                         src="@/assets/yd_ec_card.png">
-                  </div>
-                </div>-->
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <div class="yd_p_content_button_qr">
-            <el-row :gutter="12">
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
               <el-col>
-                <div v-if="readInfoVisible">
-                  <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
-                </div>
-                <div v-else>
-                  <button class="btn-copy yd_p_jd_button" @click="openPayHref('jd')">前往京东支付</button>
-                  <button class="btn-copy yd_p_tb_button" @click="openPayHref('tb')">前往淘宝支付</button>
+                <div style="height: 100px; margin-top: 20px">
+                  <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                  </div>
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
                 </div>
               </el-col>
             </el-row>
           </div>
         </div>
-      </template>
-    </el-dialog>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
 
+      <!-- 提示card模态框 -->
+      <div v-if="showCardModal" class="modal">
+        <div class="modal-content">
+          <p style="font-size: 20px">未识别到合法卡密</p>
+        </div>
+      </div>
 
-    <!-- 提示card模态框 -->
-    <div v-if="showCardModal" class="modal">
-      <div class="modal-content">
-        <p style="font-size: 20px">未识别到合法卡密</p>
+      <!-- 提示copy模态框 -->
+      <div v-if="showCopyModal" class="modal">
+        <div class="modal-content">
+          <p style="font-size: 20px">复制成功</p>
+        </div>
       </div>
-    </div>
 
-    <!-- 提示copy模态框 -->
-    <div v-if="showCopyModal" class="modal">
-      <div class="modal-content">
-        <p style="font-size: 20px">复制成功</p>
+      <!-- 提示submit card模态框 -->
+      <div v-if="showSubmitCardModal" class="modal">
+        <div class="modal-content">
+          <p style="font-size: 20px">您已提交成功，等待客服核实</p>
+        </div>
       </div>
-    </div>
-
-    <!-- 提示submit card模态框 -->
-    <div v-if="showSubmitCardModal" class="modal">
-      <div class="modal-content">
-        <p style="font-size: 20px">您已提交成功，等待客服核实</p>
+      <!-- 提示submit card err模态框 -->
+      <div v-if="showSubmitErrModal" class="modal">
+        <div class="modal-content">
+          <p style="font-size: 20px">{{ showSubmitErrInfo }}</p>
+        </div>
       </div>
-    </div>
-    <!-- 提示submit card err模态框 -->
-    <div v-if="showSubmitErrModal" class="modal">
-      <div class="modal-content">
-        <p style="font-size: 20px">{{ showSubmitErrInfo }}</p>
-      </div>
-    </div>
     </div>
 
     <div v-show="notFoundVisible">
@@ -1662,10 +1758,10 @@
       <!-- 显示新的 div 的代码... -->
       <h1>订单已超时</h1>
     </div>
-  <div v-show="exVisible">
-    <!-- 显示新的 div 的代码... -->
-    <h1>订单异常，请重新下单</h1>
-  </div>
+    <div v-show="exVisible">
+      <!-- 显示新的 div 的代码... -->
+      <h1>订单异常，请重新下单</h1>
+    </div>
   </div>
 </template>
 <script>
@@ -1782,7 +1878,7 @@ watchEffect(() => {
     if (matchPassword) {
       password1100.value = matchPassword[1];
     }
-  }else {
+  } else {
     // 匹配卡号
     const matchCardNumber = inputString.value.match(cardNumberRegex);
     if (matchCardNumber) {
@@ -1861,6 +1957,7 @@ const dialogYd4000Visible = ref(false)
 const dialogYd5000Visible = ref(false)
 const dialogYd6000Visible = ref(false)
 const dialogYd8000Visible = ref(false)
+const dialogYd9000Visible = ref(false)
 const dialogYd10000Visible = ref(false)
 
 const closeYdDialog = async () => {
@@ -1874,6 +1971,7 @@ const closeYdDialog = async () => {
   dialogYd6000Visible.value = false
   dialogYd8000Visible.value = false
   dialogYd10000Visible.value = false
+  dialogYd9000Visible.value = false
 }
 
 const openYdVisible = async () => {
@@ -1936,6 +2034,13 @@ const openYdVisible = async () => {
       readInfoVisible.value = false
     }, 3000)
     dialogYd8000Visible.value = true
+  } else if (cid >= 9000 && cid < 9099) {
+    startCountdown()
+    readInfoVisible.value = true
+    setTimeout(() => {
+      readInfoVisible.value = false
+    }, 3000)
+    dialogYd9000Visible.value = true
   } else if (cid >= 10000 && cid < 10099) {
     dialogYd10000Visible.value = true
   }else {
@@ -2089,7 +2194,6 @@ const payData = ref({
 })
 
 const reqCnt = ref(0)
-
 
 
 const queryOrder = async (timerId) => {

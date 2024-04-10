@@ -1,8 +1,9 @@
 package product
 
 type WYBalanceData struct {
-	Account string `json:"account" form:"account" url:"account"`
-	Balance int    `json:"balance" form:"balance" url:"balance"`
+	Account   string `json:"account" form:"account" url:"account"`
+	TyBalance int    `json:"tyBalance" form:"tyBalance" url:"tyBalance"`
+	JsBalance int    `json:"jsBalance" form:"jsBalance" url:"jsBalance"`
 }
 
 type WYRecords struct {

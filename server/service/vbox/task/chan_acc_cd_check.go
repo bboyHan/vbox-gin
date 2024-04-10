@@ -55,7 +55,7 @@ func AccCDCheckTask() {
 	}
 
 	// 设置初始消费者数量
-	consumerCount := 30
+	consumerCount := 10
 	// 使用 WaitGroup 来等待所有消费者完成处理
 	var wg sync.WaitGroup
 	wg.Add(consumerCount)
@@ -194,7 +194,7 @@ func AccCDCheckTask() {
 					var totalSum int
 
 					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Select("IFNULL(sum(money), 0) as totalSum").
-						Where("ac_id = ?", accDB.AcId).
+						Where("ac_id = ?", accDB.AcId).Where("channel_code = ?", accDB.Cid).
 						Where("order_status = ?", 1).Scan(&totalSum).Error
 
 					if err != nil {
@@ -219,7 +219,7 @@ func AccCDCheckTask() {
 
 					var count int64
 
-					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ? and order_status = ?", accDB.AcId, 1).Count(&count).Error
+					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("channel_code = ?", accDB.Cid).Where("ac_id = ? and order_status = ?", accDB.AcId, 1).Count(&count).Error
 
 					if err != nil {
 						global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
@@ -240,6 +240,7 @@ func AccCDCheckTask() {
 				if accDB.DlyCntLimit > 0 {
 					var count int64
 					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).
+						Where("channel_code = ?", accDB.Cid).
 						Where("ac_id = ? and order_status = ? and created_at BETWEEN CURDATE() AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND", accDB.AcId, 1).Count(&count).Error
 					if err != nil {
 						global.GVA_LOG.Error("当前账号日进单限制查mysql错误，直接丢了..." + err.Error())
@@ -259,7 +260,7 @@ func AccCDCheckTask() {
 
 					var count int64
 
-					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("ac_id = ?", accDB.AcId).Count(&count).Error
+					err = global.GVA_DB.Debug().Model(&vbox.PayOrder{}).Where("channel_code = ?", accDB.Cid).Where("ac_id = ?", accDB.AcId).Count(&count).Error
 
 					if err != nil {
 						global.GVA_LOG.Error("当前账号笔数消耗查mysql错误，直接丢了..." + err.Error())
@@ -337,6 +338,16 @@ func AccCDCheckTask() {
 							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
 							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 						}
+					} else if global.WYContains(cid) { // 网易引导
+						accKey := fmt.Sprintf(global.ChanOrgWYAccZSet, orgTmp[0], cid)
+
+						if flag || accDB.Status == 0 || accDB.SysStatus == 0 { // 表示超限了，删掉处理
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem), zap.Any("acc.Status", accDB.Status), zap.Any("acc.SysStatus", accDB.SysStatus))
+						} else {
+							global.GVA_REDIS.ZAdd(context.Background(), accKey, redis.Z{Score: 0, Member: waitAccMem})
+							global.GVA_LOG.Info("CD置为可用", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+						}
 					} else if global.DyContains(cid) { // 抖音引导
 						accKey := fmt.Sprintf(global.ChanOrgDyAccZSet, orgTmp[0], cid)
 
@@ -393,6 +404,11 @@ func AccCDCheckTask() {
 
 						} else if global.J3Contains(cid) { // 剑三引导
 							accKey := fmt.Sprintf(global.ChanOrgJ3AccZSet, orgTmp[0], cid)
+							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
+							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
+
+						} else if global.WYContains(cid) { // 剑三引导
+							accKey := fmt.Sprintf(global.ChanOrgWYAccZSet, orgTmp[0], cid)
 							_ = global.GVA_REDIS.ZRem(context.Background(), accKey, waitAccMem)
 							global.GVA_LOG.Info("CD超限或关闭账号，删掉处理", zap.Any("accKey", accKey), zap.Any("waitAccMem", waitAccMem))
 
