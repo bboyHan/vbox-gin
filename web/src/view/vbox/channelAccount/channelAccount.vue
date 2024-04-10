@@ -944,6 +944,101 @@
       </template>
     </el-dialog>
 
+
+      <!--  创建 10000 -->
+      <el-dialog v-model="dialog10000FormVisible" :before-close="close10000Dialog" :draggable="true" :title="typeTitle"
+               destroy-on-close>
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="产码方式" prop="type" disabled>
+              <el-button v-model="formData.type" readonly disabled>
+                {{ formatProdType(Number(formData.type)) }}
+              </el-button>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="通道ID" prop="cid" disabled>
+              <el-input v-model="formData.cid" readonly disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="通道账户" prop="acAccount">
+              <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="账户备注" prop="acRemark">
+              <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <!--        <el-form-item label="报文" prop="token">
+                  <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                </el-form-item>-->
+        <el-form-item label="付款链接" prop="token">
+           
+              <el-input v-model="formData.token" type="textarea" :clearable="true"
+                        placeholder="请输入付款链接"/>
+        </el-form-item>
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
+          </el-col>
+          <el-col :span="1"></el-col>
+          <el-col :span="12">
+            <el-form-item label="日限额" prop="dailyLimit">
+              <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="总限额" prop="totalLimit">
+              <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="日限进单" prop="dlyCntLimit">
+              <el-input v-model.number="formData.dlyCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限进单" prop="inCntLimit">
+              <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总限拉单" prop="countLimit">
+              <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="状态开关" prop="status">
+              <el-switch v-model="formData.status" active-value="1" inactive-value="0" active-text="开启"
+                         inactive-text="关闭"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="控制策略" prop="ctlStatus">
+              <el-switch v-model="formData.ctlStatus" active-value="2" inactive-value="1" active-text="精准控制"
+                         inactive-text="模糊控制"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="returnPreStep(10000)">上一步</el-button>
+          <el-button @click="closeDialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!--  创建 4000 -->
     <el-dialog v-model="dialog4000FormVisible" :before-close="close4000Dialog" :draggable="true" :title="typeTitle"
                destroy-on-close>
@@ -1391,6 +1486,83 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closeUpd3000Dialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+
+
+    <!--  修改 10000 -->
+    <el-dialog v-model="dialogUpd10000FormVisible" :before-close="closeUpd10000Dialog" :draggable="true"
+               :title="typeTitle" destroy-on-close>
+      <el-scrollbar height="300px">
+        <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="通道ID" prop="cid">
+                <el-input v-model="formData.cid" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="账户备注" prop="acRemark">
+                <el-input v-model="formData.acRemark" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="通道账户" prop="acAccount">
+                <el-input v-model="formData.acAccount" :clearable="true" placeholder="请输入" disabled/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <!--          <el-form-item label="报文" prop="token">
+                      <el-input v-model="formData.token" type="textarea" :clearable="true" placeholder="请输入"/>
+                    </el-form-item>-->
+          <el-form-item label="付款链接" prop="token">
+            
+                <el-input v-model="formData.token" type="textarea" :clearable="true"
+                          placeholder="请输入付款链接"/>
+              
+          </el-form-item>
+          <el-row>
+            <el-col :span="1"></el-col>
+            <el-col :span="22">
+              <warning-bar title="注：默认0，则无限额控制。【日限额/总限额】为金额限制,【进单限数/拉单限数】为笔数限制"/>
+            </el-col>
+            <el-col :span="1"></el-col>
+            <el-col :span="12">
+              <el-form-item label="日限额" prop="dailyLimit">
+                <el-input v-model.number="formData.dailyLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="总限额" prop="totalLimit">
+                <el-input v-model.number="formData.totalLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="日限进单" prop="dlyCntLimit">
+                <el-input v-model.number="formData.dlyCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限进单" prop="inCntLimit">
+                <el-input v-model.number="formData.inCntLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="总限拉单" prop="countLimit">
+                <el-input v-model.number="formData.countLimit" :clearable="true" placeholder="请输入"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </el-scrollbar>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeUpd10000Dialog">取 消</el-button>
           <el-button type="primary" @click="enterDialog">确 定</el-button>
         </div>
       </template>
@@ -3414,6 +3586,7 @@ const dialog4000FormVisible = ref(false)
 const dialog5000FormVisible = ref(false)
 const dialog6000FormVisible = ref(false)
 const dialog8000FormVisible = ref(false)
+const dialog10000FormVisible = ref(false)
 
 // 系统查单补单
 const dialogSysFormVisible = ref(false)
@@ -3438,6 +3611,8 @@ const returnPreStep = (cid) => {
     dialog6000FormVisible.value = false
   } else if (cid >= 8000 && cid <= 8099) {
     dialog8000FormVisible.value = false
+  } else if (cid >= 10000 && cid <= 10099) {
+    dialog10000FormVisible.value = false
   }
 
 }
@@ -3623,6 +3798,28 @@ const close2000Dialog = () => {
 // 关闭弹窗
 const close3000Dialog = () => {
   dialog3000FormVisible.value = false
+  formData.value = {
+    acId: '',
+    acRemark: '',
+    acAccount: '',
+    acPwd: '',
+    cid: '',
+    countLimit: 0,
+    inCntLimit: 0,
+    dlyCntLimit: 0,
+    dailyLimit: 0,
+    totalLimit: 0,
+    status: 0,
+    sysStatus: 0,
+    ctlStatus: 0,
+    uid: 0,
+  }
+}
+
+
+// 关闭弹窗
+const close10000Dialog = () => {
+  dialog10000FormVisible.value = false
   formData.value = {
     acId: '',
     acRemark: '',
@@ -3929,6 +4126,7 @@ const closeDialog = () => {
   dialog5000FormVisible.value = false
   dialog6000FormVisible.value = false
   dialog8000FormVisible.value = false
+  dialog10000FormVisible.value = false
   dialogUpd1000FormVisible.value = false
   dialogUpd1100FormVisible.value = false
   dialogUpd1200FormVisible.value = false
@@ -3938,6 +4136,7 @@ const closeDialog = () => {
   dialogUpd5000FormVisible.value = false
   dialogUpd6000FormVisible.value = false
   dialogUpd8000FormVisible.value = false
+  dialogUpd10000FormVisible.value = false
   dialogTransferFormVisible.value = false
 
   formData.value = {
@@ -4755,6 +4954,9 @@ function handleProdClick(node) {
   } else if (channelCode >= 8000 && channelCode < 8099) {
     formData.value.type = 1
     dialog8000FormVisible.value = true
+  }   else if (channelCode >= 10000 && channelCode < 10099) {
+    formData.value.type = 2
+    dialog10000FormVisible.value = true
   }
 }
 

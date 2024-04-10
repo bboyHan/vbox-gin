@@ -125,15 +125,22 @@ func (channelPayCodeService *ChannelPayCodeService) CreateChannelPayCode(vboxCha
 		global.GVA_LOG.Info("图片解析内容 ----", zap.Any("content", content))
 		vboxChannelPayCode.ImgContent = content
 	} else if vboxChannelPayCode.Type == 2 {
-		var wxSign, portalSerialNo string
-		wxSign, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "wx_sign")
-		portalSerialNo, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "portal_serial_no")
-		if err != nil {
-			return err
+		if global.JymContains(vboxChannelPayCode.Cid) {
+			vboxChannelPayCode.ImgContent = vboxChannelPayCode.ImgBaseStr
+			vboxChannelPayCode.PlatId, err = utils.FindUrlValueByKey(vboxChannelPayCode.ImgBaseStr, "contextId")
+			global.GVA_LOG.Info("url解析内容 ----", zap.Any("ImgContent", vboxChannelPayCode.ImgContent), zap.Any("PlatId", vboxChannelPayCode.PlatId))
+
+		} else {
+			var wxSign, portalSerialNo string
+			wxSign, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "wx_sign")
+			portalSerialNo, err = utils.FindJsonValueByKey(vboxChannelPayCode.ImgBaseStr, "portal_serial_no")
+			if err != nil {
+				return err
+			}
+			vboxChannelPayCode.ImgContent = wxSign
+			vboxChannelPayCode.PlatId = portalSerialNo
+			global.GVA_LOG.Info("图片解析内容 ----", zap.Any("ImgContent", vboxChannelPayCode.ImgContent), zap.Any("PlatId", vboxChannelPayCode.PlatId))
 		}
-		vboxChannelPayCode.ImgContent = wxSign
-		vboxChannelPayCode.PlatId = portalSerialNo
-		global.GVA_LOG.Info("图片解析内容 ----", zap.Any("ImgContent", vboxChannelPayCode.ImgContent), zap.Any("PlatId", vboxChannelPayCode.PlatId))
 	} else {
 		return fmt.Errorf("请传入正确的类型")
 	}

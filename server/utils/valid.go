@@ -394,3 +394,19 @@ func FindJsonValueByKey(jsonStr, key string) (string, error) {
 
 	return value, nil
 }
+
+func FindUrlValueByKey(urlStr, key string) (string, error) {
+	// 解析URL
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		fmt.Println("解析URL时出错:", err)
+		return "", fmt.Errorf("不合法的支付链接")
+	}
+	// 获取查询参数
+	queryParams := u.Query()
+
+	// 获取contextId参数的值
+	contextId := queryParams.Get(key)
+	global.GVA_LOG.Info("contextId的值为:", zap.Any(key, contextId))
+	return contextId, nil
+}

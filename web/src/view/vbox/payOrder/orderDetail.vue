@@ -496,7 +496,75 @@
           </el-row>
         </div>
       </div>
-
+   <!--   10000 交易猫   -->
+   <div v-if="payTypeVisible >= 10000 && payTypeVisible < 10099">
+        <div class="p_container">
+          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div class="p_content" :style="backgroundImageStyle">
+            <el-row :gutter="12">
+              <el-col style="width: 80px; height: 80px">
+              </el-col>
+<!--              
+              <el-col>
+                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
+              </el-col> -->
+              <el-col>
+                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                  <el-icon style="margin-right: 5px">
+                    <WarningFilled/>
+                  </el-icon>
+                  请在规定时间内付款！
+                  <div>
+                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                    <span v-else>-1 （已过期）</span>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="24">
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
+          <el-row>
+            <el-col>
+              <div style="height: 100px; margin-top: 20px">
+                <!-- <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                </div> -->
+                <div class="medicine-bag">
+                  <span>{{ payData.account }}</span>
+                </div>
+                <div class="copy-tip">
+                  <span>长按框内</span>
+                  <span class="jtone"></span>
+                  <span>复制</span>
+                  <span class="jttwo"></span>
+                  <span>记金额</span>
+                  <span class="jtthree"></span>
+                  <span>打开跳转</span>
+                </div>
+                <div v-if="!copyInfoVisible">
+                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                </div>
+                <div v-else>
+                  <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="p_content_button">
+          <el-row :gutter="12">
+            <el-col :span="24">
+              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
 
            <!--   8000- 引导   -->
            <div v-if="payTypeVisible >= 8000 && payTypeVisible < 8099">
@@ -1310,6 +1378,71 @@
       </el-dialog>
 
 
+       <!--   引导步骤10000   -->
+  <el-dialog width="360px" v-model="dialogYd10000Visible" :draggable="true" :before-close="closeYdDialog"
+                 :style="backgroundYdImageStyle"
+                 top="5vh" destroy-on-close>
+        <div style="padding: 0; margin: -20px 0 0;">
+          <div>
+            <div v-if="Number(payData.channel_code) === 10000">
+              <div>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yc_zfb_jym.jpg">
+              </div>
+            </div>
+          </div>
+          <div class="p_content_yd_inner" :style="backgroundImageStyle" style="margin-top: 10px;">
+            <el-row>
+              <el-col>
+                <div style="height: 100px; margin-top: 20px">
+                  <!-- <div class="medicine-money-bag">
+                  <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
+                      payData.money
+                    }}.00</span></span>
+                  </div> -->
+                  <div class="medicine-bag">
+                    <span>{{ payData.account }}</span>
+                  </div>
+                  <div class="copy-tip">
+                    <span>长按框内</span>
+                    <span class="jtone"></span>
+                    <span>复制</span>
+                    <span class="jttwo"></span>
+                    <span>记金额</span>
+                    <span class="jtthree"></span>
+                    <span>打开跳转</span>
+                  </div>
+                  <div v-if="!copyInfoVisible">
+                    <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <div class="yd_p_content_button_qr">
+              <el-row :gutter="12">
+                <el-col>
+                  <div v-if="readInfoVisible">
+                    <button class="yd_read_p_button" @click="">我已阅读并知晓({{ countdownTime }}s)</button>
+                  </div>
+                  <div v-else>
+                    <button class="btn-copy yd_p_button" @click="openPay">点我支付</button>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </template>
+      </el-dialog>
+
+
+
 
     <!--   步骤指导4000   -->
     <el-dialog width="360px" v-model="dialogYd4000Visible" :draggable="true" :before-close="closeYdDialog"
@@ -1728,6 +1861,7 @@ const dialogYd4000Visible = ref(false)
 const dialogYd5000Visible = ref(false)
 const dialogYd6000Visible = ref(false)
 const dialogYd8000Visible = ref(false)
+const dialogYd10000Visible = ref(false)
 
 const closeYdDialog = async () => {
   dialogYd1000Visible.value = false
@@ -1739,6 +1873,7 @@ const closeYdDialog = async () => {
   dialogYd5000Visible.value = false
   dialogYd6000Visible.value = false
   dialogYd8000Visible.value = false
+  dialogYd10000Visible.value = false
 }
 
 const openYdVisible = async () => {
@@ -1801,7 +1936,9 @@ const openYdVisible = async () => {
       readInfoVisible.value = false
     }, 3000)
     dialogYd8000Visible.value = true
-  } else {
+  } else if (cid >= 10000 && cid < 10099) {
+    dialogYd10000Visible.value = true
+  }else {
 
   }
 }

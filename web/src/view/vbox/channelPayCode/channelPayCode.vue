@@ -580,9 +580,15 @@
           <el-descriptions-item label="平台ID" :span="2">
             {{ formData.platId }}
           </el-descriptions-item>
-          <el-descriptions-item label="预处理" :span="2">
-            <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
-          </el-descriptions-item>
+          <div>
+              <el-descriptions-item v-if="formData.cid === '10000'" label="备注" :span="2">
+              {{ formData.imgBaseStr }}
+            </el-descriptions-item>
+            <el-descriptions-item  v-else label="预处理" :span="2">
+              <img :src="qrcodeUrl" alt="QR Code" style="height: 200px"/>
+            </el-descriptions-item>
+          </div>
+
           <!--          <el-descriptions-item label="付款码">
                       <el-image :src="formData.imgBaseStr" fit="contain" class="thumbnail-image"/>
                     </el-descriptions-item>-->
@@ -1281,6 +1287,7 @@ const detailShow = ref(false)
 // 打开详情弹窗
 const openDetailShow = () => {
   detailShow.value = true
+  console.log(JSON.stringify(formData.value))
 }
 
 

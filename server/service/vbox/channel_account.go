@@ -679,6 +679,11 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		if !isCK {
 			return errors.New("ck信息不合法")
 		}
+	} else if global.JymContains(vca.Cid) {
+		isUrl := http2.IsJymUrl(token)
+		if !isUrl {
+			return errors.New("url不合法")
+		}
 	} else if global.ECContains(vca.Cid) {
 		isCK := http2.IsValidCookie(token)
 		if !isCK {

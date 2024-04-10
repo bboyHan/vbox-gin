@@ -121,6 +121,18 @@ func IsIP(input string) bool {
 	return true
 }
 
+func IsJymUrl(input string) bool {
+	subString := "https://m.jiaoyimao.com/item"
+
+	if strings.Contains(input, subString) {
+		fmt.Println("字符串包含子字符串 https://m.jiaoyimao.com/item")
+		return true
+	} else {
+		fmt.Println("字符串不包含子字符串 https://m.jiaoyimao.com/item")
+		return false
+	}
+}
+
 func Trim(str string) string {
 	regex := regexp.MustCompile(`\s+`)
 	return regex.ReplaceAllString(str, "")
