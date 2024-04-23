@@ -7,16 +7,30 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func FindWYAccNick(ck string) (nickname string, err error) {
 	record, err := QryWYRecord(ck)
+	if err != nil {
+		return "", err
+	}
 	return record.Account, err
 }
 
 func QryWYRecord(ck string) (*product.WYBalanceData, error) {
 	client := vbHttp.NewHTTPClient()
 	var record product.WYBalanceData
+
+	if strings.Contains(ck, "service.mkey.163.com/mpay/games") {
+		rt, _ := client.Get(ck, nil)
+
+		l := rt.Headers["Location"]
+		r2, _ := client.Get(l, nil)
+
+		fmt.Println(r2.Headers)
+		ck = r2.Headers["Set-Cookie"]
+	}
 
 	URL := "http://ecard.163.com/account/query_balance"
 

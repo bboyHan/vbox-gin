@@ -192,7 +192,7 @@
           <el-row>
             <el-col>
               <div style="height: 100px; margin-top: 5px">
-                <div style=" color: #0c87ec; padding: 5px">方式一：手动输入</div>
+                <div style=" color: #0c87ec; padding: 5px">方式1：手动输入</div>
                 <div class="">
                   <el-input
                       v-model="inputStringCard"
@@ -211,7 +211,7 @@
                       :parser="(value) => value.replace(/密码：\s?|(-*)/g, '')"
                   />
                 </div>
-                <div style=" color: #0c87ec; padding: 5px">方式二：复制卡密信息自动识别</div>
+                <div style=" color: #0c87ec; padding: 5px">方式2：复制卡密信息自动识别</div>
                 <div class="medicine-jw-bag">
                   <textarea v-model="inputString"
                             :placeholder="`粘贴示例：\n您已购买成功(订单号:205...)，如下：\n卡号：2312290766321121;\n密码：2732221581323347;`"></textarea>
@@ -527,7 +527,7 @@
             <el-row>
               <el-col>
                 <div >
-                  
+
                   <div class="medicine-bag">
                     <span>{{ payData.account }}</span>
                   </div>
@@ -553,7 +553,7 @@
 
 
         </div>
-       
+
         <div class="p_content_button_8000">
           <button class="btn-copy p_button_8000" @click="openYdVisible">阅读帮助</button>
           <!-- <button class="btn-copy p_button_8000" @click="openYdVisible">点击付款</button> -->

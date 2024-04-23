@@ -326,10 +326,12 @@ func NewHTTPClient(proxyAddr ...string) *FastHttpClient {
 	}
 	return &FastHttpClient{
 		client: &fasthttp.Client{
-			Dial:                dialFunc,
-			MaxConnsPerHost:     100,
-			ReadBufferSize:      8192, // 设置 ReadBufferSize 大小
-			WriteBufferSize:     8192,
+			Dial:            dialFunc,
+			MaxConnsPerHost: 100,
+			ReadBufferSize:  81920, // 16KB 缓冲区大小
+			//ReadBufferSize:      8192, // 设置 ReadBufferSize 大小
+			WriteBufferSize: 81920,
+			//WriteBufferSize:     8192,
 			MaxIdleConnDuration: 10 * time.Second,
 		},
 	}

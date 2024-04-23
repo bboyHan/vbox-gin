@@ -724,11 +724,11 @@ func (vcaService *ChannelAccountService) CreateChannelAccount(vca *vbox.ChannelA
 		if account == "" || zoneCode == "" || SN == "" || sign == "" {
 			return errors.New("账号信息不完整")
 		}
-		if vca.Cid == "2001" && zoneCode != "z22" {
-			return errors.New("仅支持双线二区参数，请核查")
+		if vca.Cid == "2001" && zoneCode != "z21" {
+			return errors.New("仅支持双线区参数，请核查")
 		}
 		if vca.Cid == "2002" && zoneCode != "z05" {
-			return errors.New("仅支持电信五区参数，请核查")
+			return errors.New("仅支持电信区参数，请核查")
 		}
 		vca.AcAccount = account
 	} else if global.WYContains(vca.Cid) {
@@ -1076,7 +1076,7 @@ func (vcaService *ChannelAccountService) UpdateChannelAccount(vca vbox.ChannelAc
 		if account == "" || zoneCode == "" || SN == "" || sign == "" {
 			return errors.New("账号信息不完整")
 		}
-		if vca.Cid == "2001" && zoneCode != "z22" {
+		if vca.Cid == "2001" && zoneCode != "z21" {
 			return errors.New("仅支持双线二区参数，请核查")
 		}
 		if vca.Cid == "2002" && zoneCode != "z05" {

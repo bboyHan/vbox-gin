@@ -129,6 +129,31 @@ func (vpoApi *PayOrderApi) CallbackTestSimple(c *gin.Context) {
 	response.OkWithMessage("回调成功", c)
 }
 
+// QueryOrderNoAuth 查询QueryOrderNoAuth
+// @Tags VboxPayOrder
+// @Summary 查询QueryOrderSimple
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body vbox.VboxPayOrder true "查询QueryOrderSimple"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /base/create [get]
+func (vpoApi *PayOrderApi) QueryOrderNoAuth(c *gin.Context) {
+	var vpo vboxReq.QueryOrderSimple
+	err := c.ShouldBind(&vpo) // 可接收 from - json - xml
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if order, err := payOrderService.QueryOrderNoAuth(&vpo, c); err != nil {
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithDetailed(order, "查询成功", c)
+	}
+}
+
 // QueryOrderSimple 查询QueryOrderSimple
 // @Tags VboxPayOrder
 // @Summary 查询QueryOrderSimple

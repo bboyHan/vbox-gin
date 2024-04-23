@@ -110,6 +110,10 @@ func (channelShopService *ChannelShopService) CreateChannelShop(channelShop *vbo
 			flag = utils.ValidJDUrl(c.Address)
 		case "9001": //网易 tb
 			flag = utils.ValidTBUrl(c.Address)
+		case "9002": //网易 pdd
+			flag = utils.ValidPddUrl(c.Address)
+		case "9003": //网易 jd
+			flag = utils.ValidJDUrl(c.Address)
 		}
 
 		if !flag {
@@ -732,7 +736,7 @@ func getShopOkstatisResp(ids []uint) (err error) {
 		//shopMap[item.ShopId] = defaultItem
 		key := "statis:chShop:" + item.ShopId
 		jsonStr, err := json.Marshal(defaultItem)
-		fmt.Println("redis set,", jsonStr)
+		//fmt.Println("redis set,", jsonStr)
 		err = global.GVA_REDIS.Set(context.Background(), key, jsonStr, 5*time.Minute).Err()
 		if err != nil {
 			fmt.Println(err)

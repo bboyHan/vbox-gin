@@ -166,6 +166,8 @@ func WYContains(target string) bool {
 	set := map[string]bool{
 		"9000": true,
 		"9001": true,
+		"9002": true,
+		"9003": true,
 	}
 	_, found := set[target]
 	return found

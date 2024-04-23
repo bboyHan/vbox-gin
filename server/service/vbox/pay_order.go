@@ -375,6 +375,49 @@ func (vpoService *PayOrderService) CallbackOrderExt(vpo *vboxReq.CallBackExtReq,
 	return rep, err
 }
 
+// QueryOrderNoAuth 查询QueryOrderNoAuth
+//
+//	p := &vboxReq.QueryOrderSimple{
+//			OrderId:        "123",
+//		}
+func (vpoService *PayOrderService) QueryOrderNoAuth(vpo *vboxReq.QueryOrderSimple, ctx *gin.Context) (rep *vboxRep.OrderSimpleRes, err error) {
+
+	// 1. 查单
+	var order vbox.PayOrder
+	key := fmt.Sprintf(global.PayOrderKey, vpo.OrderId)
+	rdRes, err := global.GVA_REDIS.Get(context.Background(), key).Bytes()
+	if err == redis.Nil { // redis中还没有的情况，查一下库，并且去匹配设备信息
+		fmt.Println("redis key does not exist")
+		err = global.GVA_DB.Model(&vbox.PayOrder{}).Where("order_id = ?", vpo.OrderId).First(&order).Error
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		fmt.Println("error:", err)
+	} else {
+		//fmt.Println("从缓存里拿result:", rdRes)
+		err = json.Unmarshal(rdRes, &order)
+	}
+
+	var ext string
+	if order.PlatId != "" {
+		ext = "_"
+	}
+
+	rep = &vboxRep.OrderSimpleRes{
+		OrderId:     order.OrderId,
+		Account:     order.AcAccount,
+		Money:       order.Money,
+		ResourceUrl: order.ResourceUrl,
+		Status:      order.OrderStatus,
+		ExpTime:     *order.ExpTime,
+		Ext:         ext,
+		ChannelCode: order.ChannelCode,
+	}
+
+	return rep, err
+}
+
 // QueryOrderSimple 查询QueryOrderSimple
 //
 //	p := &vboxReq.QueryOrderSimple{

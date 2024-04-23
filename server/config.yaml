@@ -226,13 +226,13 @@ system:
     use-mq-task: true
     timer-task: false
 mq-task:
-    order-wait: true
-    order-confirm: true
-    order-callback: true
-    acc-enable-check: true
-    pay-code-cd-check: true
-    pay-code-exp-check: true
-    acc-cd-check: true
+    order-wait: false
+    order-confirm: false
+    order-callback: false
+    acc-enable-check: false
+    pay-code-cd-check: false
+    pay-code-exp-check: false
+    acc-cd-check: false
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

@@ -34,26 +34,45 @@
       <!--   1000 引导   -->
       <div v-if="payTypeVisible >= 1000 && payTypeVisible < 1099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
               <el-col>
-                <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
+                  </div>
+                  <div v-if="Number(payData.channel_code) === 1006">
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中点<b
+                        style="color: #3f75da;">一键复制</b>步骤信息
+                    </div>
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 跳转微信，打开任意<b
+                        style="color: #3f75da;">聊天窗口</b>，粘贴发送复制内容，再根据提示步骤操作支付！
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                        style="color: #3f75da;">复制指定账号</b>
+                    </div>
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                        style="color: #3f75da;">粘贴指定账号</b>
+                    </div>
+                  </div>
+                </div>
               </el-col>
-              <el-col>
-                <p v-if="Number(payData.channel_code) === 1003" style="color: red;margin-right: 20px;margin-left: 20px">
-                  充值时必须<b style="color: blue;">选择【Q币】并粘贴账号</b>付款即可到账！</p>
-                <p v-else-if="Number(payData.channel_code) === 1006"
-                   style="color: red;margin-right: 20px;margin-left: 20px">
-                  点击<b style="color: blue;">【一键复制】</b>跳转微信，打开任意<b style="color: blue;">【聊天窗口】</b>粘贴发送复制内容，再根据提示步骤操作支付！
-                </p>
-                <p v-else style="color: red;margin-right: 20px;margin-left: 20px">充值前<b style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！
-                </p>
-              </el-col>
-              <el-col>
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -69,13 +88,14 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
         <div class="p_content_inner" :style="backgroundImageStyle" style="margin-top: 20px;">
           <el-row>
             <el-col>
+<!--              <div style="text-align: center; color: #5a5e62; padding: 10px">请复制以下账号<b style="color: red">（必须）</b></div>-->
               <div style="height: 100px; margin-top: 20px">
                 <div class="medicine-money-bag">
                   <span><span style="color: red">牢记</span>充值金额：<span style="color: blue">￥{{
@@ -104,7 +124,7 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                 </div>
                 <div v-else>
                   <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
@@ -116,18 +136,8 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <div v-if="Number(payData.channel_code) === 1003">
-                <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">②
-                  点击付款
-                </button>
-              </div>
-              <div v-else-if="Number(payData.channel_code) === 1007">
-                <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 15px">②
-                  点我付款,选择"去拼单"
-                </button>
-              </div>
-              <div v-else>
-                <button class="btn-copy p_button" @click="openYdVisible">② 点我付款</button>
+              <div>
+                <button class="btn-copy p_button" @click="openYdVisible">点我付款</button>
               </div>
             </el-col>
           </el-row>
@@ -137,14 +147,24 @@
       <!--   1100 JW 引导   -->
       <div v-if="payTypeVisible >= 1100 && payTypeVisible < 1199">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
-          <div class="p_content" :style="backgroundImageStyle">
+          <!--          <div class="p_blue-section" v-for="index in 10" :key="index"-->
+          <!--               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
+          <div class="p_content_card" :style="backgroundImageStyle">
             <el-row :gutter="12">
               <el-col
                   style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
                 充值须知
-                <span style="color: #ff6200;margin-left: 5px"
+                <span style="color: #ff6200;margin-left: 3px"
                       v-if="Number(payData.channel_code) === 1101">【智选一卡通】</span>
                 <span style="color: #ff6200;margin-left: 5px"
                       v-if="Number(payData.channel_code) === 1102">【聚力一卡通】</span>
@@ -156,34 +176,44 @@
                       v-if="Number(payData.channel_code) === 1105">【顺景卡】</span>
               </el-col>
               <el-col style="text-align: left">
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">1. <b
-                    style="color: blue;">【点此付款】</b>跳转淘宝根据提示购买
-                </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【获取并复制卡密】<b
-                    style="color: blue;">联系淘宝客服</b>，获取并复制卡密信息，<b
-                    style="color: blue;">返回本页面！</b>
-                </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【粘贴卡密】<b style="color: blue;">在下方输入框中,
-                  粘贴卡密</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">4. <b style="color: blue;"></b><b
-                    style="color: blue;">【提交卡密】</b>确认并提交卡密信息
-                </div>
-              </el-col>
-              <el-col>
-                <div style="color: #6B7687; margin-top: 10px; font-size: 60px">￥{{ payData.money }}.00</div>
-              </el-col>
-              <el-col>
-                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px">
-                    <WarningFilled/>
-                  </el-icon>
-                  请在规定时间内付款！
-                  <div>
-                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
-                    <span v-else>-1 （已过期）</span>
+                <div style="padding: 2px">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 请在商城搜索
+                    <b><span style="color: #3f75da"
+                             v-if="Number(payData.channel_code) === 1101">智选一卡通</span>
+                      <span style="color: #3f75da"
+                            v-if="Number(payData.channel_code) === 1102">聚力一卡通</span>
+                      <span style="color: #3f75da"
+                            v-if="Number(payData.channel_code) === 1103">泰岳卡</span>
+                      <span style="color: #3f75da"
+                            v-if="Number(payData.channel_code) === 1104">乐游权益卡</span>
+                      <span style="color: #3f75da"
+                            v-if="Number(payData.channel_code) === 1105">顺景卡</span></b>并购买
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 付款时随便填写账号，<b
+                      style="color: #3f75da;">付款成功后点击订单详情</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 点击联系客服<b
+                      style="color: #3f75da;">获取卡号和密码</b>，正确输入卡密
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">4. 一定要点<b style="color: #3f75da;">提交卡密</b>，完成提交！否则无法核实！
                   </div>
                 </div>
               </el-col>
+              <!--              <el-col>
+                              <div style="color: #6B7687; margin-top: 10px; font-size: 60px">￥{{ payData.money }}.00</div>
+                            </el-col>
+                            <el-col>
+                              <div style="color: #e81239; margin-top: 10px; font-size: 16px">
+                                <el-icon style="margin-right: 5px">
+                                  <WarningFilled/>
+                                </el-icon>
+                                请在规定时间内付款！
+                                <div>
+                                  <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                                  <span v-else>-1 （已过期）</span>
+                                </div>
+                              </div>
+                            </el-col>-->
               <el-col :span="24">
 
               </el-col>
@@ -193,7 +223,7 @@
         <div class="p_content_card_info_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">① 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">点此跳转至商城购买</button>
             </el-col>
           </el-row>
         </div>
@@ -201,11 +231,12 @@
           <el-row>
             <el-col>
               <div style="height: 100px; margin-top: 5px">
-                <div style=" color: #0c87ec; padding: 5px">方式一：手动输入</div>
+                <div style="text-align: center; color: #5a5e62; padding: 10px">可选择以下方式<b style="color: red">（二选一）</b></div>
+                <div style="font-size:10px; text-align: left; padding-left: 15px">方式1：手动输入</div>
                 <div class="">
                   <el-input
                       v-model="inputStringCard"
-                      style="width: 240px"
+                      style="width: 280px; padding: 2px"
                       placeholder="输入卡号"
                       maxlength="20"
                       :formatter="(value) => `卡号： ${value}`"
@@ -213,23 +244,23 @@
                   />
                   <el-input
                       v-model="inputStringPwd"
-                      style="width: 240px"
+                      style="width: 280px; padding: 2px"
                       maxlength="20"
                       placeholder="输入密码"
                       :formatter="(value) => `密码： ${value}`"
                       :parser="(value) => value.replace(/密码：\s?|(-*)/g, '')"
                   />
                 </div>
-                <div style=" color: #0c87ec; padding: 5px">方式二：复制卡密信息自动识别</div>
+                <div style="font-size:10px; text-align: left; padding-left: 15px; padding-top: 5px">方式2：复制卡密信息自动识别</div>
                 <div class="medicine-jw-bag">
-                  <textarea v-model="inputString"
+                  <textarea style="font-size: 12px" v-model="inputString"
                             :placeholder="`粘贴示例：\n您已购买成功(订单号:205...)，如下：\n卡号：2312290766321121;\n密码：2732221581323347;`"></textarea>
                   <!--                  <el-input v-model="inputString" placeholder="请输入待匹配的字符串"-->
                   <!--                            style=" border: none;background-color: transparent;"></el-input>-->
                   <!-- 在这里显示匹配到的卡号和密码 -->
                 </div>
                 <div>
-                  <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
+                  <button class="btn-copy copy_button" @click="">粘贴智能识别</button>
                   <div class="medicine-jw-card-info-bag">
                     <div v-if="card1100Number && password1100" class="result-container">
                       <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b
@@ -246,13 +277,13 @@
                   <div v-if="card1100Number && password1100" class="result-container">
                     <el-row :gutter="12">
                       <el-col :span="24">
-                        <button class="btn-copy p_submit_success_button" @click="open1100CardVisible">③ 提交卡密
+                        <button class="btn-copy p_submit_success_button" @click="open1100CardVisible">提交卡密
                         </button>
                       </el-col>
                     </el-row>
                   </div>
                   <div v-else>
-                    <button class="btn-copy p_submit_button" @click="warnCardInfo">③ 提交卡密</button>
+                    <button class="btn-copy p_submit_button" @click="warnCardInfo">提交卡密</button>
                   </div>
                 </div>
 
@@ -265,11 +296,21 @@
       <!--   1200 引导   -->
       <div v-if="payTypeVisible >= 1200 && payTypeVisible < 1299">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+<!--              <el-col style="width: 80px; height: 80px">
               </el-col>
               <el-col>
               </el-col>
@@ -293,7 +334,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -342,32 +383,47 @@
       <!--   2000 引导   -->
       <div v-if="payTypeVisible >= 2000 && payTypeVisible < 2099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
               <el-col
-                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 20px;margin-bottom:-20px;color: #6B7687;">
                 充值须知
               </el-col>
-              <el-col style="text-align: left">
-                <div v-if="Number(payData.channel_code) === 2001">
-                  <div style="color: red;margin-right: 20px;margin-left: 20px;">付款前核对金额并<b
-                      style="color: blue;">【复制账号】，</b>根据提示跳转淘宝购买
+              <el-col>
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
                   </div>
-                </div>
-                <div v-if="Number(payData.channel_code) === 2002">
-                  <div style="color: red;margin-right: 20px;margin-left: 20px;">付款前核对金额并<b
-                      style="color: blue;">【复制账号】，</b>根据提示跳转淘宝，<b
-                      style="color: blue;">必须手动输入游戏大区【电信五区】</b>，粘贴指定账号付款即可
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                      style="color: #3f75da;">复制指定账号</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                      style="color: #3f75da;">粘贴指定账号</b>
+                  </div>
+                  <div v-if="Number(payData.channel_code) === 2002">
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">4. 购买时必须手动输入<b
+                        style="color: #3f75da;">【区/服】</b>：<b
+                        style="color: red;">电信五区</b>
+                    </div>
                   </div>
                 </div>
               </el-col>
-<!--              <el-col>-->
-<!--                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b-->
-<!--                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>-->
-<!--              </el-col>-->
-              <el-col>
+              <!--              <el-col>-->
+              <!--                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b-->
+              <!--                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>-->
+              <!--              </el-col>-->
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -383,7 +439,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -431,8 +487,18 @@
       <div v-if="payTypeVisible >= 3000 && payTypeVisible < 3099">
         <div class="p_container">
           <!--        <div class="p_blue-section" v-for="(color, index) in blueColors" :key="index" :style="{ backgroundColor: color }"></div>-->
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content">
             <el-row :gutter="12">
               <el-col
@@ -440,17 +506,17 @@
                 充值须知
               </el-col>
               <el-col style="text-align: left">
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">1. 仅支持<b
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">1. 仅支持<b
                     style="color: blue;">【后置摄像头扫码】</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 【PC端】<b
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">2. 【PC端】<b
                     style="color: blue;">直接微信</b>扫一扫
                 </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 【手机端】<b style="color: blue;">使用其他设备,微信扫一扫支付,
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">3. 【手机端】<b style="color: blue;">使用其他设备,微信扫一扫支付,
                   不支持相册识别</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">4.<b style="color: blue;">
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">4.<b style="color: blue;">
                   一个设备展示二维码, </b>另一个设备<b style="color: blue;">进行扫描</b></div>
               </el-col>
-              <el-col>
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -470,8 +536,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-                <!--                <el-button class="p_button" type="primary">复制充值账号 立即付款</el-button>-->
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -508,7 +573,7 @@
         <div class="p_content_button_qr">
           <el-row :gutter="12">
             <el-col>
-              <button class="p_button" @click="">扫码直付</button>
+              <button class="p_button" @click="">扫上方二维码付款</button>
             </el-col>
           </el-row>
         </div>
@@ -519,8 +584,18 @@
    <!--   10000 交易猫   -->
    <div v-if="payTypeVisible >= 10000 && payTypeVisible < 10099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
               <el-col style="width: 80px; height: 80px">
@@ -593,15 +668,26 @@
                :style="{ backgroundColor: generateColor(index) }"></div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 20px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
               <!--              <el-col>
                               <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
                             </el-col>-->
               <el-col>
-                <!--                <div style="color: #6B7687; margin-top: 10px; font-size: 16px">无法充值或提示错误，请联系客服！</div>-->
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                      style="color: #3f75da;">复制指定账号</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                      style="color: #3f75da;">粘贴指定账号</b>
+                  </div>
+                </div>
               </el-col>
-              <el-col>
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -617,7 +703,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -643,7 +729,7 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                 </div>
                 <div v-else>
                   <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
@@ -655,7 +741,7 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">点我付款</button>
             </el-col>
           </el-row>
         </div>
@@ -664,20 +750,37 @@
       <!--   5000 引导   -->
       <div v-if="payTypeVisible >= 5000 && payTypeVisible < 5099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 20px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
-                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              <el-col style="text-align: left">
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                      style="color: #3f75da;">复制指定账号</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                      style="color: #3f75da;">粘贴指定账号</b>
+                  </div>
+                </div>
               </el-col>
-              <el-col>
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -693,7 +796,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -719,7 +822,7 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                 </div>
                 <div v-else>
                   <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
@@ -731,7 +834,7 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">点我付款</button>
             </el-col>
           </el-row>
         </div>
@@ -740,8 +843,18 @@
       <!--   6000 卡密 引导   -->
       <div v-if="payTypeVisible >= 6000 && payTypeVisible < 6099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
               <el-col
@@ -749,32 +862,14 @@
                 充值须知
               </el-col>
               <el-col style="text-align: left">
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">1. 充值前<b
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前<b
                     style="color: blue;">核对【订单金额】</b></div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">2. 可自行前往<b style="color: blue;">京东/淘宝/抖音/各大商城</b>购买卡密
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">2. 可自行前往<b style="color: blue;">京东/淘宝/抖音/各大商城</b>购买卡密
                 </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">3. 根据指导步骤<b style="color: blue;">付款并获取卡号</b>
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">3. 根据指导步骤<b style="color: blue;">付款并获取卡号</b>
                 </div>
-                <div style="color: red;margin-right: 20px;margin-left: 20px;">4.<b style="color: blue;"> 复制卡号</b>在下方框输入进行<b
+                <div style="color: gray;margin-right: 20px;margin-left: 20px;">4. 一定要<b style="color: blue;">复制卡号</b>在下方框输入进行<b
                     style="color: blue;">提交</b></div>
-              </el-col>
-              <el-col>
-                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
-              </el-col>
-              <el-col>
-                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px">
-                    <WarningFilled/>
-                  </el-icon>
-                  请在规定时间内付款！
-                  <div>
-                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
-                    <span v-else>-1 （已过期）</span>
-                  </div>
-                </div>
-              </el-col>
-              <el-col :span="24">
-
               </el-col>
             </el-row>
           </div>
@@ -782,7 +877,7 @@
         <div class="p_content_card_info_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 16px">① 点我购买"京东E卡"
+              <button class="btn-copy p_button" @click="openYdVisible" style="font-size: 16px">点此跳转购买"京东E卡"
               </button>
             </el-col>
           </el-row>
@@ -799,7 +894,7 @@
                   <!-- 在这里显示匹配到的卡号和密码 -->
                 </div>
                 <div>
-                  <button class="btn-copy copy_button" @click="">② 粘贴智能识别</button>
+                  <button class="btn-copy copy_button" @click="">粘贴智能识别</button>
                   <div class="medicine-card-info-bag">
                     <div v-if="card6000Number" class="result-container">
                       <p><strong style="padding-right: 10px;font-size: 14px">卡号:</strong><b
@@ -809,18 +904,24 @@
                       <p style="color: #c4bdbd;">未识别到卡号，请核对是否包含16位卡号</p>
                     </div>
                   </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                      style="color: #3f75da;">复制指定账号</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                      style="color: #3f75da;">粘贴指定账号</b>
+                  </div>
                 </div>
                 <div class="p_content_card_submit_button">
                   <div v-if="card6000Number" class="result-container">
                     <el-row :gutter="12">
                       <el-col :span="24">
-                        <button class="btn-copy p_submit_success_button" @click="open6000CardVisible">③ 提交卡号
+                        <button class="btn-copy p_submit_success_button" @click="open6000CardVisible">提交卡密
                         </button>
                       </el-col>
                     </el-row>
                   </div>
                   <div v-else>
-                    <button class="btn-copy p_submit_button" @click="warnCardInfo">③ 提交卡号</button>
+                    <button class="btn-copy p_submit_button" @click="warnCardInfo">提交卡密</button>
                   </div>
                 </div>
 
@@ -833,35 +934,29 @@
       <!--   8000 引导   -->
       <div v-if="payTypeVisible >= 8000 && payTypeVisible < 8099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
-              </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
-                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
               <el-col>
-                <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
-              </el-col>
-              <el-col>
-                <div style="color: #e81239; margin-top: 10px; font-size: 16px">
-                  <el-icon style="margin-right: 5px">
-                    <WarningFilled/>
-                  </el-icon>
-                  请在规定时间内付款！
-                  <div>
-                    <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
-                    <span v-else>-1 （已过期）</span>
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
                   </div>
                 </div>
-              </el-col>
-              <el-col :span="24">
               </el-col>
             </el-row>
           </div>
@@ -888,7 +983,7 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                 </div>
                 <div v-else>
                   <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
@@ -900,7 +995,7 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">点我付款</button>
             </el-col>
           </el-row>
         </div>
@@ -909,20 +1004,47 @@
       <!--   9000 引导   -->
       <div v-if="payTypeVisible >= 9000 && payTypeVisible < 9099">
         <div class="p_container">
-          <div class="p_blue-section" v-for="index in 10" :key="index"
-               :style="{ backgroundColor: generateColor(index) }"></div>
+<!--          <div class="p_blue-section" v-for="index in 10" :key="index"
+               :style="{ backgroundColor: generateColor(index) }"></div>-->
+          <div style="width: 100%; padding: 20px 20px; color: aliceblue;">
+            <div style="display: flex; justify-content: space-between; font-size:16px ;gap:6px">
+              <p style="font-size: 16px;">待支付:
+                <span style="font-size: 30px; margin-top: -14px">{{ payData.money }}</span> 元</p>
+              <p style="font-size: 12px; margin-top: 18px">剩余:
+                <span v-if="countdowns[0] > 0">{{ formatTime(countdowns[0]) }} </span>
+                <span v-else>-1 （已过期）</span>
+              </p>
+            </div>
+          </div>
           <div class="p_content" :style="backgroundImageStyle">
             <el-row :gutter="12">
-              <el-col style="width: 80px; height: 80px">
-              </el-col>
-              <!--              <el-col>
-                              <img src="@/assets/header.png" alt="" style="width: 80px; height: 80px">
-                            </el-col>-->
-              <el-col>
-                <p style="color: red;margin-right: 20px;margin-left: 20px">充值前<b
-                    style="color: blue;">核对【订单金额】并复制账号</b>，根据指导步骤付款即可到账！</p>
+              <el-col
+                  style="width: 60px; height: 60px;text-align: center; font-size: 20px;margin-top: 15px;margin-bottom:-20px;color: #6B7687;">
+                充值须知
               </el-col>
               <el-col>
+                <div style="text-align:left;">
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">1. 充值前请牢记<b style="color: #3f75da;">订单金额</b>
+                  </div>
+                  <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">2. 在下方框中<b
+                      style="color: #3f75da;">复制指定账号</b>
+                  </div>
+                  <div v-if="Number(payData.channel_code) === 9003">
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额,<b
+                        style="color: #3f75da;">选择"点数卡交易游戏货币"！</b>
+                    </div>
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">4. 一定要选择"点数卡交易游戏货币"后，<b
+                        style="color: #3f75da;">粘贴指定账号</b>
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div style="padding: 2px;font-size: 13px;color: gray;margin-right: 20px;margin-left: 20px;">3. 前往商城购买时，确认金额并<b
+                        style="color: #3f75da;">粘贴指定账号</b>
+                    </div>
+                  </div>
+                </div>
+              </el-col>
+<!--              <el-col>
                 <div style="color: #6B7687; margin-top: 20px; font-size: 60px">￥{{ payData.money }}.00</div>
               </el-col>
               <el-col>
@@ -938,7 +1060,7 @@
                 </div>
               </el-col>
               <el-col :span="24">
-              </el-col>
+              </el-col>-->
             </el-row>
           </div>
         </div>
@@ -964,7 +1086,7 @@
                   <span>打开跳转</span>
                 </div>
                 <div v-if="!copyInfoVisible">
-                  <button class="btn-copy copy_button" @click="copyInfo">① 一键复制</button>
+                  <button class="btn-copy copy_button" @click="copyInfo">一键复制</button>
                 </div>
                 <div v-else>
                   <button class="btn-copy copy_success_button" @click="copyInfo">复制成功</button>
@@ -976,7 +1098,7 @@
         <div class="p_content_button">
           <el-row :gutter="12">
             <el-col :span="24">
-              <button class="btn-copy p_button" @click="openYdVisible">② 点击付款</button>
+              <button class="btn-copy p_button" @click="openYdVisible">点此付款</button>
             </el-col>
           </el-row>
         </div>
@@ -1286,7 +1408,8 @@
                       payData.money
                     }}.00</span></span>
                     <div v-if="Number(payData.channel_code) === 2002">
-                      <div style="color: blue; padding: 2px">区服必须填写<span style="color: red">【电信五区】!</span></div>
+                      <div style="color: blue; padding: 2px">区服必须填写<span style="color: red">【电信五区】!</span>
+                      </div>
                     </div>
                   </div>
                   <div class="medicine-bag">
@@ -1655,7 +1778,7 @@
         </template>
       </el-dialog>
 
-      <!--   引导步骤9000   -->
+      <!--   引导步骤  -->
       <el-dialog width="360px" v-model="dialogYd9000Visible" :draggable="true" :before-close="closeYdDialog"
                  :style="backgroundYdImageStyle"
                  top="5vh" destroy-on-close>
@@ -1665,6 +1788,18 @@
               <div>
                 <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
                      src="@/assets/yd_wy_tb.png">
+              </div>
+            </div>
+            <div v-if="Number(payData.channel_code) === 9002">
+              <div>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_wy_tb.png">
+              </div>
+            </div>
+            <div v-if="Number(payData.channel_code) === 9003">
+              <div>
+                <img alt style="width: 100%; height: 100%;border-radius: 20px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);"
+                     src="@/assets/yd_wy_jd.png">
               </div>
             </div>
           </div>
@@ -2470,7 +2605,8 @@ h1 {
 .p_container {
   display: flex;
   justify-content: space-between;
-  height: 45vh;
+  height: 100vh;
+  background: linear-gradient(rgba(82, 153, 244, 1), rgb(244, 244, 244) 60%);
 }
 
 .p_blue-section {
@@ -2481,10 +2617,25 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 50px;
-  left: 5%;
-  right: 5%;
-  height: 280px;
+  top: 60px;
+  left: 3%;
+  right: 3%;
+  padding: 1px;
+  height: 155px;
+  background-color: #f2f2f2;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.p_content_card {
+  text-align: center;
+  color: #333;
+  position: absolute;
+  top: 60px;
+  left: 3%;
+  right: 3%;
+  padding: 1px;
+  height: 155px;
   background-color: #f2f2f2;
   border-radius: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -2494,7 +2645,7 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 320px;
+  top: 220px;
   left: 5%;
   right: 5%;
   height: 200px;
@@ -2519,31 +2670,31 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 550px;
-  left: 5%;
-  right: 5%;
+  top: 440px;
+  left: 3%;
+  right: 3%;
 }
 
 .p_content_button_qr {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 580px;
+  top: 470px;
   left: 5%;
   right: 5%;
 }
 
 .p_button {
   border: none;
-  padding: 12px 24px;
-  font-size: 22px;
+  padding: 4px 14px;
+  font-size: 18px;
   color: #e7dfdf;
-  background: linear-gradient(to right, #064954, #125280, #1247c9);
-  margin-top: 6px;
-  width: 80%;
+  background: linear-gradient(to right, #33aabd, #3d97d7, #3a64cc);
+  margin-top: 10px;
+  width: 90%;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  height: 50px;
+  height: 40px;
 }
 
 .yd_p_content_button_qr {
@@ -2748,10 +2899,10 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 380px;
+  top: 260px;
   left: 5%;
   right: 5%;
-  height: 270px;
+  height: 230px;
   background-color: #f2f2f2;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -2761,7 +2912,7 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 380px;
+  top: 260px;
   left: 5%;
   right: 5%;
   height: 360px;
@@ -2774,7 +2925,7 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 340px;
+  top: 220px;
   left: 5%;
   right: 5%;
 }
@@ -2792,9 +2943,9 @@ h1 {
   text-align: center;
   color: #333;
   position: absolute;
-  top: 350px;
-  left: 5%;
-  right: 5%;
+  top: 370px;
+  left: 3%;
+  right: 3%;
 }
 
 .medicine-jw-bag {
@@ -2807,7 +2958,7 @@ h1 {
   margin-right: 5%;
   width: 90%;
   font-size: 18px;
-  height: 100px;
+  height: 80px;
 }
 
 .medicine-ec-bag {
@@ -2903,28 +3054,28 @@ textarea::placeholder {
 
 .p_submit_button {
   border: none;
-  padding: 12px 24px;
-  font-size: 22px;
+  padding: 4px 14px;
+  font-size: 18px;
   color: #e7dfdf;
   background: linear-gradient(to right, #e8731f, #d54d11, #c91258);
   margin-top: 6px;
-  width: 80%;
+  width: 90%;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  height: 50px;
+  height: 40px;
 }
 
 .p_submit_success_button {
   border: none;
-  padding: 12px 24px;
-  font-size: 22px;
+  padding: 4px 14px;
+  font-size: 18px;
   color: #e7dfdf;
   background: linear-gradient(to right, #064954, #2c9a12, #075cbd);
   margin-top: 6px;
-  width: 80%;
+  width: 90%;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  height: 50px;
+  height: 40px;
 }
 
 .modal {

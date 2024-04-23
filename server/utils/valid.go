@@ -201,7 +201,8 @@ func HandleDYUrl(requestString string) (payUrl string, err error) {
 		}
 		query := parsedURL.Query()
 		detailSchema := query.Get("detail_schema")
-		payUrl = strings.ReplaceAll(detailSchema, "sslocal://", "snssdk1128://")
+		decodedURL, _ := url.QueryUnescape(detailSchema)
+		payUrl = strings.ReplaceAll(decodedURL, "sslocal://", "snssdk1128://")
 		global.GVA_LOG.Info("处理后链接", zap.Any("payUrl", payUrl))
 	} else {
 		return "", fmt.Errorf("不合法的DY链接")
